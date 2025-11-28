@@ -188,17 +188,26 @@ export type Database = {
           contractor_id: string
           created_at: string | null
           created_by_profile_id: string | null
+          demo_cp_total: number | null
+          demo_ic_total: number | null
           final_cp_total: number | null
           final_ic_total: number | null
           gc_permit_cp_total: number | null
           gc_permit_ic_total: number | null
           glass_cp_total: number | null
           glass_ic_total: number | null
+          glass_type: string | null
           has_bathrooms: boolean | null
           has_closets: boolean | null
           has_kitchen: boolean | null
           high_estimate_cp: number | null
           id: string
+          include_demo: boolean | null
+          include_electrical: boolean | null
+          include_glass: boolean | null
+          include_paint: boolean | null
+          include_plumbing: boolean | null
+          include_waterproofing: boolean | null
           internal_json_payload: Json | null
           job_label: string | null
           job_notes: string | null
@@ -216,9 +225,15 @@ export type Database = {
           num_closets: number | null
           num_kitchens: number | null
           num_recessed_cans: number | null
+          num_toilets: number | null
+          num_vanity_lights: number | null
           other_cp_total: number | null
           other_ic_total: number | null
+          paint_cp_total: number | null
+          paint_ic_total: number | null
           permit_required: boolean | null
+          plumbing_cp_total: number | null
+          plumbing_ic_total: number | null
           property_address: string | null
           quartz_cp_total: number | null
           quartz_ic_total: number | null
@@ -234,6 +249,9 @@ export type Database = {
           updated_at: string | null
           vanities_cp_total: number | null
           vanities_ic_total: number | null
+          vanity_size: string | null
+          waterproofing_cp_total: number | null
+          waterproofing_ic_total: number | null
           zip: string | null
         }
         Insert: {
@@ -264,17 +282,26 @@ export type Database = {
           contractor_id: string
           created_at?: string | null
           created_by_profile_id?: string | null
+          demo_cp_total?: number | null
+          demo_ic_total?: number | null
           final_cp_total?: number | null
           final_ic_total?: number | null
           gc_permit_cp_total?: number | null
           gc_permit_ic_total?: number | null
           glass_cp_total?: number | null
           glass_ic_total?: number | null
+          glass_type?: string | null
           has_bathrooms?: boolean | null
           has_closets?: boolean | null
           has_kitchen?: boolean | null
           high_estimate_cp?: number | null
           id?: string
+          include_demo?: boolean | null
+          include_electrical?: boolean | null
+          include_glass?: boolean | null
+          include_paint?: boolean | null
+          include_plumbing?: boolean | null
+          include_waterproofing?: boolean | null
           internal_json_payload?: Json | null
           job_label?: string | null
           job_notes?: string | null
@@ -292,9 +319,15 @@ export type Database = {
           num_closets?: number | null
           num_kitchens?: number | null
           num_recessed_cans?: number | null
+          num_toilets?: number | null
+          num_vanity_lights?: number | null
           other_cp_total?: number | null
           other_ic_total?: number | null
+          paint_cp_total?: number | null
+          paint_ic_total?: number | null
           permit_required?: boolean | null
+          plumbing_cp_total?: number | null
+          plumbing_ic_total?: number | null
           property_address?: string | null
           quartz_cp_total?: number | null
           quartz_ic_total?: number | null
@@ -310,6 +343,9 @@ export type Database = {
           updated_at?: string | null
           vanities_cp_total?: number | null
           vanities_ic_total?: number | null
+          vanity_size?: string | null
+          waterproofing_cp_total?: number | null
+          waterproofing_ic_total?: number | null
           zip?: string | null
         }
         Update: {
@@ -340,17 +376,26 @@ export type Database = {
           contractor_id?: string
           created_at?: string | null
           created_by_profile_id?: string | null
+          demo_cp_total?: number | null
+          demo_ic_total?: number | null
           final_cp_total?: number | null
           final_ic_total?: number | null
           gc_permit_cp_total?: number | null
           gc_permit_ic_total?: number | null
           glass_cp_total?: number | null
           glass_ic_total?: number | null
+          glass_type?: string | null
           has_bathrooms?: boolean | null
           has_closets?: boolean | null
           has_kitchen?: boolean | null
           high_estimate_cp?: number | null
           id?: string
+          include_demo?: boolean | null
+          include_electrical?: boolean | null
+          include_glass?: boolean | null
+          include_paint?: boolean | null
+          include_plumbing?: boolean | null
+          include_waterproofing?: boolean | null
           internal_json_payload?: Json | null
           job_label?: string | null
           job_notes?: string | null
@@ -368,9 +413,15 @@ export type Database = {
           num_closets?: number | null
           num_kitchens?: number | null
           num_recessed_cans?: number | null
+          num_toilets?: number | null
+          num_vanity_lights?: number | null
           other_cp_total?: number | null
           other_ic_total?: number | null
+          paint_cp_total?: number | null
+          paint_ic_total?: number | null
           permit_required?: boolean | null
+          plumbing_cp_total?: number | null
+          plumbing_ic_total?: number | null
           property_address?: string | null
           quartz_cp_total?: number | null
           quartz_ic_total?: number | null
@@ -386,6 +437,9 @@ export type Database = {
           updated_at?: string | null
           vanities_cp_total?: number | null
           vanities_ic_total?: number | null
+          vanity_size?: string | null
+          waterproofing_cp_total?: number | null
+          waterproofing_ic_total?: number | null
           zip?: string | null
         }
         Relationships: [
@@ -421,10 +475,28 @@ export type Database = {
           contractor_id: string
           created_at: string | null
           currency: string | null
+          demo_kitchen_cp: number | null
+          demo_kitchen_ic: number | null
+          demo_large_bath_cp: number | null
+          demo_large_bath_ic: number | null
+          demo_shower_only_cp: number | null
+          demo_shower_only_ic: number | null
+          demo_small_bath_cp: number | null
+          demo_small_bath_ic: number | null
+          electrical_kitchen_package_cp: number | null
+          electrical_kitchen_package_ic: number | null
+          electrical_small_package_cp: number | null
+          electrical_small_package_ic: number | null
+          electrical_vanity_light_cp: number | null
+          electrical_vanity_light_ic: number | null
           frameless_glass_cp_per_sqft: number | null
           frameless_glass_ic_per_sqft: number | null
           gc_permit_fee_cp: number | null
           gc_permit_fee_ic: number | null
+          glass_panel_only_cp: number | null
+          glass_panel_only_ic: number | null
+          glass_shower_standard_cp: number | null
+          glass_shower_standard_ic: number | null
           high_range_multiplier: number | null
           id: string
           kitchen_cp_per_sqft: number | null
@@ -434,9 +506,21 @@ export type Database = {
           low_range_multiplier: number | null
           min_job_cp: number | null
           min_job_ic: number | null
+          paint_full_bath_cp: number | null
+          paint_full_bath_ic: number | null
+          paint_patch_bath_cp: number | null
+          paint_patch_bath_ic: number | null
           payment_split_deposit: number | null
           payment_split_final: number | null
           payment_split_progress: number | null
+          plumbing_extra_head_cp: number | null
+          plumbing_extra_head_ic: number | null
+          plumbing_shower_standard_cp: number | null
+          plumbing_shower_standard_ic: number | null
+          plumbing_toilet_cp: number | null
+          plumbing_toilet_ic: number | null
+          plumbing_tub_freestanding_cp: number | null
+          plumbing_tub_freestanding_ic: number | null
           quartz_cp_per_sqft: number | null
           quartz_ic_per_sqft: number | null
           recessed_can_cp_each: number | null
@@ -449,6 +533,12 @@ export type Database = {
           tile_wall_cp_per_sqft: number | null
           tile_wall_ic_per_sqft: number | null
           updated_at: string | null
+          vanity_48_bundle_cp: number | null
+          vanity_48_bundle_ic: number | null
+          vanity_60_bundle_cp: number | null
+          vanity_60_bundle_ic: number | null
+          waterproofing_cp_per_sqft: number | null
+          waterproofing_ic_per_sqft: number | null
         }
         Insert: {
           bath_cp_per_sqft?: number | null
@@ -465,10 +555,28 @@ export type Database = {
           contractor_id: string
           created_at?: string | null
           currency?: string | null
+          demo_kitchen_cp?: number | null
+          demo_kitchen_ic?: number | null
+          demo_large_bath_cp?: number | null
+          demo_large_bath_ic?: number | null
+          demo_shower_only_cp?: number | null
+          demo_shower_only_ic?: number | null
+          demo_small_bath_cp?: number | null
+          demo_small_bath_ic?: number | null
+          electrical_kitchen_package_cp?: number | null
+          electrical_kitchen_package_ic?: number | null
+          electrical_small_package_cp?: number | null
+          electrical_small_package_ic?: number | null
+          electrical_vanity_light_cp?: number | null
+          electrical_vanity_light_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
+          glass_panel_only_cp?: number | null
+          glass_panel_only_ic?: number | null
+          glass_shower_standard_cp?: number | null
+          glass_shower_standard_ic?: number | null
           high_range_multiplier?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
@@ -478,9 +586,21 @@ export type Database = {
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          paint_full_bath_cp?: number | null
+          paint_full_bath_ic?: number | null
+          paint_patch_bath_cp?: number | null
+          paint_patch_bath_ic?: number | null
           payment_split_deposit?: number | null
           payment_split_final?: number | null
           payment_split_progress?: number | null
+          plumbing_extra_head_cp?: number | null
+          plumbing_extra_head_ic?: number | null
+          plumbing_shower_standard_cp?: number | null
+          plumbing_shower_standard_ic?: number | null
+          plumbing_toilet_cp?: number | null
+          plumbing_toilet_ic?: number | null
+          plumbing_tub_freestanding_cp?: number | null
+          plumbing_tub_freestanding_ic?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_ic_per_sqft?: number | null
           recessed_can_cp_each?: number | null
@@ -493,6 +613,12 @@ export type Database = {
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
           updated_at?: string | null
+          vanity_48_bundle_cp?: number | null
+          vanity_48_bundle_ic?: number | null
+          vanity_60_bundle_cp?: number | null
+          vanity_60_bundle_ic?: number | null
+          waterproofing_cp_per_sqft?: number | null
+          waterproofing_ic_per_sqft?: number | null
         }
         Update: {
           bath_cp_per_sqft?: number | null
@@ -509,10 +635,28 @@ export type Database = {
           contractor_id?: string
           created_at?: string | null
           currency?: string | null
+          demo_kitchen_cp?: number | null
+          demo_kitchen_ic?: number | null
+          demo_large_bath_cp?: number | null
+          demo_large_bath_ic?: number | null
+          demo_shower_only_cp?: number | null
+          demo_shower_only_ic?: number | null
+          demo_small_bath_cp?: number | null
+          demo_small_bath_ic?: number | null
+          electrical_kitchen_package_cp?: number | null
+          electrical_kitchen_package_ic?: number | null
+          electrical_small_package_cp?: number | null
+          electrical_small_package_ic?: number | null
+          electrical_vanity_light_cp?: number | null
+          electrical_vanity_light_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
+          glass_panel_only_cp?: number | null
+          glass_panel_only_ic?: number | null
+          glass_shower_standard_cp?: number | null
+          glass_shower_standard_ic?: number | null
           high_range_multiplier?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
@@ -522,9 +666,21 @@ export type Database = {
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          paint_full_bath_cp?: number | null
+          paint_full_bath_ic?: number | null
+          paint_patch_bath_cp?: number | null
+          paint_patch_bath_ic?: number | null
           payment_split_deposit?: number | null
           payment_split_final?: number | null
           payment_split_progress?: number | null
+          plumbing_extra_head_cp?: number | null
+          plumbing_extra_head_ic?: number | null
+          plumbing_shower_standard_cp?: number | null
+          plumbing_shower_standard_ic?: number | null
+          plumbing_toilet_cp?: number | null
+          plumbing_toilet_ic?: number | null
+          plumbing_tub_freestanding_cp?: number | null
+          plumbing_tub_freestanding_ic?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_ic_per_sqft?: number | null
           recessed_can_cp_each?: number | null
@@ -537,6 +693,12 @@ export type Database = {
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
           updated_at?: string | null
+          vanity_48_bundle_cp?: number | null
+          vanity_48_bundle_ic?: number | null
+          vanity_60_bundle_cp?: number | null
+          vanity_60_bundle_ic?: number | null
+          waterproofing_cp_per_sqft?: number | null
+          waterproofing_ic_per_sqft?: number | null
         }
         Relationships: [
           {
