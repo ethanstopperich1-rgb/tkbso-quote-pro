@@ -27,209 +27,214 @@ const styles = StyleSheet.create({
     padding: 40,
     backgroundColor: '#ffffff',
   },
+  // Header
   header: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
   logo: {
-    width: 300,
+    width: 280,
     height: 'auto',
-    marginBottom: 8,
-  },
-  titleSection: {
     marginBottom: 15,
-    paddingBottom: 10,
+  },
+  // Title Section
+  titleSection: {
+    marginBottom: 20,
+    paddingBottom: 15,
     borderBottomWidth: 2,
     borderBottomColor: '#1e40af',
+    alignItems: 'center',
   },
   mainTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 700,
     color: '#1e3a8a',
     textAlign: 'center',
     marginBottom: 4,
   },
-  address: {
-    fontSize: 10,
-    color: '#374151',
-    textAlign: 'center',
-    marginBottom: 2,
+  // Project Snapshot
+  snapshotSection: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#f8fafc',
+    borderRadius: 4,
   },
-  contactInfo: {
-    fontSize: 9,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  section: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
+  snapshotTitle: {
     fontSize: 11,
     fontWeight: 700,
     color: '#1e3a8a',
-    marginBottom: 6,
-    paddingBottom: 3,
-    borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
+    marginBottom: 10,
     textTransform: 'uppercase',
   },
-  descriptionBox: {
-    backgroundColor: '#f9fafb',
-    padding: 10,
-    borderRadius: 3,
-    marginBottom: 10,
-  },
-  descriptionText: {
-    fontSize: 9,
-    color: '#374151',
-    lineHeight: 1.5,
-  },
-  tradeRow: {
-    marginBottom: 10,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  tradeHeader: {
+  snapshotRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  snapshotLabel: {
+    width: 80,
+    fontSize: 9,
+    fontWeight: 600,
+    color: '#64748b',
+  },
+  snapshotValue: {
+    flex: 1,
+    fontSize: 9,
+    color: '#1e293b',
+  },
+  // Investment Summary - THE HERO
+  investmentSection: {
+    marginBottom: 20,
+    padding: 20,
+    backgroundColor: '#1e3a8a',
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  investmentTitle: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#bfdbfe',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  investmentAmount: {
+    fontSize: 28,
+    fontWeight: 700,
+    color: '#ffffff',
+    marginBottom: 8,
+  },
+  investmentRange: {
+    fontSize: 9,
+    color: '#93c5fd',
+  },
+  // Scope Section
+  scopeSection: {
+    marginBottom: 20,
+  },
+  scopeTitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#1e3a8a',
+    marginBottom: 12,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    textTransform: 'uppercase',
+  },
+  tradeBlock: {
+    marginBottom: 12,
   },
   tradeTitle: {
     fontSize: 10,
-    fontWeight: 700,
-    color: '#1f2937',
-    textTransform: 'uppercase',
-  },
-  tradePrice: {
-    fontSize: 10,
     fontWeight: 600,
-    color: '#1e3a8a',
-  },
-  tradeDescription: {
-    fontSize: 9,
-    color: '#4b5563',
-    lineHeight: 1.5,
+    color: '#334155',
     marginBottom: 4,
   },
   bulletItem: {
     flexDirection: 'row',
     marginBottom: 2,
-    paddingLeft: 8,
+    paddingLeft: 10,
   },
   bullet: {
     width: 10,
     fontSize: 9,
-    color: '#6b7280',
+    color: '#64748b',
   },
   bulletText: {
     flex: 1,
     fontSize: 9,
     lineHeight: 1.4,
-    color: '#374151',
+    color: '#475569',
   },
-  totalBox: {
-    backgroundColor: '#1e3a8a',
-    padding: 12,
-    borderRadius: 4,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  totalLabel: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#ffffff',
-  },
-  totalAmount: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: '#ffffff',
-  },
+  // Payment Section
   paymentSection: {
-    marginTop: 8,
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#f8fafc',
+    borderRadius: 4,
+  },
+  paymentTitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#1e3a8a',
+    marginBottom: 12,
+    textTransform: 'uppercase',
   },
   paymentRow: {
     flexDirection: 'row',
-    paddingVertical: 5,
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#e2e8f0',
+  },
+  paymentNumber: {
+    width: 20,
+    fontSize: 10,
+    fontWeight: 700,
+    color: '#1e3a8a',
   },
   paymentPercent: {
-    width: 35,
+    width: 40,
     fontSize: 10,
     fontWeight: 600,
-    color: '#1e3a8a',
+    color: '#334155',
   },
   paymentDescription: {
     flex: 1,
     fontSize: 9,
-    color: '#374151',
+    color: '#475569',
   },
   paymentAmount: {
-    width: 65,
+    width: 70,
     fontSize: 10,
     fontWeight: 600,
+    color: '#1e3a8a',
     textAlign: 'right',
-    color: '#1f2937',
   },
-  notesSection: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: '#f9fafb',
-    borderRadius: 3,
+  // Signature Section
+  signatureSection: {
+    marginTop: 25,
+    paddingTop: 20,
+    borderTopWidth: 2,
+    borderTopColor: '#e2e8f0',
   },
-  noteText: {
-    fontSize: 8,
-    color: '#6b7280',
-    lineHeight: 1.4,
-    marginBottom: 2,
-  },
-  approvalSection: {
-    marginTop: 15,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  approvalTitle: {
+  signatureTitle: {
     fontSize: 10,
     fontWeight: 600,
-    color: '#1f2937',
-    marginBottom: 12,
+    color: '#1e3a8a',
+    marginBottom: 15,
+    textTransform: 'uppercase',
   },
   signatureLine: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 12,
     alignItems: 'flex-end',
   },
   signatureLabel: {
     fontSize: 9,
-    color: '#6b7280',
-    width: 140,
+    color: '#64748b',
+    width: 150,
   },
   signatureBlank: {
     flex: 1,
     borderBottomWidth: 1,
-    borderBottomColor: '#9ca3af',
+    borderBottomColor: '#94a3b8',
     height: 1,
   },
+  // Footer
   footer: {
     position: 'absolute',
     bottom: 25,
     left: 40,
     right: 40,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    paddingTop: 8,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 10,
   },
   footerText: {
     fontSize: 8,
-    color: '#6b7280',
+    color: '#64748b',
     textAlign: 'center',
     lineHeight: 1.4,
   },
@@ -271,92 +276,85 @@ function getProjectType(estimate: Estimate): string {
   return types.join(' & ') + ' Remodel';
 }
 
+function getRoomsSummary(estimate: Estimate): string {
+  const parts: string[] = [];
+  if (estimate.has_bathrooms && estimate.num_bathrooms) {
+    parts.push(`${estimate.num_bathrooms} Bathroom${estimate.num_bathrooms > 1 ? 's' : ''}`);
+  }
+  if (estimate.has_kitchen && estimate.num_kitchens) {
+    parts.push(`${estimate.num_kitchens} Kitchen`);
+  }
+  if (estimate.has_closets && estimate.num_closets) {
+    parts.push(`${estimate.num_closets} Closet${estimate.num_closets > 1 ? 's' : ''}`);
+  }
+  return parts.join(' + ') || 'Remodel Project';
+}
+
+function getScopeSummary(estimate: Estimate): string {
+  const scope = estimate.bath_scope_level || estimate.kitchen_scope_level || 'full_gut';
+  if (scope === 'shower_only') return 'Shower rebuild with full tile and glass';
+  if (scope === 'partial') return 'Partial remodel – targeted updates';
+  if (scope === 'refresh') return 'Cosmetic refresh – surfaces and fixtures';
+  return 'Full remodel with new fixtures, finishes, and layout';
+}
+
 interface TradeSection {
   title: string;
-  description: string;
   bullets: string[];
 }
 
 function parseScopeToTrades(text: string): TradeSection[] {
-  if (!text) return [];
+  if (!text) return getDefaultTrades();
   
   const lines = text.split('\n').filter(line => line.trim());
   const trades: TradeSection[] = [];
   let currentTrade: TradeSection | null = null;
   
   const tradeKeywords = [
-    'demo', 'demolition', 'framing', 'carpentry', 'plumbing', 'electrical', 
-    'lighting', 'tile', 'drywall', 'paint', 'cabinet', 'countertop', 'quartz',
-    'glass', 'shower', 'vanit', 'closet', 'flooring', 'trim', 'final', 'rough-in',
-    'backsplash', 'soffit', 'appliance'
+    'demo', 'plumbing', 'electrical', 'tile', 'drywall', 'paint', 
+    'cabinet', 'countertop', 'glass', 'shower', 'flooring', 'trim', 'final'
   ];
   
   for (const line of lines) {
     const trimmed = line.trim();
     const lower = trimmed.toLowerCase();
     
-    // Check if this line is a trade header (contains keyword, short, and not a bullet)
     const containsKeyword = tradeKeywords.some(kw => lower.includes(kw));
-    const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed);
-    const isShort = trimmed.length < 80;
-    const looksLikeHeader = trimmed.endsWith(':') || /^[A-Z][A-Z\s&/]+:?$/.test(trimmed);
+    const isBullet = /^[•\-*]/.test(trimmed) || /^\d+\./.test(trimmed);
+    const isShort = trimmed.length < 60;
     
-    const isTradeHeader = containsKeyword && !isBullet && isShort && (looksLikeHeader || lower.includes(':'));
-    
-    if (isTradeHeader) {
-      if (currentTrade && (currentTrade.description || currentTrade.bullets.length > 0)) {
+    if (containsKeyword && !isBullet && isShort) {
+      if (currentTrade && currentTrade.bullets.length > 0) {
         trades.push(currentTrade);
       }
       currentTrade = {
-        title: trimmed.replace(/:$/, '').toUpperCase(),
-        description: '',
+        title: trimmed.replace(/:$/, ''),
         bullets: []
       };
-    } else if (currentTrade) {
-      if (isBullet) {
-        const bulletText = trimmed.replace(/^[•\-*]\s*/, '').replace(/^\d+\.\s*/, '');
-        currentTrade.bullets.push(bulletText);
-      } else if (currentTrade.bullets.length === 0) {
-        currentTrade.description += (currentTrade.description ? ' ' : '') + trimmed;
-      } else {
-        // Continuation of last bullet or general text
-        if (currentTrade.bullets.length > 0) {
-          currentTrade.bullets[currentTrade.bullets.length - 1] += ' ' + trimmed;
-        } else {
-          currentTrade.description += ' ' + trimmed;
-        }
-      }
-    } else {
-      // No current trade yet - create intro section
-      if (!currentTrade) {
-        currentTrade = {
-          title: 'DESCRIPTION OF WORK',
-          description: '',
-          bullets: []
-        };
-      }
-      if (isBullet) {
-        currentTrade.bullets.push(trimmed.replace(/^[•\-*]\s*/, ''));
-      } else {
-        currentTrade.description += (currentTrade.description ? ' ' : '') + trimmed;
-      }
+    } else if (currentTrade && isBullet) {
+      const bulletText = trimmed.replace(/^[•\-*]\s*/, '').replace(/^\d+\.\s*/, '');
+      currentTrade.bullets.push(bulletText);
+    } else if (currentTrade && trimmed && !isBullet) {
+      currentTrade.bullets.push(trimmed);
     }
   }
   
-  if (currentTrade && (currentTrade.description || currentTrade.bullets.length > 0)) {
+  if (currentTrade && currentTrade.bullets.length > 0) {
     trades.push(currentTrade);
   }
   
-  // If no trades were parsed, create a single scope section
-  if (trades.length === 0 && text.trim()) {
-    return [{
-      title: 'SCOPE OF WORK',
-      description: text.trim(),
-      bullets: []
-    }];
-  }
-  
-  return trades;
+  return trades.length > 0 ? trades : getDefaultTrades();
+}
+
+function getDefaultTrades(): TradeSection[] {
+  return [
+    { title: 'Demolition & Prep', bullets: ['Remove existing fixtures and finishes', 'Protect work areas', 'Haul away debris'] },
+    { title: 'Plumbing', bullets: ['Install new fixtures and valves', 'Rough-in as needed', 'Final connections'] },
+    { title: 'Electrical', bullets: ['Lighting installation', 'GFCI outlets per code', 'Exhaust ventilation'] },
+    { title: 'Tile & Surfaces', bullets: ['Waterproofing and backer', 'Wall and floor tile installation', 'Grouting and sealing'] },
+    { title: 'Cabinetry & Tops', bullets: ['Vanity/cabinet installation', 'Countertop fabrication and install', 'Hardware'] },
+    { title: 'Glass & Finishes', bullets: ['Frameless shower glass', 'Mirrors and accessories', 'Final paint and touch-ups'] },
+  ];
 }
 
 export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdfProps) {
@@ -392,35 +390,56 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
         {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.mainTitle}>{title}</Text>
-          {fullAddress && <Text style={styles.address}>{fullAddress}</Text>}
-          {estimate.client_phone && (
-            <Text style={styles.contactInfo}>{estimate.client_phone}</Text>
-          )}
         </View>
         
-        {/* Description of Work */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description of Work to be Completed</Text>
-          <View style={styles.descriptionBox}>
-            <Text style={styles.descriptionText}>
-              {estimate.job_label || projectType} – Complete remodel including all labor, materials, and installation as detailed below.
-              {estimate.permit_required && ' Permit fees included as noted.'}
+        {/* Project Snapshot - Clean, human language */}
+        <View style={styles.snapshotSection}>
+          <Text style={styles.snapshotTitle}>Project Snapshot</Text>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>Client:</Text>
+            <Text style={styles.snapshotValue}>{clientName}</Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>Location:</Text>
+            <Text style={styles.snapshotValue}>{fullAddress || 'To be confirmed'}</Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>Rooms:</Text>
+            <Text style={styles.snapshotValue}>{getRoomsSummary(estimate)}</Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>Scope:</Text>
+            <Text style={styles.snapshotValue}>{getScopeSummary(estimate)}</Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <Text style={styles.snapshotLabel}>Permit:</Text>
+            <Text style={styles.snapshotValue}>
+              {estimate.permit_required 
+                ? 'Required – TKBSO to coordinate' 
+                : estimate.needs_gc_partner 
+                  ? 'GC partner handling permits'
+                  : 'Standard scope – no permit expected'}
             </Text>
           </View>
         </View>
         
-        {/* Remodel Work / Scope by Trade */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Remodel Work to be Done</Text>
-          
+        {/* Investment Summary - THE HERO - One clean number */}
+        <View style={styles.investmentSection}>
+          <Text style={styles.investmentTitle}>Recommended TKBSO Quote</Text>
+          <Text style={styles.investmentAmount}>{formatCurrency(estimate.final_cp_total)}</Text>
+          {estimate.low_estimate_cp && estimate.high_estimate_cp && (
+            <Text style={styles.investmentRange}>
+              Based on similar projects: {formatCurrency(estimate.low_estimate_cp)} – {formatCurrency(estimate.high_estimate_cp)}
+            </Text>
+          )}
+        </View>
+        
+        {/* Scope of Work - NO PRICES, just scope */}
+        <View style={styles.scopeSection}>
+          <Text style={styles.scopeTitle}>Scope of Work</Text>
           {trades.map((trade, idx) => (
-            <View key={idx} style={styles.tradeRow}>
-              <View style={styles.tradeHeader}>
-                <Text style={styles.tradeTitle}>{trade.title}:</Text>
-              </View>
-              {trade.description && (
-                <Text style={styles.tradeDescription}>{trade.description}</Text>
-              )}
+            <View key={idx} style={styles.tradeBlock}>
+              <Text style={styles.tradeTitle}>{trade.title}</Text>
               {trade.bullets.map((bullet, bIdx) => (
                 <View key={bIdx} style={styles.bulletItem}>
                   <Text style={styles.bullet}>•</Text>
@@ -431,61 +450,42 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           ))}
         </View>
         
-        {/* Total Cost Box */}
-        <View style={styles.totalBox}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{projectType} Total:</Text>
-            <Text style={styles.totalAmount}>{formatCurrency(estimate.final_cp_total)}</Text>
-          </View>
-        </View>
-        
-        {/* Payment Milestones */}
+        {/* Payment Milestones - Closes deals */}
         <View style={styles.paymentSection}>
-          <Text style={styles.sectionTitle}>Payment Milestones</Text>
+          <Text style={styles.paymentTitle}>Payment Milestones</Text>
           <View style={styles.paymentRow}>
+            <Text style={styles.paymentNumber}>1.</Text>
             <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-            <Text style={styles.paymentDescription}>Upon Contract Signing</Text>
+            <Text style={styles.paymentDescription}>Deposit – lock materials, schedule trades</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
           </View>
           <View style={styles.paymentRow}>
+            <Text style={styles.paymentNumber}>2.</Text>
             <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-            <Text style={styles.paymentDescription}>Upon Completion of Rough-In / Tile Installation</Text>
+            <Text style={styles.paymentDescription}>Progress – rough-in complete, tile installed</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
           </View>
-          <View style={styles.paymentRow}>
+          <View style={[styles.paymentRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.paymentNumber}>3.</Text>
             <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-            <Text style={styles.paymentDescription}>Upon Overall Completion of Project</Text>
+            <Text style={styles.paymentDescription}>Final – completion + punch list</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
           </View>
         </View>
         
-        {/* Notes */}
-        <View style={styles.notesSection}>
-          <Text style={styles.noteText}>
-            • Pricing is based on TKBSO standard allowances for tile, quartz, plumbing fixtures, and glass unless otherwise noted.
-          </Text>
-          <Text style={styles.noteText}>
-            • Final investment may adjust if selections exceed allowances or if additional work is requested beyond this scope.
-          </Text>
-          <Text style={styles.noteText}>
-            • {estimate.permit_required
-              ? 'Permit fees are included as noted in the scope above.'
-              : 'Permit fees, if required, will be quoted separately.'}
-          </Text>
-          <Text style={styles.noteText}>
-            • Most projects of this scope run approximately 3-4 weeks once started, depending on inspections and material lead times.
-          </Text>
-        </View>
-        
-        {/* Approval Section */}
-        <View style={styles.approvalSection}>
-          <Text style={styles.approvalTitle}>Approval</Text>
+        {/* Signature / Acceptance */}
+        <View style={styles.signatureSection}>
+          <Text style={styles.signatureTitle}>Acceptance</Text>
           <View style={styles.signatureLine}>
-            <Text style={styles.signatureLabel}>Homeowner Signature:</Text>
+            <Text style={styles.signatureLabel}>Client Signature:</Text>
             <View style={styles.signatureBlank} />
           </View>
           <View style={styles.signatureLine}>
             <Text style={styles.signatureLabel}>Date:</Text>
+            <View style={styles.signatureBlank} />
+          </View>
+          <View style={styles.signatureLine}>
+            <Text style={styles.signatureLabel}>TKBSO Representative:</Text>
             <View style={styles.signatureBlank} />
           </View>
         </View>
@@ -496,7 +496,6 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
             {contractor.name}
             {contractor.service_area && ` • Serving ${contractor.service_area}`}
             {contractor.primary_contact_phone && ` • ${contractor.primary_contact_phone}`}
-            {contractor.primary_contact_email && ` • ${contractor.primary_contact_email}`}
           </Text>
         </View>
       </Page>
