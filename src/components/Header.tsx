@@ -1,5 +1,6 @@
 import tkbsoLogo from "@/assets/tkbso-logo.png";
 
+// Header component for TKBSO Estimator
 export function Header() {
   return (
     <header className="border-b bg-card px-6 py-4">
