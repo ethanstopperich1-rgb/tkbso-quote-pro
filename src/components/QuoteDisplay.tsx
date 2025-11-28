@@ -4,6 +4,7 @@ import { Copy, Check, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { QuotePDFGenerator } from "./QuotePDFGenerator";
 
 interface QuoteDisplayProps {
   quote: Quote;
@@ -32,6 +33,7 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
           Project Quote
         </h3>
         <div className="flex items-center gap-2">
+          <QuotePDFGenerator quote={quote} />
           <Button
             variant="ghost"
             size="sm"
