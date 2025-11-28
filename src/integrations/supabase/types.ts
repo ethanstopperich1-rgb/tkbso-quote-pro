@@ -434,6 +434,9 @@ export type Database = {
           low_range_multiplier: number | null
           min_job_cp: number | null
           min_job_ic: number | null
+          payment_split_deposit: number | null
+          payment_split_final: number | null
+          payment_split_progress: number | null
           quartz_cp_per_sqft: number | null
           quartz_ic_per_sqft: number | null
           recessed_can_cp_each: number | null
@@ -475,6 +478,9 @@ export type Database = {
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          payment_split_deposit?: number | null
+          payment_split_final?: number | null
+          payment_split_progress?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_ic_per_sqft?: number | null
           recessed_can_cp_each?: number | null
@@ -516,6 +522,9 @@ export type Database = {
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          payment_split_deposit?: number | null
+          payment_split_final?: number | null
+          payment_split_progress?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_ic_per_sqft?: number | null
           recessed_can_cp_each?: number | null
