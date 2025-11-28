@@ -1,0 +1,275 @@
+// Database types for the TKBSO Estimator
+export interface Contractor {
+  id: string;
+  name: string;
+  primary_contact_name: string | null;
+  primary_contact_email: string | null;
+  primary_contact_phone: string | null;
+  service_area: string | null;
+  logo_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Profile {
+  id: string;
+  contractor_id: string | null;
+  name: string | null;
+  email: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PricingConfig {
+  id: string;
+  contractor_id: string;
+  currency: string;
+  
+  // Kitchen
+  kitchen_ic_per_sqft: number;
+  kitchen_cp_per_sqft: number;
+  kitchen_partial_multiplier: number;
+  kitchen_refresh_multiplier: number;
+  
+  // Bath
+  bath_ic_per_sqft: number;
+  bath_cp_per_sqft: number;
+  bath_shower_only_multiplier: number;
+  bath_partial_multiplier: number;
+  bath_refresh_multiplier: number;
+  
+  // Closet
+  closet_ic_per_sqft: number;
+  closet_cp_per_sqft: number;
+  
+  // Tile
+  tile_wall_ic_per_sqft: number;
+  tile_wall_cp_per_sqft: number;
+  tile_floor_ic_per_sqft: number;
+  tile_floor_cp_per_sqft: number;
+  tile_shower_floor_ic_per_sqft: number;
+  tile_shower_floor_cp_per_sqft: number;
+  
+  // Cement board
+  cement_board_ic_per_sqft: number;
+  cement_board_cp_per_sqft: number;
+  
+  // Quartz
+  quartz_ic_per_sqft: number;
+  quartz_cp_per_sqft: number;
+  
+  // Lighting
+  recessed_can_ic_each: number;
+  recessed_can_cp_each: number;
+  
+  // Glass
+  frameless_glass_ic_per_sqft: number;
+  frameless_glass_cp_per_sqft: number;
+  
+  // GC/Permits
+  gc_permit_fee_ic: number;
+  gc_permit_fee_cp: number;
+  
+  // Cabinet markups
+  cabinet_markup_multiplier_no_gc: number;
+  cabinet_markup_multiplier_with_gc: number;
+  
+  // Minimums
+  min_job_ic: number;
+  min_job_cp: number;
+  
+  // Margins
+  target_margin: number;
+  low_range_multiplier: number;
+  high_range_multiplier: number;
+  
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobState {
+  has_kitchen: boolean;
+  has_bathrooms: boolean;
+  has_closets: boolean;
+  
+  total_kitchen_sqft: number;
+  num_kitchens: number;
+  kitchen_scope_level: 'none' | 'full_gut' | 'partial' | 'refresh';
+  kitchen_countertop_sqft: number;
+  kitchen_uses_tkbso_cabinets: boolean;
+  kitchen_cabinet_supplier_cost_ic: number;
+  
+  total_bathroom_sqft: number;
+  num_bathrooms: number;
+  bath_scope_level: 'none' | 'full_gut' | 'partial' | 'shower_only' | 'refresh';
+  bath_shower_only_sqft: number;
+  bath_wall_tile_sqft: number;
+  bath_floor_tile_sqft: number;
+  bath_shower_floor_tile_sqft: number;
+  bath_countertop_sqft: number;
+  bath_uses_tkbso_vanities: boolean;
+  bath_vanity_supplier_cost_ic: number;
+  bath_uses_frameless_glass: boolean;
+  bath_frameless_glass_sqft: number;
+  
+  total_closet_sqft: number;
+  num_closets: number;
+  closet_scope_level: 'none' | 'framing_only' | 'shelves_only' | 'full';
+  
+  num_recessed_cans: number;
+  needs_gc_partner: boolean;
+  permit_required: boolean;
+  job_notes: string;
+  
+  client_name?: string;
+  client_email?: string;
+  client_phone?: string;
+  property_address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+}
+
+export interface Estimate {
+  id: string;
+  contractor_id: string;
+  created_by_profile_id: string | null;
+  
+  job_label: string | null;
+  client_name: string | null;
+  client_email: string | null;
+  client_phone: string | null;
+  property_address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  
+  has_kitchen: boolean;
+  has_bathrooms: boolean;
+  has_closets: boolean;
+  
+  total_kitchen_sqft: number;
+  num_kitchens: number;
+  kitchen_scope_level: string;
+  kitchen_countertop_sqft: number;
+  kitchen_uses_tkbso_cabinets: boolean;
+  kitchen_cabinet_supplier_cost_ic: number;
+  
+  total_bathroom_sqft: number;
+  num_bathrooms: number;
+  bath_scope_level: string;
+  bath_shower_only_sqft: number;
+  bath_wall_tile_sqft: number;
+  bath_floor_tile_sqft: number;
+  bath_shower_floor_tile_sqft: number;
+  bath_countertop_sqft: number;
+  bath_uses_tkbso_vanities: boolean;
+  bath_vanity_supplier_cost_ic: number;
+  bath_uses_frameless_glass: boolean;
+  bath_frameless_glass_sqft: number;
+  
+  total_closet_sqft: number;
+  num_closets: number;
+  closet_scope_level: string;
+  
+  num_recessed_cans: number;
+  needs_gc_partner: boolean;
+  permit_required: boolean;
+  job_notes: string | null;
+  
+  // IC totals
+  kitchen_ic_total: number;
+  baths_ic_total: number;
+  closets_ic_total: number;
+  tile_ic_total: number;
+  cement_board_ic_total: number;
+  quartz_ic_total: number;
+  cabinets_ic_total: number;
+  vanities_ic_total: number;
+  glass_ic_total: number;
+  lighting_ic_total: number;
+  gc_permit_ic_total: number;
+  other_ic_total: number;
+  subtotal_ic_before_min_job: number;
+  final_ic_total: number;
+  
+  // CP totals
+  kitchen_cp_total: number;
+  baths_cp_total: number;
+  closets_cp_total: number;
+  tile_cp_total: number;
+  cement_board_cp_total: number;
+  quartz_cp_total: number;
+  cabinets_cp_total: number;
+  vanities_cp_total: number;
+  glass_cp_total: number;
+  lighting_cp_total: number;
+  gc_permit_cp_total: number;
+  other_cp_total: number;
+  subtotal_cp_before_min_job: number;
+  final_cp_total: number;
+  low_estimate_cp: number;
+  high_estimate_cp: number;
+  
+  client_estimate_text: string | null;
+  internal_json_payload: Record<string, unknown> | null;
+  status: 'draft' | 'sent' | 'won' | 'lost';
+  
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatSession {
+  id: string;
+  contractor_id: string;
+  created_by_profile_id: string | null;
+  job_label: string | null;
+  status: 'in_progress' | 'completed' | 'archived';
+  current_job_state: Partial<JobState>;
+  linked_estimate_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  chat_session_id: string;
+  sender_type: 'user' | 'assistant';
+  sender_profile_id: string | null;
+  content: string;
+  role: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export const DEFAULT_JOB_STATE: JobState = {
+  has_kitchen: false,
+  has_bathrooms: false,
+  has_closets: false,
+  total_kitchen_sqft: 0,
+  num_kitchens: 0,
+  kitchen_scope_level: 'none',
+  kitchen_countertop_sqft: 0,
+  kitchen_uses_tkbso_cabinets: false,
+  kitchen_cabinet_supplier_cost_ic: 0,
+  total_bathroom_sqft: 0,
+  num_bathrooms: 0,
+  bath_scope_level: 'none',
+  bath_shower_only_sqft: 0,
+  bath_wall_tile_sqft: 0,
+  bath_floor_tile_sqft: 0,
+  bath_shower_floor_tile_sqft: 0,
+  bath_countertop_sqft: 0,
+  bath_uses_tkbso_vanities: false,
+  bath_vanity_supplier_cost_ic: 0,
+  bath_uses_frameless_glass: false,
+  bath_frameless_glass_sqft: 0,
+  total_closet_sqft: 0,
+  num_closets: 0,
+  closet_scope_level: 'none',
+  num_recessed_cans: 0,
+  needs_gc_partner: false,
+  permit_required: false,
+  job_notes: '',
+};
