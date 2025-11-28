@@ -14,16 +14,603 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          chat_session_id: string
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string | null
+          sender_profile_id: string | null
+          sender_type: string
+        }
+        Insert: {
+          chat_session_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string | null
+          sender_profile_id?: string | null
+          sender_type: string
+        }
+        Update: {
+          chat_session_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string | null
+          sender_profile_id?: string | null
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          contractor_id: string
+          created_at: string | null
+          created_by_profile_id: string | null
+          current_job_state: Json | null
+          id: string
+          job_label: string | null
+          linked_estimate_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string | null
+          created_by_profile_id?: string | null
+          current_job_state?: Json | null
+          id?: string
+          job_label?: string | null
+          linked_estimate_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string | null
+          created_by_profile_id?: string | null
+          current_job_state?: Json | null
+          id?: string
+          job_label?: string | null
+          linked_estimate_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_created_by_profile_id_fkey"
+            columns: ["created_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_linked_estimate_id_fkey"
+            columns: ["linked_estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractors: {
+        Row: {
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          notes: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          service_area: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          notes?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          service_area?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          notes?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          service_area?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      estimates: {
+        Row: {
+          bath_countertop_sqft: number | null
+          bath_floor_tile_sqft: number | null
+          bath_frameless_glass_sqft: number | null
+          bath_scope_level: string | null
+          bath_shower_floor_tile_sqft: number | null
+          bath_shower_only_sqft: number | null
+          bath_uses_frameless_glass: boolean | null
+          bath_uses_tkbso_vanities: boolean | null
+          bath_vanity_supplier_cost_ic: number | null
+          bath_wall_tile_sqft: number | null
+          baths_cp_total: number | null
+          baths_ic_total: number | null
+          cabinets_cp_total: number | null
+          cabinets_ic_total: number | null
+          cement_board_cp_total: number | null
+          cement_board_ic_total: number | null
+          city: string | null
+          client_email: string | null
+          client_estimate_text: string | null
+          client_name: string | null
+          client_phone: string | null
+          closet_scope_level: string | null
+          closets_cp_total: number | null
+          closets_ic_total: number | null
+          contractor_id: string
+          created_at: string | null
+          created_by_profile_id: string | null
+          final_cp_total: number | null
+          final_ic_total: number | null
+          gc_permit_cp_total: number | null
+          gc_permit_ic_total: number | null
+          glass_cp_total: number | null
+          glass_ic_total: number | null
+          has_bathrooms: boolean | null
+          has_closets: boolean | null
+          has_kitchen: boolean | null
+          high_estimate_cp: number | null
+          id: string
+          internal_json_payload: Json | null
+          job_label: string | null
+          job_notes: string | null
+          kitchen_cabinet_supplier_cost_ic: number | null
+          kitchen_countertop_sqft: number | null
+          kitchen_cp_total: number | null
+          kitchen_ic_total: number | null
+          kitchen_scope_level: string | null
+          kitchen_uses_tkbso_cabinets: boolean | null
+          lighting_cp_total: number | null
+          lighting_ic_total: number | null
+          low_estimate_cp: number | null
+          needs_gc_partner: boolean | null
+          num_bathrooms: number | null
+          num_closets: number | null
+          num_kitchens: number | null
+          num_recessed_cans: number | null
+          other_cp_total: number | null
+          other_ic_total: number | null
+          permit_required: boolean | null
+          property_address: string | null
+          quartz_cp_total: number | null
+          quartz_ic_total: number | null
+          state: string | null
+          status: string | null
+          subtotal_cp_before_min_job: number | null
+          subtotal_ic_before_min_job: number | null
+          tile_cp_total: number | null
+          tile_ic_total: number | null
+          total_bathroom_sqft: number | null
+          total_closet_sqft: number | null
+          total_kitchen_sqft: number | null
+          updated_at: string | null
+          vanities_cp_total: number | null
+          vanities_ic_total: number | null
+          zip: string | null
+        }
+        Insert: {
+          bath_countertop_sqft?: number | null
+          bath_floor_tile_sqft?: number | null
+          bath_frameless_glass_sqft?: number | null
+          bath_scope_level?: string | null
+          bath_shower_floor_tile_sqft?: number | null
+          bath_shower_only_sqft?: number | null
+          bath_uses_frameless_glass?: boolean | null
+          bath_uses_tkbso_vanities?: boolean | null
+          bath_vanity_supplier_cost_ic?: number | null
+          bath_wall_tile_sqft?: number | null
+          baths_cp_total?: number | null
+          baths_ic_total?: number | null
+          cabinets_cp_total?: number | null
+          cabinets_ic_total?: number | null
+          cement_board_cp_total?: number | null
+          cement_board_ic_total?: number | null
+          city?: string | null
+          client_email?: string | null
+          client_estimate_text?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          closet_scope_level?: string | null
+          closets_cp_total?: number | null
+          closets_ic_total?: number | null
+          contractor_id: string
+          created_at?: string | null
+          created_by_profile_id?: string | null
+          final_cp_total?: number | null
+          final_ic_total?: number | null
+          gc_permit_cp_total?: number | null
+          gc_permit_ic_total?: number | null
+          glass_cp_total?: number | null
+          glass_ic_total?: number | null
+          has_bathrooms?: boolean | null
+          has_closets?: boolean | null
+          has_kitchen?: boolean | null
+          high_estimate_cp?: number | null
+          id?: string
+          internal_json_payload?: Json | null
+          job_label?: string | null
+          job_notes?: string | null
+          kitchen_cabinet_supplier_cost_ic?: number | null
+          kitchen_countertop_sqft?: number | null
+          kitchen_cp_total?: number | null
+          kitchen_ic_total?: number | null
+          kitchen_scope_level?: string | null
+          kitchen_uses_tkbso_cabinets?: boolean | null
+          lighting_cp_total?: number | null
+          lighting_ic_total?: number | null
+          low_estimate_cp?: number | null
+          needs_gc_partner?: boolean | null
+          num_bathrooms?: number | null
+          num_closets?: number | null
+          num_kitchens?: number | null
+          num_recessed_cans?: number | null
+          other_cp_total?: number | null
+          other_ic_total?: number | null
+          permit_required?: boolean | null
+          property_address?: string | null
+          quartz_cp_total?: number | null
+          quartz_ic_total?: number | null
+          state?: string | null
+          status?: string | null
+          subtotal_cp_before_min_job?: number | null
+          subtotal_ic_before_min_job?: number | null
+          tile_cp_total?: number | null
+          tile_ic_total?: number | null
+          total_bathroom_sqft?: number | null
+          total_closet_sqft?: number | null
+          total_kitchen_sqft?: number | null
+          updated_at?: string | null
+          vanities_cp_total?: number | null
+          vanities_ic_total?: number | null
+          zip?: string | null
+        }
+        Update: {
+          bath_countertop_sqft?: number | null
+          bath_floor_tile_sqft?: number | null
+          bath_frameless_glass_sqft?: number | null
+          bath_scope_level?: string | null
+          bath_shower_floor_tile_sqft?: number | null
+          bath_shower_only_sqft?: number | null
+          bath_uses_frameless_glass?: boolean | null
+          bath_uses_tkbso_vanities?: boolean | null
+          bath_vanity_supplier_cost_ic?: number | null
+          bath_wall_tile_sqft?: number | null
+          baths_cp_total?: number | null
+          baths_ic_total?: number | null
+          cabinets_cp_total?: number | null
+          cabinets_ic_total?: number | null
+          cement_board_cp_total?: number | null
+          cement_board_ic_total?: number | null
+          city?: string | null
+          client_email?: string | null
+          client_estimate_text?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          closet_scope_level?: string | null
+          closets_cp_total?: number | null
+          closets_ic_total?: number | null
+          contractor_id?: string
+          created_at?: string | null
+          created_by_profile_id?: string | null
+          final_cp_total?: number | null
+          final_ic_total?: number | null
+          gc_permit_cp_total?: number | null
+          gc_permit_ic_total?: number | null
+          glass_cp_total?: number | null
+          glass_ic_total?: number | null
+          has_bathrooms?: boolean | null
+          has_closets?: boolean | null
+          has_kitchen?: boolean | null
+          high_estimate_cp?: number | null
+          id?: string
+          internal_json_payload?: Json | null
+          job_label?: string | null
+          job_notes?: string | null
+          kitchen_cabinet_supplier_cost_ic?: number | null
+          kitchen_countertop_sqft?: number | null
+          kitchen_cp_total?: number | null
+          kitchen_ic_total?: number | null
+          kitchen_scope_level?: string | null
+          kitchen_uses_tkbso_cabinets?: boolean | null
+          lighting_cp_total?: number | null
+          lighting_ic_total?: number | null
+          low_estimate_cp?: number | null
+          needs_gc_partner?: boolean | null
+          num_bathrooms?: number | null
+          num_closets?: number | null
+          num_kitchens?: number | null
+          num_recessed_cans?: number | null
+          other_cp_total?: number | null
+          other_ic_total?: number | null
+          permit_required?: boolean | null
+          property_address?: string | null
+          quartz_cp_total?: number | null
+          quartz_ic_total?: number | null
+          state?: string | null
+          status?: string | null
+          subtotal_cp_before_min_job?: number | null
+          subtotal_ic_before_min_job?: number | null
+          tile_cp_total?: number | null
+          tile_ic_total?: number | null
+          total_bathroom_sqft?: number | null
+          total_closet_sqft?: number | null
+          total_kitchen_sqft?: number | null
+          updated_at?: string | null
+          vanities_cp_total?: number | null
+          vanities_ic_total?: number | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimates_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimates_created_by_profile_id_fkey"
+            columns: ["created_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_configs: {
+        Row: {
+          bath_cp_per_sqft: number | null
+          bath_ic_per_sqft: number | null
+          bath_partial_multiplier: number | null
+          bath_refresh_multiplier: number | null
+          bath_shower_only_multiplier: number | null
+          cabinet_markup_multiplier_no_gc: number | null
+          cabinet_markup_multiplier_with_gc: number | null
+          cement_board_cp_per_sqft: number | null
+          cement_board_ic_per_sqft: number | null
+          closet_cp_per_sqft: number | null
+          closet_ic_per_sqft: number | null
+          contractor_id: string
+          created_at: string | null
+          currency: string | null
+          frameless_glass_cp_per_sqft: number | null
+          frameless_glass_ic_per_sqft: number | null
+          gc_permit_fee_cp: number | null
+          gc_permit_fee_ic: number | null
+          high_range_multiplier: number | null
+          id: string
+          kitchen_cp_per_sqft: number | null
+          kitchen_ic_per_sqft: number | null
+          kitchen_partial_multiplier: number | null
+          kitchen_refresh_multiplier: number | null
+          low_range_multiplier: number | null
+          min_job_cp: number | null
+          min_job_ic: number | null
+          quartz_cp_per_sqft: number | null
+          quartz_ic_per_sqft: number | null
+          recessed_can_cp_each: number | null
+          recessed_can_ic_each: number | null
+          target_margin: number | null
+          tile_floor_cp_per_sqft: number | null
+          tile_floor_ic_per_sqft: number | null
+          tile_shower_floor_cp_per_sqft: number | null
+          tile_shower_floor_ic_per_sqft: number | null
+          tile_wall_cp_per_sqft: number | null
+          tile_wall_ic_per_sqft: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bath_cp_per_sqft?: number | null
+          bath_ic_per_sqft?: number | null
+          bath_partial_multiplier?: number | null
+          bath_refresh_multiplier?: number | null
+          bath_shower_only_multiplier?: number | null
+          cabinet_markup_multiplier_no_gc?: number | null
+          cabinet_markup_multiplier_with_gc?: number | null
+          cement_board_cp_per_sqft?: number | null
+          cement_board_ic_per_sqft?: number | null
+          closet_cp_per_sqft?: number | null
+          closet_ic_per_sqft?: number | null
+          contractor_id: string
+          created_at?: string | null
+          currency?: string | null
+          frameless_glass_cp_per_sqft?: number | null
+          frameless_glass_ic_per_sqft?: number | null
+          gc_permit_fee_cp?: number | null
+          gc_permit_fee_ic?: number | null
+          high_range_multiplier?: number | null
+          id?: string
+          kitchen_cp_per_sqft?: number | null
+          kitchen_ic_per_sqft?: number | null
+          kitchen_partial_multiplier?: number | null
+          kitchen_refresh_multiplier?: number | null
+          low_range_multiplier?: number | null
+          min_job_cp?: number | null
+          min_job_ic?: number | null
+          quartz_cp_per_sqft?: number | null
+          quartz_ic_per_sqft?: number | null
+          recessed_can_cp_each?: number | null
+          recessed_can_ic_each?: number | null
+          target_margin?: number | null
+          tile_floor_cp_per_sqft?: number | null
+          tile_floor_ic_per_sqft?: number | null
+          tile_shower_floor_cp_per_sqft?: number | null
+          tile_shower_floor_ic_per_sqft?: number | null
+          tile_wall_cp_per_sqft?: number | null
+          tile_wall_ic_per_sqft?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bath_cp_per_sqft?: number | null
+          bath_ic_per_sqft?: number | null
+          bath_partial_multiplier?: number | null
+          bath_refresh_multiplier?: number | null
+          bath_shower_only_multiplier?: number | null
+          cabinet_markup_multiplier_no_gc?: number | null
+          cabinet_markup_multiplier_with_gc?: number | null
+          cement_board_cp_per_sqft?: number | null
+          cement_board_ic_per_sqft?: number | null
+          closet_cp_per_sqft?: number | null
+          closet_ic_per_sqft?: number | null
+          contractor_id?: string
+          created_at?: string | null
+          currency?: string | null
+          frameless_glass_cp_per_sqft?: number | null
+          frameless_glass_ic_per_sqft?: number | null
+          gc_permit_fee_cp?: number | null
+          gc_permit_fee_ic?: number | null
+          high_range_multiplier?: number | null
+          id?: string
+          kitchen_cp_per_sqft?: number | null
+          kitchen_ic_per_sqft?: number | null
+          kitchen_partial_multiplier?: number | null
+          kitchen_refresh_multiplier?: number | null
+          low_range_multiplier?: number | null
+          min_job_cp?: number | null
+          min_job_ic?: number | null
+          quartz_cp_per_sqft?: number | null
+          quartz_ic_per_sqft?: number | null
+          recessed_can_cp_each?: number | null
+          recessed_can_ic_each?: number | null
+          target_margin?: number | null
+          tile_floor_cp_per_sqft?: number | null
+          tile_floor_ic_per_sqft?: number | null
+          tile_shower_floor_cp_per_sqft?: number | null
+          tile_shower_floor_ic_per_sqft?: number | null
+          tile_wall_cp_per_sqft?: number | null
+          tile_wall_ic_per_sqft?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_configs_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: true
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          contractor_id: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          contractor_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          contractor_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_contractor_id: { Args: { user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "contractor_user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +737,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "contractor_user"],
+    },
   },
 } as const
