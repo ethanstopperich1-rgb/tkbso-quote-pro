@@ -748,10 +748,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
             {contractor.name || 'The Kitchen and Bath Store of Orlando'}
             {contractor.primary_contact_phone && ` • ${contractor.primary_contact_phone}`}
             {contractor.primary_contact_email && ` • ${contractor.primary_contact_email}`}
-          </Text>
-          <Text style={styles.footerText}>
-            {contractor.service_area && `Serving ${contractor.service_area}`}
-            {' • Licensed & Insured'}
+            {contractor.service_area && ` • Serving ${contractor.service_area}`}
           </Text>
         </View>
       </Page>
