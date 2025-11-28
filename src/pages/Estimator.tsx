@@ -1,9 +1,10 @@
-import { EstimatorChat } from "@/components/EstimatorChat";
+import { EstimatorProvider } from "@/contexts/EstimatorContext";
+import { EstimatorLayout } from "@/components/estimator/EstimatorLayout";
 
 export default function Estimator() {
   return (
-    <div className="h-screen">
-      <EstimatorChat />
-    </div>
+    <EstimatorProvider>
+      <EstimatorLayout />
+    </EstimatorProvider>
   );
 }
