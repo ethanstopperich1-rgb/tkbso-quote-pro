@@ -10,7 +10,7 @@ import { RotateCcw } from "lucide-react";
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Welcome to the TKBSO AI Estimator! I'm here to help you create professional quotes for kitchen and bathroom remodels.\n\nI'll gather project details and generate a complete quote with:\n• Client-facing price summary\n• Detailed scope of work\n• Internal cost & margin breakdown\n\n**Get started by telling me about your project, or choose a quick start below:**`,
+  content: `Welcome to the TKBSO AI Estimator! I'll help you create professional quotes in 4 steps:\n\n**1. Collect inputs** — project type, room size, scope\n**2. Confirm assumptions** — review before pricing\n**3. Client details** — name, phone, address\n**4. Generate quote** — TKBSO-style proposal ready to download\n\n**Tell me about your project to get started:**`,
   timestamp: new Date(),
 };
 
