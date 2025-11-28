@@ -29,137 +29,203 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   logo: {
-    width: 280,
+    width: 300,
     height: 'auto',
-    marginBottom: 15,
-  },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e40af',
-    marginVertical: 10,
+    marginBottom: 8,
   },
   titleSection: {
-    marginBottom: 20,
-    paddingBottom: 15,
+    marginBottom: 15,
+    paddingBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: '#1e40af',
   },
   mainTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 700,
     color: '#1e3a8a',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subTitle: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#374151',
     textAlign: 'center',
     marginBottom: 4,
   },
   address: {
     fontSize: 10,
+    color: '#374151',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  contactInfo: {
+    fontSize: 9,
     color: '#6b7280',
     textAlign: 'center',
   },
-  metadata: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-    fontSize: 9,
-    color: '#6b7280',
-  },
   section: {
-    marginBottom: 18,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#1e3a8a',
-    marginBottom: 8,
-    paddingBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  investmentBox: {
-    backgroundColor: '#f0f9ff',
-    padding: 15,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#bae6fd',
-  },
-  rangeText: {
     fontSize: 11,
-    color: '#374151',
-    marginBottom: 8,
-  },
-  recommendedText: {
-    fontSize: 14,
     fontWeight: 700,
     color: '#1e3a8a',
-    marginBottom: 8,
+    marginBottom: 6,
+    paddingBottom: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: '#d1d5db',
+    textTransform: 'uppercase',
   },
-  noteText: {
+  descriptionBox: {
+    backgroundColor: '#f9fafb',
+    padding: 10,
+    borderRadius: 3,
+    marginBottom: 10,
+  },
+  descriptionText: {
     fontSize: 9,
-    color: '#6b7280',
-    fontStyle: 'italic',
+    color: '#374151',
+    lineHeight: 1.5,
+  },
+  tradeRow: {
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  tradeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  tradeTitle: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: '#1f2937',
+    textTransform: 'uppercase',
+  },
+  tradePrice: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#1e3a8a',
+  },
+  tradeDescription: {
+    fontSize: 9,
+    color: '#4b5563',
+    lineHeight: 1.5,
+    marginBottom: 4,
   },
   bulletItem: {
     flexDirection: 'row',
-    marginBottom: 4,
-    paddingLeft: 10,
+    marginBottom: 2,
+    paddingLeft: 8,
   },
   bullet: {
-    width: 15,
-    fontSize: 10,
+    width: 10,
+    fontSize: 9,
+    color: '#6b7280',
   },
   bulletText: {
     flex: 1,
-    fontSize: 10,
-    lineHeight: 1.5,
-  },
-  scopeText: {
-    fontSize: 10,
-    lineHeight: 1.6,
+    fontSize: 9,
+    lineHeight: 1.4,
     color: '#374151',
-    whiteSpace: 'pre-wrap',
   },
-  paymentTable: {
+  totalBox: {
+    backgroundColor: '#1e3a8a',
+    padding: 12,
+    borderRadius: 4,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#ffffff',
+  },
+  totalAmount: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#ffffff',
+  },
+  paymentSection: {
     marginTop: 8,
   },
   paymentRow: {
     flexDirection: 'row',
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  paymentLabel: {
-    flex: 2,
-    fontSize: 10,
-  },
   paymentPercent: {
-    flex: 1,
+    width: 35,
     fontSize: 10,
-    textAlign: 'center',
+    fontWeight: 600,
+    color: '#1e3a8a',
+  },
+  paymentDescription: {
+    flex: 1,
+    fontSize: 9,
+    color: '#374151',
   },
   paymentAmount: {
-    flex: 1,
+    width: 65,
     fontSize: 10,
     fontWeight: 600,
     textAlign: 'right',
+    color: '#1f2937',
+  },
+  notesSection: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: '#f9fafb',
+    borderRadius: 3,
+  },
+  noteText: {
+    fontSize: 8,
+    color: '#6b7280',
+    lineHeight: 1.4,
+    marginBottom: 2,
+  },
+  approvalSection: {
+    marginTop: 15,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  approvalTitle: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  signatureLine: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    alignItems: 'flex-end',
+  },
+  signatureLabel: {
+    fontSize: 9,
+    color: '#6b7280',
+    width: 140,
+  },
+  signatureBlank: {
+    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#9ca3af',
+    height: 1,
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 25,
     left: 40,
     right: 40,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-    paddingTop: 10,
+    paddingTop: 8,
   },
   footerText: {
     fontSize: 8,
@@ -184,34 +250,113 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+function getProjectType(estimate: Estimate): string {
+  const types: string[] = [];
+  if (estimate.has_kitchen) types.push('Kitchen');
+  if (estimate.has_bathrooms) {
+    const bathCount = estimate.num_bathrooms || 1;
+    if (estimate.bath_scope_level === 'shower_only') {
+      types.push(bathCount > 1 ? `${bathCount} Shower` : 'Shower');
+    } else {
+      types.push(bathCount > 1 ? `${bathCount} Bathroom` : 'Bathroom');
+    }
+  }
+  if (estimate.has_closets) {
+    const closetCount = estimate.num_closets || 1;
+    types.push(closetCount > 1 ? `${closetCount} Closet` : 'Closet');
+  }
+  
+  if (types.length === 0) return 'Remodel';
+  if (types.length === 1) return `${types[0]} Remodel`;
+  return types.join(' & ') + ' Remodel';
 }
 
-function parseScopeText(text: string): { intro: string; bullets: string[]; closing: string } {
+interface TradeSection {
+  title: string;
+  description: string;
+  bullets: string[];
+}
+
+function parseScopeToTrades(text: string): TradeSection[] {
+  if (!text) return [];
+  
   const lines = text.split('\n').filter(line => line.trim());
-  const bullets: string[] = [];
-  let intro = '';
-  let closing = '';
-  let foundBullet = false;
+  const trades: TradeSection[] = [];
+  let currentTrade: TradeSection | null = null;
   
-  lines.forEach((line, index) => {
+  const tradeKeywords = [
+    'demo', 'demolition', 'framing', 'carpentry', 'plumbing', 'electrical', 
+    'lighting', 'tile', 'drywall', 'paint', 'cabinet', 'countertop', 'quartz',
+    'glass', 'shower', 'vanit', 'closet', 'flooring', 'trim', 'final', 'rough-in',
+    'backsplash', 'soffit', 'appliance'
+  ];
+  
+  for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed)) {
-      foundBullet = true;
-      bullets.push(trimmed.replace(/^[•\-*]\s*/, '').replace(/^\d+\.\s*/, ''));
-    } else if (!foundBullet && index < 3) {
-      intro += (intro ? ' ' : '') + trimmed;
-    } else if (foundBullet && bullets.length > 0) {
-      closing += (closing ? ' ' : '') + trimmed;
+    const lower = trimmed.toLowerCase();
+    
+    // Check if this line is a trade header (contains keyword, short, and not a bullet)
+    const containsKeyword = tradeKeywords.some(kw => lower.includes(kw));
+    const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed);
+    const isShort = trimmed.length < 80;
+    const looksLikeHeader = trimmed.endsWith(':') || /^[A-Z][A-Z\s&/]+:?$/.test(trimmed);
+    
+    const isTradeHeader = containsKeyword && !isBullet && isShort && (looksLikeHeader || lower.includes(':'));
+    
+    if (isTradeHeader) {
+      if (currentTrade && (currentTrade.description || currentTrade.bullets.length > 0)) {
+        trades.push(currentTrade);
+      }
+      currentTrade = {
+        title: trimmed.replace(/:$/, '').toUpperCase(),
+        description: '',
+        bullets: []
+      };
+    } else if (currentTrade) {
+      if (isBullet) {
+        const bulletText = trimmed.replace(/^[•\-*]\s*/, '').replace(/^\d+\.\s*/, '');
+        currentTrade.bullets.push(bulletText);
+      } else if (currentTrade.bullets.length === 0) {
+        currentTrade.description += (currentTrade.description ? ' ' : '') + trimmed;
+      } else {
+        // Continuation of last bullet or general text
+        if (currentTrade.bullets.length > 0) {
+          currentTrade.bullets[currentTrade.bullets.length - 1] += ' ' + trimmed;
+        } else {
+          currentTrade.description += ' ' + trimmed;
+        }
+      }
+    } else {
+      // No current trade yet - create intro section
+      if (!currentTrade) {
+        currentTrade = {
+          title: 'DESCRIPTION OF WORK',
+          description: '',
+          bullets: []
+        };
+      }
+      if (isBullet) {
+        currentTrade.bullets.push(trimmed.replace(/^[•\-*]\s*/, ''));
+      } else {
+        currentTrade.description += (currentTrade.description ? ' ' : '') + trimmed;
+      }
     }
-  });
+  }
   
-  return { intro, bullets, closing };
+  if (currentTrade && (currentTrade.description || currentTrade.bullets.length > 0)) {
+    trades.push(currentTrade);
+  }
+  
+  // If no trades were parsed, create a single scope section
+  if (trades.length === 0 && text.trim()) {
+    return [{
+      title: 'SCOPE OF WORK',
+      description: text.trim(),
+      bullets: []
+    }];
+  }
+  
+  return trades;
 }
 
 export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdfProps) {
@@ -230,9 +375,11 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
     estimate.zip,
   ].filter(Boolean).join(', ');
   
-  const scopeParsed = estimate.client_estimate_text
-    ? parseScopeText(estimate.client_estimate_text)
-    : { intro: '', bullets: [], closing: '' };
+  const projectType = getProjectType(estimate);
+  const clientName = estimate.client_name || 'Valued Client';
+  const title = `${projectType} Quote for ${clientName}`;
+  
+  const trades = parseScopeToTrades(estimate.client_estimate_text || '');
 
   return (
     <Document>
@@ -244,132 +391,102 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
         
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.mainTitle}>
-            Proposal for {estimate.client_name || 'Valued Client'}
-          </Text>
-          <Text style={styles.subTitle}>
-            {estimate.job_label || 'Kitchen & Bathroom Remodel Proposal'}
-          </Text>
-          {fullAddress && (
-            <Text style={styles.address}>{fullAddress}</Text>
+          <Text style={styles.mainTitle}>{title}</Text>
+          {fullAddress && <Text style={styles.address}>{fullAddress}</Text>}
+          {estimate.client_phone && (
+            <Text style={styles.contactInfo}>{estimate.client_phone}</Text>
           )}
-          <View style={styles.metadata}>
-            <Text>Date: {formatDate(estimate.created_at)}</Text>
-          </View>
         </View>
         
-        {/* Investment Summary */}
+        {/* Description of Work */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Investment Summary</Text>
-          <View style={styles.investmentBox}>
-            <Text style={styles.rangeText}>
-              Estimated investment range: {formatCurrency(estimate.low_estimate_cp)} – {formatCurrency(estimate.high_estimate_cp)}
-            </Text>
-            <Text style={styles.recommendedText}>
-              Recommended TKBSO proposal amount: {formatCurrency(estimate.final_cp_total)}
-            </Text>
-            <Text style={styles.noteText}>
-              Final investment will depend on final material selections and any changes to scope.
+          <Text style={styles.sectionTitle}>Description of Work to be Completed</Text>
+          <View style={styles.descriptionBox}>
+            <Text style={styles.descriptionText}>
+              {estimate.job_label || projectType} – Complete remodel including all labor, materials, and installation as detailed below.
+              {estimate.permit_required && ' Permit fees included as noted.'}
             </Text>
           </View>
         </View>
         
-        {/* Project Overview */}
+        {/* Remodel Work / Scope by Trade */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Project Overview</Text>
-          <View style={styles.bulletItem}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>
-              {estimate.has_bathrooms && estimate.num_bathrooms > 0 && `${estimate.num_bathrooms} bathroom${estimate.num_bathrooms > 1 ? 's' : ''}`}
-              {estimate.has_kitchen && estimate.num_kitchens > 0 && `${estimate.has_bathrooms ? ' and ' : ''}${estimate.num_kitchens} kitchen`}
-              {estimate.has_closets && estimate.num_closets > 0 && ` plus ${estimate.num_closets} closet${estimate.num_closets > 1 ? 's' : ''}`}
-              {!estimate.has_bathrooms && !estimate.has_kitchen && !estimate.has_closets && 'Remodel project'}
-            </Text>
-          </View>
-          {estimate.city && (
-            <View style={styles.bulletItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.bulletText}>Located in {estimate.city}, {estimate.state}</Text>
-            </View>
-          )}
-          {scopeParsed.intro && (
-            <View style={styles.bulletItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.bulletText}>{scopeParsed.intro}</Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Scope of Work */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Scope of Work</Text>
-          {scopeParsed.bullets.length > 0 ? (
-            scopeParsed.bullets.map((bullet, idx) => (
-              <View key={idx} style={styles.bulletItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.bulletText}>{bullet}</Text>
+          <Text style={styles.sectionTitle}>Remodel Work to be Done</Text>
+          
+          {trades.map((trade, idx) => (
+            <View key={idx} style={styles.tradeRow}>
+              <View style={styles.tradeHeader}>
+                <Text style={styles.tradeTitle}>{trade.title}:</Text>
               </View>
-            ))
-          ) : (
-            <Text style={styles.scopeText}>
-              {estimate.client_estimate_text || 'Scope details to be finalized.'}
-            </Text>
-          )}
-          {scopeParsed.closing && (
-            <Text style={[styles.scopeText, { marginTop: 8 }]}>{scopeParsed.closing}</Text>
-          )}
+              {trade.description && (
+                <Text style={styles.tradeDescription}>{trade.description}</Text>
+              )}
+              {trade.bullets.map((bullet, bIdx) => (
+                <View key={bIdx} style={styles.bulletItem}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.bulletText}>{bullet}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
         </View>
         
-        {/* Payment Schedule */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Schedule</Text>
-          <View style={styles.paymentTable}>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>1. Deposit (due at contract signing)</Text>
-              <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-              <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
-            </View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>2. Progress payment (rough-in / tile completion)</Text>
-              <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-              <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
-            </View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentLabel}>3. Final payment (substantial completion)</Text>
-              <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-              <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
-            </View>
+        {/* Total Cost Box */}
+        <View style={styles.totalBox}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>{projectType} Total:</Text>
+            <Text style={styles.totalAmount}>{formatCurrency(estimate.final_cp_total)}</Text>
           </View>
         </View>
         
-        {/* Notes & Assumptions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notes & Assumptions</Text>
-          <View style={styles.bulletItem}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>
-              Pricing is based on TKBSO standard allowances for tile, quartz, plumbing fixtures, and glass unless otherwise noted.
-            </Text>
+        {/* Payment Milestones */}
+        <View style={styles.paymentSection}>
+          <Text style={styles.sectionTitle}>Payment Milestones</Text>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
+            <Text style={styles.paymentDescription}>Upon Contract Signing</Text>
+            <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
           </View>
-          <View style={styles.bulletItem}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>
-              Final investment may adjust if selections exceed allowances or if additional work is requested beyond this scope.
-            </Text>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
+            <Text style={styles.paymentDescription}>Upon Completion of Rough-In / Tile Installation</Text>
+            <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
           </View>
-          <View style={styles.bulletItem}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>
-              {estimate.permit_required
-                ? 'Permit fees are included as noted in the scope above.'
-                : 'Permit fees, if required, will be quoted separately.'}
-            </Text>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
+            <Text style={styles.paymentDescription}>Upon Overall Completion of Project</Text>
+            <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
           </View>
-          <View style={styles.bulletItem}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletText}>
-              Most projects of this scope run approximately 3-4 weeks once started, depending on inspections and material lead times.
-            </Text>
+        </View>
+        
+        {/* Notes */}
+        <View style={styles.notesSection}>
+          <Text style={styles.noteText}>
+            • Pricing is based on TKBSO standard allowances for tile, quartz, plumbing fixtures, and glass unless otherwise noted.
+          </Text>
+          <Text style={styles.noteText}>
+            • Final investment may adjust if selections exceed allowances or if additional work is requested beyond this scope.
+          </Text>
+          <Text style={styles.noteText}>
+            • {estimate.permit_required
+              ? 'Permit fees are included as noted in the scope above.'
+              : 'Permit fees, if required, will be quoted separately.'}
+          </Text>
+          <Text style={styles.noteText}>
+            • Most projects of this scope run approximately 3-4 weeks once started, depending on inspections and material lead times.
+          </Text>
+        </View>
+        
+        {/* Approval Section */}
+        <View style={styles.approvalSection}>
+          <Text style={styles.approvalTitle}>Approval</Text>
+          <View style={styles.signatureLine}>
+            <Text style={styles.signatureLabel}>Homeowner Signature:</Text>
+            <View style={styles.signatureBlank} />
+          </View>
+          <View style={styles.signatureLine}>
+            <Text style={styles.signatureLabel}>Date:</Text>
+            <View style={styles.signatureBlank} />
           </View>
         </View>
         
