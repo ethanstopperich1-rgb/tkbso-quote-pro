@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { formatCurrency } from '@/lib/pricing';
-import { DollarSign, Percent, Sparkles, Lock, TrendingUp, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { formatCurrency } from '@/lib/tkbso-pricing';
+import { DollarSign, Percent, Sparkles, Lock, TrendingUp, AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function FinalSalesControls() {
@@ -30,6 +31,8 @@ export function FinalSalesControls() {
     lowEstimate,
     highEstimate,
     projectType,
+    marginStatus,
+    pricingResult,
     isLocked 
   } = state;
   
@@ -69,8 +72,6 @@ export function FinalSalesControls() {
   };
   
   const marginPercent = calculatedMargin * 100;
-  const isHealthyMargin = calculatedMargin >= 0.30;
-  const isGoodMargin = calculatedMargin >= 0.35;
   
   if (baseInternalCost === 0) return null;
   
@@ -97,6 +98,24 @@ export function FinalSalesControls() {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Margin Warning Alert */}
+        {marginStatus && marginStatus.status !== 'good' && (
+          <Alert variant={marginStatus.status === 'low' ? 'destructive' : 'default'} className={cn(
+            marginStatus.status === 'healthy' && 'border-amber-500 bg-amber-50',
+            marginStatus.status === 'high' && 'border-orange-500 bg-orange-50'
+          )}>
+            {marginStatus.status === 'low' && <AlertCircle className="h-4 w-4" />}
+            {marginStatus.status === 'healthy' && <AlertTriangle className="h-4 w-4 text-amber-600" />}
+            {marginStatus.status === 'high' && <AlertTriangle className="h-4 w-4 text-orange-600" />}
+            <AlertDescription className={cn(
+              marginStatus.status === 'healthy' && 'text-amber-800',
+              marginStatus.status === 'high' && 'text-orange-800'
+            )}>
+              {marginStatus.message}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {/* Pricing Mode Selection */}
         <RadioGroup
           value={pricingMode}
@@ -150,7 +169,7 @@ export function FinalSalesControls() {
                     onChange={(e) => setInputPrice(e.target.value)}
                     onBlur={handlePriceSubmit}
                     onKeyDown={(e) => e.key === 'Enter' && handlePriceSubmit()}
-                    placeholder="27,500"
+                    placeholder="14,500"
                     className="pl-9"
                   />
                 </div>
@@ -186,7 +205,7 @@ export function FinalSalesControls() {
                     onChange={(e) => setInputMargin(e.target.value)}
                     onBlur={handleMarginSubmit}
                     onKeyDown={(e) => e.key === 'Enter' && handleMarginSubmit()}
-                    placeholder="40"
+                    placeholder="38"
                     className="pr-8"
                     min={1}
                     max={99}
@@ -240,37 +259,120 @@ export function FinalSalesControls() {
               </div>
             </div>
             
-            {/* Margin */}
+            {/* Margin with Status */}
             <div className={cn(
               "rounded-lg p-3 text-center col-span-2 border",
-              isGoodMargin ? "bg-green-50 border-green-200" : 
-              isHealthyMargin ? "bg-amber-50 border-amber-200" : 
-              "bg-red-50 border-red-200"
+              marginStatus?.status === 'good' ? "bg-green-50 border-green-300" : 
+              marginStatus?.status === 'healthy' ? "bg-amber-50 border-amber-300" : 
+              marginStatus?.status === 'high' ? "bg-orange-50 border-orange-300" : 
+              "bg-red-50 border-red-300"
             )}>
-              <span className={cn(
-                "text-xs uppercase tracking-wide",
-                isGoodMargin ? "text-green-700" : 
-                isHealthyMargin ? "text-amber-700" : 
-                "text-red-700"
-              )}>
-                Implied Margin
-              </span>
+              <div className="flex items-center justify-center gap-2">
+                {marginStatus?.status === 'good' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                {marginStatus?.status === 'healthy' && <AlertTriangle className="w-4 h-4 text-amber-600" />}
+                {marginStatus?.status === 'high' && <AlertTriangle className="w-4 h-4 text-orange-600" />}
+                {marginStatus?.status === 'low' && <AlertCircle className="w-4 h-4 text-red-600" />}
+                <span className={cn(
+                  "text-xs uppercase tracking-wide",
+                  marginStatus?.status === 'good' ? "text-green-700" : 
+                  marginStatus?.status === 'healthy' ? "text-amber-700" : 
+                  marginStatus?.status === 'high' ? "text-orange-700" : 
+                  "text-red-700"
+                )}>
+                  Implied Margin
+                </span>
+              </div>
               <div className={cn(
                 "text-xl font-bold",
-                isGoodMargin ? "text-green-700" : 
-                isHealthyMargin ? "text-amber-700" : 
+                marginStatus?.status === 'good' ? "text-green-700" : 
+                marginStatus?.status === 'healthy' ? "text-amber-700" : 
+                marginStatus?.status === 'high' ? "text-orange-700" : 
                 "text-red-700"
               )}>
                 {marginPercent.toFixed(1)}%
               </div>
-              {!isHealthyMargin && (
-                <p className="text-xs text-red-600 flex items-center justify-center gap-1 mt-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Below recommended minimum (30%)
+              {marginStatus && (
+                <p className={cn(
+                  "text-xs mt-1",
+                  marginStatus.status === 'good' ? "text-green-600" : 
+                  marginStatus.status === 'healthy' ? "text-amber-600" : 
+                  marginStatus.status === 'high' ? "text-orange-600" : 
+                  "text-red-600"
+                )}>
+                  {marginStatus.status === 'good' ? 'TKBSO Standard – Good' : marginStatus.message}
                 </p>
               )}
             </div>
           </div>
+          
+          {/* Cost Breakdown (collapsible) */}
+          {pricingResult && (
+            <details className="bg-muted/30 rounded-lg p-3">
+              <summary className="text-xs text-muted-foreground uppercase tracking-wide cursor-pointer hover:text-foreground">
+                Cost Breakdown
+              </summary>
+              <div className="mt-2 space-y-1 text-xs">
+                {pricingResult.demo_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Demo</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.demo_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.plumbing_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Plumbing</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.plumbing_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.tile_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Tile ({pricingResult.wall_tile_sqft} + {pricingResult.shower_floor_sqft} sqft)</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.tile_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.cement_board_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Cement Board</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.cement_board_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.waterproofing_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Waterproofing</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.waterproofing_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.electrical_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Electrical</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.electrical_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.glass_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Glass</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.glass_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.vanity_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Vanity</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.vanity_ic)}</span>
+                  </div>
+                )}
+                {pricingResult.paint_ic > 0 && (
+                  <div className="flex justify-between">
+                    <span>Paint</span>
+                    <span className="font-mono">{formatCurrency(pricingResult.paint_ic)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between pt-1 border-t font-semibold">
+                  <span>Total IC</span>
+                  <span className="font-mono">{formatCurrency(pricingResult.total_ic)}</span>
+                </div>
+              </div>
+            </details>
+          )}
           
           {/* Payment Milestones Preview */}
           <div className="bg-muted/30 rounded-lg p-3">

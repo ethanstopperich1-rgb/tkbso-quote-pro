@@ -1,9 +1,30 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Quote, ClientInfo } from '@/types/estimator';
-import { PRICING, calculateBathroomRange, calculateKitchenRange, calculateMargin, formatCurrency } from '@/lib/pricing';
+import { 
+  calculateTKBSOEstimate, 
+  calculateCPFromIC, 
+  calculateMarginFromPrices,
+  getMarginStatus,
+  formatCurrency,
+  TKBSO_DEFAULT_PRICING,
+  TKBSO_MARGINS,
+  TKBSOJobInputs,
+  TKBSOPricingResult,
+} from '@/lib/tkbso-pricing';
 
 export type ScopeLevel = 'full_gut' | 'partial' | 'shower_only' | 'refresh';
 export type WorkflowStage = 'collecting' | 'confirming' | 'client_details' | 'generating' | 'complete';
+
+export interface ShowerDimensions {
+  lengthFt: number;
+  widthFt: number;
+  heightFt: number;
+}
+
+export interface BathroomFloorDimensions {
+  lengthFt: number;
+  widthFt: number;
+}
 
 export interface RoomData {
   id: string;
@@ -11,35 +32,45 @@ export interface RoomData {
   name: string;
   sqft: number;
   scopeLevel: ScopeLevel;
+  // Tile areas (can be calculated from dimensions or set directly)
   tileWallSqft?: number;
   tileFloorSqft?: number;
   showerFloorSqft?: number;
   countertopSqft?: number;
+  // Dimensions for calculations
+  showerDimensions?: ShowerDimensions;
+  bathroomFloorDimensions?: BathroomFloorDimensions;
 }
 
 export interface TradeSelection {
+  includeDemo: boolean;
+  includePlumbing: boolean;
+  includeTile: boolean;
+  includeWaterproofing: boolean;
+  includeCementBoard: boolean;
+  includeElectrical: boolean;
+  includePainting: boolean;
+  includeGlass: boolean;
+  includeVanity: boolean;
+  includeCountertops: boolean;
   includeCabinetry: boolean;
   cabinetrySupplier: 'tkbso' | 'customer';
-  includeCountertops: boolean;
-  includeGlass: boolean;
-  glassType: 'frameless' | 'framed' | 'none';
+  glassType: 'none' | 'standard' | 'panel_only';
   glassSqft: number;
-  includePlumbing: boolean;
-  includeElectrical: boolean;
   recessedCans: number;
-  includePainting: boolean;
-  includeTile: boolean;
+  vanityLights: number;
+  vanitySize: 'none' | '48' | '60';
+  paintType: 'none' | 'patch' | 'full';
+  numToilets: number;
 }
 
 export type PricingMode = 'auto' | 'sell_price' | 'target_margin';
 
-// Standard TKBSO margins by project type
-export const TKBSO_MARGINS = {
-  bathroom: { target: 0.38, range: { low: 0.35, high: 0.42 } },
-  kitchen: { target: 0.35, range: { low: 0.32, high: 0.40 } },
-  closet: { target: 0.32, range: { low: 0.28, high: 0.35 } },
-  combination: { target: 0.36, range: { low: 0.33, high: 0.40 } },
-};
+export interface MarginStatus {
+  status: 'low' | 'healthy' | 'good' | 'high';
+  message: string;
+  color: 'red' | 'yellow' | 'green' | 'orange';
+}
 
 export interface ProjectState {
   // Workflow
@@ -65,14 +96,16 @@ export interface ProjectState {
   pricingMode: PricingMode;
   overrideValue: number | null; // Price in dollars or margin as decimal (0.40 = 40%)
   
-  // Calculated values (IC stays constant, CP changes based on mode)
-  baseInternalCost: number; // Raw IC before any overrides
+  // Calculated values from TKBSO pricing
+  pricingResult: TKBSOPricingResult | null;
+  baseInternalCost: number;
   internalCost: number;
   recommendedPrice: number;
   lowEstimate: number;
   highEstimate: number;
   calculatedMargin: number;
   profit: number;
+  marginStatus: MarginStatus | null;
   
   // Lock status
   isLocked: boolean;
@@ -83,17 +116,25 @@ export interface ProjectState {
 }
 
 const defaultTrades: TradeSelection = {
-  includeCabinetry: true,
-  cabinetrySupplier: 'tkbso',
-  includeCountertops: true,
+  includeDemo: true,
+  includePlumbing: true,
+  includeTile: true,
+  includeWaterproofing: true,
+  includeCementBoard: true,
+  includeElectrical: false,
+  includePainting: false,
   includeGlass: false,
+  includeVanity: false,
+  includeCountertops: false,
+  includeCabinetry: false,
+  cabinetrySupplier: 'tkbso',
   glassType: 'none',
   glassSqft: 0,
-  includePlumbing: true,
-  includeElectrical: true,
   recessedCans: 0,
-  includePainting: true,
-  includeTile: true,
+  vanityLights: 0,
+  vanitySize: 'none',
+  paintType: 'none',
+  numToilets: 0,
 };
 
 const initialState: ProjectState = {
@@ -108,6 +149,7 @@ const initialState: ProjectState = {
   clientInfo: {},
   pricingMode: 'auto',
   overrideValue: null,
+  pricingResult: null,
   baseInternalCost: 0,
   internalCost: 0,
   recommendedPrice: 0,
@@ -115,6 +157,7 @@ const initialState: ProjectState = {
   highEstimate: 0,
   calculatedMargin: 0,
   profit: 0,
+  marginStatus: null,
   isLocked: false,
   lockedAt: null,
   finalQuote: null,
@@ -170,66 +213,111 @@ const EstimatorContext = createContext<EstimatorContextType | undefined>(undefin
 export function EstimatorProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ProjectState>(initialState);
   
-  // Calculate prices whenever relevant state changes
+  /**
+   * Calculate prices using TKBSO real trade allowances
+   * This is the MAIN pricing engine
+   */
   const recalculatePrices = useCallback((newState: ProjectState): ProjectState => {
-    let totalIC = 0;
-    let totalCP = 0;
+    // Aggregate tile areas from all bathroom rooms
+    let totalWallTileSqft = 0;
+    let totalFloorTileSqft = 0;
+    let totalShowerFloorSqft = 0;
+    let totalCountertopSqft = 0;
     
-    // Scope multipliers
-    const scopeMultipliers = {
-      full_gut: 1,
-      partial: 0.75,
-      shower_only: 0.6,
-      refresh: 0.5,
-    };
+    // Determine project type for demo package
+    let projectTypeForPricing: TKBSOJobInputs['projectType'] = 'small_bath';
     
-    const defaultMargin = PRICING.markups.targetMargin;
-    
-    // Calculate room-based pricing
     newState.rooms.forEach(room => {
       if (room.type === 'bathroom') {
-        const multiplier = scopeMultipliers[room.scopeLevel] || 1;
-        const { low, high } = calculateBathroomRange(room.sqft);
-        const mid = (low + high) / 2;
-        totalCP += mid * multiplier;
-        totalIC += mid * (1 - defaultMargin) * multiplier;
-      } else if (room.type === 'kitchen') {
-        const multiplier = room.scopeLevel === 'full_gut' ? 1 :
-          room.scopeLevel === 'partial' ? 0.6 :
-          room.scopeLevel === 'refresh' ? 0.4 : 1;
+        // Use provided tile sqft or calculate from dimensions
+        if (room.tileWallSqft) {
+          totalWallTileSqft += room.tileWallSqft;
+        } else if (room.showerDimensions) {
+          const perimeter = 2 * (room.showerDimensions.lengthFt + room.showerDimensions.widthFt);
+          totalWallTileSqft += perimeter * room.showerDimensions.heightFt;
+        }
         
-        const { low, high } = calculateKitchenRange(room.sqft);
-        const mid = (low + high) / 2;
-        totalCP += mid * multiplier;
-        totalIC += mid * (1 - defaultMargin) * multiplier;
-      } else if (room.type === 'closet') {
-        const closetRate = (PRICING.perSqFt.closet.low + PRICING.perSqFt.closet.high) / 2;
-        totalCP += room.sqft * closetRate;
-        totalIC += room.sqft * closetRate * 0.6;
+        if (room.tileFloorSqft) {
+          totalFloorTileSqft += room.tileFloorSqft;
+        } else if (room.bathroomFloorDimensions) {
+          totalFloorTileSqft += room.bathroomFloorDimensions.lengthFt * room.bathroomFloorDimensions.widthFt;
+        }
+        
+        if (room.showerFloorSqft) {
+          totalShowerFloorSqft += room.showerFloorSqft;
+        } else if (room.showerDimensions) {
+          totalShowerFloorSqft += room.showerDimensions.lengthFt * room.showerDimensions.widthFt;
+        }
+        
+        if (room.countertopSqft) {
+          totalCountertopSqft += room.countertopSqft;
+        }
+        
+        // Determine project type
+        if (room.scopeLevel === 'shower_only') {
+          projectTypeForPricing = 'shower_only';
+        } else if (room.sqft > 60) {
+          projectTypeForPricing = 'large_bath';
+        } else {
+          projectTypeForPricing = 'small_bath';
+        }
+      } else if (room.type === 'kitchen') {
+        projectTypeForPricing = newState.projectType === 'combination' ? 'combination' : 'kitchen';
+        if (room.countertopSqft) {
+          totalCountertopSqft += room.countertopSqft;
+        }
       }
     });
     
-    // Add trade-specific costs
-    const glassRate = 75; // per sq ft for frameless glass
-    if (newState.trades.includeGlass && newState.trades.glassType === 'frameless') {
-      totalCP += newState.trades.glassSqft * glassRate;
-      totalIC += newState.trades.glassSqft * glassRate * 0.6;
+    // If no tile areas calculated but we have rooms, estimate from sqft
+    if (totalWallTileSqft === 0 && totalShowerFloorSqft === 0) {
+      newState.rooms.forEach(room => {
+        if (room.type === 'bathroom' && room.sqft > 0) {
+          // Estimate shower as roughly 15 sqft floor, walls based on 8ft height
+          if (room.scopeLevel === 'shower_only') {
+            // For shower-only, estimate walls at ~3x floor area
+            totalShowerFloorSqft += 15;
+            totalWallTileSqft += 137; // Typical 3x5 shower at 8.5ft
+          } else {
+            // For full bath, include floor tile too
+            totalShowerFloorSqft += 15;
+            totalWallTileSqft += 100;
+            totalFloorTileSqft += Math.max(0, room.sqft - 15); // Floor minus shower
+          }
+        }
+      });
     }
     
-    if (newState.trades.includeElectrical && newState.trades.recessedCans > 0) {
-      totalCP += newState.trades.recessedCans * 110;
-      totalIC += newState.trades.recessedCans * 65;
-    }
+    // Build TKBSO job inputs
+    const jobInputs: TKBSOJobInputs = {
+      projectType: projectTypeForPricing,
+      includeDemo: newState.trades.includeDemo,
+      includePlumbing: newState.trades.includePlumbing,
+      includeTile: newState.trades.includeTile,
+      includeWaterproofing: newState.trades.includeWaterproofing,
+      includeCementBoard: newState.trades.includeCementBoard,
+      includeElectrical: newState.trades.includeElectrical,
+      includePaint: newState.trades.includePainting,
+      includeGlass: newState.trades.includeGlass,
+      includeVanity: newState.trades.includeVanity,
+      includeCountertops: newState.trades.includeCountertops,
+      numToilets: newState.trades.numToilets,
+      numRecessedCans: newState.trades.recessedCans,
+      numVanityLights: newState.trades.vanityLights,
+      vanitySize: newState.trades.vanitySize,
+      glassType: newState.trades.glassType,
+      paintType: newState.trades.paintType,
+      countertopSqft: totalCountertopSqft,
+      wallTileSqft: totalWallTileSqft,
+      floorTileSqft: totalFloorTileSqft,
+      showerFloorTileSqft: totalShowerFloorSqft,
+    };
     
-    // GC/Permit fees
-    if (newState.hasGC && newState.needsPermit) {
-      totalCP += 2500;
-      totalIC += 2500;
-    }
+    // Calculate using TKBSO pricing engine
+    const pricingResult = calculateTKBSOEstimate(jobInputs, TKBSO_DEFAULT_PRICING);
     
-    // Apply minimums to base costs
-    totalIC = Math.max(totalIC, 3000);
-    const baseIC = Math.round(totalIC);
+    // Base IC comes from trade-level calculations
+    const baseIC = pricingResult.total_ic;
     
     // Apply pricing mode
     let finalCP: number;
@@ -243,10 +331,10 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
         // Mode 1: Contractor sets selling price, margin calculated backwards
         if (newState.overrideValue && newState.overrideValue > 0) {
           finalCP = newState.overrideValue;
-          finalMargin = baseIC > 0 ? 1 - (baseIC / finalCP) : 0;
+          finalMargin = calculateMarginFromPrices(baseIC, finalCP);
         } else {
-          finalCP = Math.round(baseIC / (1 - tkbsoMargin));
-          finalMargin = tkbsoMargin;
+          finalCP = pricingResult.total_cp;
+          finalMargin = pricingResult.margin;
         }
         break;
         
@@ -254,33 +342,35 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
         // Mode 2: Contractor sets margin, price calculated
         if (newState.overrideValue && newState.overrideValue > 0 && newState.overrideValue < 1) {
           finalMargin = newState.overrideValue;
-          finalCP = Math.round(baseIC / (1 - finalMargin));
+          finalCP = calculateCPFromIC(baseIC, finalMargin);
         } else {
           finalMargin = tkbsoMargin;
-          finalCP = Math.round(baseIC / (1 - finalMargin));
+          finalCP = calculateCPFromIC(baseIC, finalMargin);
         }
         break;
         
       case 'auto':
       default:
-        // Mode 3: Standard TKBSO auto-margin
-        finalMargin = tkbsoMargin;
-        finalCP = Math.round(baseIC / (1 - finalMargin));
+        // Mode 3: Use TKBSO standard CP from trade allowances
+        finalCP = pricingResult.total_cp;
+        finalMargin = pricingResult.margin;
         break;
     }
     
     // Apply minimum CP
-    finalCP = Math.max(finalCP, 5000);
+    finalCP = Math.max(finalCP, TKBSO_DEFAULT_PRICING.min_job_cp);
     
     // Recalculate margin if minimum was applied
-    if (finalCP === 5000 && baseIC < 5000) {
-      finalMargin = 1 - (baseIC / finalCP);
+    if (finalCP !== pricingResult.total_cp && newState.pricingMode === 'auto') {
+      finalMargin = calculateMarginFromPrices(baseIC, finalCP);
     }
     
     const profit = finalCP - baseIC;
+    const marginStatus = getMarginStatus(finalMargin);
     
     return {
       ...newState,
+      pricingResult,
       baseInternalCost: baseIC,
       internalCost: baseIC,
       recommendedPrice: Math.round(finalCP),
@@ -288,6 +378,7 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       highEstimate: Math.round(finalCP * 1.05),
       calculatedMargin: finalMargin,
       profit: Math.round(profit),
+      marginStatus,
     };
   }, []);
   
@@ -405,7 +496,7 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
   }, []);
   
   const generateQuote = useCallback((): Quote => {
-    const { rooms, clientInfo, location, hasGC, needsPermit, lowEstimate, highEstimate, recommendedPrice, internalCost, qualityLevel } = state;
+    const { rooms, clientInfo, location, hasGC, needsPermit, lowEstimate, highEstimate, recommendedPrice, internalCost, qualityLevel, calculatedMargin, pricingResult } = state;
     
     // Build room summary
     const roomsSummary = rooms.map(r => `${r.name} (${r.sqft} sq ft)`).join(' + ');
@@ -423,56 +514,71 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       hasGC ? 'GC partner handling' :
       'None required';
     
-    // Build scope of work sections
+    // Build scope of work sections from trades
     const scopeOfWork = [];
+    
+    if (state.trades.includeDemo) {
+      scopeOfWork.push({
+        title: 'Demo & Site Prep',
+        items: [
+          'Remove existing fixtures, tile, and materials',
+          'Protect adjacent areas during demolition',
+          'Dispose of debris and haul away',
+          'Prep surfaces for new installation',
+        ],
+      });
+    }
     
     if (state.trades.includePlumbing) {
       scopeOfWork.push({
         title: 'Plumbing',
         items: [
-          'Rough plumbing for fixtures',
-          'Supply/return relocation as needed',
-          'Final trim-out and testing',
+          'Rough-in for new shower valve, drain, and supply lines',
+          'Install new shower pan/liner system',
+          'Set and connect trim kit and fixtures',
+          'Final pressure testing and leak verification',
           'Fixtures supplied by homeowner unless noted',
         ],
       });
     }
     
     if (state.trades.includeTile) {
+      const tileItems = [
+        'Install cement board substrate',
+      ];
+      if (state.trades.includeWaterproofing) {
+        tileItems.push('Apply Schluter waterproofing membrane system');
+      }
+      tileItems.push(
+        'Level substrate as needed for proper drainage',
+        'Install wall tile in shower wet areas',
+        'Install floor tile per layout',
+        'Grout, clean, and seal as appropriate'
+      );
+      
+      if (pricingResult) {
+        tileItems.push(`Tile coverage: ${pricingResult.wall_tile_sqft} sqft walls, ${pricingResult.shower_floor_sqft} sqft shower floor`);
+      }
+      
       scopeOfWork.push({
         title: 'Tile & Flooring',
-        items: [
-          'Remove existing tile/flooring',
-          'Install Schluter waterproofing membrane',
-          'Level substrate as needed',
-          'Full height wall tile in wet areas',
-          'Floor tile installation',
-        ],
-      });
-    }
-    
-    if (state.trades.includeCabinetry) {
-      scopeOfWork.push({
-        title: 'Cabinetry',
-        items: [
-          state.trades.cabinetrySupplier === 'tkbso' ? 
-            'TKBSO-supplied cabinetry' : 'Customer-supplied cabinetry',
-          'Professional installation',
-          'Hardware installation',
-          'Final adjustments',
-        ],
+        items: tileItems,
       });
     }
     
     if (state.trades.includeElectrical) {
+      const electricalItems = ['Rough electrical as needed'];
+      if (state.trades.recessedCans > 0) {
+        electricalItems.push(`Install ${state.trades.recessedCans} recessed lights`);
+      }
+      if (state.trades.vanityLights > 0) {
+        electricalItems.push(`Install ${state.trades.vanityLights} vanity light fixture(s)`);
+      }
+      electricalItems.push('GFCI outlets in wet areas', 'Final trim-out and testing');
+      
       scopeOfWork.push({
         title: 'Electrical',
-        items: [
-          'Rough electrical as needed',
-          state.trades.recessedCans > 0 ? `Install ${state.trades.recessedCans} recessed lights` : 'Lighting connections',
-          'GFCI outlets in wet areas',
-          'Final trim-out',
-        ],
+        items: electricalItems,
       });
     }
     
@@ -480,14 +586,27 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       scopeOfWork.push({
         title: 'Glass',
         items: [
-          state.trades.glassType === 'frameless' ? 'Frameless glass enclosure' : 'Framed glass enclosure',
-          'Professional measurement & install',
-          'Hardware and seals',
+          state.trades.glassType === 'standard' ? 'Frameless glass enclosure with door' : 'Fixed glass panel',
+          'Professional field measurement',
+          'Hardware, hinges, and seals',
+          'Final installation and adjustment',
         ],
       });
     }
     
-    if (state.trades.includeCountertops) {
+    if (state.trades.includeVanity && state.trades.vanitySize !== 'none') {
+      scopeOfWork.push({
+        title: 'Cabinetry & Vanity',
+        items: [
+          `${state.trades.vanitySize}" vanity with quartz top`,
+          'Undermount sink installation',
+          'Professional installation and leveling',
+          'Hardware and final adjustments',
+        ],
+      });
+    }
+    
+    if (state.trades.includeCountertops && !state.trades.includeVanity) {
       scopeOfWork.push({
         title: 'Countertops',
         items: [
@@ -499,11 +618,41 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       });
     }
     
+    if (state.trades.includePainting && state.trades.paintType !== 'none') {
+      scopeOfWork.push({
+        title: 'Paint & Finishes',
+        items: state.trades.paintType === 'full' ? [
+          'Patch and texture disturbed areas',
+          'Prime as needed',
+          'Paint walls, ceiling, and trim',
+          'Final touch-up',
+        ] : [
+          'Patch and texture disturbed areas only',
+          'Color-match existing finish',
+        ],
+      });
+    }
+    
     // Build project name
     const projectType = rooms.length > 0 ? rooms[0].type : 'bathroom';
     const projectName = rooms.length > 1 && rooms.some(r => r.type !== projectType) ?
       'Whole Home Remodel' :
       `${projectType.charAt(0).toUpperCase() + projectType.slice(1)} Remodel`;
+    
+    // Build cost buckets from pricing result
+    const costBuckets = [];
+    if (pricingResult) {
+      if (pricingResult.demo_ic > 0) costBuckets.push({ name: 'Demo', internal: pricingResult.demo_ic, client: pricingResult.demo_cp });
+      if (pricingResult.plumbing_ic > 0) costBuckets.push({ name: 'Plumbing', internal: pricingResult.plumbing_ic, client: pricingResult.plumbing_cp });
+      if (pricingResult.tile_ic > 0) costBuckets.push({ name: 'Tile', internal: pricingResult.tile_ic, client: pricingResult.tile_cp });
+      if (pricingResult.cement_board_ic > 0) costBuckets.push({ name: 'Cement Board', internal: pricingResult.cement_board_ic, client: pricingResult.cement_board_cp });
+      if (pricingResult.waterproofing_ic > 0) costBuckets.push({ name: 'Waterproofing', internal: pricingResult.waterproofing_ic, client: pricingResult.waterproofing_cp });
+      if (pricingResult.electrical_ic > 0) costBuckets.push({ name: 'Electrical', internal: pricingResult.electrical_ic, client: pricingResult.electrical_cp });
+      if (pricingResult.paint_ic > 0) costBuckets.push({ name: 'Paint', internal: pricingResult.paint_ic, client: pricingResult.paint_cp });
+      if (pricingResult.glass_ic > 0) costBuckets.push({ name: 'Glass', internal: pricingResult.glass_ic, client: pricingResult.glass_cp });
+      if (pricingResult.vanity_ic > 0) costBuckets.push({ name: 'Vanity', internal: pricingResult.vanity_ic, client: pricingResult.vanity_cp });
+      if (pricingResult.countertop_ic > 0) costBuckets.push({ name: 'Countertops', internal: pricingResult.countertop_ic, client: pricingResult.countertop_cp });
+    }
     
     const quote: Quote = {
       projectSnapshot: {
@@ -526,12 +675,8 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       internalBreakdown: {
         internalCost,
         clientPrice: recommendedPrice,
-        marginPercent: calculateMargin(internalCost, recommendedPrice),
-        costBuckets: rooms.map(r => ({
-          name: r.name,
-          internal: Math.round(r.sqft * (r.type === 'bathroom' ? 240 : r.type === 'kitchen' ? 120 : 45)),
-          client: Math.round(r.sqft * (r.type === 'bathroom' ? 370 : r.type === 'kitchen' ? 185 : 75)),
-        })),
+        marginPercent: calculatedMargin,
+        costBuckets,
       },
       assumptions: [
         'Standard working hours (8am-5pm weekdays)',
@@ -605,3 +750,6 @@ export function useEstimator() {
   }
   return context;
 }
+
+// Re-export for convenience
+export { TKBSO_MARGINS } from '@/lib/tkbso-pricing';
