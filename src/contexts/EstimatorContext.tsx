@@ -31,6 +31,16 @@ export interface TradeSelection {
   includeTile: boolean;
 }
 
+export type PricingMode = 'auto' | 'sell_price' | 'target_margin';
+
+// Standard TKBSO margins by project type
+export const TKBSO_MARGINS = {
+  bathroom: { target: 0.38, range: { low: 0.35, high: 0.42 } },
+  kitchen: { target: 0.35, range: { low: 0.32, high: 0.40 } },
+  closet: { target: 0.32, range: { low: 0.28, high: 0.35 } },
+  combination: { target: 0.36, range: { low: 0.33, high: 0.40 } },
+};
+
 export interface ProjectState {
   // Workflow
   stage: WorkflowStage;
@@ -51,11 +61,22 @@ export interface ProjectState {
   // Client info
   clientInfo: Partial<ClientInfo>;
   
-  // Calculated values
+  // Pricing overrides (3 modes)
+  pricingMode: PricingMode;
+  overrideValue: number | null; // Price in dollars or margin as decimal (0.40 = 40%)
+  
+  // Calculated values (IC stays constant, CP changes based on mode)
+  baseInternalCost: number; // Raw IC before any overrides
+  internalCost: number;
+  recommendedPrice: number;
   lowEstimate: number;
   highEstimate: number;
-  recommendedPrice: number;
-  internalCost: number;
+  calculatedMargin: number;
+  profit: number;
+  
+  // Lock status
+  isLocked: boolean;
+  lockedAt: Date | null;
   
   // Generated quote
   finalQuote: Quote | null;
@@ -85,10 +106,17 @@ const initialState: ProjectState = {
   rooms: [],
   trades: { ...defaultTrades },
   clientInfo: {},
+  pricingMode: 'auto',
+  overrideValue: null,
+  baseInternalCost: 0,
+  internalCost: 0,
+  recommendedPrice: 0,
   lowEstimate: 0,
   highEstimate: 0,
-  recommendedPrice: 0,
-  internalCost: 0,
+  calculatedMargin: 0,
+  profit: 0,
+  isLocked: false,
+  lockedAt: null,
   finalQuote: null,
 };
 
@@ -116,6 +144,13 @@ interface EstimatorContextType {
   
   // Client info
   updateClientInfo: (updates: Partial<ClientInfo>) => void;
+  
+  // Pricing overrides
+  setPricingMode: (mode: PricingMode) => void;
+  setSellingPrice: (price: number) => void;
+  setTargetMargin: (margin: number) => void;
+  resetToAutoMargin: () => void;
+  lockEstimate: () => void;
   
   // Quote generation
   generateQuote: () => Quote;
@@ -192,16 +227,67 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       totalIC += 2500;
     }
     
-    // Apply minimums
-    totalCP = Math.max(totalCP, 5000);
+    // Apply minimums to base costs
     totalIC = Math.max(totalIC, 3000);
+    const baseIC = Math.round(totalIC);
+    
+    // Apply pricing mode
+    let finalCP: number;
+    let finalMargin: number;
+    
+    const projectType = newState.projectType || 'bathroom';
+    const tkbsoMargin = TKBSO_MARGINS[projectType]?.target || 0.38;
+    
+    switch (newState.pricingMode) {
+      case 'sell_price':
+        // Mode 1: Contractor sets selling price, margin calculated backwards
+        if (newState.overrideValue && newState.overrideValue > 0) {
+          finalCP = newState.overrideValue;
+          finalMargin = baseIC > 0 ? 1 - (baseIC / finalCP) : 0;
+        } else {
+          finalCP = Math.round(baseIC / (1 - tkbsoMargin));
+          finalMargin = tkbsoMargin;
+        }
+        break;
+        
+      case 'target_margin':
+        // Mode 2: Contractor sets margin, price calculated
+        if (newState.overrideValue && newState.overrideValue > 0 && newState.overrideValue < 1) {
+          finalMargin = newState.overrideValue;
+          finalCP = Math.round(baseIC / (1 - finalMargin));
+        } else {
+          finalMargin = tkbsoMargin;
+          finalCP = Math.round(baseIC / (1 - finalMargin));
+        }
+        break;
+        
+      case 'auto':
+      default:
+        // Mode 3: Standard TKBSO auto-margin
+        finalMargin = tkbsoMargin;
+        finalCP = Math.round(baseIC / (1 - finalMargin));
+        break;
+    }
+    
+    // Apply minimum CP
+    finalCP = Math.max(finalCP, 5000);
+    
+    // Recalculate margin if minimum was applied
+    if (finalCP === 5000 && baseIC < 5000) {
+      finalMargin = 1 - (baseIC / finalCP);
+    }
+    
+    const profit = finalCP - baseIC;
     
     return {
       ...newState,
-      internalCost: Math.round(totalIC),
-      recommendedPrice: Math.round(totalCP),
-      lowEstimate: Math.round(totalCP * 0.95),
-      highEstimate: Math.round(totalCP * 1.05),
+      baseInternalCost: baseIC,
+      internalCost: baseIC,
+      recommendedPrice: Math.round(finalCP),
+      lowEstimate: Math.round(finalCP * 0.95),
+      highEstimate: Math.round(finalCP * 1.05),
+      calculatedMargin: finalMargin,
+      profit: Math.round(profit),
     };
   }, []);
   
@@ -274,6 +360,47 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     setState(prev => ({
       ...prev,
       clientInfo: { ...prev.clientInfo, ...updates },
+    }));
+  }, []);
+  
+  // Pricing override functions
+  const setPricingMode = useCallback((mode: PricingMode) => {
+    setState(prev => recalculatePrices({ 
+      ...prev, 
+      pricingMode: mode,
+      overrideValue: mode === 'auto' ? null : prev.overrideValue,
+    }));
+  }, [recalculatePrices]);
+  
+  const setSellingPrice = useCallback((price: number) => {
+    setState(prev => recalculatePrices({ 
+      ...prev, 
+      pricingMode: 'sell_price',
+      overrideValue: price,
+    }));
+  }, [recalculatePrices]);
+  
+  const setTargetMargin = useCallback((margin: number) => {
+    setState(prev => recalculatePrices({ 
+      ...prev, 
+      pricingMode: 'target_margin',
+      overrideValue: margin,
+    }));
+  }, [recalculatePrices]);
+  
+  const resetToAutoMargin = useCallback(() => {
+    setState(prev => recalculatePrices({ 
+      ...prev, 
+      pricingMode: 'auto',
+      overrideValue: null,
+    }));
+  }, [recalculatePrices]);
+  
+  const lockEstimate = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isLocked: true,
+      lockedAt: new Date(),
     }));
   }, []);
   
@@ -454,6 +581,11 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       removeRoom,
       updateTrades,
       updateClientInfo,
+      setPricingMode,
+      setSellingPrice,
+      setTargetMargin,
+      resetToAutoMargin,
+      lockEstimate,
       generateQuote,
       setFinalQuote,
       reset,

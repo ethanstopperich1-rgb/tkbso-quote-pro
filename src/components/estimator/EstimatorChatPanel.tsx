@@ -1,20 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
-import { useEstimator, ScopeLevel } from '@/contexts/EstimatorContext';
+import { useEstimator, ScopeLevel, TKBSO_MARGINS } from '@/contexts/EstimatorContext';
 import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
 import { RotateCcw } from 'lucide-react';
+import { formatCurrency } from '@/lib/pricing';
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Hi! I'm your TKBSO estimator assistant.\n\nJust describe your project and I'll build a live quote on the right panel. Include:\n\n• **Room type** (bathroom, kitchen, closet)\n• **Size** (sq ft or dimensions)\n• **Scope** (full gut, partial, shower-only)\n\nExample: *"75 sq ft bathroom, full gut, no GC"*`,
+  content: `Hi! I'm your TKBSO estimator assistant.\n\nJust describe your project and I'll build a live quote on the right panel. Include:\n\n• **Room type** (bathroom, kitchen, closet)\n• **Size** (sq ft or dimensions)\n• **Scope** (full gut, partial, shower-only)\n\nExample: *"75 sq ft bathroom, full gut, no GC"*\n\n💰 **Pricing commands:**\n• "Sell for $27,500"\n• "Price at 40% margin"\n• "Use standard TKBSO margin"`,
   timestamp: new Date(),
 };
 
 export function EstimatorChatPanel() {
-  const { state, reset, setProjectType, addRoom, setHasGC, setNeedsPermit, setQualityLevel, setLocation, updateClientInfo, setStage } = useEstimator();
+  const { 
+    state, 
+    reset, 
+    setProjectType, 
+    addRoom, 
+    setHasGC, 
+    setNeedsPermit, 
+    setQualityLevel, 
+    setLocation, 
+    updateClientInfo, 
+    setStage,
+    setSellingPrice,
+    setTargetMargin,
+    resetToAutoMargin,
+  } = useEstimator();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -26,6 +41,44 @@ export function EstimatorChatPanel() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  
+  // Parse pricing commands - returns response if handled
+  const parsePricingCommands = (text: string): string | null => {
+    const lowerText = text.toLowerCase();
+    
+    // "Sell for $X" or "sell this for $X"
+    const sellForMatch = text.match(/sell\s*(?:this\s+)?(?:for\s+)?\$?([\d,]+)/i);
+    if (sellForMatch) {
+      const price = parseInt(sellForMatch[1].replace(/,/g, ''));
+      if (price > 0) {
+        setSellingPrice(price);
+        const margin = state.baseInternalCost > 0 ? (1 - state.baseInternalCost / price) * 100 : 0;
+        return `👍 **Price override applied!**\n\n• **Selling Price:** ${formatCurrency(price)}\n• **Internal Cost:** ${formatCurrency(state.baseInternalCost)}\n• **Profit:** ${formatCurrency(price - state.baseInternalCost)}\n• **Implied Margin:** ${margin.toFixed(1)}%\n\nThe quote panel has been updated.`;
+      }
+    }
+    
+    // "X% margin" or "price at X%" or "target margin X%"
+    const marginMatch = text.match(/(?:price\s+(?:at|this\s+at)\s+)?(\d+(?:\.\d+)?)\s*%\s*margin|margin\s*(?:of\s+)?(\d+(?:\.\d+)?)\s*%/i);
+    if (marginMatch) {
+      const marginPercent = parseFloat(marginMatch[1] || marginMatch[2]);
+      if (marginPercent > 0 && marginPercent < 100) {
+        const margin = marginPercent / 100;
+        setTargetMargin(margin);
+        const newPrice = Math.round(state.baseInternalCost / (1 - margin));
+        return `👍 **Target margin ${marginPercent}% applied!**\n\n• **Internal Cost:** ${formatCurrency(state.baseInternalCost)}\n• **New Selling Price:** ${formatCurrency(newPrice)}\n• **Profit:** ${formatCurrency(newPrice - state.baseInternalCost)}\n\nThe quote panel has been updated.`;
+      }
+    }
+    
+    // "standard margin" or "TKBSO margin" or "auto margin"
+    if (/(?:standard|tkbso|auto|default)\s*margin/i.test(lowerText) || /use\s+standard/i.test(lowerText)) {
+      resetToAutoMargin();
+      const projectType = state.projectType || 'bathroom';
+      const tkbsoMargin = TKBSO_MARGINS[projectType];
+      return `👍 **TKBSO standard margin applied!**\n\n• **Project Type:** ${projectType}\n• **Target Margin:** ${(tkbsoMargin.target * 100).toFixed(0)}%\n• **Range:** ${(tkbsoMargin.range.low * 100).toFixed(0)}–${(tkbsoMargin.range.high * 100).toFixed(0)}%\n\nPricing will auto-calculate based on internal costs.`;
+    }
+    
+    return null;
+  };
   
   const parseAndUpdateState = (text: string) => {
     const lowerText = text.toLowerCase();
@@ -171,14 +224,20 @@ export function EstimatorChatPanel() {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
     
-    // Parse and update state
-    parseAndUpdateState(content);
-    
     // Simulate thinking
     await new Promise(resolve => setTimeout(resolve, 400 + Math.random() * 400));
     
-    // Generate response
-    const response = generateResponse();
+    // Check for pricing commands first
+    const pricingResponse = parsePricingCommands(content);
+    
+    let response: string;
+    if (pricingResponse) {
+      response = pricingResponse;
+    } else {
+      // Parse and update state
+      parseAndUpdateState(content);
+      response = generateResponse();
+    }
     
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),

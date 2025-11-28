@@ -4,12 +4,14 @@ import { InvestmentSummary } from './InvestmentSummary';
 import { TradeScopeAccordion } from './TradeScopeAccordion';
 import { PaymentMilestones } from './PaymentMilestones';
 import { ClientInfoForm } from './ClientInfoForm';
+import { FinalSalesControls } from './FinalSalesControls';
 import { QuoteActions } from './QuoteActions';
 import { cn } from '@/lib/utils';
 
 export function QuotePanel() {
   const { state, hasValidInputs } = useEstimator();
   const showContent = hasValidInputs();
+  const showSalesControls = state.stage === 'confirming' || state.stage === 'client_details' || state.stage === 'generating' || state.stage === 'complete';
   
   return (
     <div className="h-full flex flex-col bg-card border-l">
@@ -32,6 +34,9 @@ export function QuotePanel() {
             
             {/* Investment Summary - THE HERO */}
             <InvestmentSummary />
+            
+            {/* Final Sales Controls - After estimate is ready */}
+            {showSalesControls && <FinalSalesControls />}
             
             {/* Trade Scope Sections */}
             <TradeScopeAccordion />
