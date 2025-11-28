@@ -39,6 +39,16 @@ export interface QuoteSection {
   items: string[];
 }
 
+export interface ClientInfo {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
 export interface Quote {
   projectSnapshot: {
     name: string;
@@ -47,6 +57,7 @@ export interface Quote {
     scopeSummary: string;
     permitGCSummary: string;
   };
+  clientInfo?: ClientInfo;
   priceSummary: {
     lowEstimate: number;
     highEstimate: number;

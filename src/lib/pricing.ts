@@ -5,6 +5,7 @@ export const PRICING = {
   perSqFt: {
     bathroom: { low: 360, high: 380 },
     kitchen: { low: 175, high: 195 },
+    closet: { low: 45, high: 75 },
   },
   
   // Internal cost defaults (IC)
