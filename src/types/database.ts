@@ -84,6 +84,11 @@ export interface PricingConfig {
   low_range_multiplier: number;
   high_range_multiplier: number;
   
+  // Payment splits
+  payment_split_deposit: number;
+  payment_split_progress: number;
+  payment_split_final: number;
+  
   created_at: string;
   updated_at: string;
 }
