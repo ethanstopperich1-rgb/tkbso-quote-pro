@@ -185,6 +185,8 @@ export interface PricingConfig {
   framing_standard_cp: number;
   framing_pony_wall_ic: number;
   framing_pony_wall_cp: number;
+  niche_ic_each: number;
+  niche_cp_each: number;
   
   // Floor Prep/Leveling
   floor_leveling_small_ic: number;
@@ -193,6 +195,14 @@ export interface PricingConfig {
   floor_leveling_bath_cp: number;
   floor_leveling_kitchen_ic: number;
   floor_leveling_kitchen_cp: number;
+  floor_leveling_ls_ic: number;
+  floor_leveling_ls_cp: number;
+  
+  // LVP & Barrier Flooring
+  lvp_ic_per_sqft: number;
+  lvp_cp_per_sqft: number;
+  barrier_ic_per_sqft: number;
+  barrier_cp_per_sqft: number;
   
   // Additional Electrical
   electrical_microwave_circuit_cp: number;
@@ -203,7 +213,7 @@ export interface PricingConfig {
   glass_90_return_ic: number;
   glass_90_return_cp: number;
   
-  // Additional Vanity/Counter
+  // Additional Vanity/Counter (legacy)
   vanity_only_48_cp: number;
   quartz_sink_cutout_cp: number;
   quartz_faucet_drill_cp: number;

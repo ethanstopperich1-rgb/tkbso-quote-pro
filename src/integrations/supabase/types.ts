@@ -461,6 +461,8 @@ export type Database = {
       }
       pricing_configs: {
         Row: {
+          barrier_cp_per_sqft: number | null
+          barrier_ic_per_sqft: number | null
           bath_cp_per_sqft: number | null
           bath_ic_per_sqft: number | null
           bath_partial_multiplier: number | null
@@ -500,6 +502,8 @@ export type Database = {
           floor_leveling_bath_ic: number | null
           floor_leveling_kitchen_cp: number | null
           floor_leveling_kitchen_ic: number | null
+          floor_leveling_ls_cp: number | null
+          floor_leveling_ls_ic: number | null
           floor_leveling_small_cp: number | null
           floor_leveling_small_ic: number | null
           frameless_glass_cp_per_sqft: number | null
@@ -528,10 +532,14 @@ export type Database = {
           kitchen_refresh_multiplier: number | null
           lighting_fixture_allowance_cp: number | null
           low_range_multiplier: number | null
+          lvp_cp_per_sqft: number | null
+          lvp_ic_per_sqft: number | null
           min_job_cp: number | null
           min_job_ic: number | null
           mirror_allowance_cp: number | null
           mirror_lighting_allowance_cp: number | null
+          niche_cp_each: number | null
+          niche_ic_each: number | null
           paint_full_bath_cp: number | null
           paint_full_bath_ic: number | null
           paint_patch_bath_cp: number | null
@@ -595,6 +603,8 @@ export type Database = {
           waterproofing_ic_per_sqft: number | null
         }
         Insert: {
+          barrier_cp_per_sqft?: number | null
+          barrier_ic_per_sqft?: number | null
           bath_cp_per_sqft?: number | null
           bath_ic_per_sqft?: number | null
           bath_partial_multiplier?: number | null
@@ -634,6 +644,8 @@ export type Database = {
           floor_leveling_bath_ic?: number | null
           floor_leveling_kitchen_cp?: number | null
           floor_leveling_kitchen_ic?: number | null
+          floor_leveling_ls_cp?: number | null
+          floor_leveling_ls_ic?: number | null
           floor_leveling_small_cp?: number | null
           floor_leveling_small_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
@@ -662,10 +674,14 @@ export type Database = {
           kitchen_refresh_multiplier?: number | null
           lighting_fixture_allowance_cp?: number | null
           low_range_multiplier?: number | null
+          lvp_cp_per_sqft?: number | null
+          lvp_ic_per_sqft?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
           mirror_allowance_cp?: number | null
           mirror_lighting_allowance_cp?: number | null
+          niche_cp_each?: number | null
+          niche_ic_each?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
           paint_patch_bath_cp?: number | null
@@ -729,6 +745,8 @@ export type Database = {
           waterproofing_ic_per_sqft?: number | null
         }
         Update: {
+          barrier_cp_per_sqft?: number | null
+          barrier_ic_per_sqft?: number | null
           bath_cp_per_sqft?: number | null
           bath_ic_per_sqft?: number | null
           bath_partial_multiplier?: number | null
@@ -768,6 +786,8 @@ export type Database = {
           floor_leveling_bath_ic?: number | null
           floor_leveling_kitchen_cp?: number | null
           floor_leveling_kitchen_ic?: number | null
+          floor_leveling_ls_cp?: number | null
+          floor_leveling_ls_ic?: number | null
           floor_leveling_small_cp?: number | null
           floor_leveling_small_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
@@ -796,10 +816,14 @@ export type Database = {
           kitchen_refresh_multiplier?: number | null
           lighting_fixture_allowance_cp?: number | null
           low_range_multiplier?: number | null
+          lvp_cp_per_sqft?: number | null
+          lvp_ic_per_sqft?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
           mirror_allowance_cp?: number | null
           mirror_lighting_allowance_cp?: number | null
+          niche_cp_each?: number | null
+          niche_ic_each?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
           paint_patch_bath_cp?: number | null

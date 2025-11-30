@@ -73,8 +73,7 @@ export interface TradeSelection {
   glassType: 'none' | 'standard' | 'panel_only' | '90_return';
   paintType: 'none' | 'patch' | 'full';
   framingType: 'none' | 'standard' | 'pony_wall';
-  floorLevelingType: 'none' | 'small' | 'bath' | 'kitchen';
-  vanitySize: 'none' | '48' | '60' | 'vanity_only_48';
+  vanitySize: 'none' | '30' | '36' | '48' | '54' | '60' | '72' | '84';
   
   // Counts
   recessedCans: number;
