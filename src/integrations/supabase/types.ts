@@ -131,6 +131,7 @@ export type Database = {
           primary_contact_name: string | null
           primary_contact_phone: string | null
           service_area: string | null
+          settings: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -143,6 +144,7 @@ export type Database = {
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
           service_area?: string | null
+          settings?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -155,6 +157,7 @@ export type Database = {
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
           service_area?: string | null
+          settings?: Json | null
           updated_at?: string | null
         }
         Relationships: []
