@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useEstimator } from '@/contexts/EstimatorContext';
+import { useAuth } from '@/hooks/useAuth';
 import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { RotateCcw, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface ParsedProject {
   clientInfo: {
@@ -93,11 +95,14 @@ const initialContext: ConversationContext = {
 };
 
 export function EstimatorChatPanel() {
-  const { updateClientInfo, updateTrades, addRoom, setProjectType, reset } = useEstimator();
+  const { state, updateClientInfo, updateTrades, addRoom, setProjectType, reset } = useEstimator();
+  const { contractor, profile } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [context, setContext] = useState<ConversationContext>(initialContext);
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const scrollToBottom = () => {
@@ -116,6 +121,128 @@ export function EstimatorChatPanel() {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, message]);
+  };
+
+  // Save estimate to database
+  const saveEstimateToDatabase = async (ctx: ConversationContext): Promise<string | null> => {
+    if (!contractor?.id) {
+      console.error('No contractor ID available');
+      toast.error('You must be logged in to save estimates');
+      return null;
+    }
+
+    try {
+      // Determine scope level
+      let bathScopeLevel = 'none';
+      let kitchenScopeLevel = 'none';
+      
+      if (ctx.projectType === 'bathroom') {
+        bathScopeLevel = ctx.scopeLevel === 'shower_only' ? 'shower_only' : 
+                         ctx.scopeLevel === 'partial' ? 'partial' : 
+                         ctx.scopeLevel === 'refresh' ? 'refresh' : 'full_gut';
+      } else if (ctx.projectType === 'kitchen') {
+        kitchenScopeLevel = ctx.scopeLevel === 'partial' ? 'partial' : 
+                           ctx.scopeLevel === 'refresh' ? 'refresh' : 'full_gut';
+      }
+
+      // Calculate tile areas from dimensions if available
+      let wallTileSqft = 0;
+      let floorTileSqft = 0;
+      let showerFloorSqft = 0;
+      
+      if (ctx.dimensions.showerLength && ctx.dimensions.showerWidth) {
+        const height = ctx.dimensions.showerHeight || 8;
+        const perimeter = 2 * (ctx.dimensions.showerLength + ctx.dimensions.showerWidth);
+        wallTileSqft = perimeter * height;
+        showerFloorSqft = ctx.dimensions.showerLength * ctx.dimensions.showerWidth;
+      }
+
+      // Use state's calculated pricing if available
+      const finalCp = state.recommendedPrice || 0;
+      const lowCp = state.lowEstimate || 0;
+      const highCp = state.highEstimate || 0;
+      const finalIc = state.internalCost || 0;
+
+      const estimateData = {
+        contractor_id: contractor.id,
+        created_by_profile_id: profile?.id || null,
+        
+        // Client info
+        client_name: ctx.clientInfo.name || null,
+        client_phone: ctx.clientInfo.phone || null,
+        client_email: ctx.clientInfo.email || null,
+        property_address: ctx.clientInfo.address || null,
+        city: ctx.clientInfo.city || null,
+        state: ctx.clientInfo.state || null,
+        zip: ctx.clientInfo.zip || null,
+        job_label: ctx.clientInfo.name ? `${ctx.clientInfo.name} - ${ctx.projectType || 'Remodel'}` : null,
+        
+        // Project type
+        has_kitchen: ctx.projectType === 'kitchen',
+        has_bathrooms: ctx.projectType === 'bathroom',
+        has_closets: false,
+        num_kitchens: ctx.projectType === 'kitchen' ? 1 : 0,
+        num_bathrooms: ctx.projectType === 'bathroom' ? 1 : 0,
+        num_closets: 0,
+        
+        // Dimensions
+        total_bathroom_sqft: ctx.dimensions.bathroomSqft || 0,
+        total_kitchen_sqft: ctx.dimensions.kitchenSqft || 0,
+        bath_wall_tile_sqft: wallTileSqft,
+        bath_floor_tile_sqft: floorTileSqft,
+        bath_shower_floor_tile_sqft: showerFloorSqft,
+        bath_shower_only_sqft: ctx.scopeLevel === 'shower_only' ? (ctx.dimensions.bathroomSqft || 15) : 0,
+        
+        // Scope levels
+        bath_scope_level: bathScopeLevel,
+        kitchen_scope_level: kitchenScopeLevel,
+        
+        // Trades
+        include_demo: ctx.trades.includeDemo ?? true,
+        include_plumbing: ctx.trades.includePlumbing ?? true,
+        include_electrical: ctx.trades.includeElectrical ?? false,
+        include_paint: ctx.trades.includePaint ?? false,
+        include_glass: ctx.trades.includeGlass ?? false,
+        include_waterproofing: ctx.trades.includeTile ?? true,
+        
+        // Details
+        vanity_size: ctx.details.vanitySize || 'none',
+        glass_type: ctx.details.glassType || 'none',
+        num_recessed_cans: ctx.details.numRecessedCans || 0,
+        num_vanity_lights: ctx.details.numVanityLights || 0,
+        
+        // Pricing (use state's calculated values)
+        final_cp_total: finalCp,
+        final_ic_total: finalIc,
+        low_estimate_cp: lowCp,
+        high_estimate_cp: highCp,
+        
+        // Status
+        status: 'draft',
+      };
+
+      console.log('Saving estimate:', estimateData);
+
+      const { data, error } = await supabase
+        .from('estimates')
+        .insert(estimateData)
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('Error saving estimate:', error);
+        toast.error('Failed to save estimate: ' + error.message);
+        return null;
+      }
+
+      console.log('Estimate saved with ID:', data.id);
+      toast.success('Estimate saved successfully!');
+      return data.id;
+    } catch (err) {
+      console.error('Exception saving estimate:', err);
+      toast.error('Failed to save estimate');
+      return null;
+    }
   };
 
   const applyParsedData = (parsed: ParsedProject) => {
@@ -250,8 +377,16 @@ export function EstimatorChatPanel() {
         const hasDimensions = newContext.dimensions.bathroomSqft || newContext.dimensions.kitchenSqft;
         
         if (hasClientName && hasProjectType && hasDimensions) {
-          setIsComplete(true);
-          response += `\n\n✅ **Quote created!** Navigate to the **Estimates** page to view and download the PDF.\n\nType **new** to start another estimate.`;
+          // Save to database
+          const estimateId = await saveEstimateToDatabase(newContext);
+          
+          if (estimateId) {
+            setIsComplete(true);
+            setSavedEstimateId(estimateId);
+            response += `\n\n✅ **Quote saved!** [View your estimate](/estimates/${estimateId}) or navigate to the **Estimates** page.\n\nType **new** to start another estimate.`;
+          } else {
+            response += `\n\nI have all the information needed, but there was an issue saving the quote. Please try again or contact support.`;
+          }
         } else {
           // Ask for missing critical info
           if (!hasClientName) {
@@ -286,6 +421,7 @@ export function EstimatorChatPanel() {
     setContext(initialContext);
     setMessages([WELCOME_MESSAGE]);
     setIsComplete(false);
+    setSavedEstimateId(null);
   };
 
   const getPlaceholder = () => {
