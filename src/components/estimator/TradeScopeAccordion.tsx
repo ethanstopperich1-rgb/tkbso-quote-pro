@@ -76,8 +76,24 @@ export function TradeScopeAccordion() {
         'Level substrate for proper drainage',
         'Install wall tile in wet areas',
         'Install floor tile per layout',
+        trades.numNiches > 0 ? `${trades.numNiches} recessed niche(s)` : null,
         'Grout, clean, and seal',
-      ],
+      ].filter(Boolean),
+      hasOptions: true,
+      options: (
+        <div className="pt-3 border-t mt-3 space-y-3">
+          <div>
+            <Label className="text-xs">Number of Niches</Label>
+            <Input
+              type="number"
+              min={0}
+              value={trades.numNiches}
+              onChange={(e) => updateTrades({ numNiches: parseInt(e.target.value) || 0 })}
+              className="mt-1 h-8 w-24"
+            />
+          </div>
+        </div>
+      ),
     },
     {
       id: 'waterproofing',
@@ -174,15 +190,10 @@ export function TradeScopeAccordion() {
       title: 'Vanity & Countertop',
       enabled: trades.includeVanity,
       onToggle: (val: boolean) => updateTrades({ includeVanity: val }),
-      items: trades.vanitySize === '48' ? [
-        '48" vanity cabinet',
+      items: trades.vanitySize !== 'none' ? [
+        `${trades.vanitySize}" vanity cabinet`,
         'Quartz countertop included',
-        'Undermount sink',
-        'Professional installation',
-      ] : trades.vanitySize === '60' ? [
-        '60" double vanity cabinet',
-        'Quartz countertop included',
-        'Two undermount sinks',
+        parseInt(trades.vanitySize) >= 60 ? 'Two undermount sinks' : 'Undermount sink',
         'Professional installation',
       ] : [
         'Vanity cabinet installation',
@@ -194,15 +205,20 @@ export function TradeScopeAccordion() {
           <Label className="text-xs">Vanity Size</Label>
           <Select
             value={trades.vanitySize}
-            onValueChange={(val: 'none' | '48' | '60') => updateTrades({ vanitySize: val })}
+            onValueChange={(val: 'none' | '30' | '36' | '48' | '54' | '60' | '72' | '84') => updateTrades({ vanitySize: val })}
           >
             <SelectTrigger className="mt-1 h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="48">48" Single (w/ Quartz Top)</SelectItem>
-              <SelectItem value="60">60" Double (w/ Quartz Top)</SelectItem>
-              <SelectItem value="none">Customer-Supplied Vanity</SelectItem>
+              <SelectItem value="30">30" Single</SelectItem>
+              <SelectItem value="36">36" Single</SelectItem>
+              <SelectItem value="48">48" Single</SelectItem>
+              <SelectItem value="54">54" Single</SelectItem>
+              <SelectItem value="60">60" Double</SelectItem>
+              <SelectItem value="72">72" Double</SelectItem>
+              <SelectItem value="84">84" Double</SelectItem>
+              <SelectItem value="none">Customer-Supplied</SelectItem>
             </SelectContent>
           </Select>
         </div>
