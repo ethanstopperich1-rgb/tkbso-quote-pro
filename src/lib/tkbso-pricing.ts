@@ -28,6 +28,12 @@ export interface TKBSOPricingConfig {
   demo_kitchen_ic: number;
   demo_kitchen_cp: number;
   
+  // Dumpster / Haul
+  dumpster_bath_ic: number;
+  dumpster_bath_cp: number;
+  dumpster_kitchen_ic: number;
+  dumpster_kitchen_cp: number;
+  
   // Plumbing packages (fixed)
   plumbing_shower_standard_ic: number;
   plumbing_shower_standard_cp: number;
@@ -37,6 +43,27 @@ export interface TKBSOPricingConfig {
   plumbing_tub_freestanding_cp: number;
   plumbing_toilet_ic: number;
   plumbing_toilet_cp: number;
+  plumbing_tub_to_shower_ic: number;
+  plumbing_tub_to_shower_cp: number;
+  plumbing_smart_valve_ic: number;
+  plumbing_smart_valve_cp: number;
+  plumbing_linear_drain_ic: number;
+  plumbing_linear_drain_cp: number;
+  plumbing_toilet_relocation_cp: number;
+  
+  // Framing & Structure
+  framing_standard_ic: number;
+  framing_standard_cp: number;
+  framing_pony_wall_ic: number;
+  framing_pony_wall_cp: number;
+  
+  // Floor Leveling
+  floor_leveling_small_ic: number;
+  floor_leveling_small_cp: number;
+  floor_leveling_bath_ic: number;
+  floor_leveling_bath_cp: number;
+  floor_leveling_kitchen_ic: number;
+  floor_leveling_kitchen_cp: number;
   
   // Electrical packages
   recessed_can_ic: number;
@@ -45,6 +72,11 @@ export interface TKBSOPricingConfig {
   electrical_vanity_light_cp: number;
   electrical_small_package_ic: number;
   electrical_small_package_cp: number;
+  electrical_kitchen_package_ic: number;
+  electrical_kitchen_package_cp: number;
+  electrical_microwave_circuit_cp: number;
+  electrical_hood_relocation_cp: number;
+  electrical_dishwasher_disposal_cp: number;
   
   // Paint packages
   paint_patch_bath_ic: number;
@@ -57,16 +89,30 @@ export interface TKBSOPricingConfig {
   glass_shower_standard_cp: number;
   glass_panel_only_ic: number;
   glass_panel_only_cp: number;
+  glass_90_return_ic: number;
+  glass_90_return_cp: number;
   
   // Vanity bundles
   vanity_48_bundle_ic: number;
   vanity_48_bundle_cp: number;
   vanity_60_bundle_ic: number;
   vanity_60_bundle_cp: number;
+  vanity_only_48_cp: number;
   
   // Quartz (per sqft)
   quartz_ic: number;
   quartz_cp: number;
+  quartz_sink_cutout_cp: number;
+  quartz_faucet_drill_cp: number;
+  
+  // Material Allowances (CP only - client-facing)
+  tile_material_allowance_cp_per_sqft: number;
+  plumbing_fixture_allowance_cp: number;
+  mirror_allowance_cp: number;
+  lighting_fixture_allowance_cp: number;
+  hardware_allowance_per_pull_cp: number;
+  toilet_allowance_cp: number;
+  sink_faucet_allowance_cp: number;
   
   // Minimums
   min_job_ic: number;
@@ -105,6 +151,12 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   demo_kitchen_ic: 1750,
   demo_kitchen_cp: 2800,
   
+  // Dumpster / Haul
+  dumpster_bath_ic: 400,
+  dumpster_bath_cp: 750,
+  dumpster_kitchen_ic: 825,
+  dumpster_kitchen_cp: 1400,
+  
   // Plumbing packages (always ask: slab/raised? fixture relocation? diverter count?)
   plumbing_shower_standard_ic: 2225,  // $2,100-2,350 range - drain upgrade, valve move, supply relocation, vent, pan drain, pressure test
   plumbing_shower_standard_cp: 3425,  // $3,250-3,600 range
@@ -113,7 +165,28 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   plumbing_tub_freestanding_ic: 3300, // $3,000-3,600 range - includes slab trench if applicable
   plumbing_tub_freestanding_cp: 4800, // $4,400-5,200 range
   plumbing_toilet_ic: 350,
-  plumbing_toilet_cp: 690,            // $650-725 swap, $800-1,100 relocation
+  plumbing_toilet_cp: 690,            // $650-725 swap
+  plumbing_tub_to_shower_ic: 2550,    // Tub-to-shower conversion
+  plumbing_tub_to_shower_cp: 4200,
+  plumbing_smart_valve_ic: 1350,      // Smart valve system (Moen/Kohler/Digital)
+  plumbing_smart_valve_cp: 2450,
+  plumbing_linear_drain_ic: 750,      // Linear drain system
+  plumbing_linear_drain_cp: 1550,
+  plumbing_toilet_relocation_cp: 950, // Toilet relocation (CP only)
+  
+  // Framing & Structure
+  framing_standard_ic: 550,           // Blocking, niche, curb, header
+  framing_standard_cp: 1200,
+  framing_pony_wall_ic: 450,          // Pony wall
+  framing_pony_wall_cp: 850,
+  
+  // Floor Leveling
+  floor_leveling_small_ic: 300,
+  floor_leveling_small_cp: 500,
+  floor_leveling_bath_ic: 550,
+  floor_leveling_bath_cp: 900,
+  floor_leveling_kitchen_ic: 900,
+  floor_leveling_kitchen_cp: 1450,
   
   // Electrical packages
   recessed_can_ic: 65,
@@ -122,6 +195,11 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   electrical_vanity_light_cp: 350,
   electrical_small_package_ic: 250,
   electrical_small_package_cp: 400,
+  electrical_kitchen_package_ic: 950,
+  electrical_kitchen_package_cp: 1750,
+  electrical_microwave_circuit_cp: 550,
+  electrical_hood_relocation_cp: 550,
+  electrical_dishwasher_disposal_cp: 465,
   
   // Paint packages
   paint_patch_bath_ic: 800,
@@ -134,16 +212,30 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   glass_shower_standard_cp: 2100,
   glass_panel_only_ic: 800,
   glass_panel_only_cp: 1450,
+  glass_90_return_ic: 1425,        // 90° return (door + 2 panels)
+  glass_90_return_cp: 2775,
   
   // Vanity bundles (includes quartz top + sink)
   vanity_48_bundle_ic: 1600,
   vanity_48_bundle_cp: 2600,
   vanity_60_bundle_ic: 2200,
   vanity_60_bundle_cp: 3500,
+  vanity_only_48_cp: 1550,         // Vanity only (no top)
   
   // Quartz (fab + install)
   quartz_ic: 15,
-  quartz_cp: 50,  // +$250 sink cutout, +$150 faucet drill
+  quartz_cp: 50,
+  quartz_sink_cutout_cp: 250,
+  quartz_faucet_drill_cp: 150,
+  
+  // Material Allowances (CP only - client-facing)
+  tile_material_allowance_cp_per_sqft: 7.85,  // Tile, grout, thinset, sealer
+  plumbing_fixture_allowance_cp: 1350,        // Valve/trim, head, handheld, faucet
+  mirror_allowance_cp: 500,
+  lighting_fixture_allowance_cp: 400,
+  hardware_allowance_per_pull_cp: 15,
+  toilet_allowance_cp: 450,
+  sink_faucet_allowance_cp: 350,
   
   // Minimums (jobs below rejected automatically)
   min_job_ic: 10500,
@@ -188,7 +280,7 @@ export interface TKBSOJobInputs {
   // Main bathroom floor dimensions
   bathroomFloorDimensions?: BathroomDimensions;
   
-  // What's included
+  // What's included - Core trades
   includeDemo: boolean;
   includePlumbing: boolean;
   includeTile: boolean;
@@ -199,15 +291,47 @@ export interface TKBSOJobInputs {
   includeGlass: boolean;
   includeVanity: boolean;
   includeCountertops: boolean;
+  includeDumpster: boolean;
+  includeFraming: boolean;
+  includeFloorLeveling: boolean;
+  
+  // Material allowances toggles
+  includeTileMaterialAllowance: boolean;
+  includePlumbingFixtureAllowance: boolean;
+  includeMirrorAllowance: boolean;
+  includeLightingFixtureAllowance: boolean;
+  includeToiletAllowance: boolean;
+  includeSinkFaucetAllowance: boolean;
   
   // Specific counts/sizes
   numToilets: number;
   numRecessedCans: number;
   numVanityLights: number;
-  vanitySize: 'none' | '48' | '60';
-  glassType: 'none' | 'standard' | 'panel_only';
+  numHardwarePulls: number;
+  numExtraShowerHeads: number;
+  vanitySize: 'none' | '48' | '60' | 'vanity_only_48';
+  glassType: 'none' | 'standard' | 'panel_only' | '90_return';
   paintType: 'none' | 'patch' | 'full';
+  framingType: 'none' | 'standard' | 'pony_wall';
+  floorLevelingType: 'none' | 'small' | 'bath' | 'kitchen';
   countertopSqft: number;
+  
+  // Special plumbing options
+  includeTubToShower: boolean;
+  includeSmartValve: boolean;
+  includeLinearDrain: boolean;
+  includeFreestandingTub: boolean;
+  numToiletRelocations: number;
+  
+  // Kitchen-specific electrical
+  includeKitchenElectrical: boolean;
+  includeMicrowaveCircuit: boolean;
+  includeHoodRelocation: boolean;
+  includeDishwasherDisposal: boolean;
+  
+  // Quartz add-ons
+  numSinkCutouts: number;
+  numFaucetDrills: number;
   
   // Override tile sqft (if calculated elsewhere)
   wallTileSqft?: number;
@@ -218,10 +342,13 @@ export interface TKBSOJobInputs {
 export interface TKBSOPricingResult {
   // Trade-level IC
   demo_ic: number;
+  dumpster_ic: number;
   plumbing_ic: number;
   tile_ic: number;
   cement_board_ic: number;
   waterproofing_ic: number;
+  framing_ic: number;
+  floor_leveling_ic: number;
   electrical_ic: number;
   paint_ic: number;
   glass_ic: number;
@@ -230,19 +357,32 @@ export interface TKBSOPricingResult {
   
   // Trade-level CP
   demo_cp: number;
+  dumpster_cp: number;
   plumbing_cp: number;
   tile_cp: number;
   cement_board_cp: number;
   waterproofing_cp: number;
+  framing_cp: number;
+  floor_leveling_cp: number;
   electrical_cp: number;
   paint_cp: number;
   glass_cp: number;
   vanity_cp: number;
   countertop_cp: number;
   
+  // Material Allowances (CP only)
+  tile_material_allowance_cp: number;
+  plumbing_fixture_allowance_cp: number;
+  mirror_allowance_cp: number;
+  lighting_fixture_allowance_cp: number;
+  hardware_allowance_cp: number;
+  toilet_allowance_cp: number;
+  sink_faucet_allowance_cp: number;
+  
   // Totals
   total_ic: number;
   total_cp: number;
+  total_allowances_cp: number;
   
   // Range
   low_estimate: number;
@@ -332,6 +472,22 @@ export function calculateTKBSOEstimate(
     }
   }
   
+  // Dumpster / Haul
+  let dumpster_ic = 0;
+  let dumpster_cp = 0;
+  if (inputs.includeDumpster) {
+    if (inputs.projectType === 'kitchen') {
+      dumpster_ic = pricing.dumpster_kitchen_ic;
+      dumpster_cp = pricing.dumpster_kitchen_cp;
+    } else if (inputs.projectType === 'combination') {
+      dumpster_ic = pricing.dumpster_bath_ic + pricing.dumpster_kitchen_ic;
+      dumpster_cp = pricing.dumpster_bath_cp + pricing.dumpster_kitchen_cp;
+    } else {
+      dumpster_ic = pricing.dumpster_bath_ic;
+      dumpster_cp = pricing.dumpster_bath_cp;
+    }
+  }
+  
   // Plumbing IC/CP
   let plumbing_ic = 0;
   let plumbing_cp = 0;
@@ -342,9 +498,40 @@ export function calculateTKBSOEstimate(
       plumbing_cp += pricing.plumbing_shower_standard_cp;
     }
     
-    // Toilets
+    // Extra shower heads
+    plumbing_ic += inputs.numExtraShowerHeads * pricing.plumbing_extra_head_ic;
+    plumbing_cp += inputs.numExtraShowerHeads * pricing.plumbing_extra_head_cp;
+    
+    // Toilets (swap)
     plumbing_ic += inputs.numToilets * pricing.plumbing_toilet_ic;
     plumbing_cp += inputs.numToilets * pricing.plumbing_toilet_cp;
+    
+    // Toilet relocations (CP only line item)
+    plumbing_cp += inputs.numToiletRelocations * pricing.plumbing_toilet_relocation_cp;
+    
+    // Tub-to-shower conversion
+    if (inputs.includeTubToShower) {
+      plumbing_ic += pricing.plumbing_tub_to_shower_ic;
+      plumbing_cp += pricing.plumbing_tub_to_shower_cp;
+    }
+    
+    // Freestanding tub
+    if (inputs.includeFreestandingTub) {
+      plumbing_ic += pricing.plumbing_tub_freestanding_ic;
+      plumbing_cp += pricing.plumbing_tub_freestanding_cp;
+    }
+    
+    // Smart valve system
+    if (inputs.includeSmartValve) {
+      plumbing_ic += pricing.plumbing_smart_valve_ic;
+      plumbing_cp += pricing.plumbing_smart_valve_cp;
+    }
+    
+    // Linear drain
+    if (inputs.includeLinearDrain) {
+      plumbing_ic += pricing.plumbing_linear_drain_ic;
+      plumbing_cp += pricing.plumbing_linear_drain_cp;
+    }
   }
   
   // Tile IC/CP
@@ -375,17 +562,73 @@ export function calculateTKBSOEstimate(
     waterproofing_cp = totalTileSqft * pricing.waterproofing_cp;
   }
   
+  // Framing IC/CP
+  let framing_ic = 0;
+  let framing_cp = 0;
+  if (inputs.includeFraming) {
+    switch (inputs.framingType) {
+      case 'standard':
+        framing_ic = pricing.framing_standard_ic;
+        framing_cp = pricing.framing_standard_cp;
+        break;
+      case 'pony_wall':
+        framing_ic = pricing.framing_pony_wall_ic;
+        framing_cp = pricing.framing_pony_wall_cp;
+        break;
+    }
+  }
+  
+  // Floor Leveling IC/CP
+  let floor_leveling_ic = 0;
+  let floor_leveling_cp = 0;
+  if (inputs.includeFloorLeveling) {
+    switch (inputs.floorLevelingType) {
+      case 'small':
+        floor_leveling_ic = pricing.floor_leveling_small_ic;
+        floor_leveling_cp = pricing.floor_leveling_small_cp;
+        break;
+      case 'bath':
+        floor_leveling_ic = pricing.floor_leveling_bath_ic;
+        floor_leveling_cp = pricing.floor_leveling_bath_cp;
+        break;
+      case 'kitchen':
+        floor_leveling_ic = pricing.floor_leveling_kitchen_ic;
+        floor_leveling_cp = pricing.floor_leveling_kitchen_cp;
+        break;
+    }
+  }
+  
   // Electrical IC/CP
   let electrical_ic = 0;
   let electrical_cp = 0;
   if (inputs.includeElectrical) {
-    electrical_ic = inputs.numRecessedCans * pricing.recessed_can_ic +
-                    inputs.numVanityLights * pricing.electrical_vanity_light_ic;
-    electrical_cp = inputs.numRecessedCans * pricing.recessed_can_cp +
-                    inputs.numVanityLights * pricing.electrical_vanity_light_cp;
+    // Recessed cans
+    electrical_ic += inputs.numRecessedCans * pricing.recessed_can_ic;
+    electrical_cp += inputs.numRecessedCans * pricing.recessed_can_cp;
     
-    // Add small package if any electrical work
-    if (electrical_ic === 0 && inputs.includeElectrical) {
+    // Vanity lights
+    electrical_ic += inputs.numVanityLights * pricing.electrical_vanity_light_ic;
+    electrical_cp += inputs.numVanityLights * pricing.electrical_vanity_light_cp;
+    
+    // Kitchen electrical package
+    if (inputs.includeKitchenElectrical) {
+      electrical_ic += pricing.electrical_kitchen_package_ic;
+      electrical_cp += pricing.electrical_kitchen_package_cp;
+    }
+    
+    // Additional kitchen electrical options
+    if (inputs.includeMicrowaveCircuit) {
+      electrical_cp += pricing.electrical_microwave_circuit_cp;
+    }
+    if (inputs.includeHoodRelocation) {
+      electrical_cp += pricing.electrical_hood_relocation_cp;
+    }
+    if (inputs.includeDishwasherDisposal) {
+      electrical_cp += pricing.electrical_dishwasher_disposal_cp;
+    }
+    
+    // Add small package if any electrical work but no items specified
+    if (electrical_ic === 0 && inputs.includeElectrical && !inputs.includeKitchenElectrical) {
       electrical_ic = pricing.electrical_small_package_ic;
       electrical_cp = pricing.electrical_small_package_cp;
     }
@@ -420,6 +663,10 @@ export function calculateTKBSOEstimate(
         glass_ic = pricing.glass_panel_only_ic;
         glass_cp = pricing.glass_panel_only_cp;
         break;
+      case '90_return':
+        glass_ic = pricing.glass_90_return_ic;
+        glass_cp = pricing.glass_90_return_cp;
+        break;
     }
   }
   
@@ -436,6 +683,9 @@ export function calculateTKBSOEstimate(
         vanity_ic = pricing.vanity_60_bundle_ic;
         vanity_cp = pricing.vanity_60_bundle_cp;
         break;
+      case 'vanity_only_48':
+        vanity_cp = pricing.vanity_only_48_cp;
+        break;
     }
   }
   
@@ -445,16 +695,62 @@ export function calculateTKBSOEstimate(
   if (inputs.includeCountertops && inputs.countertopSqft > 0) {
     countertop_ic = inputs.countertopSqft * pricing.quartz_ic;
     countertop_cp = inputs.countertopSqft * pricing.quartz_cp;
+    
+    // Add sink cutouts
+    countertop_cp += inputs.numSinkCutouts * pricing.quartz_sink_cutout_cp;
+    
+    // Add faucet drills
+    countertop_cp += inputs.numFaucetDrills * pricing.quartz_faucet_drill_cp;
+  }
+  
+  // Material Allowances (CP only - client-facing)
+  let tile_material_allowance_cp = 0;
+  if (inputs.includeTileMaterialAllowance && totalTileSqft > 0) {
+    tile_material_allowance_cp = totalTileSqft * pricing.tile_material_allowance_cp_per_sqft;
+  }
+  
+  let plumbing_fixture_allowance_cp = 0;
+  if (inputs.includePlumbingFixtureAllowance) {
+    plumbing_fixture_allowance_cp = pricing.plumbing_fixture_allowance_cp;
+  }
+  
+  let mirror_allowance_cp = 0;
+  if (inputs.includeMirrorAllowance) {
+    mirror_allowance_cp = pricing.mirror_allowance_cp;
+  }
+  
+  let lighting_fixture_allowance_cp = 0;
+  if (inputs.includeLightingFixtureAllowance) {
+    lighting_fixture_allowance_cp = pricing.lighting_fixture_allowance_cp;
+  }
+  
+  let hardware_allowance_cp = 0;
+  if (inputs.numHardwarePulls > 0) {
+    hardware_allowance_cp = inputs.numHardwarePulls * pricing.hardware_allowance_per_pull_cp;
+  }
+  
+  let toilet_allowance_cp = 0;
+  if (inputs.includeToiletAllowance && inputs.numToilets > 0) {
+    toilet_allowance_cp = inputs.numToilets * pricing.toilet_allowance_cp;
+  }
+  
+  let sink_faucet_allowance_cp = 0;
+  if (inputs.includeSinkFaucetAllowance) {
+    sink_faucet_allowance_cp = pricing.sink_faucet_allowance_cp;
   }
   
   // Sum totals
-  const total_ic = demo_ic + plumbing_ic + tile_ic + cement_board_ic + 
-                   waterproofing_ic + electrical_ic + paint_ic + 
-                   glass_ic + vanity_ic + countertop_ic;
+  const total_ic = demo_ic + dumpster_ic + plumbing_ic + tile_ic + cement_board_ic + 
+                   waterproofing_ic + framing_ic + floor_leveling_ic + electrical_ic + 
+                   paint_ic + glass_ic + vanity_ic + countertop_ic;
   
-  const total_cp = demo_cp + plumbing_cp + tile_cp + cement_board_cp + 
-                   waterproofing_cp + electrical_cp + paint_cp + 
-                   glass_cp + vanity_cp + countertop_cp;
+  const total_allowances_cp = tile_material_allowance_cp + plumbing_fixture_allowance_cp + 
+                              mirror_allowance_cp + lighting_fixture_allowance_cp + 
+                              hardware_allowance_cp + toilet_allowance_cp + sink_faucet_allowance_cp;
+  
+  const total_cp = demo_cp + dumpster_cp + plumbing_cp + tile_cp + cement_board_cp + 
+                   waterproofing_cp + framing_cp + floor_leveling_cp + electrical_cp + 
+                   paint_cp + glass_cp + vanity_cp + countertop_cp + total_allowances_cp;
   
   // Apply minimums
   const final_ic = Math.max(total_ic, pricing.min_job_ic);
@@ -470,10 +766,13 @@ export function calculateTKBSOEstimate(
   
   return {
     demo_ic: Math.round(demo_ic),
+    dumpster_ic: Math.round(dumpster_ic),
     plumbing_ic: Math.round(plumbing_ic),
     tile_ic: Math.round(tile_ic),
     cement_board_ic: Math.round(cement_board_ic),
     waterproofing_ic: Math.round(waterproofing_ic),
+    framing_ic: Math.round(framing_ic),
+    floor_leveling_ic: Math.round(floor_leveling_ic),
     electrical_ic: Math.round(electrical_ic),
     paint_ic: Math.round(paint_ic),
     glass_ic: Math.round(glass_ic),
@@ -481,18 +780,30 @@ export function calculateTKBSOEstimate(
     countertop_ic: Math.round(countertop_ic),
     
     demo_cp: Math.round(demo_cp),
+    dumpster_cp: Math.round(dumpster_cp),
     plumbing_cp: Math.round(plumbing_cp),
     tile_cp: Math.round(tile_cp),
     cement_board_cp: Math.round(cement_board_cp),
     waterproofing_cp: Math.round(waterproofing_cp),
+    framing_cp: Math.round(framing_cp),
+    floor_leveling_cp: Math.round(floor_leveling_cp),
     electrical_cp: Math.round(electrical_cp),
     paint_cp: Math.round(paint_cp),
     glass_cp: Math.round(glass_cp),
     vanity_cp: Math.round(vanity_cp),
     countertop_cp: Math.round(countertop_cp),
     
+    tile_material_allowance_cp: Math.round(tile_material_allowance_cp),
+    plumbing_fixture_allowance_cp: Math.round(plumbing_fixture_allowance_cp),
+    mirror_allowance_cp: Math.round(mirror_allowance_cp),
+    lighting_fixture_allowance_cp: Math.round(lighting_fixture_allowance_cp),
+    hardware_allowance_cp: Math.round(hardware_allowance_cp),
+    toilet_allowance_cp: Math.round(toilet_allowance_cp),
+    sink_faucet_allowance_cp: Math.round(sink_faucet_allowance_cp),
+    
     total_ic: Math.round(final_ic),
     total_cp: Math.round(final_cp),
+    total_allowances_cp: Math.round(total_allowances_cp),
     low_estimate,
     high_estimate,
     margin,

@@ -5,7 +5,6 @@ import {
   calculateCPFromIC, 
   calculateMarginFromPrices,
   getMarginStatus,
-  formatCurrency,
   TKBSO_DEFAULT_PRICING,
   TKBSO_MARGINS,
   TKBSOJobInputs,
@@ -43,25 +42,62 @@ export interface RoomData {
 }
 
 export interface TradeSelection {
+  // Core trades
   includeDemo: boolean;
+  includeDumpster: boolean;
   includePlumbing: boolean;
   includeTile: boolean;
   includeWaterproofing: boolean;
   includeCementBoard: boolean;
+  includeFraming: boolean;
+  includeFloorLeveling: boolean;
   includeElectrical: boolean;
   includePainting: boolean;
   includeGlass: boolean;
   includeVanity: boolean;
   includeCountertops: boolean;
   includeCabinetry: boolean;
+  
+  // Material allowance toggles
+  includeTileMaterialAllowance: boolean;
+  includePlumbingFixtureAllowance: boolean;
+  includeMirrorAllowance: boolean;
+  includeLightingFixtureAllowance: boolean;
+  includeToiletAllowance: boolean;
+  includeSinkFaucetAllowance: boolean;
+  
+  // Suppliers
   cabinetrySupplier: 'tkbso' | 'customer';
-  glassType: 'none' | 'standard' | 'panel_only';
-  glassSqft: number;
+  
+  // Type selections
+  glassType: 'none' | 'standard' | 'panel_only' | '90_return';
+  paintType: 'none' | 'patch' | 'full';
+  framingType: 'none' | 'standard' | 'pony_wall';
+  floorLevelingType: 'none' | 'small' | 'bath' | 'kitchen';
+  vanitySize: 'none' | '48' | '60' | 'vanity_only_48';
+  
+  // Counts
   recessedCans: number;
   vanityLights: number;
-  vanitySize: 'none' | '48' | '60';
-  paintType: 'none' | 'patch' | 'full';
   numToilets: number;
+  numExtraShowerHeads: number;
+  numToiletRelocations: number;
+  numHardwarePulls: number;
+  numSinkCutouts: number;
+  numFaucetDrills: number;
+  glassSqft: number;
+  
+  // Special plumbing options
+  includeTubToShower: boolean;
+  includeSmartValve: boolean;
+  includeLinearDrain: boolean;
+  includeFreestandingTub: boolean;
+  
+  // Kitchen electrical options
+  includeKitchenElectrical: boolean;
+  includeMicrowaveCircuit: boolean;
+  includeHoodRelocation: boolean;
+  includeDishwasherDisposal: boolean;
 }
 
 export type PricingMode = 'auto' | 'sell_price' | 'target_margin';
@@ -116,25 +152,62 @@ export interface ProjectState {
 }
 
 const defaultTrades: TradeSelection = {
+  // Core trades
   includeDemo: true,
+  includeDumpster: true,
   includePlumbing: true,
   includeTile: true,
   includeWaterproofing: true,
   includeCementBoard: true,
+  includeFraming: false,
+  includeFloorLeveling: false,
   includeElectrical: false,
   includePainting: false,
   includeGlass: false,
   includeVanity: false,
   includeCountertops: false,
   includeCabinetry: false,
+  
+  // Material allowance toggles
+  includeTileMaterialAllowance: true,
+  includePlumbingFixtureAllowance: true,
+  includeMirrorAllowance: false,
+  includeLightingFixtureAllowance: false,
+  includeToiletAllowance: false,
+  includeSinkFaucetAllowance: false,
+  
+  // Suppliers
   cabinetrySupplier: 'tkbso',
+  
+  // Type selections
   glassType: 'none',
-  glassSqft: 0,
+  paintType: 'none',
+  framingType: 'none',
+  floorLevelingType: 'none',
+  vanitySize: 'none',
+  
+  // Counts
   recessedCans: 0,
   vanityLights: 0,
-  vanitySize: 'none',
-  paintType: 'none',
   numToilets: 0,
+  numExtraShowerHeads: 0,
+  numToiletRelocations: 0,
+  numHardwarePulls: 0,
+  numSinkCutouts: 0,
+  numFaucetDrills: 0,
+  glassSqft: 0,
+  
+  // Special plumbing options
+  includeTubToShower: false,
+  includeSmartValve: false,
+  includeLinearDrain: false,
+  includeFreestandingTub: false,
+  
+  // Kitchen electrical options
+  includeKitchenElectrical: false,
+  includeMicrowaveCircuit: false,
+  includeHoodRelocation: false,
+  includeDishwasherDisposal: false,
 };
 
 const initialState: ProjectState = {
@@ -288,26 +361,64 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       });
     }
     
-    // Build TKBSO job inputs
+    // Build TKBSO job inputs with all new fields
     const jobInputs: TKBSOJobInputs = {
       projectType: projectTypeForPricing,
+      
+      // Core trades
       includeDemo: newState.trades.includeDemo,
+      includeDumpster: newState.trades.includeDumpster,
       includePlumbing: newState.trades.includePlumbing,
       includeTile: newState.trades.includeTile,
       includeWaterproofing: newState.trades.includeWaterproofing,
       includeCementBoard: newState.trades.includeCementBoard,
+      includeFraming: newState.trades.includeFraming,
+      includeFloorLeveling: newState.trades.includeFloorLeveling,
       includeElectrical: newState.trades.includeElectrical,
       includePaint: newState.trades.includePainting,
       includeGlass: newState.trades.includeGlass,
       includeVanity: newState.trades.includeVanity,
       includeCountertops: newState.trades.includeCountertops,
+      
+      // Material allowance toggles
+      includeTileMaterialAllowance: newState.trades.includeTileMaterialAllowance,
+      includePlumbingFixtureAllowance: newState.trades.includePlumbingFixtureAllowance,
+      includeMirrorAllowance: newState.trades.includeMirrorAllowance,
+      includeLightingFixtureAllowance: newState.trades.includeLightingFixtureAllowance,
+      includeToiletAllowance: newState.trades.includeToiletAllowance,
+      includeSinkFaucetAllowance: newState.trades.includeSinkFaucetAllowance,
+      
+      // Type selections
+      glassType: newState.trades.glassType,
+      paintType: newState.trades.paintType,
+      framingType: newState.trades.framingType,
+      floorLevelingType: newState.trades.floorLevelingType,
+      vanitySize: newState.trades.vanitySize,
+      
+      // Counts
       numToilets: newState.trades.numToilets,
       numRecessedCans: newState.trades.recessedCans,
       numVanityLights: newState.trades.vanityLights,
-      vanitySize: newState.trades.vanitySize,
-      glassType: newState.trades.glassType,
-      paintType: newState.trades.paintType,
+      numExtraShowerHeads: newState.trades.numExtraShowerHeads,
+      numToiletRelocations: newState.trades.numToiletRelocations,
+      numHardwarePulls: newState.trades.numHardwarePulls,
+      numSinkCutouts: newState.trades.numSinkCutouts,
+      numFaucetDrills: newState.trades.numFaucetDrills,
       countertopSqft: totalCountertopSqft,
+      
+      // Special plumbing options
+      includeTubToShower: newState.trades.includeTubToShower,
+      includeSmartValve: newState.trades.includeSmartValve,
+      includeLinearDrain: newState.trades.includeLinearDrain,
+      includeFreestandingTub: newState.trades.includeFreestandingTub,
+      
+      // Kitchen electrical options
+      includeKitchenElectrical: newState.trades.includeKitchenElectrical,
+      includeMicrowaveCircuit: newState.trades.includeMicrowaveCircuit,
+      includeHoodRelocation: newState.trades.includeHoodRelocation,
+      includeDishwasherDisposal: newState.trades.includeDishwasherDisposal,
+      
+      // Tile sqft
       wallTileSqft: totalWallTileSqft,
       floorTileSqft: totalFloorTileSqft,
       showerFloorTileSqft: totalShowerFloorSqft,
@@ -518,39 +629,83 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     const scopeOfWork = [];
     
     if (state.trades.includeDemo) {
+      const demoItems = [
+        'Remove existing fixtures, tile, and materials',
+        'Protect adjacent areas during demolition',
+        'Prep surfaces for new installation',
+      ];
+      if (state.trades.includeDumpster) {
+        demoItems.push('Dumpster and debris haul-away included');
+      }
       scopeOfWork.push({
         title: 'Demo & Site Prep',
-        items: [
-          'Remove existing fixtures, tile, and materials',
-          'Protect adjacent areas during demolition',
-          'Dispose of debris and haul away',
-          'Prep surfaces for new installation',
-        ],
+        items: demoItems,
       });
     }
     
     if (state.trades.includePlumbing) {
+      const plumbingItems = [
+        'Rough-in for new shower valve, drain, and supply lines',
+        'Install new shower pan/liner system',
+        'Set and connect trim kit and fixtures',
+        'Final pressure testing and leak verification',
+      ];
+      if (state.trades.numExtraShowerHeads > 0) {
+        plumbingItems.push(`${state.trades.numExtraShowerHeads} additional shower head(s)`);
+      }
+      if (state.trades.includeTubToShower) {
+        plumbingItems.push('Tub-to-shower conversion');
+      }
+      if (state.trades.includeFreestandingTub) {
+        plumbingItems.push('Freestanding tub installation with floor filler');
+      }
+      if (state.trades.includeSmartValve) {
+        plumbingItems.push('Smart valve system (Moen/Kohler digital)');
+      }
+      if (state.trades.includeLinearDrain) {
+        plumbingItems.push('Linear drain system with pan grading');
+      }
+      if (state.trades.numToilets > 0) {
+        plumbingItems.push(`${state.trades.numToilets} toilet swap(s)`);
+      }
+      if (state.trades.numToiletRelocations > 0) {
+        plumbingItems.push(`${state.trades.numToiletRelocations} toilet relocation(s)`);
+      }
+      if (state.trades.includePlumbingFixtureAllowance) {
+        plumbingItems.push('Plumbing fixture allowance included');
+      }
       scopeOfWork.push({
         title: 'Plumbing',
-        items: [
-          'Rough-in for new shower valve, drain, and supply lines',
-          'Install new shower pan/liner system',
-          'Set and connect trim kit and fixtures',
-          'Final pressure testing and leak verification',
-          'Fixtures supplied by homeowner unless noted',
+        items: plumbingItems,
+      });
+    }
+    
+    if (state.trades.includeFraming && state.trades.framingType !== 'none') {
+      scopeOfWork.push({
+        title: 'Framing & Structure',
+        items: state.trades.framingType === 'pony_wall' ? [
+          'Pony wall construction',
+          'Blocking for glass and fixtures',
+        ] : [
+          'Standard framing/blocking',
+          'Niche, curb, and header support',
+          'Blocking for glass installation',
         ],
       });
     }
     
     if (state.trades.includeTile) {
-      const tileItems = [
-        'Install cement board substrate',
-      ];
+      const tileItems = [];
+      if (state.trades.includeCementBoard) {
+        tileItems.push('Install cement board substrate');
+      }
       if (state.trades.includeWaterproofing) {
         tileItems.push('Apply Schluter waterproofing membrane system');
       }
+      if (state.trades.includeFloorLeveling && state.trades.floorLevelingType !== 'none') {
+        tileItems.push('Level substrate as needed for proper drainage');
+      }
       tileItems.push(
-        'Level substrate as needed for proper drainage',
         'Install wall tile in shower wet areas',
         'Install floor tile per layout',
         'Grout, clean, and seal as appropriate'
@@ -558,6 +713,10 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       
       if (pricingResult) {
         tileItems.push(`Tile coverage: ${pricingResult.wall_tile_sqft} sqft walls, ${pricingResult.shower_floor_sqft} sqft shower floor`);
+      }
+      
+      if (state.trades.includeTileMaterialAllowance) {
+        tileItems.push('Tile material allowance included (tile, grout, thinset, sealer)');
       }
       
       scopeOfWork.push({
@@ -574,7 +733,23 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       if (state.trades.vanityLights > 0) {
         electricalItems.push(`Install ${state.trades.vanityLights} vanity light fixture(s)`);
       }
+      if (state.trades.includeKitchenElectrical) {
+        electricalItems.push('Kitchen electrical package');
+      }
+      if (state.trades.includeMicrowaveCircuit) {
+        electricalItems.push('Dedicated microwave circuit');
+      }
+      if (state.trades.includeHoodRelocation) {
+        electricalItems.push('Hood power relocation');
+      }
+      if (state.trades.includeDishwasherDisposal) {
+        electricalItems.push('Dishwasher/disposal GFCI bundle');
+      }
       electricalItems.push('GFCI outlets in wet areas', 'Final trim-out and testing');
+      
+      if (state.trades.includeLightingFixtureAllowance) {
+        electricalItems.push('Lighting fixture allowance included');
+      }
       
       scopeOfWork.push({
         title: 'Electrical',
@@ -583,10 +758,13 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     }
     
     if (state.trades.includeGlass && state.trades.glassType !== 'none') {
+      const glassLabel = state.trades.glassType === 'standard' ? 'Frameless glass enclosure with door' :
+                        state.trades.glassType === 'panel_only' ? 'Fixed glass panel' :
+                        '90° return glass (door + 2 panels)';
       scopeOfWork.push({
         title: 'Glass',
         items: [
-          state.trades.glassType === 'standard' ? 'Frameless glass enclosure with door' : 'Fixed glass panel',
+          glassLabel,
           'Professional field measurement',
           'Hardware, hinges, and seals',
           'Final installation and adjustment',
@@ -595,26 +773,41 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     }
     
     if (state.trades.includeVanity && state.trades.vanitySize !== 'none') {
+      const vanityLabel = state.trades.vanitySize === 'vanity_only_48' ? '48" vanity (no top)' :
+                         `${state.trades.vanitySize}" vanity with quartz top`;
+      const vanityItems = [
+        vanityLabel,
+        'Undermount sink installation',
+        'Professional installation and leveling',
+        'Hardware and final adjustments',
+      ];
+      if (state.trades.includeMirrorAllowance) {
+        vanityItems.push('Mirror allowance included');
+      }
+      if (state.trades.includeSinkFaucetAllowance) {
+        vanityItems.push('Sink/faucet allowance included');
+      }
       scopeOfWork.push({
         title: 'Cabinetry & Vanity',
-        items: [
-          `${state.trades.vanitySize}" vanity with quartz top`,
-          'Undermount sink installation',
-          'Professional installation and leveling',
-          'Hardware and final adjustments',
-        ],
+        items: vanityItems,
       });
     }
     
     if (state.trades.includeCountertops && !state.trades.includeVanity) {
+      const counterItems = [
+        'Template and fabrication',
+        'Professional installation',
+      ];
+      if (state.trades.numSinkCutouts > 0) {
+        counterItems.push(`${state.trades.numSinkCutouts} sink cutout(s)`);
+      }
+      if (state.trades.numFaucetDrills > 0) {
+        counterItems.push(`${state.trades.numFaucetDrills} faucet drill(s)`);
+      }
+      counterItems.push('Edge profile selection');
       scopeOfWork.push({
         title: 'Countertops',
-        items: [
-          'Template and fabrication',
-          'Professional installation',
-          'Undermount sink cutout',
-          'Edge profile selection',
-        ],
+        items: counterItems,
       });
     }
     
@@ -643,15 +836,23 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     const costBuckets = [];
     if (pricingResult) {
       if (pricingResult.demo_ic > 0) costBuckets.push({ name: 'Demo', internal: pricingResult.demo_ic, client: pricingResult.demo_cp });
+      if (pricingResult.dumpster_ic > 0) costBuckets.push({ name: 'Dumpster', internal: pricingResult.dumpster_ic, client: pricingResult.dumpster_cp });
       if (pricingResult.plumbing_ic > 0) costBuckets.push({ name: 'Plumbing', internal: pricingResult.plumbing_ic, client: pricingResult.plumbing_cp });
+      if (pricingResult.framing_ic > 0) costBuckets.push({ name: 'Framing', internal: pricingResult.framing_ic, client: pricingResult.framing_cp });
       if (pricingResult.tile_ic > 0) costBuckets.push({ name: 'Tile', internal: pricingResult.tile_ic, client: pricingResult.tile_cp });
       if (pricingResult.cement_board_ic > 0) costBuckets.push({ name: 'Cement Board', internal: pricingResult.cement_board_ic, client: pricingResult.cement_board_cp });
       if (pricingResult.waterproofing_ic > 0) costBuckets.push({ name: 'Waterproofing', internal: pricingResult.waterproofing_ic, client: pricingResult.waterproofing_cp });
+      if (pricingResult.floor_leveling_ic > 0) costBuckets.push({ name: 'Floor Leveling', internal: pricingResult.floor_leveling_ic, client: pricingResult.floor_leveling_cp });
       if (pricingResult.electrical_ic > 0) costBuckets.push({ name: 'Electrical', internal: pricingResult.electrical_ic, client: pricingResult.electrical_cp });
       if (pricingResult.paint_ic > 0) costBuckets.push({ name: 'Paint', internal: pricingResult.paint_ic, client: pricingResult.paint_cp });
       if (pricingResult.glass_ic > 0) costBuckets.push({ name: 'Glass', internal: pricingResult.glass_ic, client: pricingResult.glass_cp });
       if (pricingResult.vanity_ic > 0) costBuckets.push({ name: 'Vanity', internal: pricingResult.vanity_ic, client: pricingResult.vanity_cp });
       if (pricingResult.countertop_ic > 0) costBuckets.push({ name: 'Countertops', internal: pricingResult.countertop_ic, client: pricingResult.countertop_cp });
+      
+      // Add allowances (CP only)
+      if (pricingResult.total_allowances_cp > 0) {
+        costBuckets.push({ name: 'Material Allowances', internal: 0, client: pricingResult.total_allowances_cp });
+      }
     }
     
     const quote: Quote = {
