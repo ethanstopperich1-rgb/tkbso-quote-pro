@@ -92,11 +92,21 @@ export interface TKBSOPricingConfig {
   glass_90_return_ic: number;
   glass_90_return_cp: number;
   
-  // Vanity bundles
+  // Vanity bundles - All sizes
+  vanity_30_bundle_ic: number;
+  vanity_30_bundle_cp: number;
+  vanity_36_bundle_ic: number;
+  vanity_36_bundle_cp: number;
   vanity_48_bundle_ic: number;
   vanity_48_bundle_cp: number;
+  vanity_54_bundle_ic: number;
+  vanity_54_bundle_cp: number;
   vanity_60_bundle_ic: number;
   vanity_60_bundle_cp: number;
+  vanity_72_bundle_ic: number;
+  vanity_72_bundle_cp: number;
+  vanity_84_bundle_ic: number;
+  vanity_84_bundle_cp: number;
   vanity_only_48_cp: number;
   
   // Quartz (per sqft)
@@ -113,6 +123,13 @@ export interface TKBSOPricingConfig {
   hardware_allowance_per_pull_cp: number;
   toilet_allowance_cp: number;
   sink_faucet_allowance_cp: number;
+  tub_allowance_cp: number;
+  shower_trim_kit_allowance_cp: number;
+  tub_filler_allowance_cp: number;
+  kitchen_faucet_allowance_cp: number;
+  garbage_disposal_allowance_cp: number;
+  freestanding_tub_allowance_cp: number;
+  regular_tub_allowance_cp: number;
   
   // Minimums
   min_job_ic: number;
@@ -215,11 +232,21 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   glass_90_return_ic: 1425,        // 90° return (door + 2 panels)
   glass_90_return_cp: 2775,
   
-  // Vanity bundles (includes quartz top + sink)
+  // Vanity bundles - All sizes (includes quartz top + sink)
+  vanity_30_bundle_ic: 1100,
+  vanity_30_bundle_cp: 1800,
+  vanity_36_bundle_ic: 1300,
+  vanity_36_bundle_cp: 2100,
   vanity_48_bundle_ic: 1600,
   vanity_48_bundle_cp: 2600,
+  vanity_54_bundle_ic: 1900,
+  vanity_54_bundle_cp: 3000,
   vanity_60_bundle_ic: 2200,
   vanity_60_bundle_cp: 3500,
+  vanity_72_bundle_ic: 2600,
+  vanity_72_bundle_cp: 4200,
+  vanity_84_bundle_ic: 3200,
+  vanity_84_bundle_cp: 5000,
   vanity_only_48_cp: 1550,         // Vanity only (no top)
   
   // Quartz (fab + install)
@@ -236,6 +263,13 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   hardware_allowance_per_pull_cp: 15,
   toilet_allowance_cp: 450,
   sink_faucet_allowance_cp: 350,
+  tub_allowance_cp: 800,
+  shower_trim_kit_allowance_cp: 450,
+  tub_filler_allowance_cp: 650,
+  kitchen_faucet_allowance_cp: 400,
+  garbage_disposal_allowance_cp: 250,
+  freestanding_tub_allowance_cp: 2500,
+  regular_tub_allowance_cp: 600,
   
   // Minimums (jobs below rejected automatically)
   min_job_ic: 10500,

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PricingConfig } from '@/types/database';
-import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
+import { formatCurrency } from '@/lib/pricing-calculator';
 import { Save, RefreshCw, RotateCcw, HelpCircle, ChevronDown } from 'lucide-react';
 import {
   Tooltip,
@@ -90,27 +90,37 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   paint_full_bath_ic: 1200,
   paint_full_bath_cp: 1900,
   
-  // Shower Glass
+  // Shower Glass (fixed packages only - no per-sqft)
   glass_shower_standard_ic: 1200,
   glass_shower_standard_cp: 2100,
   glass_panel_only_ic: 800,
   glass_panel_only_cp: 1450,
-  frameless_glass_ic_per_sqft: 45,
-  frameless_glass_cp_per_sqft: 75,
+  glass_90_return_ic: 1425,
+  glass_90_return_cp: 2775,
   
-  // Vanities & Counters
+  // Vanity Bundles - All Sizes
+  vanity_30_bundle_ic: 1100,
+  vanity_30_bundle_cp: 1800,
+  vanity_36_bundle_ic: 1300,
+  vanity_36_bundle_cp: 2100,
   vanity_48_bundle_ic: 1600,
   vanity_48_bundle_cp: 2600,
+  vanity_54_bundle_ic: 1900,
+  vanity_54_bundle_cp: 3000,
   vanity_60_bundle_ic: 2200,
   vanity_60_bundle_cp: 3500,
+  vanity_72_bundle_ic: 2600,
+  vanity_72_bundle_cp: 4200,
+  vanity_84_bundle_ic: 3200,
+  vanity_84_bundle_cp: 5000,
+  
+  // Quartz & Counters
   quartz_ic_per_sqft: 15,
   quartz_cp_per_sqft: 50,
   cabinet_markup_multiplier_no_gc: 1.28,
-  cabinet_markup_multiplier_with_gc: 1.15,
-  
-  // Permits & GC
-  gc_permit_fee_ic: 2500,
-  gc_permit_fee_cp: 2500,
+  vanity_only_48_cp: 1550,
+  quartz_sink_cutout_cp: 250,
+  quartz_faucet_drill_cp: 150,
   
   // Material Allowances (client-facing)
   tile_material_allowance_cp_per_sqft: 7.85,
@@ -120,6 +130,13 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   hardware_allowance_per_pull_cp: 15,
   toilet_allowance_cp: 450,
   sink_faucet_allowance_cp: 350,
+  tub_allowance_cp: 800,
+  shower_trim_kit_allowance_cp: 450,
+  tub_filler_allowance_cp: 650,
+  kitchen_faucet_allowance_cp: 400,
+  garbage_disposal_allowance_cp: 250,
+  freestanding_tub_allowance_cp: 2500,
+  regular_tub_allowance_cp: 600,
   
   // Dumpster/Haul
   dumpster_bath_ic: 400,
@@ -155,15 +172,6 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   electrical_hood_relocation_cp: 550,
   electrical_dishwasher_disposal_cp: 465,
   
-  // Additional Glass
-  glass_90_return_ic: 1425,
-  glass_90_return_cp: 2775,
-  
-  // Additional Vanity/Counter
-  vanity_only_48_cp: 1550,
-  quartz_sink_cutout_cp: 250,
-  quartz_faucet_drill_cp: 150,
-  
   // Payment Terms
   payment_split_deposit: 0.65,
   payment_split_progress: 0.25,
@@ -190,19 +198,9 @@ const FIELD_HELP: Record<string, string> = {
   waterproofing_cp_per_sqft: 'Client price for waterproofing system ($12-14/sqft range)',
   quartz_ic_per_sqft: 'Fabrication + install cost for level 1 quartz',
   quartz_cp_per_sqft: 'Client price for quartz ($50/sqft + cutouts)',
-  frameless_glass_ic_per_sqft: 'Frameless shower glass cost per sqft',
-  frameless_glass_cp_per_sqft: 'Client price for frameless glass',
   recessed_can_ic_each: 'Cost per recessed light (labor + basic trim)',
   recessed_can_cp_each: 'Client price per recessed can',
   cabinet_markup_multiplier_no_gc: 'Cabinet markup when TKBSO manages project directly (1.28 = 28%)',
-  cabinet_markup_multiplier_with_gc: 'Cabinet markup when working under a GC (1.15 = 15%)',
-  gc_permit_fee_ic: 'Standard permit fee (IC = CP for permits)',
-  gc_permit_fee_cp: 'Standard permit client price ($3,500-4,500 for multi-area)',
-  min_job_ic: 'Minimum internal cost - jobs below rejected automatically',
-  min_job_cp: 'Minimum client price - $15,000 floor',
-  target_margin: 'Target gross margin (0.38 = 38%)',
-  low_range_multiplier: 'Low end of estimate range (0.95 = -5%)',
-  high_range_multiplier: 'High end of estimate range (1.05 = +5%)',
   demo_shower_only_ic: 'Shower demo: tear-out, haul off, site protection, disposal',
   demo_shower_only_cp: 'Client price for shower demo',
   demo_small_bath_ic: 'Small bath demo (5x8 or similar)',
@@ -218,7 +216,7 @@ const FIELD_HELP: Record<string, string> = {
   plumbing_tub_freestanding_ic: 'Freestanding tub + filler package, includes slab trench/cut if applicable',
   plumbing_tub_freestanding_cp: 'Client price for freestanding tub install ($4,400-5,200 range)',
   plumbing_toilet_ic: 'Toilet simple swap internal cost',
-  plumbing_toilet_cp: 'Client price for toilet swap ($650-725), relocation ($800-1,100)',
+  plumbing_toilet_cp: 'Client price for toilet swap ($650-725)',
   electrical_vanity_light_ic: 'Vanity light rough-in and trim cost',
   electrical_vanity_light_cp: 'Client price per vanity light',
   electrical_small_package_ic: 'Basic switch/outlet refresh package',
@@ -229,14 +227,28 @@ const FIELD_HELP: Record<string, string> = {
   paint_patch_bath_cp: 'Client price for patch work',
   paint_full_bath_ic: 'Full bath paint (walls, ceiling, trim)',
   paint_full_bath_cp: 'Client price for full paint',
-  glass_shower_standard_ic: 'Door + panel combo ($1,200-1,500 for 90° return)',
-  glass_shower_standard_cp: 'Client price for door + panel ($2,650-2,900 for 90° return)',
+  glass_shower_standard_ic: 'Door + panel combo',
+  glass_shower_standard_cp: 'Client price for door + panel',
   glass_panel_only_ic: 'Single fixed panel only',
   glass_panel_only_cp: 'Client price for panel only',
-  vanity_48_bundle_ic: '48" vanity + quartz top + sink (level 1)',
-  vanity_48_bundle_cp: 'Client price for 48" vanity bundle',
-  vanity_60_bundle_ic: '60" double vanity + quartz + 2 sinks',
-  vanity_60_bundle_cp: 'Client price for 60" double bundle',
+  glass_90_return_ic: '90° return (door + 2 panels) IC',
+  glass_90_return_cp: '90° return CP ($2,650-2,900 range)',
+  
+  // Vanity bundles
+  vanity_30_bundle_ic: '30" vanity + quartz top + sink IC',
+  vanity_30_bundle_cp: '30" vanity bundle CP',
+  vanity_36_bundle_ic: '36" vanity + quartz top + sink IC',
+  vanity_36_bundle_cp: '36" vanity bundle CP',
+  vanity_48_bundle_ic: '48" vanity + quartz top + sink IC',
+  vanity_48_bundle_cp: '48" vanity bundle CP',
+  vanity_54_bundle_ic: '54" vanity + quartz top + sink IC',
+  vanity_54_bundle_cp: '54" vanity bundle CP',
+  vanity_60_bundle_ic: '60" double vanity + quartz + 2 sinks IC',
+  vanity_60_bundle_cp: '60" double vanity bundle CP',
+  vanity_72_bundle_ic: '72" double vanity + quartz + 2 sinks IC',
+  vanity_72_bundle_cp: '72" double vanity bundle CP',
+  vanity_84_bundle_ic: '84" double vanity + quartz + 2 sinks IC',
+  vanity_84_bundle_cp: '84" double vanity bundle CP',
   
   // Material Allowances
   tile_material_allowance_cp_per_sqft: 'Tile, grout, thinset, sealer ($7.5-8.25/sqft range)',
@@ -246,6 +258,13 @@ const FIELD_HELP: Record<string, string> = {
   hardware_allowance_per_pull_cp: 'Hardware/pulls allowance per piece',
   toilet_allowance_cp: 'Toilet fixture allowance',
   sink_faucet_allowance_cp: 'Sink/faucet fixture allowance',
+  tub_allowance_cp: 'Standard tub fixture allowance',
+  shower_trim_kit_allowance_cp: 'Shower trim kit (valve trim, showerhead, handheld)',
+  tub_filler_allowance_cp: 'Tub filler allowance (wall-mount or deck-mount)',
+  kitchen_faucet_allowance_cp: 'Kitchen faucet allowance',
+  garbage_disposal_allowance_cp: 'Garbage disposal allowance',
+  freestanding_tub_allowance_cp: 'Freestanding tub fixture allowance',
+  regular_tub_allowance_cp: 'Regular/alcove tub allowance',
   
   // Dumpster/Haul
   dumpster_bath_ic: 'Bathroom dumpster IC ($350-450 range)',
@@ -280,10 +299,6 @@ const FIELD_HELP: Record<string, string> = {
   electrical_microwave_circuit_cp: 'Dedicated microwave circuit CP ($450-650 range)',
   electrical_hood_relocation_cp: 'Hood power relocation CP ($300-800 range)',
   electrical_dishwasher_disposal_cp: 'Dishwasher/disposal GFCI bundle CP ($350-575)',
-  
-  // Additional Glass
-  glass_90_return_ic: '90° return glass (door + 2 panels) IC ($1,350-1,500)',
-  glass_90_return_cp: '90° return glass CP ($2,650-2,900 range)',
   
   // Additional Vanity/Counter
   vanity_only_48_cp: '48" vanity only (no top) CP',
@@ -628,53 +643,63 @@ export default function Pricing() {
           </div>
         </CollapsibleSection>
 
-        {/* Glass */}
+        {/* Glass - Fixed packages only */}
         <CollapsibleSection 
           title="Shower Glass" 
-          description="Frameless glass packages - never use '$2,000 standard'"
+          description="Fixed glass packages - panel, door+panel, 90° return"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Panel Only IC" field="glass_panel_only_ic" value={config.glass_panel_only_ic} onChange={handleChange} prefix="$" />
             <PricingField label="Panel Only CP" field="glass_panel_only_cp" value={config.glass_panel_only_cp} onChange={handleChange} prefix="$" />
             <PricingField label="Door + Panel IC" field="glass_shower_standard_ic" value={config.glass_shower_standard_ic} onChange={handleChange} prefix="$" />
             <PricingField label="Door + Panel CP" field="glass_shower_standard_cp" value={config.glass_shower_standard_cp} onChange={handleChange} prefix="$" />
-            <PricingField label="Frameless IC/sqft" field="frameless_glass_ic_per_sqft" value={config.frameless_glass_ic_per_sqft} onChange={handleChange} prefix="$" />
-            <PricingField label="Frameless CP/sqft" field="frameless_glass_cp_per_sqft" value={config.frameless_glass_cp_per_sqft} onChange={handleChange} prefix="$" />
+            <PricingField label="90° Return IC" field="glass_90_return_ic" value={config.glass_90_return_ic ?? 1425} onChange={handleChange} prefix="$" />
+            <PricingField label="90° Return CP" field="glass_90_return_cp" value={config.glass_90_return_cp ?? 2775} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
-        {/* Vanities & Counters */}
+        {/* Vanities - All Sizes */}
         <CollapsibleSection 
-          title="Vanities & Counters" 
-          description="Vanity bundles and quartz rates"
+          title="Vanity Bundles" 
+          description="Vanity + quartz top + sink bundles by size"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label='48" Vanity Bundle IC' field="vanity_48_bundle_ic" value={config.vanity_48_bundle_ic} onChange={handleChange} prefix="$" />
-            <PricingField label='48" Vanity Bundle CP' field="vanity_48_bundle_cp" value={config.vanity_48_bundle_cp} onChange={handleChange} prefix="$" />
-            <PricingField label='60" Double Bundle IC' field="vanity_60_bundle_ic" value={config.vanity_60_bundle_ic} onChange={handleChange} prefix="$" />
-            <PricingField label='60" Double Bundle CP' field="vanity_60_bundle_cp" value={config.vanity_60_bundle_cp} onChange={handleChange} prefix="$" />
+            <PricingField label='30" Bundle IC' field="vanity_30_bundle_ic" value={config.vanity_30_bundle_ic ?? 1100} onChange={handleChange} prefix="$" />
+            <PricingField label='30" Bundle CP' field="vanity_30_bundle_cp" value={config.vanity_30_bundle_cp ?? 1800} onChange={handleChange} prefix="$" />
+            <PricingField label='36" Bundle IC' field="vanity_36_bundle_ic" value={config.vanity_36_bundle_ic ?? 1300} onChange={handleChange} prefix="$" />
+            <PricingField label='36" Bundle CP' field="vanity_36_bundle_cp" value={config.vanity_36_bundle_cp ?? 2100} onChange={handleChange} prefix="$" />
+            <PricingField label='48" Bundle IC' field="vanity_48_bundle_ic" value={config.vanity_48_bundle_ic} onChange={handleChange} prefix="$" />
+            <PricingField label='48" Bundle CP' field="vanity_48_bundle_cp" value={config.vanity_48_bundle_cp} onChange={handleChange} prefix="$" />
+            <PricingField label='54" Bundle IC' field="vanity_54_bundle_ic" value={config.vanity_54_bundle_ic ?? 1900} onChange={handleChange} prefix="$" />
+            <PricingField label='54" Bundle CP' field="vanity_54_bundle_cp" value={config.vanity_54_bundle_cp ?? 3000} onChange={handleChange} prefix="$" />
+            <PricingField label='60" Double IC' field="vanity_60_bundle_ic" value={config.vanity_60_bundle_ic} onChange={handleChange} prefix="$" />
+            <PricingField label='60" Double CP' field="vanity_60_bundle_cp" value={config.vanity_60_bundle_cp} onChange={handleChange} prefix="$" />
+            <PricingField label='72" Double IC' field="vanity_72_bundle_ic" value={config.vanity_72_bundle_ic ?? 2600} onChange={handleChange} prefix="$" />
+            <PricingField label='72" Double CP' field="vanity_72_bundle_cp" value={config.vanity_72_bundle_cp ?? 4200} onChange={handleChange} prefix="$" />
+            <PricingField label='84" Double IC' field="vanity_84_bundle_ic" value={config.vanity_84_bundle_ic ?? 3200} onChange={handleChange} prefix="$" />
+            <PricingField label='84" Double CP' field="vanity_84_bundle_cp" value={config.vanity_84_bundle_cp ?? 5000} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Counters & Quartz */}
+        <CollapsibleSection 
+          title="Counters & Quartz" 
+          description="Quartz rates and add-ons"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Quartz IC/sqft" field="quartz_ic_per_sqft" value={config.quartz_ic_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Quartz CP/sqft" field="quartz_cp_per_sqft" value={config.quartz_cp_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Cabinet Markup (No GC)" field="cabinet_markup_multiplier_no_gc" value={config.cabinet_markup_multiplier_no_gc} onChange={handleChange} step="0.01" suffix="×" />
-            <PricingField label="Cabinet Markup (With GC)" field="cabinet_markup_multiplier_with_gc" value={config.cabinet_markup_multiplier_with_gc} onChange={handleChange} step="0.01" suffix="×" />
+            <PricingField label='48" Vanity Only CP' field="vanity_only_48_cp" value={config.vanity_only_48_cp ?? 1550} onChange={handleChange} prefix="$" />
+            <PricingField label="Sink Cutout CP" field="quartz_sink_cutout_cp" value={config.quartz_sink_cutout_cp ?? 250} onChange={handleChange} prefix="$" />
+            <PricingField label="Faucet Drill CP" field="quartz_faucet_drill_cp" value={config.quartz_faucet_drill_cp ?? 150} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
-        {/* GC & Permits */}
-        <CollapsibleSection 
-          title="Permits & GC" 
-          description="Standard $2,500, multi-area $3,500-4,500"
-        >
-          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="GC/Permit Fee IC" field="gc_permit_fee_ic" value={config.gc_permit_fee_ic} onChange={handleChange} prefix="$" />
-            <PricingField label="GC/Permit Fee CP" field="gc_permit_fee_cp" value={config.gc_permit_fee_cp} onChange={handleChange} prefix="$" />
-          </div>
-        </CollapsibleSection>
-
-        {/* Material Allowances */}
+        {/* Material Allowances - Expanded */}
         <CollapsibleSection 
           title="Material Allowances" 
-          description="Client-facing allowances for materials not included in labor"
+          description="Client-facing allowances for fixtures and materials"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Tile Material CP/sqft" field="tile_material_allowance_cp_per_sqft" value={config.tile_material_allowance_cp_per_sqft ?? 7.85} onChange={handleChange} step="0.25" prefix="$" />
@@ -684,6 +709,13 @@ export default function Pricing() {
             <PricingField label="Hardware/Pull CP" field="hardware_allowance_per_pull_cp" value={config.hardware_allowance_per_pull_cp ?? 15} onChange={handleChange} prefix="$" />
             <PricingField label="Toilet Allowance CP" field="toilet_allowance_cp" value={config.toilet_allowance_cp ?? 450} onChange={handleChange} prefix="$" />
             <PricingField label="Sink/Faucet Allowance CP" field="sink_faucet_allowance_cp" value={config.sink_faucet_allowance_cp ?? 350} onChange={handleChange} prefix="$" />
+            <PricingField label="Tub Allowance CP" field="tub_allowance_cp" value={config.tub_allowance_cp ?? 800} onChange={handleChange} prefix="$" />
+            <PricingField label="Shower Trim Kit CP" field="shower_trim_kit_allowance_cp" value={config.shower_trim_kit_allowance_cp ?? 450} onChange={handleChange} prefix="$" />
+            <PricingField label="Tub Filler Allowance CP" field="tub_filler_allowance_cp" value={config.tub_filler_allowance_cp ?? 650} onChange={handleChange} prefix="$" />
+            <PricingField label="Kitchen Faucet CP" field="kitchen_faucet_allowance_cp" value={config.kitchen_faucet_allowance_cp ?? 400} onChange={handleChange} prefix="$" />
+            <PricingField label="Garbage Disposal CP" field="garbage_disposal_allowance_cp" value={config.garbage_disposal_allowance_cp ?? 250} onChange={handleChange} prefix="$" />
+            <PricingField label="Freestanding Tub Allowance CP" field="freestanding_tub_allowance_cp" value={config.freestanding_tub_allowance_cp ?? 2500} onChange={handleChange} prefix="$" />
+            <PricingField label="Regular Tub Allowance CP" field="regular_tub_allowance_cp" value={config.regular_tub_allowance_cp ?? 600} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
@@ -719,7 +751,7 @@ export default function Pricing() {
         {/* Framing & Structure */}
         <CollapsibleSection 
           title="Framing & Structure" 
-          description="Blocking, niches, curbs, headers, pony walls - never include in tile"
+          description="Blocking, niches, curbs, pony walls"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Standard Framing IC" field="framing_standard_ic" value={config.framing_standard_ic ?? 550} onChange={handleChange} prefix="$" />
@@ -732,7 +764,7 @@ export default function Pricing() {
         {/* Floor Leveling */}
         <CollapsibleSection 
           title="Floor Leveling" 
-          description="Pitch modification or dip correction"
+          description="Substrate prep and leveling by room type"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Small Room IC" field="floor_leveling_small_ic" value={config.floor_leveling_small_ic ?? 300} onChange={handleChange} prefix="$" />
@@ -747,67 +779,26 @@ export default function Pricing() {
         {/* Additional Electrical */}
         <CollapsibleSection 
           title="Additional Electrical" 
-          description="Kitchen circuits, relocations, GFCI bundles"
+          description="Kitchen circuits and relocations"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Microwave Circuit CP" field="electrical_microwave_circuit_cp" value={config.electrical_microwave_circuit_cp ?? 550} onChange={handleChange} prefix="$" />
             <PricingField label="Hood Relocation CP" field="electrical_hood_relocation_cp" value={config.electrical_hood_relocation_cp ?? 550} onChange={handleChange} prefix="$" />
-            <PricingField label="DW/Disposal GFCI CP" field="electrical_dishwasher_disposal_cp" value={config.electrical_dishwasher_disposal_cp ?? 465} onChange={handleChange} prefix="$" />
-          </div>
-        </CollapsibleSection>
-
-        {/* Additional Glass */}
-        <CollapsibleSection 
-          title="Additional Glass Options" 
-          description="90° return and specialty configurations"
-        >
-          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="90° Return IC" field="glass_90_return_ic" value={config.glass_90_return_ic ?? 1425} onChange={handleChange} prefix="$" />
-            <PricingField label="90° Return CP" field="glass_90_return_cp" value={config.glass_90_return_cp ?? 2775} onChange={handleChange} prefix="$" />
-          </div>
-        </CollapsibleSection>
-
-        {/* Additional Vanity/Counter */}
-        <CollapsibleSection 
-          title="Additional Vanity & Counter" 
-          description="Vanity-only, cutouts, drills"
-        >
-          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label='48" Vanity Only CP' field="vanity_only_48_cp" value={config.vanity_only_48_cp ?? 1550} onChange={handleChange} prefix="$" />
-            <PricingField label="Sink Cutout CP" field="quartz_sink_cutout_cp" value={config.quartz_sink_cutout_cp ?? 250} onChange={handleChange} prefix="$" />
-            <PricingField label="Faucet Drill CP" field="quartz_faucet_drill_cp" value={config.quartz_faucet_drill_cp ?? 150} onChange={handleChange} prefix="$" />
+            <PricingField label="Dishwasher/Disposal CP" field="electrical_dishwasher_disposal_cp" value={config.electrical_dishwasher_disposal_cp ?? 465} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
         {/* Payment Terms */}
         <CollapsibleSection 
           title="Payment Terms" 
-          description="Bath/Kitchen: 65/25/10 | Closet/Minor: 50/40/10"
+          description="Standard payment split percentages"
         >
           <div className="grid md:grid-cols-3 gap-x-6 gap-y-4">
-            <PricingField label="Deposit %" field="payment_split_deposit" value={config.payment_split_deposit} onChange={handleChange} step="0.01" />
-            <PricingField label="Progress %" field="payment_split_progress" value={config.payment_split_progress} onChange={handleChange} step="0.01" />
-            <PricingField label="Final %" field="payment_split_final" value={config.payment_split_final} onChange={handleChange} step="0.01" />
+            <PricingField label="Deposit" field="payment_split_deposit" value={config.payment_split_deposit} onChange={handleChange} step="0.05" suffix="%" />
+            <PricingField label="Progress" field="payment_split_progress" value={config.payment_split_progress} onChange={handleChange} step="0.05" suffix="%" />
+            <PricingField label="Final" field="payment_split_final" value={config.payment_split_final} onChange={handleChange} step="0.05" suffix="%" />
           </div>
-          {Math.abs((config.payment_split_deposit + config.payment_split_progress + config.payment_split_final) - 1) > 0.001 && (
-            <p className="text-sm text-destructive mt-2">
-              Warning: Payment splits should total 100% (currently {((config.payment_split_deposit + config.payment_split_progress + config.payment_split_final) * 100).toFixed(0)}%)
-            </p>
-          )}
         </CollapsibleSection>
-      </div>
-
-      {/* Sticky Save Footer */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t mt-8 -mx-8 px-8 py-4">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <p className="text-sm text-muted-foreground">
-            Changes are saved to your contractor profile
-          </p>
-          <Button onClick={handleSave} disabled={saving} size="lg">
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save All Changes'}
-          </Button>
-        </div>
       </div>
     </div>
   );

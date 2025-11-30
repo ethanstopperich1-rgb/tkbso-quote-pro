@@ -508,6 +508,8 @@ export type Database = {
           framing_pony_wall_ic: number | null
           framing_standard_cp: number | null
           framing_standard_ic: number | null
+          freestanding_tub_allowance_cp: number | null
+          garbage_disposal_allowance_cp: number | null
           gc_permit_fee_cp: number | null
           gc_permit_fee_ic: number | null
           glass_90_return_cp: number | null
@@ -520,6 +522,7 @@ export type Database = {
           high_range_multiplier: number | null
           id: string
           kitchen_cp_per_sqft: number | null
+          kitchen_faucet_allowance_cp: number | null
           kitchen_ic_per_sqft: number | null
           kitchen_partial_multiplier: number | null
           kitchen_refresh_multiplier: number | null
@@ -558,6 +561,8 @@ export type Database = {
           quartz_sink_cutout_cp: number | null
           recessed_can_cp_each: number | null
           recessed_can_ic_each: number | null
+          regular_tub_allowance_cp: number | null
+          shower_trim_kit_allowance_cp: number | null
           sink_faucet_allowance_cp: number | null
           target_margin: number | null
           tile_floor_cp_per_sqft: number | null
@@ -568,11 +573,23 @@ export type Database = {
           tile_wall_cp_per_sqft: number | null
           tile_wall_ic_per_sqft: number | null
           toilet_allowance_cp: number | null
+          tub_allowance_cp: number | null
+          tub_filler_allowance_cp: number | null
           updated_at: string | null
+          vanity_30_bundle_cp: number | null
+          vanity_30_bundle_ic: number | null
+          vanity_36_bundle_cp: number | null
+          vanity_36_bundle_ic: number | null
           vanity_48_bundle_cp: number | null
           vanity_48_bundle_ic: number | null
+          vanity_54_bundle_cp: number | null
+          vanity_54_bundle_ic: number | null
           vanity_60_bundle_cp: number | null
           vanity_60_bundle_ic: number | null
+          vanity_72_bundle_cp: number | null
+          vanity_72_bundle_ic: number | null
+          vanity_84_bundle_cp: number | null
+          vanity_84_bundle_ic: number | null
           vanity_only_48_cp: number | null
           waterproofing_cp_per_sqft: number | null
           waterproofing_ic_per_sqft: number | null
@@ -625,6 +642,8 @@ export type Database = {
           framing_pony_wall_ic?: number | null
           framing_standard_cp?: number | null
           framing_standard_ic?: number | null
+          freestanding_tub_allowance_cp?: number | null
+          garbage_disposal_allowance_cp?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
           glass_90_return_cp?: number | null
@@ -637,6 +656,7 @@ export type Database = {
           high_range_multiplier?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
+          kitchen_faucet_allowance_cp?: number | null
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
@@ -675,6 +695,8 @@ export type Database = {
           quartz_sink_cutout_cp?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
+          regular_tub_allowance_cp?: number | null
+          shower_trim_kit_allowance_cp?: number | null
           sink_faucet_allowance_cp?: number | null
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
@@ -685,11 +707,23 @@ export type Database = {
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
           toilet_allowance_cp?: number | null
+          tub_allowance_cp?: number | null
+          tub_filler_allowance_cp?: number | null
           updated_at?: string | null
+          vanity_30_bundle_cp?: number | null
+          vanity_30_bundle_ic?: number | null
+          vanity_36_bundle_cp?: number | null
+          vanity_36_bundle_ic?: number | null
           vanity_48_bundle_cp?: number | null
           vanity_48_bundle_ic?: number | null
+          vanity_54_bundle_cp?: number | null
+          vanity_54_bundle_ic?: number | null
           vanity_60_bundle_cp?: number | null
           vanity_60_bundle_ic?: number | null
+          vanity_72_bundle_cp?: number | null
+          vanity_72_bundle_ic?: number | null
+          vanity_84_bundle_cp?: number | null
+          vanity_84_bundle_ic?: number | null
           vanity_only_48_cp?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
@@ -742,6 +776,8 @@ export type Database = {
           framing_pony_wall_ic?: number | null
           framing_standard_cp?: number | null
           framing_standard_ic?: number | null
+          freestanding_tub_allowance_cp?: number | null
+          garbage_disposal_allowance_cp?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
           glass_90_return_cp?: number | null
@@ -754,6 +790,7 @@ export type Database = {
           high_range_multiplier?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
+          kitchen_faucet_allowance_cp?: number | null
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
@@ -792,6 +829,8 @@ export type Database = {
           quartz_sink_cutout_cp?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
+          regular_tub_allowance_cp?: number | null
+          shower_trim_kit_allowance_cp?: number | null
           sink_faucet_allowance_cp?: number | null
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
@@ -802,11 +841,23 @@ export type Database = {
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
           toilet_allowance_cp?: number | null
+          tub_allowance_cp?: number | null
+          tub_filler_allowance_cp?: number | null
           updated_at?: string | null
+          vanity_30_bundle_cp?: number | null
+          vanity_30_bundle_ic?: number | null
+          vanity_36_bundle_cp?: number | null
+          vanity_36_bundle_ic?: number | null
           vanity_48_bundle_cp?: number | null
           vanity_48_bundle_ic?: number | null
+          vanity_54_bundle_cp?: number | null
+          vanity_54_bundle_ic?: number | null
           vanity_60_bundle_cp?: number | null
           vanity_60_bundle_ic?: number | null
+          vanity_72_bundle_cp?: number | null
+          vanity_72_bundle_ic?: number | null
+          vanity_84_bundle_cp?: number | null
+          vanity_84_bundle_ic?: number | null
           vanity_only_48_cp?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
