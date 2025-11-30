@@ -4,87 +4,100 @@ import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, CheckCircle2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { RotateCcw, Sparkles, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-// Step definitions for the guided flow
-type ChatStep = 
-  | 'client_name'
-  | 'client_phone'
-  | 'client_email'
-  | 'client_address'
-  | 'project_type'
-  | 'bathroom_size'
-  | 'bathroom_scope'
-  | 'include_demo'
-  | 'include_plumbing'
-  | 'include_tile'
-  | 'include_glass'
-  | 'include_vanity'
-  | 'vanity_size'
-  | 'include_electrical'
-  | 'include_paint'
-  | 'kitchen_size'
-  | 'kitchen_scope'
-  | 'include_countertops'
-  | 'include_cabinets'
-  | 'summary'
-  | 'complete';
-
-interface ChatState {
-  step: ChatStep;
-  clientName: string;
-  clientPhone: string;
-  clientEmail: string;
-  clientAddress: string;
-  projectType: 'bathroom' | 'kitchen' | null;
-  roomSqft: number;
-  scopeLevel: string;
-  includeDemo: boolean;
-  includePlumbing: boolean;
-  includeTile: boolean;
-  includeGlass: boolean;
-  includeVanity: boolean;
-  vanitySize: string;
-  includeElectrical: boolean;
-  includePaint: boolean;
-  includeCountertops: boolean;
-  includeCabinets: boolean;
+interface ParsedProject {
+  clientInfo: {
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+  };
+  projectType: 'kitchen' | 'bathroom' | 'both' | null;
+  rooms: {
+    bathrooms: number;
+    kitchens: number;
+  };
+  dimensions: {
+    bathroomSqft: number | null;
+    kitchenSqft: number | null;
+    showerLength: number | null;
+    showerWidth: number | null;
+    showerHeight: number | null;
+  };
+  scopeLevel: 'full' | 'partial' | 'refresh' | 'shower_only' | null;
+  trades: {
+    includeDemo: boolean | null;
+    includePlumbing: boolean | null;
+    includeTile: boolean | null;
+    includeGlass: boolean | null;
+    includeVanity: boolean | null;
+    includeCountertops: boolean | null;
+    includeCabinets: boolean | null;
+    includeElectrical: boolean | null;
+    includePaint: boolean | null;
+    includeLVP: boolean | null;
+  };
+  details: {
+    vanitySize: '30' | '36' | '48' | '54' | '60' | '72' | '84' | null;
+    glassType: 'panel' | 'door_panel' | '90_return' | 'frameless' | null;
+    hasNiche: boolean | null;
+    hasBench: boolean | null;
+    numRecessedCans: number | null;
+    numVanityLights: number | null;
+    lvpSqft: number | null;
+  };
+  needsMoreInfo: boolean;
+  followUpQuestion: string | null;
+  summary: string;
 }
 
-const initialChatState: ChatState = {
-  step: 'client_name',
-  clientName: '',
-  clientPhone: '',
-  clientEmail: '',
-  clientAddress: '',
-  projectType: null,
-  roomSqft: 0,
-  scopeLevel: 'full_gut',
-  includeDemo: true,
-  includePlumbing: true,
-  includeTile: true,
-  includeGlass: false,
-  includeVanity: false,
-  vanitySize: 'none',
-  includeElectrical: false,
-  includePaint: false,
-  includeCountertops: false,
-  includeCabinets: false,
-};
+interface ConversationContext {
+  clientInfo: Partial<ParsedProject['clientInfo']>;
+  projectType: string | null;
+  rooms: ParsedProject['rooms'];
+  dimensions: Partial<ParsedProject['dimensions']>;
+  scopeLevel: string | null;
+  trades: Partial<ParsedProject['trades']>;
+  details: Partial<ParsedProject['details']>;
+}
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Welcome to the TKBSO Estimator! 👋\n\nI'll walk you through creating a quote step by step.\n\nLet's start with the basics:\n\n**What is the client's name?**`,
+  content: `Welcome to the TKBSO Estimator! ✨
+
+I can understand natural language, so just describe your project and I'll help create a quote.
+
+**Try something like:**
+- "Master bath remodel for John Smith, about 80 sqft, full gut with tile, glass, and new vanity"
+- "Kitchen refresh for the Johnsons at 123 Main St, 150 sqft, just countertops and paint"
+
+Or start simple and I'll ask follow-up questions!`,
   timestamp: new Date(),
+};
+
+const initialContext: ConversationContext = {
+  clientInfo: {},
+  projectType: null,
+  rooms: { bathrooms: 0, kitchens: 0 },
+  dimensions: {},
+  scopeLevel: null,
+  trades: {},
+  details: {},
 };
 
 export function EstimatorChatPanel() {
   const { updateClientInfo, updateTrades, addRoom, setProjectType, reset } = useEstimator();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
-  const [chatState, setChatState] = useState<ChatState>(initialChatState);
-  const [isTyping, setIsTyping] = useState(false);
+  const [context, setContext] = useState<ConversationContext>(initialContext);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const scrollToBottom = () => {
@@ -105,288 +118,97 @@ export function EstimatorChatPanel() {
     setMessages(prev => [...prev, message]);
   };
 
-  const processStep = (userInput: string, currentStep: ChatStep): { nextStep: ChatStep; response: string } => {
-    const input = userInput.trim();
-    const lowerInput = input.toLowerCase();
+  const applyParsedData = (parsed: ParsedProject) => {
+    // Update client info
+    if (parsed.clientInfo.name || parsed.clientInfo.phone || parsed.clientInfo.email || parsed.clientInfo.address) {
+      updateClientInfo({
+        name: parsed.clientInfo.name || undefined,
+        phone: parsed.clientInfo.phone || undefined,
+        email: parsed.clientInfo.email || undefined,
+        address: parsed.clientInfo.address || undefined,
+        city: parsed.clientInfo.city || undefined,
+        state: parsed.clientInfo.state || undefined,
+        zip: parsed.clientInfo.zip || undefined,
+      });
+    }
+
+    // Update project type
+    if (parsed.projectType === 'kitchen' || parsed.projectType === 'bathroom') {
+      setProjectType(parsed.projectType);
+    }
+
+    // Update trades
+    const tradesUpdate: Record<string, any> = {};
+    if (parsed.trades.includeDemo !== null) tradesUpdate.includeDemo = parsed.trades.includeDemo;
+    if (parsed.trades.includePlumbing !== null) tradesUpdate.includePlumbing = parsed.trades.includePlumbing;
+    if (parsed.trades.includeTile !== null) {
+      tradesUpdate.includeTile = parsed.trades.includeTile;
+      tradesUpdate.includeCementBoard = parsed.trades.includeTile;
+      tradesUpdate.includeWaterproofing = parsed.trades.includeTile;
+    }
+    if (parsed.trades.includeGlass !== null) tradesUpdate.includeGlass = parsed.trades.includeGlass;
+    if (parsed.trades.includeVanity !== null) tradesUpdate.includeVanity = parsed.trades.includeVanity;
+    if (parsed.trades.includeCountertops !== null) tradesUpdate.includeCountertops = parsed.trades.includeCountertops;
+    if (parsed.trades.includeCabinets !== null) tradesUpdate.includeCabinetry = parsed.trades.includeCabinets;
+    if (parsed.trades.includeElectrical !== null) tradesUpdate.includeElectrical = parsed.trades.includeElectrical;
+    if (parsed.trades.includePaint !== null) {
+      tradesUpdate.includePainting = parsed.trades.includePaint;
+      tradesUpdate.paintType = parsed.trades.includePaint ? 'full' : 'none';
+    }
+    if (parsed.trades.includeLVP !== null) tradesUpdate.includeLVP = parsed.trades.includeLVP;
     
-    switch (currentStep) {
-      case 'client_name':
-        if (input.length < 2) {
-          return { nextStep: 'client_name', response: "Please enter a valid name for the client." };
-        }
-        setChatState(prev => ({ ...prev, clientName: input }));
-        updateClientInfo({ name: input });
-        return { 
-          nextStep: 'client_phone', 
-          response: `Great, working with **${input}**!\n\n**What is their phone number?**\n\n_(You can type "skip" if you don't have it)_` 
-        };
+    // Update details
+    if (parsed.details.vanitySize) tradesUpdate.vanitySize = parsed.details.vanitySize;
+    if (parsed.details.glassType) tradesUpdate.glassType = parsed.details.glassType;
+    if (parsed.details.numRecessedCans) tradesUpdate.numRecessedCans = parsed.details.numRecessedCans;
+    if (parsed.details.numVanityLights) tradesUpdate.numVanityLights = parsed.details.numVanityLights;
+    if (parsed.details.lvpSqft) tradesUpdate.lvpSqft = parsed.details.lvpSqft;
+    
+    if (Object.keys(tradesUpdate).length > 0) {
+      updateTrades(tradesUpdate);
+    }
 
-      case 'client_phone':
-        if (lowerInput !== 'skip') {
-          const phoneMatch = input.match(/(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/);
-          if (phoneMatch) {
-            setChatState(prev => ({ ...prev, clientPhone: phoneMatch[1] }));
-            updateClientInfo({ phone: phoneMatch[1] });
-          }
-        }
-        return { 
-          nextStep: 'client_email', 
-          response: `**What is their email address?**\n\n_(You can type "skip" if you don't have it)_` 
-        };
-
-      case 'client_email':
-        if (lowerInput !== 'skip') {
-          const emailMatch = input.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-          if (emailMatch) {
-            setChatState(prev => ({ ...prev, clientEmail: emailMatch[1] }));
-            updateClientInfo({ email: emailMatch[1] });
-          }
-        }
-        return { 
-          nextStep: 'client_address', 
-          response: `**What is the property address?**\n\n_(Enter the full address or type "skip")_` 
-        };
-
-      case 'client_address':
-        if (lowerInput !== 'skip' && input.length > 5) {
-          setChatState(prev => ({ ...prev, clientAddress: input }));
-          updateClientInfo({ address: input });
-        }
-        return { 
-          nextStep: 'project_type', 
-          response: `Perfect! Now let's talk about the project.\n\n**Is this a Kitchen or Bathroom remodel?**\n\nType **kitchen** or **bathroom**` 
-        };
-
-      case 'project_type':
-        if (lowerInput.includes('kitchen')) {
-          setChatState(prev => ({ ...prev, projectType: 'kitchen' }));
-          setProjectType('kitchen');
-          return { 
-            nextStep: 'kitchen_size', 
-            response: `🍳 **Kitchen remodel** - got it!\n\n**What is the kitchen size in square feet?**\n\n_(Example: 150 sqft or 12x12)_` 
-          };
-        } else if (lowerInput.includes('bath')) {
-          setChatState(prev => ({ ...prev, projectType: 'bathroom' }));
-          setProjectType('bathroom');
-          return { 
-            nextStep: 'bathroom_size', 
-            response: `🚿 **Bathroom remodel** - got it!\n\n**What is the bathroom size in square feet?**\n\n_(Example: 75 sqft or 8x10)_` 
-          };
-        }
-        return { nextStep: 'project_type', response: "Please type **kitchen** or **bathroom** to continue." };
-
-      case 'bathroom_size':
-      case 'kitchen_size': {
-        let sqft = 0;
-        const sqftMatch = input.match(/(\d+)\s*(sq\.?\s*ft\.?|square\s*feet?|sqft|sf)?\b/i);
-        const dimMatch = input.match(/(\d+)\s*[xX×]\s*(\d+)/);
-        
-        if (dimMatch) {
-          sqft = parseInt(dimMatch[1]) * parseInt(dimMatch[2]);
-        } else if (sqftMatch) {
-          sqft = parseInt(sqftMatch[1]);
-        }
-        
-        if (sqft < 10) {
-          return { nextStep: currentStep, response: "Please enter a valid size. Example: **75 sqft** or **8x10**" };
-        }
-        
-        setChatState(prev => ({ ...prev, roomSqft: sqft }));
-        
-        if (chatState.projectType === 'bathroom') {
-          return { 
-            nextStep: 'bathroom_scope', 
-            response: `Got it - **${sqft} square feet**.\n\n**What's the scope of work?**\n\n• **Full gut** - complete tear-out and rebuild\n• **Shower only** - just the shower area\n• **Partial** - some updates, not everything\n• **Refresh** - cosmetic updates only\n\nType your choice:` 
-          };
-        } else {
-          return { 
-            nextStep: 'kitchen_scope', 
-            response: `Got it - **${sqft} square feet**.\n\n**What's the scope of work?**\n\n• **Full gut** - complete tear-out and rebuild\n• **Partial** - cabinets/counters only\n• **Refresh** - cosmetic updates only\n\nType your choice:` 
-          };
-        }
-      }
-
-      case 'bathroom_scope': {
-        let scope = 'full_gut';
-        if (lowerInput.includes('shower')) scope = 'shower_only';
-        else if (lowerInput.includes('partial')) scope = 'partial';
-        else if (lowerInput.includes('refresh') || lowerInput.includes('cosmetic')) scope = 'refresh';
-        
-        setChatState(prev => ({ ...prev, scopeLevel: scope }));
-        return { 
-          nextStep: 'include_demo', 
-          response: `**${scope.replace('_', ' ').toUpperCase()}** scope selected.\n\nNow let's go through the trades:\n\n**Include demolition & site prep?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'kitchen_scope': {
-        let scope = 'full_gut';
-        if (lowerInput.includes('partial')) scope = 'partial';
-        else if (lowerInput.includes('refresh') || lowerInput.includes('cosmetic')) scope = 'refresh';
-        
-        setChatState(prev => ({ ...prev, scopeLevel: scope }));
-        return { 
-          nextStep: 'include_demo', 
-          response: `**${scope.replace('_', ' ').toUpperCase()}** scope selected.\n\nNow let's go through the trades:\n\n**Include demolition & site prep?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_demo': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includeDemo: include }));
-        updateTrades({ includeDemo: include, includeDumpster: include });
-        return { 
-          nextStep: 'include_plumbing', 
-          response: `Demo: **${include ? 'Yes' : 'No'}** ✓\n\n**Include plumbing work?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_plumbing': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includePlumbing: include }));
-        updateTrades({ includePlumbing: include });
-        return { 
-          nextStep: 'include_tile', 
-          response: `Plumbing: **${include ? 'Yes' : 'No'}** ✓\n\n**Include tile work?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_tile': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includeTile: include }));
-        updateTrades({ includeTile: include, includeCementBoard: include, includeWaterproofing: include });
-        
-        if (chatState.projectType === 'bathroom') {
-          return { 
-            nextStep: 'include_glass', 
-            response: `Tile: **${include ? 'Yes' : 'No'}** ✓\n\n**Include glass enclosure?**\n\n_(yes/no)_` 
-          };
-        } else {
-          return { 
-            nextStep: 'include_countertops', 
-            response: `Tile: **${include ? 'Yes' : 'No'}** ✓\n\n**Include countertops (quartz)?**\n\n_(yes/no)_` 
-          };
-        }
-      }
-
-      case 'include_glass': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includeGlass: include }));
-        updateTrades({ includeGlass: include, glassType: include ? 'standard' : 'none' });
-        return { 
-          nextStep: 'include_vanity', 
-          response: `Glass: **${include ? 'Yes' : 'No'}** ✓\n\n**Include vanity & countertop?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_vanity': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includeVanity: include }));
-        updateTrades({ includeVanity: include });
-        
-        if (include) {
-          return { 
-            nextStep: 'vanity_size', 
-            response: `Vanity: **Yes** ✓\n\n**What size vanity?**\n\n• 30" Single\n• 36" Single\n• 48" Single\n• 54" Single\n• 60" Double\n• 72" Double\n• 84" Double\n\nType the size (e.g., **48** or **60 double**):` 
-          };
-        }
-        return { 
-          nextStep: 'include_electrical', 
-          response: `Vanity: **No** ✓\n\n**Include electrical work?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'vanity_size': {
-        let size = '48';
-        if (input.includes('30')) size = '30';
-        else if (input.includes('36')) size = '36';
-        else if (input.includes('48')) size = '48';
-        else if (input.includes('54')) size = '54';
-        else if (input.includes('60')) size = '60';
-        else if (input.includes('72')) size = '72';
-        else if (input.includes('84')) size = '84';
-        
-        setChatState(prev => ({ ...prev, vanitySize: size }));
-        updateTrades({ vanitySize: size as any });
-        return { 
-          nextStep: 'include_electrical', 
-          response: `Vanity size: **${size}"** ✓\n\n**Include electrical work?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_countertops': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includeCountertops: include }));
-        updateTrades({ includeCountertops: include });
-        return { 
-          nextStep: 'include_cabinets', 
-          response: `Countertops: **${include ? 'Yes' : 'No'}** ✓\n\n**Include cabinet work?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_cabinets': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includeCabinets: include }));
-        updateTrades({ includeCabinetry: include });
-        return { 
-          nextStep: 'include_electrical', 
-          response: `Cabinets: **${include ? 'Yes' : 'No'}** ✓\n\n**Include electrical work?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_electrical': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includeElectrical: include }));
-        updateTrades({ includeElectrical: include });
-        return { 
-          nextStep: 'include_paint', 
-          response: `Electrical: **${include ? 'Yes' : 'No'}** ✓\n\n**Include painting?**\n\n_(yes/no)_` 
-        };
-      }
-
-      case 'include_paint': {
-        const include = lowerInput.includes('yes') || lowerInput === 'y';
-        setChatState(prev => ({ ...prev, includePaint: include }));
-        updateTrades({ includePainting: include, paintType: include ? 'full' : 'none' });
-        
-        // Add the room to the estimator context
-        addRoom({
-          type: chatState.projectType || 'bathroom',
-          name: chatState.projectType === 'kitchen' ? 'Kitchen' : 'Bathroom',
-          sqft: chatState.roomSqft,
-          scopeLevel: chatState.scopeLevel as any,
-        });
-        
-        return { 
-          nextStep: 'summary', 
-          response: `Painting: **${include ? 'Yes' : 'No'}** ✓\n\n---\n\n## Project Summary\n\n**Client:** ${chatState.clientName}\n**Project:** ${chatState.projectType?.toUpperCase()} REMODEL\n**Size:** ${chatState.roomSqft} sqft\n**Scope:** ${chatState.scopeLevel.replace('_', ' ')}\n\n**Included Trades:**\n${chatState.includeDemo ? '✓ Demo & Haul Away\n' : ''}${chatState.includePlumbing ? '✓ Plumbing\n' : ''}${chatState.includeTile ? '✓ Tile & Waterproofing\n' : ''}${chatState.includeGlass ? '✓ Glass Enclosure\n' : ''}${chatState.includeVanity ? `✓ Vanity (${chatState.vanitySize}")\n` : ''}${chatState.includeCountertops ? '✓ Countertops\n' : ''}${chatState.includeCabinets ? '✓ Cabinets\n' : ''}${chatState.includeElectrical ? '✓ Electrical\n' : ''}${include ? '✓ Painting\n' : ''}\n\nType **confirm** to generate quote or **restart** to start over.` 
-        };
-      }
-
-      case 'summary':
-        if (lowerInput === 'confirm' || lowerInput.includes('yes')) {
-          return { 
-            nextStep: 'complete', 
-            response: `🎉 **Quote created successfully!**\n\nYour estimate has been saved and is ready for review.\n\nTo view and download the quote PDF, navigate to the **Estimates** page.\n\nType **new** to start a new estimate.` 
-          };
-        } else if (lowerInput === 'restart' || lowerInput.includes('start over')) {
-          return { nextStep: 'client_name', response: WELCOME_MESSAGE.content };
-        }
-        return { nextStep: 'summary', response: "Type **confirm** to generate quote or **restart** to start over." };
-
-      case 'complete':
-        if (lowerInput === 'new' || lowerInput.includes('new')) {
-          setChatState(initialChatState);
-          return { nextStep: 'client_name', response: WELCOME_MESSAGE.content };
-        }
-        return { nextStep: 'complete', response: "Type **new** to start a new estimate." };
-
-      default:
-        return { nextStep: 'client_name', response: "Let's start over. What is the client's name?" };
+    // Add rooms
+    if (parsed.projectType === 'bathroom' && parsed.dimensions.bathroomSqft) {
+      addRoom({
+        type: 'bathroom',
+        name: 'Bathroom',
+        sqft: parsed.dimensions.bathroomSqft,
+        scopeLevel: (parsed.scopeLevel as any) || 'full_gut',
+      });
+    } else if (parsed.projectType === 'kitchen' && parsed.dimensions.kitchenSqft) {
+      addRoom({
+        type: 'kitchen',
+        name: 'Kitchen',
+        sqft: parsed.dimensions.kitchenSqft,
+        scopeLevel: (parsed.scopeLevel as any) || 'full_gut',
+      });
     }
   };
-  
+
+  const mergeContext = (parsed: ParsedProject): ConversationContext => {
+    return {
+      clientInfo: { ...context.clientInfo, ...Object.fromEntries(Object.entries(parsed.clientInfo).filter(([_, v]) => v !== null)) },
+      projectType: parsed.projectType || context.projectType,
+      rooms: {
+        bathrooms: parsed.rooms.bathrooms || context.rooms.bathrooms,
+        kitchens: parsed.rooms.kitchens || context.rooms.kitchens,
+      },
+      dimensions: { ...context.dimensions, ...Object.fromEntries(Object.entries(parsed.dimensions).filter(([_, v]) => v !== null)) },
+      scopeLevel: parsed.scopeLevel || context.scopeLevel,
+      trades: { ...context.trades, ...Object.fromEntries(Object.entries(parsed.trades).filter(([_, v]) => v !== null)) },
+      details: { ...context.details, ...Object.fromEntries(Object.entries(parsed.details).filter(([_, v]) => v !== null)) },
+    };
+  };
+
   const handleSendMessage = async (content: string) => {
+    // Check for reset commands
+    const lowerContent = content.toLowerCase().trim();
+    if (lowerContent === 'new' || lowerContent === 'restart' || lowerContent === 'start over') {
+      handleReset();
+      return;
+    }
+
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -395,35 +217,82 @@ export function EstimatorChatPanel() {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
+    setIsLoading(true);
     
-    // Simulate thinking
-    await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 300));
-    
-    // Process the step
-    const { nextStep, response } = processStep(content, chatState.step);
-    setChatState(prev => ({ ...prev, step: nextStep }));
-    
-    addAssistantMessage(response);
-    setIsTyping(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-project', {
+        body: { message: content, context },
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to process your message');
+      }
+
+      const parsed = data as ParsedProject;
+      
+      // Merge new data with existing context
+      const newContext = mergeContext(parsed);
+      setContext(newContext);
+
+      // Apply the parsed data to the estimator
+      applyParsedData(parsed);
+
+      // Build response message
+      let response = parsed.summary;
+      
+      if (parsed.needsMoreInfo && parsed.followUpQuestion) {
+        response += `\n\n${parsed.followUpQuestion}`;
+      } else if (!parsed.needsMoreInfo) {
+        // Check if we have enough info to generate a quote
+        const hasClientName = newContext.clientInfo.name;
+        const hasProjectType = newContext.projectType;
+        const hasDimensions = newContext.dimensions.bathroomSqft || newContext.dimensions.kitchenSqft;
+        
+        if (hasClientName && hasProjectType && hasDimensions) {
+          setIsComplete(true);
+          response += `\n\n✅ **Quote created!** Navigate to the **Estimates** page to view and download the PDF.\n\nType **new** to start another estimate.`;
+        } else {
+          // Ask for missing critical info
+          if (!hasClientName) {
+            response += `\n\nWhat is the client's name?`;
+          } else if (!hasProjectType) {
+            response += `\n\nIs this a **kitchen** or **bathroom** remodel?`;
+          } else if (!hasDimensions) {
+            response += `\n\nWhat is the room size in square feet?`;
+          }
+        }
+      }
+
+      addAssistantMessage(response);
+    } catch (error) {
+      console.error('Error processing message:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
+      
+      if (errorMessage.includes('Rate limit')) {
+        toast.error('Rate limit reached. Please wait a moment and try again.');
+      } else {
+        toast.error('Failed to process message');
+      }
+      
+      addAssistantMessage("I had trouble understanding that. Could you try rephrasing? For example:\n\n\"Full bathroom remodel for John Smith, 75 sqft, includes tile, glass, and vanity\"");
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleReset = () => {
     reset();
-    setChatState(initialChatState);
+    setContext(initialContext);
     setMessages([WELCOME_MESSAGE]);
+    setIsComplete(false);
   };
 
-  // Progress indicator
-  const getProgress = () => {
-    const steps: ChatStep[] = [
-      'client_name', 'client_phone', 'client_email', 'client_address', 
-      'project_type', 'bathroom_size', 'bathroom_scope', 'include_demo',
-      'include_plumbing', 'include_tile', 'include_glass', 'include_vanity',
-      'include_electrical', 'include_paint', 'summary', 'complete'
-    ];
-    const currentIndex = steps.indexOf(chatState.step);
-    return Math.round((currentIndex / (steps.length - 1)) * 100);
+  const getPlaceholder = () => {
+    if (isComplete) return "Type 'new' to start another estimate...";
+    if (!context.clientInfo.name) return "Describe your project (e.g., 'Master bath remodel for John Smith...')";
+    if (!context.projectType) return "Is this a kitchen or bathroom remodel?";
+    return "Add more details or ask questions...";
   };
   
   return (
@@ -431,29 +300,24 @@ export function EstimatorChatPanel() {
       {/* Header */}
       <div className="border-b px-4 py-3 bg-card">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-display font-semibold text-foreground">TKBSO Estimator</h2>
-            <p className="text-xs text-muted-foreground">Guided quote builder</p>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <div>
+              <h2 className="font-display font-semibold text-foreground">TKBSO AI Estimator</h2>
+              <p className="text-xs text-muted-foreground">Describe your project naturally</p>
+            </div>
           </div>
           {messages.length > 1 && (
-            <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-muted-foreground hover:text-foreground"
+            >
               <RotateCcw className="w-4 h-4 mr-1" />
               Start Over
             </Button>
           )}
-        </div>
-        {/* Progress bar */}
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>Progress</span>
-            <span>{getProgress()}%</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-1.5">
-            <div 
-              className="bg-primary h-1.5 rounded-full transition-all duration-300" 
-              style={{ width: `${getProgress()}%` }}
-            />
-          </div>
         </div>
       </div>
       
@@ -463,18 +327,10 @@ export function EstimatorChatPanel() {
           <ChatMessage key={message.id} message={message} />
         ))}
         
-        {isTyping && (
-          <div className="flex gap-3 animate-fade-in">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-primary-foreground">TK</span>
-            </div>
-            <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></span>
-                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></span>
-              </div>
-            </div>
+        {isLoading && (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Analyzing your project...</span>
           </div>
         )}
         
@@ -482,18 +338,11 @@ export function EstimatorChatPanel() {
       </div>
       
       {/* Input */}
-      <div className="border-t p-4 bg-card">
-        <ChatInput
-          onSend={handleSendMessage}
-          disabled={isTyping}
-          placeholder={
-            chatState.step === 'client_name' ? "Enter client name..." :
-            chatState.step === 'project_type' ? "Type kitchen or bathroom..." :
-            chatState.step === 'summary' ? "Type confirm or restart..." :
-            "Type your answer..."
-          }
-        />
-      </div>
+      <ChatInput
+        onSend={handleSendMessage}
+        disabled={isLoading}
+        placeholder={getPlaceholder()}
+      />
     </div>
   );
 }
