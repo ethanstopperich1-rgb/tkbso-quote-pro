@@ -25,6 +25,143 @@ import {
   Copy,
 } from 'lucide-react';
 
+// Generate scope text from estimate data
+function generateScopeTextFromEstimate(estimate: Estimate): string {
+  const lines: string[] = [];
+  const isShowerOnly = estimate.bath_scope_level === 'shower_only';
+  
+  // Demo
+  if (estimate.include_demo !== false) {
+    lines.push('DEMO:');
+    if (estimate.has_bathrooms) {
+      if (isShowerOnly) {
+        lines.push('• Remove existing shower fixtures, tile, and substrate');
+      } else {
+        lines.push('• Remove existing fixtures, tile, vanity, and toilet');
+      }
+    } else if (estimate.has_kitchen) {
+      lines.push('• Remove existing cabinets, countertops, and appliances as needed');
+    }
+    lines.push('• Protect adjacent areas and flooring');
+    lines.push('• Debris removal and disposal');
+    lines.push('');
+  }
+  
+  // Framing (bathroom only)
+  if (estimate.has_bathrooms) {
+    lines.push('FRAMING:');
+    lines.push('• Install blocking for shower fixtures and accessories');
+    lines.push('• Frame shower niche(s) as needed');
+    lines.push('');
+  }
+  
+  // Plumbing
+  if (estimate.include_plumbing !== false) {
+    lines.push('PLUMBING:');
+    if (estimate.has_bathrooms) {
+      if (isShowerOnly) {
+        lines.push('• Rough-in water supply and drain lines for new shower');
+        lines.push('• Install shower valve, trim, and showerhead');
+        lines.push('• Pressure test and leak verification');
+      } else {
+        lines.push('• Rough-in water supply and drain lines');
+        lines.push('• Install shower valve, trim, and fixtures');
+        lines.push('• Set and connect toilet');
+        lines.push('• Install vanity plumbing and faucet');
+        lines.push('• Final pressure testing and leak check');
+      }
+    } else if (estimate.has_kitchen) {
+      lines.push('• Install and connect kitchen sink and faucet');
+      lines.push('• Connect dishwasher and disposal if included');
+      lines.push('• Final pressure testing');
+    }
+    lines.push('');
+  }
+  
+  // Electrical
+  if (estimate.include_electrical) {
+    lines.push('ELECTRICAL:');
+    if (estimate.has_bathrooms) {
+      if (estimate.num_recessed_cans && estimate.num_recessed_cans > 0) {
+        lines.push(`• Install ${estimate.num_recessed_cans} recessed light(s)`);
+      }
+      if (estimate.num_vanity_lights && estimate.num_vanity_lights > 0) {
+        lines.push(`• Install ${estimate.num_vanity_lights} vanity light fixture(s)`);
+      }
+      lines.push('• Install exhaust fan');
+      lines.push('• GFCI outlets per code');
+    } else if (estimate.has_kitchen) {
+      lines.push('• Install dedicated circuits as needed');
+      lines.push('• Install under-cabinet lighting');
+      lines.push('• Connect appliances per code');
+    }
+    lines.push('');
+  }
+  
+  // Tile Work
+  if (estimate.has_bathrooms) {
+    lines.push('TILE WORK:');
+    lines.push('• Install waterproofing system (Schluter or equivalent)');
+    lines.push('• Level and prep substrate as needed');
+    if (estimate.bath_wall_tile_sqft && estimate.bath_wall_tile_sqft > 0) {
+      lines.push(`• Install wall tile in shower area (~${Math.round(estimate.bath_wall_tile_sqft)} sq ft)`);
+    } else {
+      lines.push('• Install wall tile in shower/wet areas');
+    }
+    if (estimate.bath_shower_floor_tile_sqft && estimate.bath_shower_floor_tile_sqft > 0) {
+      lines.push(`• Install shower floor tile with slope to drain (~${Math.round(estimate.bath_shower_floor_tile_sqft)} sq ft)`);
+    } else {
+      lines.push('• Install shower floor tile with proper slope to drain');
+    }
+    if (!isShowerOnly && estimate.bath_floor_tile_sqft && estimate.bath_floor_tile_sqft > 0) {
+      lines.push(`• Install bathroom floor tile (~${Math.round(estimate.bath_floor_tile_sqft)} sq ft)`);
+    }
+    lines.push('• Grout, clean, and seal all tile');
+    lines.push('• Tile material to be supplied by homeowner');
+    lines.push('');
+  }
+  
+  // Vanity (full bathroom only)
+  if (estimate.has_bathrooms && !isShowerOnly && estimate.bath_uses_tkbso_vanities) {
+    lines.push('VANITY:');
+    if (estimate.vanity_size && estimate.vanity_size !== 'none') {
+      lines.push(`• Install ${estimate.vanity_size}" vanity with top and sink`);
+    } else {
+      lines.push('• Install vanity with top and sink');
+    }
+    lines.push('• Install mirror');
+    lines.push('• Connect plumbing and faucet');
+    lines.push('');
+  }
+  
+  // Glass
+  if (estimate.include_glass || estimate.bath_uses_frameless_glass || (estimate.glass_type && estimate.glass_type !== 'none')) {
+    lines.push('SHOWER GLASS:');
+    if (estimate.glass_type === 'panel_only') {
+      lines.push('• Glass panel installation');
+    } else if (estimate.glass_type === '90_return') {
+      lines.push('• 90-degree return glass enclosure');
+    } else {
+      lines.push('• Frameless glass shower enclosure');
+    }
+    lines.push('• Field measurement after tile completion');
+    lines.push('• Custom hardware and seals');
+    lines.push('• Professional installation');
+    lines.push('');
+  }
+  
+  // Paint
+  if (estimate.include_paint) {
+    lines.push('PAINTING:');
+    lines.push('• Patch and repair drywall as needed');
+    lines.push('• Prime and paint walls and ceiling');
+    lines.push('• Paint color to be selected by homeowner');
+    lines.push('');
+  }
+  
+  return lines.join('\n');
+}
+
 export default function EstimateDetail() {
   const { id } = useParams<{ id: string }>();
   const { contractor } = useAuth();
@@ -32,6 +169,7 @@ export default function EstimateDetail() {
   const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -49,6 +187,30 @@ export default function EstimateDetail() {
     
     fetchData();
   }, [id, contractor]);
+
+  const handleRegenerateScope = async () => {
+    if (!estimate || !id) return;
+    
+    setRegenerating(true);
+    try {
+      const newScopeText = generateScopeTextFromEstimate(estimate);
+      
+      const { error } = await supabase
+        .from('estimates')
+        .update({ client_estimate_text: newScopeText })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setEstimate({ ...estimate, client_estimate_text: newScopeText });
+      toast.success('Scope text regenerated!');
+    } catch (error) {
+      console.error('Error regenerating scope:', error);
+      toast.error('Failed to regenerate scope text');
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     if (!estimate || !contractor) return;
@@ -214,10 +376,24 @@ export default function EstimateDetail() {
                 <FileText className="h-5 w-5" />
                 Scope of Work
               </CardTitle>
-              {estimate.client_estimate_text && (
+              {estimate.client_estimate_text ? (
                 <Button variant="ghost" size="sm" onClick={handleCopyText}>
                   <Copy className="h-4 w-4 mr-1" />
                   Copy
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRegenerateScope}
+                  disabled={regenerating}
+                >
+                  {regenerating ? (
+                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                  )}
+                  Generate Scope
                 </Button>
               )}
             </CardHeader>
@@ -229,9 +405,23 @@ export default function EstimateDetail() {
                   </pre>
                 </div>
               ) : (
-                <p className="text-muted-foreground italic">
-                  No scope text generated yet. Complete the estimate to generate client-facing scope.
-                </p>
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground italic mb-3">
+                    No scope text generated yet.
+                  </p>
+                  <Button 
+                    variant="secondary" 
+                    onClick={handleRegenerateScope}
+                    disabled={regenerating}
+                  >
+                    {regenerating ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <FileText className="h-4 w-4 mr-2" />
+                    )}
+                    Generate Scope Text
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
