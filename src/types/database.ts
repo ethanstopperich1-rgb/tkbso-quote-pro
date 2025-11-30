@@ -67,11 +67,11 @@ export interface PricingConfig {
   recessed_can_ic_each: number;
   recessed_can_cp_each: number;
   
-  // Glass
+  // Glass (legacy - not used in UI)
   frameless_glass_ic_per_sqft: number;
   frameless_glass_cp_per_sqft: number;
   
-  // GC/Permits
+  // GC/Permits (legacy - not used in UI)
   gc_permit_fee_ic: number;
   gc_permit_fee_cp: number;
   
@@ -133,11 +133,21 @@ export interface PricingConfig {
   glass_panel_only_ic: number;
   glass_panel_only_cp: number;
   
-  // Vanity bundles
+  // Vanity bundles - All sizes
+  vanity_30_bundle_ic: number;
+  vanity_30_bundle_cp: number;
+  vanity_36_bundle_ic: number;
+  vanity_36_bundle_cp: number;
   vanity_48_bundle_ic: number;
   vanity_48_bundle_cp: number;
+  vanity_54_bundle_ic: number;
+  vanity_54_bundle_cp: number;
   vanity_60_bundle_ic: number;
   vanity_60_bundle_cp: number;
+  vanity_72_bundle_ic: number;
+  vanity_72_bundle_cp: number;
+  vanity_84_bundle_ic: number;
+  vanity_84_bundle_cp: number;
   
   // Material allowances (client-facing)
   tile_material_allowance_cp_per_sqft: number;
@@ -147,6 +157,13 @@ export interface PricingConfig {
   hardware_allowance_per_pull_cp: number;
   toilet_allowance_cp: number;
   sink_faucet_allowance_cp: number;
+  tub_allowance_cp: number;
+  shower_trim_kit_allowance_cp: number;
+  tub_filler_allowance_cp: number;
+  kitchen_faucet_allowance_cp: number;
+  garbage_disposal_allowance_cp: number;
+  freestanding_tub_allowance_cp: number;
+  regular_tub_allowance_cp: number;
   
   // Dumpster/Haul
   dumpster_bath_ic: number;
