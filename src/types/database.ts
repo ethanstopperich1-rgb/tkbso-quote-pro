@@ -163,7 +163,7 @@ export interface PricingConfig {
   kitchen_faucet_allowance_cp: number;
   garbage_disposal_allowance_cp: number;
   freestanding_tub_allowance_cp: number;
-  regular_tub_allowance_cp: number;
+  quartz_slab_level1_allowance_cp: number;
   
   // Dumpster/Haul
   dumpster_bath_ic: number;
