@@ -308,11 +308,29 @@ export interface Estimate {
   closet_scope_level: string;
   
   num_recessed_cans: number;
+  num_toilets: number;
+  num_vanity_lights: number;
   needs_gc_partner: boolean;
   permit_required: boolean;
   job_notes: string | null;
   
+  // Trade toggles
+  include_demo: boolean;
+  include_plumbing: boolean;
+  include_electrical: boolean;
+  include_paint: boolean;
+  include_glass: boolean;
+  include_waterproofing: boolean;
+  
+  // Type selections
+  glass_type: string;
+  vanity_size: string;
+  
   // IC totals
+  demo_ic_total: number;
+  plumbing_ic_total: number;
+  waterproofing_ic_total: number;
+  paint_ic_total: number;
   kitchen_ic_total: number;
   baths_ic_total: number;
   closets_ic_total: number;
@@ -329,6 +347,10 @@ export interface Estimate {
   final_ic_total: number;
   
   // CP totals
+  demo_cp_total: number;
+  plumbing_cp_total: number;
+  waterproofing_cp_total: number;
+  paint_cp_total: number;
   kitchen_cp_total: number;
   baths_cp_total: number;
   closets_cp_total: number;
