@@ -1,3 +1,5 @@
+import { ContractorSettings } from './settings';
+
 // Database types for the TKBSO Estimator
 export interface Contractor {
   id: string;
@@ -8,6 +10,7 @@ export interface Contractor {
   service_area: string | null;
   logo_url: string | null;
   notes: string | null;
+  settings: ContractorSettings | null;
   created_at: string;
   updated_at: string;
 }

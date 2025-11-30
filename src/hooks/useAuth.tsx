@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
         
         if (contractorData) {
-          setContractor(contractorData as Contractor);
+          setContractor(contractorData as unknown as Contractor);
         }
       }
     }
