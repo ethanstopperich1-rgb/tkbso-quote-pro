@@ -54,6 +54,12 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   waterproofing_ic_per_sqft: 6,
   waterproofing_cp_per_sqft: 13,
   
+  // LVP & Barrier Flooring
+  lvp_ic_per_sqft: 2.5,
+  lvp_cp_per_sqft: 4.5,
+  barrier_ic_per_sqft: 1.0,
+  barrier_cp_per_sqft: 2.0,
+  
   // Demo Packages
   demo_shower_only_ic: 900,
   demo_shower_only_cp: 1450,
@@ -64,7 +70,7 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   demo_kitchen_ic: 1750,
   demo_kitchen_cp: 2800,
   
-  // Plumbing Packages
+  // Plumbing Packages (all in one)
   plumbing_shower_standard_ic: 2225,
   plumbing_shower_standard_cp: 3425,
   plumbing_extra_head_ic: 625,
@@ -73,8 +79,15 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   plumbing_tub_freestanding_cp: 4800,
   plumbing_toilet_ic: 350,
   plumbing_toilet_cp: 690,
+  plumbing_tub_to_shower_ic: 2550,
+  plumbing_tub_to_shower_cp: 4200,
+  plumbing_smart_valve_ic: 1350,
+  plumbing_smart_valve_cp: 2450,
+  plumbing_linear_drain_ic: 750,
+  plumbing_linear_drain_cp: 1550,
+  plumbing_toilet_relocation_cp: 950,
   
-  // Electrical
+  // Electrical (all in one)
   recessed_can_ic_each: 65,
   recessed_can_cp_each: 110,
   electrical_vanity_light_ic: 200,
@@ -83,6 +96,9 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   electrical_small_package_cp: 400,
   electrical_kitchen_package_ic: 950,
   electrical_kitchen_package_cp: 1750,
+  electrical_microwave_circuit_cp: 550,
+  electrical_hood_relocation_cp: 550,
+  electrical_dishwasher_disposal_cp: 465,
   
   // Paint & Drywall
   paint_patch_bath_ic: 800,
@@ -90,7 +106,7 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   paint_full_bath_ic: 1200,
   paint_full_bath_cp: 1900,
   
-  // Shower Glass (fixed packages only - no per-sqft)
+  // Shower Glass (fixed packages only)
   glass_shower_standard_ic: 1200,
   glass_shower_standard_cp: 2100,
   glass_panel_only_ic: 800,
@@ -118,9 +134,6 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   quartz_ic_per_sqft: 15,
   quartz_cp_per_sqft: 50,
   cabinet_markup_multiplier_no_gc: 1.28,
-  vanity_only_48_cp: 1550,
-  quartz_sink_cutout_cp: 250,
-  quartz_faucet_drill_cp: 150,
   
   // Material Allowances (client-facing)
   tile_material_allowance_cp_per_sqft: 7.85,
@@ -144,33 +157,23 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   dumpster_kitchen_ic: 825,
   dumpster_kitchen_cp: 1400,
   
-  // Additional Plumbing
-  plumbing_tub_to_shower_ic: 2550,
-  plumbing_tub_to_shower_cp: 4200,
-  plumbing_smart_valve_ic: 1350,
-  plumbing_smart_valve_cp: 2450,
-  plumbing_linear_drain_ic: 750,
-  plumbing_linear_drain_cp: 1550,
-  plumbing_toilet_relocation_cp: 950,
-  
   // Framing & Structure
-  framing_standard_ic: 550,
-  framing_standard_cp: 1200,
+  framing_standard_ic: 750,
+  framing_standard_cp: 1300,
   framing_pony_wall_ic: 450,
   framing_pony_wall_cp: 850,
+  niche_ic_each: 300,
+  niche_cp_each: 550,
   
-  // Floor Leveling
+  // Floor Leveling (lump sum)
+  floor_leveling_ls_ic: 500,
+  floor_leveling_ls_cp: 850,
   floor_leveling_small_ic: 300,
   floor_leveling_small_cp: 500,
   floor_leveling_bath_ic: 550,
   floor_leveling_bath_cp: 900,
   floor_leveling_kitchen_ic: 900,
   floor_leveling_kitchen_cp: 1450,
-  
-  // Additional Electrical
-  electrical_microwave_circuit_cp: 550,
-  electrical_hood_relocation_cp: 550,
-  electrical_dishwasher_disposal_cp: 465,
   
   // Payment Terms
   payment_split_deposit: 0.65,
@@ -272,7 +275,7 @@ const FIELD_HELP: Record<string, string> = {
   dumpster_kitchen_ic: 'Kitchen dumpster IC ($750-900 range)',
   dumpster_kitchen_cp: 'Kitchen dumpster CP ($1,200-1,600 range)',
   
-  // Additional Plumbing
+  // Additional Plumbing (merged into main)
   plumbing_tub_to_shower_ic: 'Tub-to-shower conversion IC ($2,400-2,700 range)',
   plumbing_tub_to_shower_cp: 'Tub-to-shower conversion CP ($3,900-4,500 range)',
   plumbing_smart_valve_ic: 'Smart valve system (Moen/Kohler/Digital) IC ($1,200-1,500)',
@@ -281,13 +284,22 @@ const FIELD_HELP: Record<string, string> = {
   plumbing_linear_drain_cp: 'Linear drain system CP ($1,200-1,900 range)',
   plumbing_toilet_relocation_cp: 'Toilet relocation CP ($800-1,100 range)',
   
+  // Additional Electrical (merged into main)
+  electrical_microwave_circuit_cp: 'Dedicated microwave circuit CP ($450-650 range)',
+  electrical_hood_relocation_cp: 'Hood power relocation CP ($300-800 range)',
+  electrical_dishwasher_disposal_cp: 'Dishwasher/disposal GFCI bundle CP ($350-575)',
+  
   // Framing & Structure
-  framing_standard_ic: 'Standard framing/blocking IC: niche, curb, header ($450-650)',
-  framing_standard_cp: 'Standard framing/blocking CP ($950-1,450 range)',
+  framing_standard_ic: 'Standard framing/blocking IC ($750 per)',
+  framing_standard_cp: 'Standard framing/blocking CP',
   framing_pony_wall_ic: 'Pony wall framing IC',
   framing_pony_wall_cp: 'Pony wall framing CP',
+  niche_ic_each: 'Niche IC each ($300 per)',
+  niche_cp_each: 'Niche CP each',
   
   // Floor Leveling
+  floor_leveling_ls_ic: 'Floor leveling lump sum IC ($500)',
+  floor_leveling_ls_cp: 'Floor leveling lump sum CP',
   floor_leveling_small_ic: 'Small room floor leveling IC',
   floor_leveling_small_cp: 'Small room floor leveling CP',
   floor_leveling_bath_ic: 'Full bath floor leveling IC',
@@ -295,15 +307,11 @@ const FIELD_HELP: Record<string, string> = {
   floor_leveling_kitchen_ic: 'Kitchen floor leveling IC',
   floor_leveling_kitchen_cp: 'Kitchen floor leveling CP',
   
-  // Additional Electrical
-  electrical_microwave_circuit_cp: 'Dedicated microwave circuit CP ($450-650 range)',
-  electrical_hood_relocation_cp: 'Hood power relocation CP ($300-800 range)',
-  electrical_dishwasher_disposal_cp: 'Dishwasher/disposal GFCI bundle CP ($350-575)',
-  
-  // Additional Vanity/Counter
-  vanity_only_48_cp: '48" vanity only (no top) CP',
-  quartz_sink_cutout_cp: 'Sink cutout add-on CP',
-  quartz_faucet_drill_cp: 'Faucet drill add-on CP',
+  // LVP & Barrier Flooring
+  lvp_ic_per_sqft: 'LVP flooring IC per sqft ($2.50)',
+  lvp_cp_per_sqft: 'LVP flooring CP per sqft',
+  barrier_ic_per_sqft: 'Barrier/underlayment IC per sqft ($1.00)',
+  barrier_cp_per_sqft: 'Barrier/underlayment CP per sqft',
   
   payment_split_deposit: 'Deposit percentage (0.65 = 65%) - Bath/Kitchen standard',
   payment_split_progress: 'Progress payment percentage (0.25 = 25%)',
@@ -577,10 +585,10 @@ export default function Pricing() {
           </div>
         </CollapsibleSection>
 
-        {/* Plumbing */}
+        {/* Plumbing - All Packages */}
         <CollapsibleSection 
           title="Plumbing Packages" 
-          description="Always ask: slab or raised? fixture relocation? diverter count?"
+          description="All plumbing - rough-ins, conversions, smart valves, drains, relocations"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Shower Rough-In IC" field="plumbing_shower_standard_ic" value={config.plumbing_shower_standard_ic} onChange={handleChange} prefix="$" />
@@ -591,21 +599,32 @@ export default function Pricing() {
             <PricingField label="Freestanding Tub CP" field="plumbing_tub_freestanding_cp" value={config.plumbing_tub_freestanding_cp} onChange={handleChange} prefix="$" />
             <PricingField label="Toilet Swap IC" field="plumbing_toilet_ic" value={config.plumbing_toilet_ic} onChange={handleChange} prefix="$" />
             <PricingField label="Toilet Swap CP" field="plumbing_toilet_cp" value={config.plumbing_toilet_cp} onChange={handleChange} prefix="$" />
+            <PricingField label="Tub-to-Shower IC" field="plumbing_tub_to_shower_ic" value={config.plumbing_tub_to_shower_ic ?? 2550} onChange={handleChange} prefix="$" />
+            <PricingField label="Tub-to-Shower CP" field="plumbing_tub_to_shower_cp" value={config.plumbing_tub_to_shower_cp ?? 4200} onChange={handleChange} prefix="$" />
+            <PricingField label="Smart Valve IC" field="plumbing_smart_valve_ic" value={config.plumbing_smart_valve_ic ?? 1350} onChange={handleChange} prefix="$" />
+            <PricingField label="Smart Valve CP" field="plumbing_smart_valve_cp" value={config.plumbing_smart_valve_cp ?? 2450} onChange={handleChange} prefix="$" />
+            <PricingField label="Linear Drain IC" field="plumbing_linear_drain_ic" value={config.plumbing_linear_drain_ic ?? 750} onChange={handleChange} prefix="$" />
+            <PricingField label="Linear Drain CP" field="plumbing_linear_drain_cp" value={config.plumbing_linear_drain_cp ?? 1550} onChange={handleChange} prefix="$" />
+            <PricingField label="Toilet Relocation CP" field="plumbing_toilet_relocation_cp" value={config.plumbing_toilet_relocation_cp ?? 950} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
-        {/* Tile & Waterproofing */}
+        {/* Tile, LVP & Waterproofing */}
         <CollapsibleSection 
-          title="Tile Labor & Waterproofing" 
-          description="Per-sqft rates - never include demo in tile"
+          title="Flooring, Tile & Waterproofing" 
+          description="Per-sqft rates for tile, LVP, barrier, waterproofing"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Wall Tile IC/sqft" field="tile_wall_ic_per_sqft" value={config.tile_wall_ic_per_sqft} onChange={handleChange} step="0.5" prefix="$" />
             <PricingField label="Wall Tile CP/sqft" field="tile_wall_cp_per_sqft" value={config.tile_wall_cp_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Shower Floor IC/sqft" field="tile_shower_floor_ic_per_sqft" value={config.tile_shower_floor_ic_per_sqft} onChange={handleChange} step="0.5" prefix="$" />
             <PricingField label="Shower Floor CP/sqft" field="tile_shower_floor_cp_per_sqft" value={config.tile_shower_floor_cp_per_sqft} onChange={handleChange} prefix="$" />
-            <PricingField label="Main Floor IC/sqft" field="tile_floor_ic_per_sqft" value={config.tile_floor_ic_per_sqft} onChange={handleChange} step="0.1" prefix="$" />
-            <PricingField label="Main Floor CP/sqft" field="tile_floor_cp_per_sqft" value={config.tile_floor_cp_per_sqft} onChange={handleChange} prefix="$" />
+            <PricingField label="Main Floor Tile IC/sqft" field="tile_floor_ic_per_sqft" value={config.tile_floor_ic_per_sqft} onChange={handleChange} step="0.1" prefix="$" />
+            <PricingField label="Main Floor Tile CP/sqft" field="tile_floor_cp_per_sqft" value={config.tile_floor_cp_per_sqft} onChange={handleChange} prefix="$" />
+            <PricingField label="LVP IC/sqft" field="lvp_ic_per_sqft" value={(config as any).lvp_ic_per_sqft ?? 2.5} onChange={handleChange} step="0.25" prefix="$" />
+            <PricingField label="LVP CP/sqft" field="lvp_cp_per_sqft" value={(config as any).lvp_cp_per_sqft ?? 4.5} onChange={handleChange} step="0.25" prefix="$" />
+            <PricingField label="Barrier IC/sqft" field="barrier_ic_per_sqft" value={(config as any).barrier_ic_per_sqft ?? 1.0} onChange={handleChange} step="0.25" prefix="$" />
+            <PricingField label="Barrier CP/sqft" field="barrier_cp_per_sqft" value={(config as any).barrier_cp_per_sqft ?? 2.0} onChange={handleChange} step="0.25" prefix="$" />
             <PricingField label="Cement Board IC/sqft" field="cement_board_ic_per_sqft" value={config.cement_board_ic_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Cement Board CP/sqft" field="cement_board_cp_per_sqft" value={config.cement_board_cp_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Waterproofing IC/sqft" field="waterproofing_ic_per_sqft" value={config.waterproofing_ic_per_sqft} onChange={handleChange} prefix="$" />
@@ -613,10 +632,10 @@ export default function Pricing() {
           </div>
         </CollapsibleSection>
 
-        {/* Electrical */}
+        {/* Electrical - All Packages */}
         <CollapsibleSection 
           title="Electrical Packages" 
-          description="Lighting and electrical rough-in rates"
+          description="All electrical - lighting, circuits, kitchen packages"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Recessed Can IC (each)" field="recessed_can_ic_each" value={config.recessed_can_ic_each} onChange={handleChange} prefix="$" />
@@ -627,6 +646,9 @@ export default function Pricing() {
             <PricingField label="Small Package CP" field="electrical_small_package_cp" value={config.electrical_small_package_cp} onChange={handleChange} prefix="$" />
             <PricingField label="Kitchen Package IC" field="electrical_kitchen_package_ic" value={config.electrical_kitchen_package_ic} onChange={handleChange} prefix="$" />
             <PricingField label="Kitchen Package CP" field="electrical_kitchen_package_cp" value={config.electrical_kitchen_package_cp} onChange={handleChange} prefix="$" />
+            <PricingField label="Microwave Circuit CP" field="electrical_microwave_circuit_cp" value={config.electrical_microwave_circuit_cp ?? 550} onChange={handleChange} prefix="$" />
+            <PricingField label="Hood Relocation CP" field="electrical_hood_relocation_cp" value={config.electrical_hood_relocation_cp ?? 550} onChange={handleChange} prefix="$" />
+            <PricingField label="Dishwasher/Disposal CP" field="electrical_dishwasher_disposal_cp" value={config.electrical_dishwasher_disposal_cp ?? 465} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
@@ -684,15 +706,12 @@ export default function Pricing() {
         {/* Counters & Quartz */}
         <CollapsibleSection 
           title="Counters & Quartz" 
-          description="Quartz rates and add-ons"
+          description="Quartz rates and cabinet markup"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Quartz IC/sqft" field="quartz_ic_per_sqft" value={config.quartz_ic_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Quartz CP/sqft" field="quartz_cp_per_sqft" value={config.quartz_cp_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Cabinet Markup (No GC)" field="cabinet_markup_multiplier_no_gc" value={config.cabinet_markup_multiplier_no_gc} onChange={handleChange} step="0.01" suffix="×" />
-            <PricingField label='48" Vanity Only CP' field="vanity_only_48_cp" value={config.vanity_only_48_cp ?? 1550} onChange={handleChange} prefix="$" />
-            <PricingField label="Sink Cutout CP" field="quartz_sink_cutout_cp" value={config.quartz_sink_cutout_cp ?? 250} onChange={handleChange} prefix="$" />
-            <PricingField label="Faucet Drill CP" field="quartz_faucet_drill_cp" value={config.quartz_faucet_drill_cp ?? 150} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
@@ -732,59 +751,29 @@ export default function Pricing() {
           </div>
         </CollapsibleSection>
 
-        {/* Additional Plumbing */}
-        <CollapsibleSection 
-          title="Additional Plumbing Packages" 
-          description="Conversions, smart valves, linear drains, relocations"
-        >
-          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="Tub-to-Shower IC" field="plumbing_tub_to_shower_ic" value={config.plumbing_tub_to_shower_ic ?? 2550} onChange={handleChange} prefix="$" />
-            <PricingField label="Tub-to-Shower CP" field="plumbing_tub_to_shower_cp" value={config.plumbing_tub_to_shower_cp ?? 4200} onChange={handleChange} prefix="$" />
-            <PricingField label="Smart Valve IC" field="plumbing_smart_valve_ic" value={config.plumbing_smart_valve_ic ?? 1350} onChange={handleChange} prefix="$" />
-            <PricingField label="Smart Valve CP" field="plumbing_smart_valve_cp" value={config.plumbing_smart_valve_cp ?? 2450} onChange={handleChange} prefix="$" />
-            <PricingField label="Linear Drain IC" field="plumbing_linear_drain_ic" value={config.plumbing_linear_drain_ic ?? 750} onChange={handleChange} prefix="$" />
-            <PricingField label="Linear Drain CP" field="plumbing_linear_drain_cp" value={config.plumbing_linear_drain_cp ?? 1550} onChange={handleChange} prefix="$" />
-            <PricingField label="Toilet Relocation CP" field="plumbing_toilet_relocation_cp" value={config.plumbing_toilet_relocation_cp ?? 950} onChange={handleChange} prefix="$" />
-          </div>
-        </CollapsibleSection>
-
         {/* Framing & Structure */}
         <CollapsibleSection 
           title="Framing & Structure" 
           description="Blocking, niches, curbs, pony walls"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="Standard Framing IC" field="framing_standard_ic" value={config.framing_standard_ic ?? 550} onChange={handleChange} prefix="$" />
-            <PricingField label="Standard Framing CP" field="framing_standard_cp" value={config.framing_standard_cp ?? 1200} onChange={handleChange} prefix="$" />
+            <PricingField label="Standard Framing IC" field="framing_standard_ic" value={config.framing_standard_ic ?? 750} onChange={handleChange} prefix="$" />
+            <PricingField label="Standard Framing CP" field="framing_standard_cp" value={config.framing_standard_cp ?? 1300} onChange={handleChange} prefix="$" />
             <PricingField label="Pony Wall IC" field="framing_pony_wall_ic" value={config.framing_pony_wall_ic ?? 450} onChange={handleChange} prefix="$" />
             <PricingField label="Pony Wall CP" field="framing_pony_wall_cp" value={config.framing_pony_wall_cp ?? 850} onChange={handleChange} prefix="$" />
+            <PricingField label="Niche IC (each)" field="niche_ic_each" value={(config as any).niche_ic_each ?? 300} onChange={handleChange} prefix="$" />
+            <PricingField label="Niche CP (each)" field="niche_cp_each" value={(config as any).niche_cp_each ?? 550} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
         {/* Floor Leveling */}
         <CollapsibleSection 
           title="Floor Leveling" 
-          description="Substrate prep and leveling by room type"
+          description="Lump sum floor leveling"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="Small Room IC" field="floor_leveling_small_ic" value={config.floor_leveling_small_ic ?? 300} onChange={handleChange} prefix="$" />
-            <PricingField label="Small Room CP" field="floor_leveling_small_cp" value={config.floor_leveling_small_cp ?? 500} onChange={handleChange} prefix="$" />
-            <PricingField label="Full Bath IC" field="floor_leveling_bath_ic" value={config.floor_leveling_bath_ic ?? 550} onChange={handleChange} prefix="$" />
-            <PricingField label="Full Bath CP" field="floor_leveling_bath_cp" value={config.floor_leveling_bath_cp ?? 900} onChange={handleChange} prefix="$" />
-            <PricingField label="Kitchen IC" field="floor_leveling_kitchen_ic" value={config.floor_leveling_kitchen_ic ?? 900} onChange={handleChange} prefix="$" />
-            <PricingField label="Kitchen CP" field="floor_leveling_kitchen_cp" value={config.floor_leveling_kitchen_cp ?? 1450} onChange={handleChange} prefix="$" />
-          </div>
-        </CollapsibleSection>
-
-        {/* Additional Electrical */}
-        <CollapsibleSection 
-          title="Additional Electrical" 
-          description="Kitchen circuits and relocations"
-        >
-          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="Microwave Circuit CP" field="electrical_microwave_circuit_cp" value={config.electrical_microwave_circuit_cp ?? 550} onChange={handleChange} prefix="$" />
-            <PricingField label="Hood Relocation CP" field="electrical_hood_relocation_cp" value={config.electrical_hood_relocation_cp ?? 550} onChange={handleChange} prefix="$" />
-            <PricingField label="Dishwasher/Disposal CP" field="electrical_dishwasher_disposal_cp" value={config.electrical_dishwasher_disposal_cp ?? 465} onChange={handleChange} prefix="$" />
+            <PricingField label="Floor Leveling LS IC" field="floor_leveling_ls_ic" value={(config as any).floor_leveling_ls_ic ?? 500} onChange={handleChange} prefix="$" />
+            <PricingField label="Floor Leveling LS CP" field="floor_leveling_ls_cp" value={(config as any).floor_leveling_ls_cp ?? 850} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 

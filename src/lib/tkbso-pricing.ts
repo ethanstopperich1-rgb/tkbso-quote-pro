@@ -10,6 +10,12 @@ export interface TKBSOPricingConfig {
   tile_shower_floor_ic: number;
   tile_shower_floor_cp: number;
   
+  // LVP & Barrier flooring (per sqft)
+  lvp_ic: number;
+  lvp_cp: number;
+  barrier_ic: number;
+  barrier_cp: number;
+  
   // Cement board (per sqft)
   cement_board_ic: number;
   cement_board_cp: number;
@@ -56,14 +62,12 @@ export interface TKBSOPricingConfig {
   framing_standard_cp: number;
   framing_pony_wall_ic: number;
   framing_pony_wall_cp: number;
+  niche_ic: number;
+  niche_cp: number;
   
-  // Floor Leveling
-  floor_leveling_small_ic: number;
-  floor_leveling_small_cp: number;
-  floor_leveling_bath_ic: number;
-  floor_leveling_bath_cp: number;
-  floor_leveling_kitchen_ic: number;
-  floor_leveling_kitchen_cp: number;
+  // Floor Leveling (lump sum)
+  floor_leveling_ls_ic: number;
+  floor_leveling_ls_cp: number;
   
   // Electrical packages
   recessed_can_ic: number;
@@ -107,13 +111,10 @@ export interface TKBSOPricingConfig {
   vanity_72_bundle_cp: number;
   vanity_84_bundle_ic: number;
   vanity_84_bundle_cp: number;
-  vanity_only_48_cp: number;
   
   // Quartz (per sqft)
   quartz_ic: number;
   quartz_cp: number;
-  quartz_sink_cutout_cp: number;
-  quartz_faucet_drill_cp: number;
   
   // Material Allowances (CP only - client-facing)
   tile_material_allowance_cp_per_sqft: number;
@@ -149,6 +150,12 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   tile_floor_cp: 12,      // $10-14/sqft range
   tile_shower_floor_ic: 6, // $5-7/sqft range
   tile_shower_floor_cp: 14, // $12-16/sqft range
+  
+  // LVP & Barrier flooring
+  lvp_ic: 2.5,
+  lvp_cp: 4.5,
+  barrier_ic: 1.0,
+  barrier_cp: 2.0,
   
   // Cement board / backerboard
   cement_board_ic: 3,
@@ -192,18 +199,16 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   plumbing_toilet_relocation_cp: 950, // Toilet relocation (CP only)
   
   // Framing & Structure
-  framing_standard_ic: 550,           // Blocking, niche, curb, header
-  framing_standard_cp: 1200,
+  framing_standard_ic: 750,           // Blocking, curb, header - $750 per
+  framing_standard_cp: 1300,
   framing_pony_wall_ic: 450,          // Pony wall
   framing_pony_wall_cp: 850,
+  niche_ic: 300,                      // Niche - $300 per IC
+  niche_cp: 550,
   
-  // Floor Leveling
-  floor_leveling_small_ic: 300,
-  floor_leveling_small_cp: 500,
-  floor_leveling_bath_ic: 550,
-  floor_leveling_bath_cp: 900,
-  floor_leveling_kitchen_ic: 900,
-  floor_leveling_kitchen_cp: 1450,
+  // Floor Leveling (lump sum)
+  floor_leveling_ls_ic: 500,
+  floor_leveling_ls_cp: 850,
   
   // Electrical packages
   recessed_can_ic: 65,
@@ -247,13 +252,10 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   vanity_72_bundle_cp: 4200,
   vanity_84_bundle_ic: 3200,
   vanity_84_bundle_cp: 5000,
-  vanity_only_48_cp: 1550,         // Vanity only (no top)
   
   // Quartz (fab + install)
   quartz_ic: 15,
   quartz_cp: 50,
-  quartz_sink_cutout_cp: 250,
-  quartz_faucet_drill_cp: 150,
   
   // Material Allowances (CP only - client-facing)
   tile_material_allowance_cp_per_sqft: 7.85,  // Tile, grout, thinset, sealer
@@ -343,11 +345,11 @@ export interface TKBSOJobInputs {
   numVanityLights: number;
   numHardwarePulls: number;
   numExtraShowerHeads: number;
-  vanitySize: 'none' | '48' | '60' | 'vanity_only_48';
+  numNiches: number;
+  vanitySize: 'none' | '30' | '36' | '48' | '54' | '60' | '72' | '84';
   glassType: 'none' | 'standard' | 'panel_only' | '90_return';
   paintType: 'none' | 'patch' | 'full';
   framingType: 'none' | 'standard' | 'pony_wall';
-  floorLevelingType: 'none' | 'small' | 'bath' | 'kitchen';
   countertopSqft: number;
   
   // Special plumbing options
@@ -612,24 +614,12 @@ export function calculateTKBSOEstimate(
     }
   }
   
-  // Floor Leveling IC/CP
+  // Floor Leveling IC/CP (lump sum)
   let floor_leveling_ic = 0;
   let floor_leveling_cp = 0;
   if (inputs.includeFloorLeveling) {
-    switch (inputs.floorLevelingType) {
-      case 'small':
-        floor_leveling_ic = pricing.floor_leveling_small_ic;
-        floor_leveling_cp = pricing.floor_leveling_small_cp;
-        break;
-      case 'bath':
-        floor_leveling_ic = pricing.floor_leveling_bath_ic;
-        floor_leveling_cp = pricing.floor_leveling_bath_cp;
-        break;
-      case 'kitchen':
-        floor_leveling_ic = pricing.floor_leveling_kitchen_ic;
-        floor_leveling_cp = pricing.floor_leveling_kitchen_cp;
-        break;
-    }
+    floor_leveling_ic = pricing.floor_leveling_ls_ic;
+    floor_leveling_cp = pricing.floor_leveling_ls_cp;
   }
   
   // Electrical IC/CP
@@ -709,16 +699,33 @@ export function calculateTKBSOEstimate(
   let vanity_cp = 0;
   if (inputs.includeVanity) {
     switch (inputs.vanitySize) {
+      case '30':
+        vanity_ic = pricing.vanity_30_bundle_ic;
+        vanity_cp = pricing.vanity_30_bundle_cp;
+        break;
+      case '36':
+        vanity_ic = pricing.vanity_36_bundle_ic;
+        vanity_cp = pricing.vanity_36_bundle_cp;
+        break;
       case '48':
         vanity_ic = pricing.vanity_48_bundle_ic;
         vanity_cp = pricing.vanity_48_bundle_cp;
+        break;
+      case '54':
+        vanity_ic = pricing.vanity_54_bundle_ic;
+        vanity_cp = pricing.vanity_54_bundle_cp;
         break;
       case '60':
         vanity_ic = pricing.vanity_60_bundle_ic;
         vanity_cp = pricing.vanity_60_bundle_cp;
         break;
-      case 'vanity_only_48':
-        vanity_cp = pricing.vanity_only_48_cp;
+      case '72':
+        vanity_ic = pricing.vanity_72_bundle_ic;
+        vanity_cp = pricing.vanity_72_bundle_cp;
+        break;
+      case '84':
+        vanity_ic = pricing.vanity_84_bundle_ic;
+        vanity_cp = pricing.vanity_84_bundle_cp;
         break;
     }
   }
@@ -729,12 +736,6 @@ export function calculateTKBSOEstimate(
   if (inputs.includeCountertops && inputs.countertopSqft > 0) {
     countertop_ic = inputs.countertopSqft * pricing.quartz_ic;
     countertop_cp = inputs.countertopSqft * pricing.quartz_cp;
-    
-    // Add sink cutouts
-    countertop_cp += inputs.numSinkCutouts * pricing.quartz_sink_cutout_cp;
-    
-    // Add faucet drills
-    countertop_cp += inputs.numFaucetDrills * pricing.quartz_faucet_drill_cp;
   }
   
   // Material Allowances (CP only - client-facing)
