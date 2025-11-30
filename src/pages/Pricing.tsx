@@ -133,7 +133,7 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   // Quartz & Counters
   quartz_ic_per_sqft: 15,
   quartz_cp_per_sqft: 50,
-  cabinet_markup_multiplier_no_gc: 1.28,
+  quartz_slab_level1_allowance_cp: 1000,
   
   // Material Allowances (client-facing)
   tile_material_allowance_cp_per_sqft: 7.85,
@@ -149,9 +149,8 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   kitchen_faucet_allowance_cp: 400,
   garbage_disposal_allowance_cp: 250,
   freestanding_tub_allowance_cp: 2500,
-  regular_tub_allowance_cp: 600,
   
-  // Dumpster/Haul
+  // Dumpster/Haul (merged into Demo section)
   dumpster_bath_ic: 400,
   dumpster_bath_cp: 750,
   dumpster_kitchen_ic: 825,
@@ -203,7 +202,6 @@ const FIELD_HELP: Record<string, string> = {
   quartz_cp_per_sqft: 'Client price for quartz ($50/sqft + cutouts)',
   recessed_can_ic_each: 'Cost per recessed light (labor + basic trim)',
   recessed_can_cp_each: 'Client price per recessed can',
-  cabinet_markup_multiplier_no_gc: 'Cabinet markup when TKBSO manages project directly (1.28 = 28%)',
   demo_shower_only_ic: 'Shower demo: tear-out, haul off, site protection, disposal',
   demo_shower_only_cp: 'Client price for shower demo',
   demo_small_bath_ic: 'Small bath demo (5x8 or similar)',
@@ -267,7 +265,9 @@ const FIELD_HELP: Record<string, string> = {
   kitchen_faucet_allowance_cp: 'Kitchen faucet allowance',
   garbage_disposal_allowance_cp: 'Garbage disposal allowance',
   freestanding_tub_allowance_cp: 'Freestanding tub fixture allowance',
-  regular_tub_allowance_cp: 'Regular/alcove tub allowance',
+  
+  // Quartz Slab
+  quartz_slab_level1_allowance_cp: 'Level 1 quartz slab material allowance ($1,000/slab)',
   
   // Dumpster/Haul
   dumpster_bath_ic: 'Bathroom dumpster IC ($350-450 range)',
@@ -571,7 +571,7 @@ export default function Pricing() {
         {/* Demo Packages */}
         <CollapsibleSection 
           title="Demo & Haul Away" 
-          description="Fixed packages - never blend into other categories"
+          description="Fixed packages including dumpster and disposal"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Shower Demo IC" field="demo_shower_only_ic" value={config.demo_shower_only_ic} onChange={handleChange} prefix="$" />
@@ -582,6 +582,10 @@ export default function Pricing() {
             <PricingField label="Large Bath Demo CP" field="demo_large_bath_cp" value={config.demo_large_bath_cp} onChange={handleChange} prefix="$" />
             <PricingField label="Kitchen Demo IC" field="demo_kitchen_ic" value={config.demo_kitchen_ic} onChange={handleChange} prefix="$" />
             <PricingField label="Kitchen Demo CP" field="demo_kitchen_cp" value={config.demo_kitchen_cp} onChange={handleChange} prefix="$" />
+            <PricingField label="Bathroom Dumpster IC" field="dumpster_bath_ic" value={config.dumpster_bath_ic ?? 400} onChange={handleChange} prefix="$" />
+            <PricingField label="Bathroom Dumpster CP" field="dumpster_bath_cp" value={config.dumpster_bath_cp ?? 750} onChange={handleChange} prefix="$" />
+            <PricingField label="Kitchen Dumpster IC" field="dumpster_kitchen_ic" value={config.dumpster_kitchen_ic ?? 825} onChange={handleChange} prefix="$" />
+            <PricingField label="Kitchen Dumpster CP" field="dumpster_kitchen_cp" value={config.dumpster_kitchen_cp ?? 1400} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
@@ -706,12 +710,12 @@ export default function Pricing() {
         {/* Counters & Quartz */}
         <CollapsibleSection 
           title="Counters & Quartz" 
-          description="Quartz rates and cabinet markup"
+          description="Quartz labor and material allowance"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Quartz IC/sqft" field="quartz_ic_per_sqft" value={config.quartz_ic_per_sqft} onChange={handleChange} prefix="$" />
             <PricingField label="Quartz CP/sqft" field="quartz_cp_per_sqft" value={config.quartz_cp_per_sqft} onChange={handleChange} prefix="$" />
-            <PricingField label="Cabinet Markup (No GC)" field="cabinet_markup_multiplier_no_gc" value={config.cabinet_markup_multiplier_no_gc} onChange={handleChange} step="0.01" suffix="×" />
+            <PricingField label="Level 1 Slab Allowance CP" field="quartz_slab_level1_allowance_cp" value={(config as any).quartz_slab_level1_allowance_cp ?? 1000} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
@@ -734,26 +738,12 @@ export default function Pricing() {
             <PricingField label="Kitchen Faucet CP" field="kitchen_faucet_allowance_cp" value={config.kitchen_faucet_allowance_cp ?? 400} onChange={handleChange} prefix="$" />
             <PricingField label="Garbage Disposal CP" field="garbage_disposal_allowance_cp" value={config.garbage_disposal_allowance_cp ?? 250} onChange={handleChange} prefix="$" />
             <PricingField label="Freestanding Tub Allowance CP" field="freestanding_tub_allowance_cp" value={config.freestanding_tub_allowance_cp ?? 2500} onChange={handleChange} prefix="$" />
-            <PricingField label="Regular Tub Allowance CP" field="regular_tub_allowance_cp" value={config.regular_tub_allowance_cp ?? 600} onChange={handleChange} prefix="$" />
-          </div>
-        </CollapsibleSection>
-
-        {/* Dumpster/Haul */}
-        <CollapsibleSection 
-          title="Dumpster & Haul Away" 
-          description="Separate from demo - disposal and container fees"
-        >
-          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="Bathroom Dumpster IC" field="dumpster_bath_ic" value={config.dumpster_bath_ic ?? 400} onChange={handleChange} prefix="$" />
-            <PricingField label="Bathroom Dumpster CP" field="dumpster_bath_cp" value={config.dumpster_bath_cp ?? 750} onChange={handleChange} prefix="$" />
-            <PricingField label="Kitchen Dumpster IC" field="dumpster_kitchen_ic" value={config.dumpster_kitchen_ic ?? 825} onChange={handleChange} prefix="$" />
-            <PricingField label="Kitchen Dumpster CP" field="dumpster_kitchen_cp" value={config.dumpster_kitchen_cp ?? 1400} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
         {/* Framing & Structure */}
         <CollapsibleSection 
-          title="Framing & Structure" 
+          title="Framing & Structure"
           description="Blocking, niches, curbs, pony walls"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">

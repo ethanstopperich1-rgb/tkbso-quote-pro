@@ -567,6 +567,7 @@ export type Database = {
           quartz_faucet_drill_cp: number | null
           quartz_ic_per_sqft: number | null
           quartz_sink_cutout_cp: number | null
+          quartz_slab_level1_allowance_cp: number | null
           recessed_can_cp_each: number | null
           recessed_can_ic_each: number | null
           regular_tub_allowance_cp: number | null
@@ -709,6 +710,7 @@ export type Database = {
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
           quartz_sink_cutout_cp?: number | null
+          quartz_slab_level1_allowance_cp?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
           regular_tub_allowance_cp?: number | null
@@ -851,6 +853,7 @@ export type Database = {
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
           quartz_sink_cutout_cp?: number | null
+          quartz_slab_level1_allowance_cp?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
           regular_tub_allowance_cp?: number | null
