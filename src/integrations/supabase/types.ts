@@ -506,6 +506,7 @@ export type Database = {
           low_range_multiplier: number | null
           min_job_cp: number | null
           min_job_ic: number | null
+          mirror_lighting_allowance_cp: number | null
           paint_full_bath_cp: number | null
           paint_full_bath_ic: number | null
           paint_patch_bath_cp: number | null
@@ -515,6 +516,7 @@ export type Database = {
           payment_split_progress: number | null
           plumbing_extra_head_cp: number | null
           plumbing_extra_head_ic: number | null
+          plumbing_fixture_allowance_cp: number | null
           plumbing_shower_standard_cp: number | null
           plumbing_shower_standard_ic: number | null
           plumbing_toilet_cp: number | null
@@ -528,6 +530,7 @@ export type Database = {
           target_margin: number | null
           tile_floor_cp_per_sqft: number | null
           tile_floor_ic_per_sqft: number | null
+          tile_material_allowance_cp_per_sqft: number | null
           tile_shower_floor_cp_per_sqft: number | null
           tile_shower_floor_ic_per_sqft: number | null
           tile_wall_cp_per_sqft: number | null
@@ -586,6 +589,7 @@ export type Database = {
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          mirror_lighting_allowance_cp?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
           paint_patch_bath_cp?: number | null
@@ -595,6 +599,7 @@ export type Database = {
           payment_split_progress?: number | null
           plumbing_extra_head_cp?: number | null
           plumbing_extra_head_ic?: number | null
+          plumbing_fixture_allowance_cp?: number | null
           plumbing_shower_standard_cp?: number | null
           plumbing_shower_standard_ic?: number | null
           plumbing_toilet_cp?: number | null
@@ -608,6 +613,7 @@ export type Database = {
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
+          tile_material_allowance_cp_per_sqft?: number | null
           tile_shower_floor_cp_per_sqft?: number | null
           tile_shower_floor_ic_per_sqft?: number | null
           tile_wall_cp_per_sqft?: number | null
@@ -666,6 +672,7 @@ export type Database = {
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          mirror_lighting_allowance_cp?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
           paint_patch_bath_cp?: number | null
@@ -675,6 +682,7 @@ export type Database = {
           payment_split_progress?: number | null
           plumbing_extra_head_cp?: number | null
           plumbing_extra_head_ic?: number | null
+          plumbing_fixture_allowance_cp?: number | null
           plumbing_shower_standard_cp?: number | null
           plumbing_shower_standard_ic?: number | null
           plumbing_toilet_cp?: number | null
@@ -688,6 +696,7 @@ export type Database = {
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
+          tile_material_allowance_cp_per_sqft?: number | null
           tile_shower_floor_cp_per_sqft?: number | null
           tile_shower_floor_ic_per_sqft?: number | null
           tile_wall_cp_per_sqft?: number | null
