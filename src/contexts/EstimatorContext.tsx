@@ -82,8 +82,7 @@ export interface TradeSelection {
   numExtraShowerHeads: number;
   numToiletRelocations: number;
   numHardwarePulls: number;
-  numSinkCutouts: number;
-  numFaucetDrills: number;
+  numNiches: number;
   glassSqft: number;
   
   // Special plumbing options
@@ -182,7 +181,6 @@ const defaultTrades: TradeSelection = {
   glassType: 'none',
   paintType: 'none',
   framingType: 'none',
-  floorLevelingType: 'none',
   vanitySize: 'none',
   
   // Counts
@@ -192,8 +190,7 @@ const defaultTrades: TradeSelection = {
   numExtraShowerHeads: 0,
   numToiletRelocations: 0,
   numHardwarePulls: 0,
-  numSinkCutouts: 0,
-  numFaucetDrills: 0,
+  numNiches: 0,
   glassSqft: 0,
   
   // Special plumbing options
@@ -391,8 +388,7 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       glassType: newState.trades.glassType,
       paintType: newState.trades.paintType,
       framingType: newState.trades.framingType,
-      floorLevelingType: newState.trades.floorLevelingType,
-      vanitySize: newState.trades.vanitySize,
+      vanitySize: newState.trades.vanitySize as any,
       
       // Counts
       numToilets: newState.trades.numToilets,
@@ -401,8 +397,7 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       numExtraShowerHeads: newState.trades.numExtraShowerHeads,
       numToiletRelocations: newState.trades.numToiletRelocations,
       numHardwarePulls: newState.trades.numHardwarePulls,
-      numSinkCutouts: newState.trades.numSinkCutouts,
-      numFaucetDrills: newState.trades.numFaucetDrills,
+      numNiches: newState.trades.numNiches,
       countertopSqft: totalCountertopSqft,
       
       // Special plumbing options
@@ -701,7 +696,7 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       if (state.trades.includeWaterproofing) {
         tileItems.push('Apply Schluter waterproofing membrane system');
       }
-      if (state.trades.includeFloorLeveling && state.trades.floorLevelingType !== 'none') {
+      if (state.trades.includeFloorLeveling) {
         tileItems.push('Level substrate as needed for proper drainage');
       }
       tileItems.push(
@@ -772,8 +767,7 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     }
     
     if (state.trades.includeVanity && state.trades.vanitySize !== 'none') {
-      const vanityLabel = state.trades.vanitySize === 'vanity_only_48' ? '48" vanity (no top)' :
-                         `${state.trades.vanitySize}" vanity with quartz top`;
+      const vanityLabel = `${state.trades.vanitySize}" vanity with quartz top`;
       const vanityItems = [
         vanityLabel,
         'Undermount sink installation',
@@ -796,14 +790,8 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       const counterItems = [
         'Template and fabrication',
         'Professional installation',
+        'Edge profile selection',
       ];
-      if (state.trades.numSinkCutouts > 0) {
-        counterItems.push(`${state.trades.numSinkCutouts} sink cutout(s)`);
-      }
-      if (state.trades.numFaucetDrills > 0) {
-        counterItems.push(`${state.trades.numFaucetDrills} faucet drill(s)`);
-      }
-      counterItems.push('Edge profile selection');
       scopeOfWork.push({
         title: 'Countertops',
         items: counterItems,

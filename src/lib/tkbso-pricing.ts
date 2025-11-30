@@ -365,10 +365,6 @@ export interface TKBSOJobInputs {
   includeHoodRelocation: boolean;
   includeDishwasherDisposal: boolean;
   
-  // Quartz add-ons
-  numSinkCutouts: number;
-  numFaucetDrills: number;
-  
   // Override tile sqft (if calculated elsewhere)
   wallTileSqft?: number;
   floorTileSqft?: number;
