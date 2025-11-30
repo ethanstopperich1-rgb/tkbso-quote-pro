@@ -123,6 +123,134 @@ export function EstimatorChatPanel() {
     setMessages(prev => [...prev, message]);
   };
 
+  // Generate scope text for client-facing display
+  const generateScopeText = (ctx: ConversationContext, bathScopeLevel: string): string => {
+    const lines: string[] = [];
+    
+    // Demo
+    if (ctx.trades.includeDemo !== false) {
+      lines.push('DEMO:');
+      if (ctx.projectType === 'bathroom') {
+        if (bathScopeLevel === 'shower_only') {
+          lines.push('• Remove existing shower fixtures, tile, and substrate');
+        } else {
+          lines.push('• Remove existing fixtures, tile, vanity, and toilet');
+        }
+      } else if (ctx.projectType === 'kitchen') {
+        lines.push('• Remove existing cabinets, countertops, and appliances as needed');
+      }
+      lines.push('• Protect adjacent areas and flooring');
+      lines.push('• Debris removal and disposal');
+      lines.push('');
+    }
+    
+    // Framing (bathroom only)
+    if (ctx.projectType === 'bathroom') {
+      lines.push('FRAMING:');
+      lines.push('• Install blocking for shower fixtures and accessories');
+      lines.push('• Frame shower niche(s) as needed');
+      lines.push('');
+    }
+    
+    // Plumbing
+    if (ctx.trades.includePlumbing !== false) {
+      lines.push('PLUMBING:');
+      if (ctx.projectType === 'bathroom') {
+        if (bathScopeLevel === 'shower_only') {
+          lines.push('• Rough-in water supply and drain lines for new shower');
+          lines.push('• Install shower valve, trim, and showerhead');
+          lines.push('• Pressure test and leak verification');
+        } else {
+          lines.push('• Rough-in water supply and drain lines');
+          lines.push('• Install shower valve, trim, and fixtures');
+          lines.push('• Set and connect toilet');
+          lines.push('• Install vanity plumbing and faucet');
+          lines.push('• Final pressure testing and leak check');
+        }
+      } else if (ctx.projectType === 'kitchen') {
+        lines.push('• Install and connect kitchen sink and faucet');
+        lines.push('• Connect dishwasher and disposal if included');
+        lines.push('• Final pressure testing');
+      }
+      lines.push('');
+    }
+    
+    // Electrical
+    if (ctx.trades.includeElectrical) {
+      lines.push('ELECTRICAL:');
+      if (ctx.projectType === 'bathroom') {
+        if (ctx.details.numRecessedCans) {
+          lines.push(`• Install ${ctx.details.numRecessedCans} recessed light(s)`);
+        }
+        if (ctx.details.numVanityLights) {
+          lines.push(`• Install ${ctx.details.numVanityLights} vanity light fixture(s)`);
+        }
+        lines.push('• Install exhaust fan');
+        lines.push('• GFCI outlets per code');
+      } else if (ctx.projectType === 'kitchen') {
+        lines.push('• Install dedicated circuits as needed');
+        lines.push('• Install under-cabinet lighting');
+        lines.push('• Connect appliances per code');
+      }
+      lines.push('');
+    }
+    
+    // Tile Work
+    if (ctx.trades.includeTile !== false && ctx.projectType === 'bathroom') {
+      lines.push('TILE WORK:');
+      lines.push('• Install waterproofing system (Schluter or equivalent)');
+      lines.push('• Level and prep substrate as needed');
+      lines.push('• Install wall tile in shower/wet areas');
+      lines.push('• Install shower floor tile with proper slope to drain');
+      if (bathScopeLevel !== 'shower_only') {
+        lines.push('• Install bathroom floor tile');
+      }
+      lines.push('• Grout, clean, and seal all tile');
+      lines.push('• Tile material to be supplied by homeowner');
+      lines.push('');
+    }
+    
+    // Vanity (full bathroom only)
+    if (ctx.trades.includeVanity && bathScopeLevel !== 'shower_only') {
+      lines.push('VANITY:');
+      if (ctx.details.vanitySize) {
+        lines.push(`• Install ${ctx.details.vanitySize}" vanity with top and sink`);
+      } else {
+        lines.push('• Install vanity with top and sink');
+      }
+      lines.push('• Install mirror');
+      lines.push('• Connect plumbing and faucet');
+      lines.push('');
+    }
+    
+    // Glass
+    if (ctx.trades.includeGlass) {
+      lines.push('SHOWER GLASS:');
+      if (ctx.details.glassType === 'panel') {
+        lines.push('• Glass panel installation');
+      } else if (ctx.details.glassType === '90_return') {
+        lines.push('• 90-degree return glass enclosure');
+      } else {
+        lines.push('• Frameless glass shower enclosure');
+      }
+      lines.push('• Field measurement after tile completion');
+      lines.push('• Custom hardware and seals');
+      lines.push('• Professional installation');
+      lines.push('');
+    }
+    
+    // Paint
+    if (ctx.trades.includePaint) {
+      lines.push('PAINTING:');
+      lines.push('• Patch and repair drywall as needed');
+      lines.push('• Prime and paint walls and ceiling');
+      lines.push('• Paint color to be selected by homeowner');
+      lines.push('');
+    }
+    
+    return lines.join('\n');
+  };
+
   // Save estimate to database
   const saveEstimateToDatabase = async (ctx: ConversationContext): Promise<string | null> => {
     if (!contractor?.id) {
@@ -163,6 +291,9 @@ export function EstimatorChatPanel() {
       const highCp = state.highEstimate || 0;
       const finalIc = state.internalCost || 0;
 
+      // Generate scope text
+      const scopeText = generateScopeText(ctx, bathScopeLevel);
+
       const estimateData = {
         contractor_id: contractor.id,
         created_by_profile_id: profile?.id || null,
@@ -176,6 +307,9 @@ export function EstimatorChatPanel() {
         state: ctx.clientInfo.state || null,
         zip: ctx.clientInfo.zip || null,
         job_label: ctx.clientInfo.name ? `${ctx.clientInfo.name} - ${ctx.projectType || 'Remodel'}` : null,
+        
+        // Scope text for display
+        client_estimate_text: scopeText,
         
         // Project type
         has_kitchen: ctx.projectType === 'kitchen',
