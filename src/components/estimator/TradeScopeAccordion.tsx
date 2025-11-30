@@ -109,6 +109,36 @@ export function TradeScopeAccordion() {
       ],
     },
     {
+      id: 'lvp',
+      icon: Square,
+      title: 'LVP Flooring',
+      enabled: trades.includeLVP,
+      onToggle: (val: boolean) => updateTrades({ includeLVP: val }),
+      items: [
+        'Luxury vinyl plank installation',
+        'Barrier/underlayment included',
+        trades.lvpSqft > 0 ? `${trades.lvpSqft} sqft coverage` : 'Square footage to be determined',
+        'Professional installation and trim',
+      ],
+      hasOptions: true,
+      options: (
+        <div className="pt-3 border-t mt-3 space-y-3">
+          <div>
+            <Label className="text-xs">LVP Square Footage</Label>
+            <Input
+              type="number"
+              min={0}
+              value={trades.lvpSqft}
+              onChange={(e) => updateTrades({ lvpSqft: parseInt(e.target.value) || 0 })}
+              className="mt-1 h-8 w-32"
+              placeholder="e.g., 150"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Includes barrier @ $1/sqft + LVP @ $2.50/sqft</p>
+          </div>
+        </div>
+      ),
+    },
+    {
       id: 'electrical',
       icon: Zap,
       title: 'Electrical',

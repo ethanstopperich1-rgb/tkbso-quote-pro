@@ -57,6 +57,8 @@ export interface TradeSelection {
   includeVanity: boolean;
   includeCountertops: boolean;
   includeCabinetry: boolean;
+  includeLVP: boolean;
+  lvpSqft: number;
   
   // Material allowance toggles
   includeTileMaterialAllowance: boolean;
@@ -165,6 +167,8 @@ const defaultTrades: TradeSelection = {
   includeVanity: false,
   includeCountertops: false,
   includeCabinetry: false,
+  includeLVP: false,
+  lvpSqft: 0,
   
   // Material allowance toggles
   includeTileMaterialAllowance: true,
@@ -411,6 +415,10 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       includeMicrowaveCircuit: newState.trades.includeMicrowaveCircuit,
       includeHoodRelocation: newState.trades.includeHoodRelocation,
       includeDishwasherDisposal: newState.trades.includeDishwasherDisposal,
+      
+      // LVP Flooring
+      includeLVP: newState.trades.includeLVP,
+      lvpSqft: newState.trades.lvpSqft,
       
       // Tile sqft
       wallTileSqft: totalWallTileSqft,
