@@ -5,24 +5,13 @@ import {
   View,
   StyleSheet,
   Image,
-  Font,
 } from '@react-pdf/renderer';
 import { Contractor, Estimate, PricingConfig } from '@/types/database';
 import tkbsoLogo from '@/assets/tkbso-logo-full.png';
 
-// Register fonts
-Font.register({
-  family: 'Inter',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZ9hiJ-Ek-_EeA.woff2', fontWeight: 600 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff2', fontWeight: 700 },
-  ],
-});
-
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Inter',
+    fontFamily: 'Helvetica',
     fontSize: 11,
     padding: 50,
     backgroundColor: '#ffffff',
@@ -38,7 +27,7 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 18,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
     textAlign: 'center',
     marginBottom: 20,
@@ -48,7 +37,7 @@ const styles = StyleSheet.create({
   },
   projectTitle: {
     fontSize: 16,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     marginBottom: 8,
   },
@@ -59,7 +48,7 @@ const styles = StyleSheet.create({
   },
   descriptionHeader: {
     fontSize: 14,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     marginTop: 16,
     marginBottom: 12,
@@ -72,7 +61,7 @@ const styles = StyleSheet.create({
   },
   tradeTitle: {
     fontSize: 12,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
     marginBottom: 6,
   },
@@ -100,25 +89,25 @@ const styles = StyleSheet.create({
   },
   costLabel: {
     fontSize: 14,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     marginBottom: 4,
   },
   costAmount: {
     fontSize: 24,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
     marginBottom: 16,
   },
   milestonesLabel: {
     fontSize: 12,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     marginBottom: 8,
   },
   paymentScheduleTitle: {
     fontSize: 16,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     marginBottom: 16,
     textAlign: 'center',
@@ -135,7 +124,7 @@ const styles = StyleSheet.create({
   paymentPercent: {
     width: 60,
     fontSize: 14,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
   },
   paymentDescription: {
@@ -146,7 +135,7 @@ const styles = StyleSheet.create({
   paymentAmount: {
     width: 100,
     fontSize: 11,
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     textAlign: 'right',
   },
@@ -187,7 +176,7 @@ const styles = StyleSheet.create({
   },
   notesTitle: {
     fontSize: 14,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     marginBottom: 12,
   },
@@ -196,7 +185,7 @@ const styles = StyleSheet.create({
   },
   noteLabel: {
     fontSize: 10,
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     color: '#334155',
     marginBottom: 2,
   },
