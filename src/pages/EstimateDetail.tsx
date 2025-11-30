@@ -53,7 +53,7 @@ export default function EstimateDetail() {
   const handleDownloadPdf = async () => {
     if (!estimate || !contractor) return;
     
-    if (!estimate.final_cp_total || !estimate.client_estimate_text) {
+    if (!estimate.final_cp_total) {
       toast.error('Estimate is incomplete – finish the quote before downloading a PDF.');
       return;
     }
