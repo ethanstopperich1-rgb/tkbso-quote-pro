@@ -1,10 +1,17 @@
 import { EstimatorChatPanel } from './EstimatorChatPanel';
+import { QuotePanel } from './QuotePanel';
 
 export function EstimatorLayout() {
   return (
-    <div className="h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-2xl h-full flex flex-col">
+    <div className="h-screen flex bg-background">
+      {/* Left: Chat Panel */}
+      <div className="w-1/2 flex flex-col border-r">
         <EstimatorChatPanel />
+      </div>
+      
+      {/* Right: Live Quote Panel with Pricing Controls */}
+      <div className="w-1/2 flex flex-col">
+        <QuotePanel />
       </div>
     </div>
   );
