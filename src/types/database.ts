@@ -55,6 +55,10 @@ export interface PricingConfig {
   cement_board_ic_per_sqft: number;
   cement_board_cp_per_sqft: number;
   
+  // Waterproofing
+  waterproofing_ic_per_sqft: number;
+  waterproofing_cp_per_sqft: number;
+  
   // Quartz
   quartz_ic_per_sqft: number;
   quartz_cp_per_sqft: number;
@@ -88,6 +92,52 @@ export interface PricingConfig {
   payment_split_deposit: number;
   payment_split_progress: number;
   payment_split_final: number;
+  
+  // Demo packages
+  demo_shower_only_ic: number;
+  demo_shower_only_cp: number;
+  demo_small_bath_ic: number;
+  demo_small_bath_cp: number;
+  demo_large_bath_ic: number;
+  demo_large_bath_cp: number;
+  demo_kitchen_ic: number;
+  demo_kitchen_cp: number;
+  
+  // Plumbing packages
+  plumbing_shower_standard_ic: number;
+  plumbing_shower_standard_cp: number;
+  plumbing_extra_head_ic: number;
+  plumbing_extra_head_cp: number;
+  plumbing_tub_freestanding_ic: number;
+  plumbing_tub_freestanding_cp: number;
+  plumbing_toilet_ic: number;
+  plumbing_toilet_cp: number;
+  
+  // Electrical packages
+  electrical_vanity_light_ic: number;
+  electrical_vanity_light_cp: number;
+  electrical_small_package_ic: number;
+  electrical_small_package_cp: number;
+  electrical_kitchen_package_ic: number;
+  electrical_kitchen_package_cp: number;
+  
+  // Paint packages
+  paint_patch_bath_ic: number;
+  paint_patch_bath_cp: number;
+  paint_full_bath_ic: number;
+  paint_full_bath_cp: number;
+  
+  // Glass packages
+  glass_shower_standard_ic: number;
+  glass_shower_standard_cp: number;
+  glass_panel_only_ic: number;
+  glass_panel_only_cp: number;
+  
+  // Vanity bundles
+  vanity_48_bundle_ic: number;
+  vanity_48_bundle_cp: number;
+  vanity_60_bundle_ic: number;
+  vanity_60_bundle_cp: number;
   
   created_at: string;
   updated_at: string;
