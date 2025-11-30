@@ -330,6 +330,8 @@ export interface TKBSOJobInputs {
   includeDumpster: boolean;
   includeFraming: boolean;
   includeFloorLeveling: boolean;
+  includeLVP: boolean;
+  lvpSqft: number;
   
   // Material allowances toggles
   includeTileMaterialAllowance: boolean;
@@ -381,6 +383,7 @@ export interface TKBSOPricingResult {
   waterproofing_ic: number;
   framing_ic: number;
   floor_leveling_ic: number;
+  lvp_ic: number;
   electrical_ic: number;
   paint_ic: number;
   glass_ic: number;
@@ -396,6 +399,7 @@ export interface TKBSOPricingResult {
   waterproofing_cp: number;
   framing_cp: number;
   floor_leveling_cp: number;
+  lvp_cp: number;
   electrical_cp: number;
   paint_cp: number;
   glass_cp: number;
@@ -618,6 +622,14 @@ export function calculateTKBSOEstimate(
     floor_leveling_cp = pricing.floor_leveling_ls_cp;
   }
   
+  // LVP Flooring IC/CP (includes barrier)
+  let lvp_ic = 0;
+  let lvp_cp = 0;
+  if (inputs.includeLVP && inputs.lvpSqft > 0) {
+    lvp_ic = inputs.lvpSqft * (pricing.lvp_ic + pricing.barrier_ic);
+    lvp_cp = inputs.lvpSqft * (pricing.lvp_cp + pricing.barrier_cp);
+  }
+  
   // Electrical IC/CP
   let electrical_ic = 0;
   let electrical_cp = 0;
@@ -772,7 +784,7 @@ export function calculateTKBSOEstimate(
   
   // Sum totals
   const total_ic = demo_ic + dumpster_ic + plumbing_ic + tile_ic + cement_board_ic + 
-                   waterproofing_ic + framing_ic + floor_leveling_ic + electrical_ic + 
+                   waterproofing_ic + framing_ic + floor_leveling_ic + lvp_ic + electrical_ic + 
                    paint_ic + glass_ic + vanity_ic + countertop_ic;
   
   const total_allowances_cp = tile_material_allowance_cp + plumbing_fixture_allowance_cp + 
@@ -780,7 +792,7 @@ export function calculateTKBSOEstimate(
                               hardware_allowance_cp + toilet_allowance_cp + sink_faucet_allowance_cp;
   
   const total_cp = demo_cp + dumpster_cp + plumbing_cp + tile_cp + cement_board_cp + 
-                   waterproofing_cp + framing_cp + floor_leveling_cp + electrical_cp + 
+                   waterproofing_cp + framing_cp + floor_leveling_cp + lvp_cp + electrical_cp + 
                    paint_cp + glass_cp + vanity_cp + countertop_cp + total_allowances_cp;
   
   // Apply minimums
@@ -804,6 +816,7 @@ export function calculateTKBSOEstimate(
     waterproofing_ic: Math.round(waterproofing_ic),
     framing_ic: Math.round(framing_ic),
     floor_leveling_ic: Math.round(floor_leveling_ic),
+    lvp_ic: Math.round(lvp_ic),
     electrical_ic: Math.round(electrical_ic),
     paint_ic: Math.round(paint_ic),
     glass_ic: Math.round(glass_ic),
@@ -818,6 +831,7 @@ export function calculateTKBSOEstimate(
     waterproofing_cp: Math.round(waterproofing_cp),
     framing_cp: Math.round(framing_cp),
     floor_leveling_cp: Math.round(floor_leveling_cp),
+    lvp_cp: Math.round(lvp_cp),
     electrical_cp: Math.round(electrical_cp),
     paint_cp: Math.round(paint_cp),
     glass_cp: Math.round(glass_cp),
