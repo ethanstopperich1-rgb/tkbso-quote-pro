@@ -13,6 +13,7 @@ import Estimator from "./pages/Estimator";
 import Estimates from "./pages/Estimates";
 import EstimateDetail from "./pages/EstimateDetail";
 import Pricing from "./pages/Pricing";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/estimates" element={<Estimates />} />
               <Route path="/estimates/:id" element={<EstimateDetail />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

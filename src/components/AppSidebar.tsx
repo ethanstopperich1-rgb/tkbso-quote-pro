@@ -1,4 +1,4 @@
-import { LayoutDashboard, MessageSquare, FileText, DollarSign, LogOut } from "lucide-react";
+import { LayoutDashboard, MessageSquare, FileText, DollarSign, LogOut, Settings } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -18,6 +18,7 @@ const navItems = [
   { title: "Chat Estimator", url: "/estimator", icon: MessageSquare },
   { title: "Estimates", url: "/estimates", icon: FileText },
   { title: "Pricing", url: "/pricing", icon: DollarSign },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -46,7 +47,8 @@ export function AppSidebar() {
             <SidebarMenu>
               {navItems.map((item) => {
                 const isActive = location.pathname === item.url || 
-                  (item.url === '/estimates' && location.pathname.startsWith('/estimates'));
+                  (item.url === '/estimates' && location.pathname.startsWith('/estimates')) ||
+                  (item.url === '/settings' && location.pathname.startsWith('/settings'));
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
