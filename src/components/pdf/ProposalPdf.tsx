@@ -27,7 +27,6 @@ const styles = StyleSheet.create({
     padding: 50,
     backgroundColor: '#ffffff',
   },
-  // Header
   header: {
     alignItems: 'center',
     marginBottom: 20,
@@ -44,7 +43,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  // Title Section
   titleSection: {
     marginBottom: 20,
   },
@@ -59,7 +57,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     marginBottom: 4,
   },
-  // Description Header
   descriptionHeader: {
     fontSize: 14,
     fontWeight: 700,
@@ -70,28 +67,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e2e8f0',
     paddingBottom: 6,
   },
-  // Trade Sections
   tradeSection: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   tradeTitle: {
     fontSize: 12,
     fontWeight: 700,
     color: '#1e3a8a',
     marginBottom: 6,
-  },
-  tradeSubtitle: {
-    fontSize: 10,
-    fontWeight: 600,
-    color: '#475569',
-    marginBottom: 4,
-  },
-  workDescription: {
-    fontSize: 10,
-    color: '#475569',
-    lineHeight: 1.5,
-    marginBottom: 4,
-    paddingLeft: 8,
   },
   bulletItem: {
     flexDirection: 'row',
@@ -109,7 +92,6 @@ const styles = StyleSheet.create({
     lineHeight: 1.4,
     color: '#475569',
   },
-  // Cost Section
   costSection: {
     marginTop: 24,
     paddingTop: 16,
@@ -128,14 +110,12 @@ const styles = StyleSheet.create({
     color: '#1e3a8a',
     marginBottom: 16,
   },
-  // Payment Milestones
   milestonesLabel: {
     fontSize: 12,
     fontWeight: 700,
     color: '#1e293b',
     marginBottom: 8,
   },
-  // Page 2 styles
   paymentScheduleTitle: {
     fontSize: 16,
     fontWeight: 700,
@@ -170,7 +150,6 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     textAlign: 'right',
   },
-  // Signature Section
   signatureSection: {
     marginTop: 32,
     marginBottom: 32,
@@ -203,7 +182,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#94a3b8',
     height: 1,
   },
-  // Project Notes
   notesSection: {
     marginTop: 24,
   },
@@ -235,6 +213,11 @@ interface ProposalPdfProps {
   pricingConfig?: PricingConfig;
 }
 
+interface ScopeSection {
+  title: string;
+  items: string[];
+}
+
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -245,100 +228,216 @@ function formatCurrency(amount: number): string {
 }
 
 function getProjectTypeLabel(estimate: Estimate): string {
-  if (estimate.bath_scope_level === 'shower_only') return 'Shower';
-  if (estimate.has_bathrooms) return 'Bathroom';
-  if (estimate.has_kitchen) return 'Kitchen';
-  return 'Remodel';
+  const types: string[] = [];
+  if (estimate.has_kitchen) types.push('Kitchen');
+  if (estimate.has_bathrooms) {
+    if (estimate.bath_scope_level === 'shower_only') {
+      types.push('Shower');
+    } else {
+      types.push('Bathroom');
+    }
+  }
+  if (estimate.has_closets) types.push('Closet');
+  return types.length > 0 ? types.join(' & ') : 'Remodel';
 }
 
-function getDemoScope(estimate: Estimate): string[] {
-  const items: string[] = [];
+function buildScopeSections(estimate: Estimate): ScopeSection[] {
+  const sections: ScopeSection[] = [];
   
-  if (estimate.bath_scope_level === 'shower_only') {
-    items.push('Remove existing shower fixtures, tile, and substrate');
-    items.push('Protect adjacent areas and flooring');
-    items.push('Debris removal and disposal');
-  } else if (estimate.has_bathrooms) {
-    items.push('Remove existing fixtures, tile, vanity, and toilet');
-    items.push('Protect adjacent areas and flooring');
-    items.push('Debris removal and disposal');
-  } else if (estimate.has_kitchen) {
-    items.push('Remove existing cabinets, countertops, and appliances as needed');
-    items.push('Protect adjacent areas and flooring');
-    items.push('Debris removal and disposal');
+  // DEMO Section
+  if (estimate.include_demo !== false) {
+    const demoItems: string[] = [];
+    if (estimate.has_kitchen) {
+      demoItems.push('Remove existing cabinets, countertops, and appliances as needed');
+      demoItems.push('Protect adjacent areas and flooring');
+      demoItems.push('Debris removal and disposal');
+    }
+    if (estimate.has_bathrooms) {
+      if (estimate.bath_scope_level === 'shower_only') {
+        demoItems.push('Remove existing shower fixtures, tile, and substrate');
+      } else {
+        demoItems.push('Remove existing fixtures, tile, vanity, and toilet');
+      }
+      if (!estimate.has_kitchen) {
+        demoItems.push('Protect adjacent areas and flooring');
+        demoItems.push('Debris removal and disposal');
+      }
+    }
+    if (demoItems.length > 0) {
+      sections.push({ title: 'DEMO', items: demoItems });
+    }
   }
   
-  return items;
-}
-
-function getPlumbingScope(estimate: Estimate): string[] {
-  const items: string[] = [];
-  
-  if (estimate.bath_scope_level === 'shower_only') {
-    items.push('Rough-in water supply and drain lines for new shower');
-    items.push('Install shower valve, trim, and showerhead');
-    items.push('Pressure test and leak verification');
-  } else if (estimate.has_bathrooms) {
-    items.push('Rough-in water supply and drain lines');
-    items.push('Install shower valve, trim, and fixtures');
-    items.push('Set and connect toilet');
-    items.push('Install vanity plumbing and faucet');
-    items.push('Final pressure testing and leak check');
-  } else if (estimate.has_kitchen) {
-    items.push('Install and connect kitchen sink and faucet');
-    items.push('Connect dishwasher and disposal if included');
-    items.push('Final pressure testing');
+  // FRAMING Section
+  const framingItems: string[] = [];
+  if (estimate.has_bathrooms) {
+    framingItems.push('Install blocking for shower fixtures and accessories');
+    framingItems.push('Frame shower niche(s) as needed');
+  }
+  if (framingItems.length > 0) {
+    sections.push({ title: 'FRAMING', items: framingItems });
   }
   
-  return items;
-}
-
-function getTileScope(estimate: Estimate): string[] {
-  const items: string[] = [];
-  
-  items.push('Install waterproofing system (Schluter or equivalent)');
-  items.push('Level and prep substrate as needed');
-  
-  if (estimate.bath_wall_tile_sqft && estimate.bath_wall_tile_sqft > 0) {
-    items.push(`Install wall tile in shower area (~${Math.round(estimate.bath_wall_tile_sqft)} sq ft)`);
-  } else {
-    items.push('Install wall tile in shower/wet areas');
+  // PLUMBING Section
+  if (estimate.include_plumbing !== false) {
+    const plumbingItems: string[] = [];
+    if (estimate.has_kitchen) {
+      plumbingItems.push('Install and connect kitchen sink and faucet');
+      plumbingItems.push('Connect dishwasher and disposal if included');
+      plumbingItems.push('Final pressure testing');
+    }
+    if (estimate.has_bathrooms) {
+      if (estimate.bath_scope_level === 'shower_only') {
+        plumbingItems.push('Rough-in water supply and drain lines for new shower');
+        plumbingItems.push('Install shower valve, trim, and showerhead');
+        plumbingItems.push('Pressure test and leak verification');
+      } else {
+        plumbingItems.push('Rough-in water supply and drain lines');
+        plumbingItems.push('Install shower valve, trim, and fixtures');
+        plumbingItems.push('Set and connect toilet');
+        plumbingItems.push('Install vanity plumbing and faucet');
+        plumbingItems.push('Final pressure testing and leak check');
+      }
+    }
+    if (plumbingItems.length > 0) {
+      sections.push({ title: 'PLUMBING', items: plumbingItems });
+    }
   }
   
-  if (estimate.bath_shower_floor_tile_sqft && estimate.bath_shower_floor_tile_sqft > 0) {
-    items.push(`Install shower floor tile with slope to drain (~${Math.round(estimate.bath_shower_floor_tile_sqft)} sq ft)`);
-  } else {
-    items.push('Install shower floor tile with proper slope to drain');
+  // ELECTRICAL Section
+  if (estimate.include_electrical !== false) {
+    const electricalItems: string[] = [];
+    if (estimate.has_kitchen) {
+      electricalItems.push('Install dedicated circuits as needed');
+      electricalItems.push('Install under-cabinet lighting');
+      electricalItems.push('Connect appliances per code');
+    }
+    if (estimate.has_bathrooms) {
+      if (estimate.num_recessed_cans && estimate.num_recessed_cans > 0) {
+        electricalItems.push(`Install ${estimate.num_recessed_cans} recessed light(s)`);
+      }
+      if (estimate.num_vanity_lights && estimate.num_vanity_lights > 0) {
+        electricalItems.push(`Install ${estimate.num_vanity_lights} vanity light fixture(s)`);
+      }
+      electricalItems.push('Install exhaust fan');
+      electricalItems.push('GFCI outlets per code');
+    }
+    if (electricalItems.length > 0) {
+      sections.push({ title: 'ELECTRICAL', items: electricalItems });
+    }
   }
   
-  if (estimate.bath_floor_tile_sqft && estimate.bath_floor_tile_sqft > 0) {
-    items.push(`Install bathroom floor tile (~${Math.round(estimate.bath_floor_tile_sqft)} sq ft)`);
+  // TILE WORK Section
+  const tileItems: string[] = [];
+  if (estimate.has_bathrooms) {
+    tileItems.push('Install waterproofing system (Schluter or equivalent)');
+    tileItems.push('Level and prep substrate as needed');
+    if (estimate.bath_wall_tile_sqft && estimate.bath_wall_tile_sqft > 0) {
+      tileItems.push(`Install wall tile in shower area (~${Math.round(estimate.bath_wall_tile_sqft)} sq ft)`);
+    } else {
+      tileItems.push('Install wall tile in shower/wet areas');
+    }
+    if (estimate.bath_shower_floor_tile_sqft && estimate.bath_shower_floor_tile_sqft > 0) {
+      tileItems.push(`Install shower floor tile with slope to drain (~${Math.round(estimate.bath_shower_floor_tile_sqft)} sq ft)`);
+    } else {
+      tileItems.push('Install shower floor tile with proper slope to drain');
+    }
+    if (estimate.bath_scope_level !== 'shower_only' && estimate.bath_floor_tile_sqft && estimate.bath_floor_tile_sqft > 0) {
+      tileItems.push(`Install bathroom floor tile (~${Math.round(estimate.bath_floor_tile_sqft)} sq ft)`);
+    }
+    tileItems.push('Grout, clean, and seal all tile');
+    tileItems.push('Tile material to be supplied by homeowner');
+  }
+  if (estimate.has_kitchen) {
+    tileItems.push('Install backsplash tile');
+    tileItems.push('Grout and seal backsplash');
+  }
+  if (tileItems.length > 0) {
+    sections.push({ title: 'TILE WORK', items: tileItems });
   }
   
-  items.push('Grout, clean, and seal all tile');
-  items.push('Tile material to be supplied by homeowner');
-  
-  return items;
-}
-
-function getGlassScope(estimate: Estimate): string[] {
-  const items: string[] = [];
-  
-  if (estimate.glass_type === 'standard' || estimate.bath_uses_frameless_glass) {
-    items.push('Frameless glass shower enclosure');
-    items.push('Field measurement after tile completion');
-    items.push('Custom hardware and seals');
-    items.push('Professional installation');
-  } else if (estimate.glass_type === 'panel_only') {
-    items.push('Glass panel installation');
-    items.push('Field measurement after tile completion');
-  } else if (estimate.glass_type === '90_return') {
-    items.push('90-degree return glass enclosure');
-    items.push('Field measurement after tile completion');
-    items.push('Custom hardware and seals');
+  // CABINETS Section (Kitchen)
+  if (estimate.has_kitchen && estimate.kitchen_uses_tkbso_cabinets) {
+    sections.push({ 
+      title: 'CABINETS', 
+      items: [
+        'Install new kitchen cabinets per design',
+        'Level and secure all cabinets',
+        'Install hardware and soft-close hinges'
+      ]
+    });
   }
   
-  return items;
+  // COUNTERTOPS Section
+  const countertopItems: string[] = [];
+  if (estimate.has_kitchen && estimate.kitchen_countertop_sqft) {
+    countertopItems.push(`Install kitchen quartz countertops (~${Math.round(estimate.kitchen_countertop_sqft)} sq ft)`);
+    countertopItems.push('Template after cabinet installation');
+    countertopItems.push('Sink cutout and faucet holes');
+  }
+  if (estimate.has_bathrooms && estimate.bath_countertop_sqft) {
+    countertopItems.push(`Install vanity countertop (~${Math.round(estimate.bath_countertop_sqft)} sq ft)`);
+  }
+  if (countertopItems.length > 0) {
+    sections.push({ title: 'COUNTERTOPS', items: countertopItems });
+  }
+  
+  // VANITY Section (Bathroom)
+  if (estimate.has_bathrooms && estimate.bath_scope_level !== 'shower_only' && estimate.bath_uses_tkbso_vanities) {
+    const vanityItems: string[] = [];
+    if (estimate.vanity_size) {
+      vanityItems.push(`Install ${estimate.vanity_size}" vanity with top and sink`);
+    } else {
+      vanityItems.push('Install vanity with top and sink');
+    }
+    vanityItems.push('Install mirror');
+    vanityItems.push('Connect plumbing and faucet');
+    sections.push({ title: 'VANITY', items: vanityItems });
+  }
+  
+  // SHOWER GLASS Section
+  const hasGlass = estimate.include_glass || estimate.bath_uses_frameless_glass || 
+                   (estimate.glass_type && estimate.glass_type !== 'none');
+  if (estimate.has_bathrooms && hasGlass) {
+    const glassItems: string[] = [];
+    if (estimate.glass_type === 'panel_only') {
+      glassItems.push('Glass panel installation');
+    } else if (estimate.glass_type === '90_return') {
+      glassItems.push('90-degree return glass enclosure');
+    } else {
+      glassItems.push('Frameless glass shower enclosure');
+    }
+    glassItems.push('Field measurement after tile completion');
+    glassItems.push('Custom hardware and seals');
+    glassItems.push('Professional installation');
+    sections.push({ title: 'SHOWER GLASS', items: glassItems });
+  }
+  
+  // PAINT Section
+  if (estimate.include_paint !== false && estimate.has_bathrooms) {
+    sections.push({ 
+      title: 'PAINTING', 
+      items: [
+        'Patch and repair drywall as needed',
+        'Prime and paint bathroom walls and ceiling',
+        'Paint color to be selected by homeowner'
+      ]
+    });
+  }
+  
+  // CLOSET Section
+  if (estimate.has_closets) {
+    sections.push({ 
+      title: 'CLOSET', 
+      items: [
+        'Install closet organization system',
+        'Shelving, rods, and drawers per design',
+        'Hardware and accessories'
+      ]
+    });
+  }
+  
+  return sections;
 }
 
 export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdfProps) {
@@ -351,7 +450,6 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
   const progressAmount = Math.round(totalCost * progressSplit);
   const finalAmount = Math.round(totalCost * finalSplit);
   
-  // Build address
   const addressParts = [
     estimate.property_address,
     estimate.city,
@@ -362,14 +460,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
   
   const clientName = estimate.client_name || 'Customer Name';
   const projectType = getProjectTypeLabel(estimate);
-  
-  const demoItems = getDemoScope(estimate);
-  const plumbingItems = getPlumbingScope(estimate);
-  const tileItems = getTileScope(estimate);
-  const glassItems = getGlassScope(estimate);
-  
-  const hasGlass = estimate.include_glass || estimate.bath_uses_frameless_glass || 
-                   (estimate.glass_type && estimate.glass_type !== 'none');
+  const scopeSections = buildScopeSections(estimate);
 
   return (
     <Document>
@@ -390,72 +481,31 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
         {/* Description Header */}
         <Text style={styles.descriptionHeader}>Description of work to be completed</Text>
         
-        {/* DEMO Section */}
-        {estimate.include_demo !== false && (
-          <View style={styles.tradeSection}>
-            <Text style={styles.tradeTitle}>DEMO:</Text>
-            <Text style={styles.tradeSubtitle}>Remodel work to be done:</Text>
-            {demoItems.map((item, idx) => (
-              <View key={idx} style={styles.bulletItem}>
+        {/* Dynamic Scope Sections */}
+        {scopeSections.map((section, sectionIdx) => (
+          <View key={sectionIdx} style={styles.tradeSection}>
+            <Text style={styles.tradeTitle}>{section.title}:</Text>
+            {section.items.map((item, itemIdx) => (
+              <View key={itemIdx} style={styles.bulletItem}>
                 <Text style={styles.bullet}>•</Text>
                 <Text style={styles.bulletText}>{item}</Text>
               </View>
             ))}
           </View>
-        )}
-        
-        {/* PLUMBING Section */}
-        {estimate.include_plumbing !== false && (
-          <View style={styles.tradeSection}>
-            <Text style={styles.tradeTitle}>PLUMBING:</Text>
-            {plumbingItems.map((item, idx) => (
-              <View key={idx} style={styles.bulletItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.bulletText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-        
-        {/* TILE WORK Section */}
-        <View style={styles.tradeSection}>
-          <Text style={styles.tradeTitle}>TILE WORK:</Text>
-          {tileItems.map((item, idx) => (
-            <View key={idx} style={styles.bulletItem}>
-              <Text style={styles.bullet}>•</Text>
-              <Text style={styles.bulletText}>{item}</Text>
-            </View>
-          ))}
-        </View>
-        
-        {/* SHOWER GLASS Section */}
-        {hasGlass && glassItems.length > 0 && (
-          <View style={styles.tradeSection}>
-            <Text style={styles.tradeTitle}>SHOWER GLASS:</Text>
-            {glassItems.map((item, idx) => (
-              <View key={idx} style={styles.bulletItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.bulletText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        ))}
         
         {/* Final Cost */}
         <View style={styles.costSection}>
           <Text style={styles.costLabel}>{projectType} Final Cost:</Text>
           <Text style={styles.costAmount}>{formatCurrency(totalCost)}</Text>
-          
           <Text style={styles.milestonesLabel}>Payment Milestones:</Text>
         </View>
       </Page>
       
       {/* Page 2 - Payment Schedule & Signatures */}
       <Page size="LETTER" style={styles.page}>
-        {/* Payment Schedule Title */}
         <Text style={styles.paymentScheduleTitle}>Payment Schedule</Text>
         
-        {/* Payment Table */}
         <View style={styles.paymentTable}>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
