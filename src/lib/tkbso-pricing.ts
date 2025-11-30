@@ -76,63 +76,64 @@ export interface TKBSOPricingConfig {
   target_margin: number;
 }
 
-// Default TKBSO pricing - these are the REAL numbers from the business
+// Default TKBSO pricing - Updated Jan 2025
+// No multipliers - use line items for scope variations
 export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
-  // Tile rates (IC = what TKBSO pays subs)
-  tile_wall_ic: 21,       // $21/sqft for shower/wall tile labor
-  tile_wall_cp: 34,       // CP = IC / 0.62 for ~38% margin
-  tile_floor_ic: 4.5,     // $4.50/sqft for main floor tile
-  tile_floor_cp: 7.25,
-  tile_shower_floor_ic: 5, // $5/sqft for shower floor
-  tile_shower_floor_cp: 8,
+  // Tile rates (per sqft ranges from pricing doc)
+  tile_wall_ic: 20,       // $18-22/sqft range
+  tile_wall_cp: 39,       // $36-42/sqft range
+  tile_floor_ic: 5.5,     // $4.5-6.5/sqft range
+  tile_floor_cp: 12,      // $10-14/sqft range
+  tile_shower_floor_ic: 6, // $5-7/sqft range
+  tile_shower_floor_cp: 14, // $12-16/sqft range
   
   // Cement board / backerboard
-  cement_board_ic: 3,     // $3/sqft
-  cement_board_cp: 4.85,
+  cement_board_ic: 3,
+  cement_board_cp: 5,
   
-  // Waterproofing membrane
-  waterproofing_ic: 5,    // $5/sqft labor + material
-  waterproofing_cp: 8,
+  // Waterproofing system (required)
+  waterproofing_ic: 6,    // $6/sqft includes membrane, corners, seam banding
+  waterproofing_cp: 13,   // $12-14/sqft range
   
-  // Demo packages
-  demo_shower_only_ic: 800,
-  demo_shower_only_cp: 1300,
-  demo_small_bath_ic: 1100,
-  demo_small_bath_cp: 1800,
-  demo_large_bath_ic: 1500,
-  demo_large_bath_cp: 2400,
-  demo_kitchen_ic: 1400,
-  demo_kitchen_cp: 2250,
+  // Demo packages (fixed - never blend into other categories)
+  demo_shower_only_ic: 900,
+  demo_shower_only_cp: 1450,
+  demo_small_bath_ic: 1300,
+  demo_small_bath_cp: 2050,
+  demo_large_bath_ic: 1650,
+  demo_large_bath_cp: 2500,
+  demo_kitchen_ic: 1750,
+  demo_kitchen_cp: 2800,
   
-  // Plumbing packages
-  plumbing_shower_standard_ic: 1800,  // New valve, pan/liner, drain, trim
-  plumbing_shower_standard_cp: 2900,
-  plumbing_extra_head_ic: 450,
-  plumbing_extra_head_cp: 725,
-  plumbing_tub_freestanding_ic: 2400,
-  plumbing_tub_freestanding_cp: 3900,
+  // Plumbing packages (always ask: slab/raised? fixture relocation? diverter count?)
+  plumbing_shower_standard_ic: 2225,  // $2,100-2,350 range - drain upgrade, valve move, supply relocation, vent, pan drain, pressure test
+  plumbing_shower_standard_cp: 3425,  // $3,250-3,600 range
+  plumbing_extra_head_ic: 625,        // $550-700 range
+  plumbing_extra_head_cp: 1100,       // $900-1,300 range
+  plumbing_tub_freestanding_ic: 3300, // $3,000-3,600 range - includes slab trench if applicable
+  plumbing_tub_freestanding_cp: 4800, // $4,400-5,200 range
   plumbing_toilet_ic: 350,
-  plumbing_toilet_cp: 565,
+  plumbing_toilet_cp: 690,            // $650-725 swap, $800-1,100 relocation
   
   // Electrical packages
-  recessed_can_ic: 65,    // Per can
+  recessed_can_ic: 65,
   recessed_can_cp: 110,
   electrical_vanity_light_ic: 200,
-  electrical_vanity_light_cp: 325,
+  electrical_vanity_light_cp: 350,
   electrical_small_package_ic: 250,
   electrical_small_package_cp: 400,
   
   // Paint packages
-  paint_patch_bath_ic: 600,
-  paint_patch_bath_cp: 1000,
-  paint_full_bath_ic: 1000,
-  paint_full_bath_cp: 1600,
+  paint_patch_bath_ic: 800,
+  paint_patch_bath_cp: 1300,
+  paint_full_bath_ic: 1200,
+  paint_full_bath_cp: 1900,
   
-  // Glass packages
-  glass_shower_standard_ic: 1200,  // Standard 3x5 frameless
-  glass_shower_standard_cp: 2000,
+  // Glass packages (never use "$2,000 standard")
+  glass_shower_standard_ic: 1200,  // Door + panel
+  glass_shower_standard_cp: 2100,
   glass_panel_only_ic: 800,
-  glass_panel_only_cp: 1300,
+  glass_panel_only_cp: 1450,
   
   // Vanity bundles (includes quartz top + sink)
   vanity_48_bundle_ic: 1600,
@@ -142,11 +143,11 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   
   // Quartz (fab + install)
   quartz_ic: 15,
-  quartz_cp: 50,
+  quartz_cp: 50,  // +$250 sink cutout, +$150 faucet drill
   
-  // Minimums
-  min_job_ic: 8000,
-  min_job_cp: 13000,
+  // Minimums (jobs below rejected automatically)
+  min_job_ic: 10500,
+  min_job_cp: 15000,
   
   // Target margin
   target_margin: 0.38,
