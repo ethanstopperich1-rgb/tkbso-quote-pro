@@ -139,10 +139,57 @@ export interface PricingConfig {
   vanity_60_bundle_ic: number;
   vanity_60_bundle_cp: number;
   
-  // Material allowances
+  // Material allowances (client-facing)
   tile_material_allowance_cp_per_sqft: number;
   plumbing_fixture_allowance_cp: number;
-  mirror_lighting_allowance_cp: number;
+  mirror_allowance_cp: number;
+  lighting_fixture_allowance_cp: number;
+  hardware_allowance_per_pull_cp: number;
+  toilet_allowance_cp: number;
+  sink_faucet_allowance_cp: number;
+  
+  // Dumpster/Haul
+  dumpster_bath_ic: number;
+  dumpster_bath_cp: number;
+  dumpster_kitchen_ic: number;
+  dumpster_kitchen_cp: number;
+  
+  // Additional Plumbing Packages
+  plumbing_tub_to_shower_ic: number;
+  plumbing_tub_to_shower_cp: number;
+  plumbing_smart_valve_ic: number;
+  plumbing_smart_valve_cp: number;
+  plumbing_linear_drain_ic: number;
+  plumbing_linear_drain_cp: number;
+  plumbing_toilet_relocation_cp: number;
+  
+  // Framing & Structure
+  framing_standard_ic: number;
+  framing_standard_cp: number;
+  framing_pony_wall_ic: number;
+  framing_pony_wall_cp: number;
+  
+  // Floor Prep/Leveling
+  floor_leveling_small_ic: number;
+  floor_leveling_small_cp: number;
+  floor_leveling_bath_ic: number;
+  floor_leveling_bath_cp: number;
+  floor_leveling_kitchen_ic: number;
+  floor_leveling_kitchen_cp: number;
+  
+  // Additional Electrical
+  electrical_microwave_circuit_cp: number;
+  electrical_hood_relocation_cp: number;
+  electrical_dishwasher_disposal_cp: number;
+  
+  // Additional Glass
+  glass_90_return_ic: number;
+  glass_90_return_cp: number;
+  
+  // Additional Vanity/Counter
+  vanity_only_48_cp: number;
+  quartz_sink_cutout_cp: number;
+  quartz_faucet_drill_cp: number;
   
   created_at: string;
   updated_at: string;

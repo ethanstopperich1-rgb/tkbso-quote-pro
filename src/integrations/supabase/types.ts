@@ -483,29 +483,51 @@ export type Database = {
           demo_shower_only_ic: number | null
           demo_small_bath_cp: number | null
           demo_small_bath_ic: number | null
+          dumpster_bath_cp: number | null
+          dumpster_bath_ic: number | null
+          dumpster_kitchen_cp: number | null
+          dumpster_kitchen_ic: number | null
+          electrical_dishwasher_disposal_cp: number | null
+          electrical_hood_relocation_cp: number | null
           electrical_kitchen_package_cp: number | null
           electrical_kitchen_package_ic: number | null
+          electrical_microwave_circuit_cp: number | null
           electrical_small_package_cp: number | null
           electrical_small_package_ic: number | null
           electrical_vanity_light_cp: number | null
           electrical_vanity_light_ic: number | null
+          floor_leveling_bath_cp: number | null
+          floor_leveling_bath_ic: number | null
+          floor_leveling_kitchen_cp: number | null
+          floor_leveling_kitchen_ic: number | null
+          floor_leveling_small_cp: number | null
+          floor_leveling_small_ic: number | null
           frameless_glass_cp_per_sqft: number | null
           frameless_glass_ic_per_sqft: number | null
+          framing_pony_wall_cp: number | null
+          framing_pony_wall_ic: number | null
+          framing_standard_cp: number | null
+          framing_standard_ic: number | null
           gc_permit_fee_cp: number | null
           gc_permit_fee_ic: number | null
+          glass_90_return_cp: number | null
+          glass_90_return_ic: number | null
           glass_panel_only_cp: number | null
           glass_panel_only_ic: number | null
           glass_shower_standard_cp: number | null
           glass_shower_standard_ic: number | null
+          hardware_allowance_per_pull_cp: number | null
           high_range_multiplier: number | null
           id: string
           kitchen_cp_per_sqft: number | null
           kitchen_ic_per_sqft: number | null
           kitchen_partial_multiplier: number | null
           kitchen_refresh_multiplier: number | null
+          lighting_fixture_allowance_cp: number | null
           low_range_multiplier: number | null
           min_job_cp: number | null
           min_job_ic: number | null
+          mirror_allowance_cp: number | null
           mirror_lighting_allowance_cp: number | null
           paint_full_bath_cp: number | null
           paint_full_bath_ic: number | null
@@ -517,16 +539,26 @@ export type Database = {
           plumbing_extra_head_cp: number | null
           plumbing_extra_head_ic: number | null
           plumbing_fixture_allowance_cp: number | null
+          plumbing_linear_drain_cp: number | null
+          plumbing_linear_drain_ic: number | null
           plumbing_shower_standard_cp: number | null
           plumbing_shower_standard_ic: number | null
+          plumbing_smart_valve_cp: number | null
+          plumbing_smart_valve_ic: number | null
           plumbing_toilet_cp: number | null
           plumbing_toilet_ic: number | null
+          plumbing_toilet_relocation_cp: number | null
           plumbing_tub_freestanding_cp: number | null
           plumbing_tub_freestanding_ic: number | null
+          plumbing_tub_to_shower_cp: number | null
+          plumbing_tub_to_shower_ic: number | null
           quartz_cp_per_sqft: number | null
+          quartz_faucet_drill_cp: number | null
           quartz_ic_per_sqft: number | null
+          quartz_sink_cutout_cp: number | null
           recessed_can_cp_each: number | null
           recessed_can_ic_each: number | null
+          sink_faucet_allowance_cp: number | null
           target_margin: number | null
           tile_floor_cp_per_sqft: number | null
           tile_floor_ic_per_sqft: number | null
@@ -535,11 +567,13 @@ export type Database = {
           tile_shower_floor_ic_per_sqft: number | null
           tile_wall_cp_per_sqft: number | null
           tile_wall_ic_per_sqft: number | null
+          toilet_allowance_cp: number | null
           updated_at: string | null
           vanity_48_bundle_cp: number | null
           vanity_48_bundle_ic: number | null
           vanity_60_bundle_cp: number | null
           vanity_60_bundle_ic: number | null
+          vanity_only_48_cp: number | null
           waterproofing_cp_per_sqft: number | null
           waterproofing_ic_per_sqft: number | null
         }
@@ -566,29 +600,51 @@ export type Database = {
           demo_shower_only_ic?: number | null
           demo_small_bath_cp?: number | null
           demo_small_bath_ic?: number | null
+          dumpster_bath_cp?: number | null
+          dumpster_bath_ic?: number | null
+          dumpster_kitchen_cp?: number | null
+          dumpster_kitchen_ic?: number | null
+          electrical_dishwasher_disposal_cp?: number | null
+          electrical_hood_relocation_cp?: number | null
           electrical_kitchen_package_cp?: number | null
           electrical_kitchen_package_ic?: number | null
+          electrical_microwave_circuit_cp?: number | null
           electrical_small_package_cp?: number | null
           electrical_small_package_ic?: number | null
           electrical_vanity_light_cp?: number | null
           electrical_vanity_light_ic?: number | null
+          floor_leveling_bath_cp?: number | null
+          floor_leveling_bath_ic?: number | null
+          floor_leveling_kitchen_cp?: number | null
+          floor_leveling_kitchen_ic?: number | null
+          floor_leveling_small_cp?: number | null
+          floor_leveling_small_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
+          framing_pony_wall_cp?: number | null
+          framing_pony_wall_ic?: number | null
+          framing_standard_cp?: number | null
+          framing_standard_ic?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
+          glass_90_return_cp?: number | null
+          glass_90_return_ic?: number | null
           glass_panel_only_cp?: number | null
           glass_panel_only_ic?: number | null
           glass_shower_standard_cp?: number | null
           glass_shower_standard_ic?: number | null
+          hardware_allowance_per_pull_cp?: number | null
           high_range_multiplier?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
+          lighting_fixture_allowance_cp?: number | null
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          mirror_allowance_cp?: number | null
           mirror_lighting_allowance_cp?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
@@ -600,16 +656,26 @@ export type Database = {
           plumbing_extra_head_cp?: number | null
           plumbing_extra_head_ic?: number | null
           plumbing_fixture_allowance_cp?: number | null
+          plumbing_linear_drain_cp?: number | null
+          plumbing_linear_drain_ic?: number | null
           plumbing_shower_standard_cp?: number | null
           plumbing_shower_standard_ic?: number | null
+          plumbing_smart_valve_cp?: number | null
+          plumbing_smart_valve_ic?: number | null
           plumbing_toilet_cp?: number | null
           plumbing_toilet_ic?: number | null
+          plumbing_toilet_relocation_cp?: number | null
           plumbing_tub_freestanding_cp?: number | null
           plumbing_tub_freestanding_ic?: number | null
+          plumbing_tub_to_shower_cp?: number | null
+          plumbing_tub_to_shower_ic?: number | null
           quartz_cp_per_sqft?: number | null
+          quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
+          quartz_sink_cutout_cp?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
+          sink_faucet_allowance_cp?: number | null
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
@@ -618,11 +684,13 @@ export type Database = {
           tile_shower_floor_ic_per_sqft?: number | null
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
+          toilet_allowance_cp?: number | null
           updated_at?: string | null
           vanity_48_bundle_cp?: number | null
           vanity_48_bundle_ic?: number | null
           vanity_60_bundle_cp?: number | null
           vanity_60_bundle_ic?: number | null
+          vanity_only_48_cp?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
         }
@@ -649,29 +717,51 @@ export type Database = {
           demo_shower_only_ic?: number | null
           demo_small_bath_cp?: number | null
           demo_small_bath_ic?: number | null
+          dumpster_bath_cp?: number | null
+          dumpster_bath_ic?: number | null
+          dumpster_kitchen_cp?: number | null
+          dumpster_kitchen_ic?: number | null
+          electrical_dishwasher_disposal_cp?: number | null
+          electrical_hood_relocation_cp?: number | null
           electrical_kitchen_package_cp?: number | null
           electrical_kitchen_package_ic?: number | null
+          electrical_microwave_circuit_cp?: number | null
           electrical_small_package_cp?: number | null
           electrical_small_package_ic?: number | null
           electrical_vanity_light_cp?: number | null
           electrical_vanity_light_ic?: number | null
+          floor_leveling_bath_cp?: number | null
+          floor_leveling_bath_ic?: number | null
+          floor_leveling_kitchen_cp?: number | null
+          floor_leveling_kitchen_ic?: number | null
+          floor_leveling_small_cp?: number | null
+          floor_leveling_small_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
+          framing_pony_wall_cp?: number | null
+          framing_pony_wall_ic?: number | null
+          framing_standard_cp?: number | null
+          framing_standard_ic?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
+          glass_90_return_cp?: number | null
+          glass_90_return_ic?: number | null
           glass_panel_only_cp?: number | null
           glass_panel_only_ic?: number | null
           glass_shower_standard_cp?: number | null
           glass_shower_standard_ic?: number | null
+          hardware_allowance_per_pull_cp?: number | null
           high_range_multiplier?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
+          lighting_fixture_allowance_cp?: number | null
           low_range_multiplier?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
+          mirror_allowance_cp?: number | null
           mirror_lighting_allowance_cp?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
@@ -683,16 +773,26 @@ export type Database = {
           plumbing_extra_head_cp?: number | null
           plumbing_extra_head_ic?: number | null
           plumbing_fixture_allowance_cp?: number | null
+          plumbing_linear_drain_cp?: number | null
+          plumbing_linear_drain_ic?: number | null
           plumbing_shower_standard_cp?: number | null
           plumbing_shower_standard_ic?: number | null
+          plumbing_smart_valve_cp?: number | null
+          plumbing_smart_valve_ic?: number | null
           plumbing_toilet_cp?: number | null
           plumbing_toilet_ic?: number | null
+          plumbing_toilet_relocation_cp?: number | null
           plumbing_tub_freestanding_cp?: number | null
           plumbing_tub_freestanding_ic?: number | null
+          plumbing_tub_to_shower_cp?: number | null
+          plumbing_tub_to_shower_ic?: number | null
           quartz_cp_per_sqft?: number | null
+          quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
+          quartz_sink_cutout_cp?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
+          sink_faucet_allowance_cp?: number | null
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
@@ -701,11 +801,13 @@ export type Database = {
           tile_shower_floor_ic_per_sqft?: number | null
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
+          toilet_allowance_cp?: number | null
           updated_at?: string | null
           vanity_48_bundle_cp?: number | null
           vanity_48_bundle_ic?: number | null
           vanity_60_bundle_cp?: number | null
           vanity_60_bundle_ic?: number | null
+          vanity_only_48_cp?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
         }

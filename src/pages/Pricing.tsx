@@ -112,10 +112,57 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   gc_permit_fee_ic: 2500,
   gc_permit_fee_cp: 2500,
   
-  // Material Allowances
+  // Material Allowances (client-facing)
   tile_material_allowance_cp_per_sqft: 7.85,
   plumbing_fixture_allowance_cp: 1350,
-  mirror_lighting_allowance_cp: 800,
+  mirror_allowance_cp: 500,
+  lighting_fixture_allowance_cp: 400,
+  hardware_allowance_per_pull_cp: 15,
+  toilet_allowance_cp: 450,
+  sink_faucet_allowance_cp: 350,
+  
+  // Dumpster/Haul
+  dumpster_bath_ic: 400,
+  dumpster_bath_cp: 750,
+  dumpster_kitchen_ic: 825,
+  dumpster_kitchen_cp: 1400,
+  
+  // Additional Plumbing
+  plumbing_tub_to_shower_ic: 2550,
+  plumbing_tub_to_shower_cp: 4200,
+  plumbing_smart_valve_ic: 1350,
+  plumbing_smart_valve_cp: 2450,
+  plumbing_linear_drain_ic: 750,
+  plumbing_linear_drain_cp: 1550,
+  plumbing_toilet_relocation_cp: 950,
+  
+  // Framing & Structure
+  framing_standard_ic: 550,
+  framing_standard_cp: 1200,
+  framing_pony_wall_ic: 450,
+  framing_pony_wall_cp: 850,
+  
+  // Floor Leveling
+  floor_leveling_small_ic: 300,
+  floor_leveling_small_cp: 500,
+  floor_leveling_bath_ic: 550,
+  floor_leveling_bath_cp: 900,
+  floor_leveling_kitchen_ic: 900,
+  floor_leveling_kitchen_cp: 1450,
+  
+  // Additional Electrical
+  electrical_microwave_circuit_cp: 550,
+  electrical_hood_relocation_cp: 550,
+  electrical_dishwasher_disposal_cp: 465,
+  
+  // Additional Glass
+  glass_90_return_ic: 1425,
+  glass_90_return_cp: 2775,
+  
+  // Additional Vanity/Counter
+  vanity_only_48_cp: 1550,
+  quartz_sink_cutout_cp: 250,
+  quartz_faucet_drill_cp: 150,
   
   // Payment Terms
   payment_split_deposit: 0.65,
@@ -190,9 +237,59 @@ const FIELD_HELP: Record<string, string> = {
   vanity_48_bundle_cp: 'Client price for 48" vanity bundle',
   vanity_60_bundle_ic: '60" double vanity + quartz + 2 sinks',
   vanity_60_bundle_cp: 'Client price for 60" double bundle',
-  tile_material_allowance_cp_per_sqft: 'Includes tile, grout, thinset, sealer ($7.5-8.25/sqft range)',
-  plumbing_fixture_allowance_cp: 'Per bathroom: valve/trim, head, handheld, faucet or tub filler ($1,100-1,600 range)',
-  mirror_lighting_allowance_cp: 'Mirror + lighting fixture allowance ($400-1,200 range)',
+  
+  // Material Allowances
+  tile_material_allowance_cp_per_sqft: 'Tile, grout, thinset, sealer ($7.5-8.25/sqft range)',
+  plumbing_fixture_allowance_cp: 'Per bath: valve/trim, head, handheld, faucet or filler ($1,100-1,600)',
+  mirror_allowance_cp: 'Mirror allowance per bathroom',
+  lighting_fixture_allowance_cp: 'Light fixture allowance per location',
+  hardware_allowance_per_pull_cp: 'Hardware/pulls allowance per piece',
+  toilet_allowance_cp: 'Toilet fixture allowance',
+  sink_faucet_allowance_cp: 'Sink/faucet fixture allowance',
+  
+  // Dumpster/Haul
+  dumpster_bath_ic: 'Bathroom dumpster IC ($350-450 range)',
+  dumpster_bath_cp: 'Bathroom dumpster CP ($650-850 range)',
+  dumpster_kitchen_ic: 'Kitchen dumpster IC ($750-900 range)',
+  dumpster_kitchen_cp: 'Kitchen dumpster CP ($1,200-1,600 range)',
+  
+  // Additional Plumbing
+  plumbing_tub_to_shower_ic: 'Tub-to-shower conversion IC ($2,400-2,700 range)',
+  plumbing_tub_to_shower_cp: 'Tub-to-shower conversion CP ($3,900-4,500 range)',
+  plumbing_smart_valve_ic: 'Smart valve system (Moen/Kohler/Digital) IC ($1,200-1,500)',
+  plumbing_smart_valve_cp: 'Smart valve system CP ($2,100-2,800 range)',
+  plumbing_linear_drain_ic: 'Linear drain system IC - includes pan grading ($600-900)',
+  plumbing_linear_drain_cp: 'Linear drain system CP ($1,200-1,900 range)',
+  plumbing_toilet_relocation_cp: 'Toilet relocation CP ($800-1,100 range)',
+  
+  // Framing & Structure
+  framing_standard_ic: 'Standard framing/blocking IC: niche, curb, header ($450-650)',
+  framing_standard_cp: 'Standard framing/blocking CP ($950-1,450 range)',
+  framing_pony_wall_ic: 'Pony wall framing IC',
+  framing_pony_wall_cp: 'Pony wall framing CP',
+  
+  // Floor Leveling
+  floor_leveling_small_ic: 'Small room floor leveling IC',
+  floor_leveling_small_cp: 'Small room floor leveling CP',
+  floor_leveling_bath_ic: 'Full bath floor leveling IC',
+  floor_leveling_bath_cp: 'Full bath floor leveling CP',
+  floor_leveling_kitchen_ic: 'Kitchen floor leveling IC',
+  floor_leveling_kitchen_cp: 'Kitchen floor leveling CP',
+  
+  // Additional Electrical
+  electrical_microwave_circuit_cp: 'Dedicated microwave circuit CP ($450-650 range)',
+  electrical_hood_relocation_cp: 'Hood power relocation CP ($300-800 range)',
+  electrical_dishwasher_disposal_cp: 'Dishwasher/disposal GFCI bundle CP ($350-575)',
+  
+  // Additional Glass
+  glass_90_return_ic: '90° return glass (door + 2 panels) IC ($1,350-1,500)',
+  glass_90_return_cp: '90° return glass CP ($2,650-2,900 range)',
+  
+  // Additional Vanity/Counter
+  vanity_only_48_cp: '48" vanity only (no top) CP',
+  quartz_sink_cutout_cp: 'Sink cutout add-on CP',
+  quartz_faucet_drill_cp: 'Faucet drill add-on CP',
+  
   payment_split_deposit: 'Deposit percentage (0.65 = 65%) - Bath/Kitchen standard',
   payment_split_progress: 'Progress payment percentage (0.25 = 25%)',
   payment_split_final: 'Final payment percentage (0.10 = 10%)',
@@ -582,7 +679,103 @@ export default function Pricing() {
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
             <PricingField label="Tile Material CP/sqft" field="tile_material_allowance_cp_per_sqft" value={config.tile_material_allowance_cp_per_sqft ?? 7.85} onChange={handleChange} step="0.25" prefix="$" />
             <PricingField label="Plumbing Fixtures/Bath CP" field="plumbing_fixture_allowance_cp" value={config.plumbing_fixture_allowance_cp ?? 1350} onChange={handleChange} prefix="$" />
-            <PricingField label="Mirror + Lighting CP" field="mirror_lighting_allowance_cp" value={config.mirror_lighting_allowance_cp ?? 800} onChange={handleChange} prefix="$" />
+            <PricingField label="Mirror Allowance CP" field="mirror_allowance_cp" value={config.mirror_allowance_cp ?? 500} onChange={handleChange} prefix="$" />
+            <PricingField label="Lighting Fixture CP" field="lighting_fixture_allowance_cp" value={config.lighting_fixture_allowance_cp ?? 400} onChange={handleChange} prefix="$" />
+            <PricingField label="Hardware/Pull CP" field="hardware_allowance_per_pull_cp" value={config.hardware_allowance_per_pull_cp ?? 15} onChange={handleChange} prefix="$" />
+            <PricingField label="Toilet Allowance CP" field="toilet_allowance_cp" value={config.toilet_allowance_cp ?? 450} onChange={handleChange} prefix="$" />
+            <PricingField label="Sink/Faucet Allowance CP" field="sink_faucet_allowance_cp" value={config.sink_faucet_allowance_cp ?? 350} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Dumpster/Haul */}
+        <CollapsibleSection 
+          title="Dumpster & Haul Away" 
+          description="Separate from demo - disposal and container fees"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+            <PricingField label="Bathroom Dumpster IC" field="dumpster_bath_ic" value={config.dumpster_bath_ic ?? 400} onChange={handleChange} prefix="$" />
+            <PricingField label="Bathroom Dumpster CP" field="dumpster_bath_cp" value={config.dumpster_bath_cp ?? 750} onChange={handleChange} prefix="$" />
+            <PricingField label="Kitchen Dumpster IC" field="dumpster_kitchen_ic" value={config.dumpster_kitchen_ic ?? 825} onChange={handleChange} prefix="$" />
+            <PricingField label="Kitchen Dumpster CP" field="dumpster_kitchen_cp" value={config.dumpster_kitchen_cp ?? 1400} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Additional Plumbing */}
+        <CollapsibleSection 
+          title="Additional Plumbing Packages" 
+          description="Conversions, smart valves, linear drains, relocations"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+            <PricingField label="Tub-to-Shower IC" field="plumbing_tub_to_shower_ic" value={config.plumbing_tub_to_shower_ic ?? 2550} onChange={handleChange} prefix="$" />
+            <PricingField label="Tub-to-Shower CP" field="plumbing_tub_to_shower_cp" value={config.plumbing_tub_to_shower_cp ?? 4200} onChange={handleChange} prefix="$" />
+            <PricingField label="Smart Valve IC" field="plumbing_smart_valve_ic" value={config.plumbing_smart_valve_ic ?? 1350} onChange={handleChange} prefix="$" />
+            <PricingField label="Smart Valve CP" field="plumbing_smart_valve_cp" value={config.plumbing_smart_valve_cp ?? 2450} onChange={handleChange} prefix="$" />
+            <PricingField label="Linear Drain IC" field="plumbing_linear_drain_ic" value={config.plumbing_linear_drain_ic ?? 750} onChange={handleChange} prefix="$" />
+            <PricingField label="Linear Drain CP" field="plumbing_linear_drain_cp" value={config.plumbing_linear_drain_cp ?? 1550} onChange={handleChange} prefix="$" />
+            <PricingField label="Toilet Relocation CP" field="plumbing_toilet_relocation_cp" value={config.plumbing_toilet_relocation_cp ?? 950} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Framing & Structure */}
+        <CollapsibleSection 
+          title="Framing & Structure" 
+          description="Blocking, niches, curbs, headers, pony walls - never include in tile"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+            <PricingField label="Standard Framing IC" field="framing_standard_ic" value={config.framing_standard_ic ?? 550} onChange={handleChange} prefix="$" />
+            <PricingField label="Standard Framing CP" field="framing_standard_cp" value={config.framing_standard_cp ?? 1200} onChange={handleChange} prefix="$" />
+            <PricingField label="Pony Wall IC" field="framing_pony_wall_ic" value={config.framing_pony_wall_ic ?? 450} onChange={handleChange} prefix="$" />
+            <PricingField label="Pony Wall CP" field="framing_pony_wall_cp" value={config.framing_pony_wall_cp ?? 850} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Floor Leveling */}
+        <CollapsibleSection 
+          title="Floor Leveling" 
+          description="Pitch modification or dip correction"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+            <PricingField label="Small Room IC" field="floor_leveling_small_ic" value={config.floor_leveling_small_ic ?? 300} onChange={handleChange} prefix="$" />
+            <PricingField label="Small Room CP" field="floor_leveling_small_cp" value={config.floor_leveling_small_cp ?? 500} onChange={handleChange} prefix="$" />
+            <PricingField label="Full Bath IC" field="floor_leveling_bath_ic" value={config.floor_leveling_bath_ic ?? 550} onChange={handleChange} prefix="$" />
+            <PricingField label="Full Bath CP" field="floor_leveling_bath_cp" value={config.floor_leveling_bath_cp ?? 900} onChange={handleChange} prefix="$" />
+            <PricingField label="Kitchen IC" field="floor_leveling_kitchen_ic" value={config.floor_leveling_kitchen_ic ?? 900} onChange={handleChange} prefix="$" />
+            <PricingField label="Kitchen CP" field="floor_leveling_kitchen_cp" value={config.floor_leveling_kitchen_cp ?? 1450} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Additional Electrical */}
+        <CollapsibleSection 
+          title="Additional Electrical" 
+          description="Kitchen circuits, relocations, GFCI bundles"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+            <PricingField label="Microwave Circuit CP" field="electrical_microwave_circuit_cp" value={config.electrical_microwave_circuit_cp ?? 550} onChange={handleChange} prefix="$" />
+            <PricingField label="Hood Relocation CP" field="electrical_hood_relocation_cp" value={config.electrical_hood_relocation_cp ?? 550} onChange={handleChange} prefix="$" />
+            <PricingField label="DW/Disposal GFCI CP" field="electrical_dishwasher_disposal_cp" value={config.electrical_dishwasher_disposal_cp ?? 465} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Additional Glass */}
+        <CollapsibleSection 
+          title="Additional Glass Options" 
+          description="90° return and specialty configurations"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+            <PricingField label="90° Return IC" field="glass_90_return_ic" value={config.glass_90_return_ic ?? 1425} onChange={handleChange} prefix="$" />
+            <PricingField label="90° Return CP" field="glass_90_return_cp" value={config.glass_90_return_cp ?? 2775} onChange={handleChange} prefix="$" />
+          </div>
+        </CollapsibleSection>
+
+        {/* Additional Vanity/Counter */}
+        <CollapsibleSection 
+          title="Additional Vanity & Counter" 
+          description="Vanity-only, cutouts, drills"
+        >
+          <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+            <PricingField label='48" Vanity Only CP' field="vanity_only_48_cp" value={config.vanity_only_48_cp ?? 1550} onChange={handleChange} prefix="$" />
+            <PricingField label="Sink Cutout CP" field="quartz_sink_cutout_cp" value={config.quartz_sink_cutout_cp ?? 250} onChange={handleChange} prefix="$" />
+            <PricingField label="Faucet Drill CP" field="quartz_faucet_drill_cp" value={config.quartz_faucet_drill_cp ?? 150} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
