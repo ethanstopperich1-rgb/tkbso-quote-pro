@@ -29,12 +29,22 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-sm font-bold text-primary-foreground">TK</span>
-          </div>
+          {contractor?.settings?.branding?.logoUrl ? (
+            <img 
+              src={contractor.settings.branding.logoUrl} 
+              alt="Company logo" 
+              className="w-10 h-10 rounded-lg object-contain bg-white"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-sm font-bold text-primary-foreground">
+                {(contractor?.settings?.companyProfile?.companyName || contractor?.name || 'TK').slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="font-semibold text-sm text-foreground">
-              {contractor?.name || 'TKBSO'}
+              {contractor?.settings?.companyProfile?.companyName || contractor?.name || 'My Company'}
             </span>
             <span className="text-xs text-muted-foreground">Quote Creator</span>
           </div>
