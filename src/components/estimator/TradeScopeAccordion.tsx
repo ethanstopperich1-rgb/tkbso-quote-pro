@@ -178,6 +178,43 @@ export function TradeScopeAccordion() {
       ),
     },
     {
+      id: 'framing',
+      icon: Package,
+      title: 'Framing & Structure',
+      enabled: trades.includeFraming,
+      onToggle: (val: boolean) => updateTrades({ includeFraming: val, framingType: val ? 'standard' : 'none' }),
+      items: trades.framingType === 'standard' ? [
+        'Standard framing, blocking, and curbs',
+        'Niche/bench blocking as needed',
+        'Header and support framing',
+        'Code-compliant construction',
+      ] : trades.framingType === 'pony_wall' ? [
+        'Pony wall construction',
+        'Blocking and reinforcement',
+        'Cap/ledge preparation',
+      ] : ['No framing work'],
+      hasOptions: trades.includeFraming,
+      options: trades.includeFraming && (
+        <div className="pt-3 border-t mt-3 space-y-3">
+          <div>
+            <Label className="text-xs">Framing Type</Label>
+            <Select
+              value={trades.framingType}
+              onValueChange={(val: 'none' | 'standard' | 'pony_wall') => updateTrades({ framingType: val })}
+            >
+              <SelectTrigger className="mt-1 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard (blocking, curbs, niches)</SelectItem>
+                <SelectItem value="pony_wall">Pony Wall</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      ),
+    },
+    {
       id: 'glass',
       icon: Sparkles,
       title: 'Glass Enclosure',
