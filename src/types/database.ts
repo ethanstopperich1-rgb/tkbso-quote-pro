@@ -139,6 +139,11 @@ export interface PricingConfig {
   vanity_60_bundle_ic: number;
   vanity_60_bundle_cp: number;
   
+  // Material allowances
+  tile_material_allowance_cp_per_sqft: number;
+  plumbing_fixture_allowance_cp: number;
+  mirror_lighting_allowance_cp: number;
+  
   created_at: string;
   updated_at: string;
 }

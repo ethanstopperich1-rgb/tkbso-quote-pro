@@ -112,12 +112,10 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   gc_permit_fee_ic: 2500,
   gc_permit_fee_cp: 2500,
   
-  // Minimums & Margins
-  min_job_ic: 10500,
-  min_job_cp: 15000,
-  target_margin: 0.38,
-  low_range_multiplier: 0.95,
-  high_range_multiplier: 1.05,
+  // Material Allowances
+  tile_material_allowance_cp_per_sqft: 7.85,
+  plumbing_fixture_allowance_cp: 1350,
+  mirror_lighting_allowance_cp: 800,
   
   // Payment Terms
   payment_split_deposit: 0.65,
@@ -192,6 +190,9 @@ const FIELD_HELP: Record<string, string> = {
   vanity_48_bundle_cp: 'Client price for 48" vanity bundle',
   vanity_60_bundle_ic: '60" double vanity + quartz + 2 sinks',
   vanity_60_bundle_cp: 'Client price for 60" double bundle',
+  tile_material_allowance_cp_per_sqft: 'Includes tile, grout, thinset, sealer ($7.5-8.25/sqft range)',
+  plumbing_fixture_allowance_cp: 'Per bathroom: valve/trim, head, handheld, faucet or tub filler ($1,100-1,600 range)',
+  mirror_lighting_allowance_cp: 'Mirror + lighting fixture allowance ($400-1,200 range)',
   payment_split_deposit: 'Deposit percentage (0.65 = 65%) - Bath/Kitchen standard',
   payment_split_progress: 'Progress payment percentage (0.25 = 25%)',
   payment_split_final: 'Final payment percentage (0.10 = 10%)',
@@ -403,7 +404,7 @@ export default function Pricing() {
       {/* Summary Card */}
       <Card className="mb-6 bg-primary/5 border-primary/20">
         <CardContent className="p-6">
-          <div className="grid md:grid-cols-4 gap-4 text-center">
+          <div className="grid md:grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Bath CP/sqft</p>
               <p className="text-2xl font-bold text-primary">
@@ -419,18 +420,11 @@ export default function Pricing() {
               <p className="text-xs text-muted-foreground">Full gut rate</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Target Margin</p>
-              <p className="text-2xl font-bold text-emerald-600">
-                {formatPercentage(config.target_margin)}
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Closet CP/sqft</p>
+              <p className="text-2xl font-bold text-primary">
+                {formatCurrency(config.closet_cp_per_sqft)}
               </p>
-              <p className="text-xs text-muted-foreground">~38% standard</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Min Job</p>
-              <p className="text-2xl font-bold text-amber-600">
-                {formatCurrency(config.min_job_cp)}
-              </p>
-              <p className="text-xs text-muted-foreground">$15k floor</p>
+              <p className="text-xs text-muted-foreground">Build/expansion</p>
             </div>
           </div>
         </CardContent>
@@ -580,17 +574,15 @@ export default function Pricing() {
           </div>
         </CollapsibleSection>
 
-        {/* Minimums & Margins */}
+        {/* Material Allowances */}
         <CollapsibleSection 
-          title="Minimums, Margins & Range" 
-          description="Jobs below minimum rejected automatically"
+          title="Material Allowances" 
+          description="Client-facing allowances for materials not included in labor"
         >
           <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-            <PricingField label="Min Job IC" field="min_job_ic" value={config.min_job_ic} onChange={handleChange} prefix="$" />
-            <PricingField label="Min Job CP" field="min_job_cp" value={config.min_job_cp} onChange={handleChange} prefix="$" />
-            <PricingField label="Target Margin" field="target_margin" value={config.target_margin} onChange={handleChange} step="0.01" />
-            <PricingField label="Low Range Multiplier" field="low_range_multiplier" value={config.low_range_multiplier} onChange={handleChange} step="0.01" suffix="×" />
-            <PricingField label="High Range Multiplier" field="high_range_multiplier" value={config.high_range_multiplier} onChange={handleChange} step="0.01" suffix="×" />
+            <PricingField label="Tile Material CP/sqft" field="tile_material_allowance_cp_per_sqft" value={config.tile_material_allowance_cp_per_sqft ?? 7.85} onChange={handleChange} step="0.25" prefix="$" />
+            <PricingField label="Plumbing Fixtures/Bath CP" field="plumbing_fixture_allowance_cp" value={config.plumbing_fixture_allowance_cp ?? 1350} onChange={handleChange} prefix="$" />
+            <PricingField label="Mirror + Lighting CP" field="mirror_lighting_allowance_cp" value={config.mirror_lighting_allowance_cp ?? 800} onChange={handleChange} prefix="$" />
           </div>
         </CollapsibleSection>
 
