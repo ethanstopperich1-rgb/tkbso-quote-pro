@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
 import { ProposalPdf } from '@/components/pdf/ProposalPdf';
+import { ClientInfoEditCard } from '@/components/estimates/ClientInfoEditCard';
 import { 
   ArrowLeft, 
   Download, 
@@ -461,44 +462,11 @@ export default function EstimateDetail() {
 
         {/* Right Column - Client & Project Info */}
         <div className="space-y-6">
-          {/* Client Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Client Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {estimate.client_name && (
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>{estimate.client_name}</span>
-                </div>
-              )}
-              {estimate.client_email && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{estimate.client_email}</span>
-                </div>
-              )}
-              {estimate.client_phone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{estimate.client_phone}</span>
-                </div>
-              )}
-              {fullAddress && (
-                <div className="flex items-start gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <span>{fullAddress}</span>
-                </div>
-              )}
-              {!estimate.client_name && !estimate.client_email && !fullAddress && (
-                <p className="text-sm text-muted-foreground italic">No client info provided</p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Client Info - Editable */}
+          <ClientInfoEditCard 
+            estimate={estimate} 
+            onUpdate={(updated) => setEstimate({ ...estimate, ...updated })} 
+          />
 
           {/* Project Summary */}
           <Card>
