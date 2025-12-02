@@ -464,6 +464,8 @@ export type Database = {
       }
       pricing_configs: {
         Row: {
+          alcove_builtin_cp: number | null
+          alcove_builtin_ic: number | null
           barrier_cp_per_sqft: number | null
           barrier_ic_per_sqft: number | null
           bath_cp_per_sqft: number | null
@@ -478,6 +480,8 @@ export type Database = {
           cement_board_ic_per_sqft: number | null
           closet_cp_per_sqft: number | null
           closet_ic_per_sqft: number | null
+          closet_reframe_cp: number | null
+          closet_reframe_ic: number | null
           contractor_id: string
           created_at: string | null
           currency: string | null
@@ -490,6 +494,12 @@ export type Database = {
           demo_shower_only_ic: number | null
           demo_small_bath_cp: number | null
           demo_small_bath_ic: number | null
+          door_closure_cp: number | null
+          door_closure_ic: number | null
+          door_relocation_cp: number | null
+          door_relocation_ic: number | null
+          drywall_cp_per_sqft: number | null
+          drywall_ic_per_sqft: number | null
           dumpster_bath_cp: number | null
           dumpster_bath_ic: number | null
           dumpster_kitchen_cp: number | null
@@ -504,6 +514,8 @@ export type Database = {
           electrical_small_package_ic: number | null
           electrical_vanity_light_cp: number | null
           electrical_vanity_light_ic: number | null
+          entrance_enlargement_cp: number | null
+          entrance_enlargement_ic: number | null
           floor_leveling_bath_cp: number | null
           floor_leveling_bath_ic: number | null
           floor_leveling_kitchen_cp: number | null
@@ -581,8 +593,12 @@ export type Database = {
           recessed_can_cp_each: number | null
           recessed_can_ic_each: number | null
           regular_tub_allowance_cp: number | null
+          shower_enlargement_cp: number | null
+          shower_enlargement_ic: number | null
           shower_trim_kit_allowance_cp: number | null
           sink_faucet_allowance_cp: number | null
+          soffit_removal_cp: number | null
+          soffit_removal_ic: number | null
           target_margin: number | null
           tile_floor_cp_per_sqft: number | null
           tile_floor_ic_per_sqft: number | null
@@ -592,8 +608,12 @@ export type Database = {
           tile_wall_cp_per_sqft: number | null
           tile_wall_ic_per_sqft: number | null
           toilet_allowance_cp: number | null
+          toilet_relocation_cp: number | null
+          toilet_relocation_ic: number | null
           tub_allowance_cp: number | null
           tub_filler_allowance_cp: number | null
+          tub_relocation_cp: number | null
+          tub_relocation_ic: number | null
           updated_at: string | null
           vanity_30_bundle_cp: number | null
           vanity_30_bundle_ic: number | null
@@ -610,12 +630,16 @@ export type Database = {
           vanity_84_bundle_cp: number | null
           vanity_84_bundle_ic: number | null
           vanity_only_48_cp: number | null
+          wall_removal_cp: number | null
+          wall_removal_ic: number | null
           wall_tile_labor_margin: number | null
           waterproofing_cp_per_sqft: number | null
           waterproofing_ic_per_sqft: number | null
           waterproofing_margin: number | null
         }
         Insert: {
+          alcove_builtin_cp?: number | null
+          alcove_builtin_ic?: number | null
           barrier_cp_per_sqft?: number | null
           barrier_ic_per_sqft?: number | null
           bath_cp_per_sqft?: number | null
@@ -630,6 +654,8 @@ export type Database = {
           cement_board_ic_per_sqft?: number | null
           closet_cp_per_sqft?: number | null
           closet_ic_per_sqft?: number | null
+          closet_reframe_cp?: number | null
+          closet_reframe_ic?: number | null
           contractor_id: string
           created_at?: string | null
           currency?: string | null
@@ -642,6 +668,12 @@ export type Database = {
           demo_shower_only_ic?: number | null
           demo_small_bath_cp?: number | null
           demo_small_bath_ic?: number | null
+          door_closure_cp?: number | null
+          door_closure_ic?: number | null
+          door_relocation_cp?: number | null
+          door_relocation_ic?: number | null
+          drywall_cp_per_sqft?: number | null
+          drywall_ic_per_sqft?: number | null
           dumpster_bath_cp?: number | null
           dumpster_bath_ic?: number | null
           dumpster_kitchen_cp?: number | null
@@ -656,6 +688,8 @@ export type Database = {
           electrical_small_package_ic?: number | null
           electrical_vanity_light_cp?: number | null
           electrical_vanity_light_ic?: number | null
+          entrance_enlargement_cp?: number | null
+          entrance_enlargement_ic?: number | null
           floor_leveling_bath_cp?: number | null
           floor_leveling_bath_ic?: number | null
           floor_leveling_kitchen_cp?: number | null
@@ -733,8 +767,12 @@ export type Database = {
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
           regular_tub_allowance_cp?: number | null
+          shower_enlargement_cp?: number | null
+          shower_enlargement_ic?: number | null
           shower_trim_kit_allowance_cp?: number | null
           sink_faucet_allowance_cp?: number | null
+          soffit_removal_cp?: number | null
+          soffit_removal_ic?: number | null
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
@@ -744,8 +782,12 @@ export type Database = {
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
           toilet_allowance_cp?: number | null
+          toilet_relocation_cp?: number | null
+          toilet_relocation_ic?: number | null
           tub_allowance_cp?: number | null
           tub_filler_allowance_cp?: number | null
+          tub_relocation_cp?: number | null
+          tub_relocation_ic?: number | null
           updated_at?: string | null
           vanity_30_bundle_cp?: number | null
           vanity_30_bundle_ic?: number | null
@@ -762,12 +804,16 @@ export type Database = {
           vanity_84_bundle_cp?: number | null
           vanity_84_bundle_ic?: number | null
           vanity_only_48_cp?: number | null
+          wall_removal_cp?: number | null
+          wall_removal_ic?: number | null
           wall_tile_labor_margin?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
           waterproofing_margin?: number | null
         }
         Update: {
+          alcove_builtin_cp?: number | null
+          alcove_builtin_ic?: number | null
           barrier_cp_per_sqft?: number | null
           barrier_ic_per_sqft?: number | null
           bath_cp_per_sqft?: number | null
@@ -782,6 +828,8 @@ export type Database = {
           cement_board_ic_per_sqft?: number | null
           closet_cp_per_sqft?: number | null
           closet_ic_per_sqft?: number | null
+          closet_reframe_cp?: number | null
+          closet_reframe_ic?: number | null
           contractor_id?: string
           created_at?: string | null
           currency?: string | null
@@ -794,6 +842,12 @@ export type Database = {
           demo_shower_only_ic?: number | null
           demo_small_bath_cp?: number | null
           demo_small_bath_ic?: number | null
+          door_closure_cp?: number | null
+          door_closure_ic?: number | null
+          door_relocation_cp?: number | null
+          door_relocation_ic?: number | null
+          drywall_cp_per_sqft?: number | null
+          drywall_ic_per_sqft?: number | null
           dumpster_bath_cp?: number | null
           dumpster_bath_ic?: number | null
           dumpster_kitchen_cp?: number | null
@@ -808,6 +862,8 @@ export type Database = {
           electrical_small_package_ic?: number | null
           electrical_vanity_light_cp?: number | null
           electrical_vanity_light_ic?: number | null
+          entrance_enlargement_cp?: number | null
+          entrance_enlargement_ic?: number | null
           floor_leveling_bath_cp?: number | null
           floor_leveling_bath_ic?: number | null
           floor_leveling_kitchen_cp?: number | null
@@ -885,8 +941,12 @@ export type Database = {
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
           regular_tub_allowance_cp?: number | null
+          shower_enlargement_cp?: number | null
+          shower_enlargement_ic?: number | null
           shower_trim_kit_allowance_cp?: number | null
           sink_faucet_allowance_cp?: number | null
+          soffit_removal_cp?: number | null
+          soffit_removal_ic?: number | null
           target_margin?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
@@ -896,8 +956,12 @@ export type Database = {
           tile_wall_cp_per_sqft?: number | null
           tile_wall_ic_per_sqft?: number | null
           toilet_allowance_cp?: number | null
+          toilet_relocation_cp?: number | null
+          toilet_relocation_ic?: number | null
           tub_allowance_cp?: number | null
           tub_filler_allowance_cp?: number | null
+          tub_relocation_cp?: number | null
+          tub_relocation_ic?: number | null
           updated_at?: string | null
           vanity_30_bundle_cp?: number | null
           vanity_30_bundle_ic?: number | null
@@ -914,6 +978,8 @@ export type Database = {
           vanity_84_bundle_cp?: number | null
           vanity_84_bundle_ic?: number | null
           vanity_only_48_cp?: number | null
+          wall_removal_cp?: number | null
+          wall_removal_ic?: number | null
           wall_tile_labor_margin?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
