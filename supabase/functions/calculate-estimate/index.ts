@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Zod schema for AI output validation - AI only extracts, NO math
+// Zod schema for AI output validation
 const EstimateSchema = z.object({
   project_header: z.object({
     client_name: z.string().nullable().optional(),
@@ -27,7 +27,8 @@ const EstimateSchema = z.object({
   }),
   trade_buckets: z.array(
     z.object({
-      trade_name: z.string(), // Maps to trade_buckets_config.trade_name
+      category: z.string(),
+      task_description: z.string(),
       quantity: z.number(),
       unit: z.enum(["sqft", "ea", "lf"]),
     })
@@ -45,147 +46,219 @@ const EstimateSchema = z.object({
 
 type EstimateData = z.infer<typeof EstimateSchema>;
 
-interface TradeBucketConfig {
-  trade_name: string;
-  display_name: string;
-  unit: string;
-  ic_per_unit: number;
-  margin_percent: number;
-  category: string;
+interface PricingConfig {
+  [key: string]: number | string | null;
 }
 
 interface PricingResult {
-  trade_name: string;
-  display_name: string;
   category: string;
+  task_description: string;
   quantity: number;
   unit: string;
   ic_per_unit: number;
+  cp_per_unit: number;
   ic_total: number;
   cp_total: number;
   margin_percent: number;
 }
 
-interface PricingConfig {
-  min_job_cp?: number;
-  min_job_ic?: number;
-  low_range_multiplier?: number;
-  high_range_multiplier?: number;
-  payment_split_deposit?: number;
-  payment_split_progress?: number;
-  payment_split_final?: number;
+// Map trade bucket categories to pricing_configs fields
+function mapCategoryToPricing(
+  category: string,
+  taskDescription: string,
+  config: PricingConfig
+): { ic: number; cp: number; unit: string } | null {
+  const categoryLower = category.toLowerCase();
+  const taskLower = taskDescription.toLowerCase();
+
+  // Demolition
+  if (categoryLower.includes('demo')) {
+    if (taskLower.includes('shower') && taskLower.includes('only')) {
+      return { ic: Number(config.demo_shower_only_ic) || 900, cp: Number(config.demo_shower_only_cp) || 1450, unit: 'ea' };
+    } else if (taskLower.includes('small')) {
+      return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea' };
+    } else if (taskLower.includes('large')) {
+      return { ic: Number(config.demo_large_bath_ic) || 1650, cp: Number(config.demo_large_bath_cp) || 2500, unit: 'ea' };
+    } else if (taskLower.includes('kitchen')) {
+      return { ic: Number(config.demo_kitchen_ic) || 1750, cp: Number(config.demo_kitchen_cp) || 2800, unit: 'ea' };
+    }
+    return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea' };
+  }
+
+  // Plumbing
+  if (categoryLower.includes('plumb')) {
+    if (taskLower.includes('toilet') && !taskLower.includes('relocation')) {
+      return { ic: Number(config.plumbing_toilet_ic) || 350, cp: Number(config.plumbing_toilet_cp) || 690, unit: 'ea' };
+    } else if (taskLower.includes('shower') && taskLower.includes('standard')) {
+      return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea' };
+    } else if (taskLower.includes('extra head') || taskLower.includes('additional head')) {
+      return { ic: Number(config.plumbing_extra_head_ic) || 625, cp: Number(config.plumbing_extra_head_cp) || 1100, unit: 'ea' };
+    } else if (taskLower.includes('freestanding')) {
+      return { ic: Number(config.plumbing_tub_freestanding_ic) || 3300, cp: Number(config.plumbing_tub_freestanding_cp) || 4800, unit: 'ea' };
+    } else if (taskLower.includes('tub to shower') || taskLower.includes('conversion')) {
+      return { ic: Number(config.plumbing_tub_to_shower_ic) || 2550, cp: Number(config.plumbing_tub_to_shower_cp) || 4200, unit: 'ea' };
+    } else if (taskLower.includes('linear drain')) {
+      return { ic: Number(config.plumbing_linear_drain_ic) || 750, cp: Number(config.plumbing_linear_drain_cp) || 1550, unit: 'ea' };
+    } else if (taskLower.includes('smart valve')) {
+      return { ic: Number(config.plumbing_smart_valve_ic) || 1350, cp: Number(config.plumbing_smart_valve_cp) || 2450, unit: 'ea' };
+    }
+    return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea' };
+  }
+
+  // Tile
+  if (categoryLower.includes('tile')) {
+    if (taskLower.includes('wall')) {
+      return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
+    } else if (taskLower.includes('shower floor')) {
+      return { ic: Number(config.tile_shower_floor_ic_per_sqft) || 6, cp: Number(config.tile_shower_floor_cp_per_sqft) || 14, unit: 'sqft' };
+    } else if (taskLower.includes('floor') || taskLower.includes('main floor')) {
+      return { ic: Number(config.tile_floor_ic_per_sqft) || 5.5, cp: Number(config.tile_floor_cp_per_sqft) || 12, unit: 'sqft' };
+    }
+    return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
+  }
+
+  // Waterproofing / Support Work
+  if (categoryLower.includes('waterproof') || (categoryLower.includes('support') && taskLower.includes('waterproof'))) {
+    return { ic: Number(config.waterproofing_ic_per_sqft) || 6, cp: Number(config.waterproofing_cp_per_sqft) || 13, unit: 'sqft' };
+  }
+
+  // Cement Board
+  if (categoryLower.includes('cement') || (categoryLower.includes('support') && taskLower.includes('cement'))) {
+    return { ic: Number(config.cement_board_ic_per_sqft) || 3, cp: Number(config.cement_board_cp_per_sqft) || 5, unit: 'sqft' };
+  }
+
+  // Electrical
+  if (categoryLower.includes('electric')) {
+    if (taskLower.includes('recessed') || taskLower.includes('can')) {
+      return { ic: Number(config.recessed_can_ic_each) || 65, cp: Number(config.recessed_can_cp_each) || 110, unit: 'ea' };
+    } else if (taskLower.includes('vanity light')) {
+      return { ic: Number(config.electrical_vanity_light_ic) || 200, cp: Number(config.electrical_vanity_light_cp) || 350, unit: 'ea' };
+    } else if (taskLower.includes('kitchen')) {
+      return { ic: Number(config.electrical_kitchen_package_ic) || 950, cp: Number(config.electrical_kitchen_package_cp) || 1750, unit: 'ea' };
+    }
+    return { ic: Number(config.electrical_small_package_ic) || 250, cp: Number(config.electrical_small_package_cp) || 400, unit: 'ea' };
+  }
+
+  // Framing
+  if (categoryLower.includes('fram')) {
+    if (taskLower.includes('niche')) {
+      return { ic: Number(config.niche_ic_each) || 300, cp: Number(config.niche_cp_each) || 550, unit: 'ea' };
+    } else if (taskLower.includes('pony wall')) {
+      return { ic: Number(config.framing_pony_wall_ic) || 450, cp: Number(config.framing_pony_wall_cp) || 850, unit: 'ea' };
+    }
+    return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea' };
+  }
+
+  // Glass
+  if (categoryLower.includes('glass')) {
+    if (taskLower.includes('90') || taskLower.includes('return')) {
+      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea' };
+    } else if (taskLower.includes('panel only')) {
+      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1450, unit: 'ea' };
+    }
+    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2100, unit: 'ea' };
+  }
+
+  // Paint
+  if (categoryLower.includes('paint')) {
+    if (taskLower.includes('full')) {
+      return { ic: Number(config.paint_full_bath_ic) || 1200, cp: Number(config.paint_full_bath_cp) || 1900, unit: 'ea' };
+    }
+    return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1000, unit: 'ea' };
+  }
+
+  // Vanity
+  if (categoryLower.includes('vanity')) {
+    if (taskLower.includes('30')) {
+      return { ic: Number(config.vanity_30_bundle_ic) || 1100, cp: Number(config.vanity_30_bundle_cp) || 1800, unit: 'ea' };
+    } else if (taskLower.includes('36')) {
+      return { ic: Number(config.vanity_36_bundle_ic) || 1300, cp: Number(config.vanity_36_bundle_cp) || 2100, unit: 'ea' };
+    } else if (taskLower.includes('48')) {
+      return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea' };
+    } else if (taskLower.includes('54')) {
+      return { ic: Number(config.vanity_54_bundle_ic) || 1900, cp: Number(config.vanity_54_bundle_cp) || 3000, unit: 'ea' };
+    } else if (taskLower.includes('60')) {
+      return { ic: Number(config.vanity_60_bundle_ic) || 2200, cp: Number(config.vanity_60_bundle_cp) || 3500, unit: 'ea' };
+    } else if (taskLower.includes('72')) {
+      return { ic: Number(config.vanity_72_bundle_ic) || 2600, cp: Number(config.vanity_72_bundle_cp) || 4200, unit: 'ea' };
+    } else if (taskLower.includes('84')) {
+      return { ic: Number(config.vanity_84_bundle_ic) || 3200, cp: Number(config.vanity_84_bundle_cp) || 5000, unit: 'ea' };
+    }
+    return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea' };
+  }
+
+  // Quartz/Countertops
+  if (categoryLower.includes('quartz') || categoryLower.includes('countertop')) {
+    return { ic: Number(config.quartz_ic_per_sqft) || 15, cp: Number(config.quartz_cp_per_sqft) || 50, unit: 'sqft' };
+  }
+
+  return null;
 }
 
-// SANITY CHECK THRESHOLD: $320/sqft max
-const SANITY_CHECK_THRESHOLD = 320;
-
-/**
- * CORE CALCULATION: CP = IC × Quantity / (1 - Margin)
- * This is the unbreakable pricing formula
- */
-function calculateCpFromIc(icPerUnit: number, quantity: number, margin: number): number {
-  if (margin >= 1) margin = 0.38; // Fallback if margin is 100%+
-  return (icPerUnit * quantity) / (1 - margin);
-}
-
-function calculatePricing(
-  tradeBuckets: EstimateData['trade_buckets'],
-  tradeBucketsConfig: TradeBucketConfig[],
-  pricingConfig: PricingConfig,
-  totalSqft: number
-) {
+function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: PricingConfig) {
   const lineItems: PricingResult[] = [];
   const warnings: string[] = [];
 
-  // Build lookup map for O(1) access
-  const configMap = new Map<string, TradeBucketConfig>();
-  for (const config of tradeBucketsConfig) {
-    configMap.set(config.trade_name, config);
-  }
-
-  // Process each trade bucket from AI
   for (const bucket of tradeBuckets) {
-    const config = configMap.get(bucket.trade_name);
+    const mapping = mapCategoryToPricing(bucket.category, bucket.task_description, config);
 
-    if (!config) {
-      warnings.push(`No pricing config found for trade: ${bucket.trade_name}`);
+    if (!mapping) {
+      warnings.push(`No pricing found for: ${bucket.category} - ${bucket.task_description}`);
       continue;
     }
 
-    const icTotal = config.ic_per_unit * bucket.quantity;
-    const cpTotal = calculateCpFromIc(config.ic_per_unit, bucket.quantity, config.margin_percent);
-    
+    const icTotal = mapping.ic * bucket.quantity;
+    const cpTotal = mapping.cp * bucket.quantity;
+    const marginPercent = cpTotal > 0 ? ((cpTotal - icTotal) / cpTotal) * 100 : 0;
+
     lineItems.push({
-      trade_name: bucket.trade_name,
-      display_name: config.display_name,
-      category: config.category,
+      category: bucket.category,
+      task_description: bucket.task_description,
       quantity: bucket.quantity,
-      unit: bucket.unit || config.unit,
-      ic_per_unit: config.ic_per_unit,
-      ic_total: Math.round(icTotal * 100) / 100,
-      cp_total: Math.round(cpTotal * 100) / 100,
-      margin_percent: Math.round(config.margin_percent * 100),
+      unit: bucket.unit || mapping.unit,
+      ic_per_unit: mapping.ic,
+      cp_per_unit: mapping.cp,
+      ic_total: icTotal,
+      cp_total: cpTotal,
+      margin_percent: marginPercent,
     });
   }
 
-  // Calculate totals
   const totalIc = lineItems.reduce((sum, item) => sum + item.ic_total, 0);
   const totalCp = lineItems.reduce((sum, item) => sum + item.cp_total, 0);
   const overallMargin = totalCp > 0 ? ((totalCp - totalIc) / totalCp) * 100 : 0;
 
   // Apply minimum job pricing
-  const minJobCp = pricingConfig.min_job_cp || 15000;
-  const minJobIc = pricingConfig.min_job_ic || 10500;
+  const minJobCp = Number(config.min_job_cp) || 15000;
+  const minJobIc = Number(config.min_job_ic) || 10500;
 
   let finalTotalCp = totalCp;
   let finalTotalIc = totalIc;
-  let appliedMinJob = false;
 
   if (totalCp < minJobCp) {
     finalTotalCp = minJobCp;
     finalTotalIc = Math.max(totalIc, minJobIc);
-    appliedMinJob = true;
     warnings.push(`Applied minimum job pricing: $${minJobCp.toLocaleString()}`);
   }
 
-  // SANITY CHECK: Total CP / sqft must not exceed $320
-  let sanityCheckFailed = false;
-  let pricePerSqft = 0;
-  
-  if (totalSqft > 0) {
-    pricePerSqft = finalTotalCp / totalSqft;
-    if (pricePerSqft > SANITY_CHECK_THRESHOLD) {
-      sanityCheckFailed = true;
-      warnings.push(`⚠️ SANITY CHECK FAILED: Price exceeds $${SANITY_CHECK_THRESHOLD}/sqft threshold (calculated: $${pricePerSqft.toFixed(0)}/sqft). REVIEW LINE ITEMS.`);
-    }
-  }
-
   // Calculate range
-  const lowMultiplier = pricingConfig.low_range_multiplier || 0.95;
-  const highMultiplier = pricingConfig.high_range_multiplier || 1.05;
+  const lowMultiplier = Number(config.low_range_multiplier) || 0.95;
+  const highMultiplier = Number(config.high_range_multiplier) || 1.05;
 
   return {
     line_items: lineItems,
     totals: {
-      total_ic: Math.round(finalTotalIc),
-      total_cp: Math.round(finalTotalCp),
+      total_ic: finalTotalIc,
+      total_cp: finalTotalCp,
       low_estimate: Math.round(finalTotalCp * lowMultiplier),
       high_estimate: Math.round(finalTotalCp * highMultiplier),
-      overall_margin_percent: Math.round(overallMargin * 10) / 10,
-      price_per_sqft: Math.round(pricePerSqft),
-      applied_min_job: appliedMinJob,
-    },
-    sanity_check: {
-      passed: !sanityCheckFailed,
-      threshold: SANITY_CHECK_THRESHOLD,
-      calculated_per_sqft: Math.round(pricePerSqft),
-      total_sqft: totalSqft,
+      overall_margin_percent: finalTotalCp > 0 ? ((finalTotalCp - finalTotalIc) / finalTotalCp) * 100 : 0,
     },
     warnings,
   };
 }
 
-// JSON Schema for tool calling - AI extracts trade_name, quantity, unit ONLY
+// JSON Schema for tool calling
 const estimateJsonSchema = {
   type: "object",
   properties: {
@@ -218,11 +291,12 @@ const estimateJsonSchema = {
       items: {
         type: "object",
         properties: {
-          trade_name: { type: "string", description: "Must match exactly: demo_shower_only, demo_small_bath, demo_large_bath, demo_kitchen, dumpster_bath, dumpster_kitchen, framing_standard, framing_niche, framing_pony_wall, tile_wall, tile_shower_floor, tile_main_floor, waterproofing, cement_board, floor_leveling, plumbing_shower_standard, plumbing_extra_head, plumbing_toilet, plumbing_tub_to_shower, plumbing_freestanding_tub, plumbing_linear_drain, plumbing_smart_valve, electrical_recessed_can, electrical_vanity_light, electrical_small_package, electrical_kitchen_package, paint_patch, paint_full_bath, glass_shower_standard, glass_panel_only, glass_90_return, vanity_30, vanity_36, vanity_48, vanity_54, vanity_60, vanity_72, vanity_84, quartz_countertop" },
+          category: { type: "string" },
+          task_description: { type: "string" },
           quantity: { type: "number" },
           unit: { type: "string", enum: ["sqft", "ea", "lf"] }
         },
-        required: ["trade_name", "quantity", "unit"]
+        required: ["category", "task_description", "quantity", "unit"]
       }
     },
     allowances: { type: "array", items: { type: "object", properties: { item: { type: "string" }, quantity: { type: "number" }, notes: { type: "string" } }, required: ["item", "quantity"] } },
@@ -232,48 +306,41 @@ const estimateJsonSchema = {
   required: ["project_header", "dimensions", "trade_buckets"]
 };
 
-// System prompt - AI does NO math, only extraction
 const systemPrompt = `### SYSTEM: Construction Estimator AI (TKE)
 
-You EXTRACT structured data from natural language project descriptions. You do NO pricing math - that happens in code.
+You convert natural language project descriptions into structured pricing payloads.
 
-**YOUR ONLY JOB**: Extract trade_name, quantity, and unit for each task.
-
-**VALID TRADE NAMES** (use EXACTLY these values):
-- demo_shower_only, demo_small_bath, demo_large_bath, demo_kitchen
-- dumpster_bath, dumpster_kitchen  
-- framing_standard, framing_niche, framing_pony_wall
-- tile_wall (sqft), tile_shower_floor (sqft), tile_main_floor (sqft)
-- waterproofing (sqft), cement_board (sqft), floor_leveling (ea)
-- plumbing_shower_standard, plumbing_extra_head, plumbing_toilet, plumbing_tub_to_shower, plumbing_freestanding_tub, plumbing_linear_drain, plumbing_smart_valve
-- electrical_recessed_can (ea), electrical_vanity_light (ea), electrical_small_package, electrical_kitchen_package
-- paint_patch, paint_full_bath
-- glass_shower_standard, glass_panel_only, glass_90_return
-- vanity_30, vanity_36, vanity_48, vanity_54, vanity_60, vanity_72, vanity_84
-- quartz_countertop (sqft)
-
-**MEASUREMENT RULES (for dimensions + sqft calculations):**
-- Room floor sqft = room_length × room_width
+**MEASUREMENT RULES:**
+- Room floor sqft = length × width
 - Shower floor sqft = shower_length × shower_width  
 - Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
-- Main floor sqft = room_floor_sqft - shower_floor_sqft
 - Default ceiling height: 8ft
-- Waterproofing sqft = tile_wall_sqft + tile_shower_floor_sqft
-- Cement board sqft = tile_wall_sqft + tile_shower_floor_sqft
 
-**SCOPE INFERENCE:**
-- "Full gut" → Demo + all typical trades for room type
-- "Shower remodel" → demo_shower_only + plumbing_shower_standard + tile_wall + tile_shower_floor + waterproofing + cement_board + glass
-- "48in vanity" → vanity_48
-- Always include waterproofing and cement_board when there's tile work
-- Include dumpster_bath or dumpster_kitchen for demolition jobs
+**TRADE BUCKET MAPPING:**
 
-**DEMO SIZE RULES:**
-- Shower only (<20 sqft room or "shower remodel") → demo_shower_only
-- Small bath (<50 sqft) → demo_small_bath
-- Large bath (50+ sqft) → demo_large_bath
+**Demolition:** demo_shower_only (showers <20 sqft), demo_small_bath (<50 sqft), demo_large_bath (50+ sqft), demo_kitchen
 
-IMPORTANT: Output trade_name values EXACTLY as listed above. Code will match these to database.`;
+**Plumbing:** Plumbing - Shower Standard, Plumbing - Extra Head, Plumbing - Toilet Swap, Plumbing - Tub to Shower, Plumbing - Freestanding Tub
+
+**Tile:** Tile - Wall (sqft), Tile - Shower Floor (sqft), Tile - Main Floor (sqft)
+
+**Support:** Waterproofing (=total tile sqft), Cement Board (=total tile sqft)
+
+**Electrical:** Electrical - Recessed Can (ea), Electrical - Vanity Light (ea)
+
+**Glass:** Glass - Shower Standard, Glass - Panel Only, Glass - 90 Return
+
+**Vanity:** Vanity - 30in through Vanity - 84in
+
+**Framing:** Framing - Standard, Framing - Niche (ea)
+
+**Paint:** Paint - Patch, Paint - Full Bath
+
+**INFERENCE:**
+- "Full gut" → Demo + all trades
+- "Shower remodel" → Demo + plumbing + tile + waterproofing + cement board + glass
+- "Tile to ceiling" → Calculate full wall height
+- Always include waterproofing + cement board = total tile sqft`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -292,36 +359,21 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Step 1: Fetch trade buckets config for contractor
-    console.log("Fetching trade_buckets_config for contractor:", contractor_id);
-    const { data: tradeBucketsConfig, error: bucketsError } = await supabase
-      .from('trade_buckets_config')
-      .select('trade_name, display_name, unit, ic_per_unit, margin_percent, category')
-      .eq('contractor_id', contractor_id)
-      .eq('is_active', true);
-
-    if (bucketsError) {
-      console.error("Error fetching trade buckets config:", bucketsError);
-      throw new Error("Failed to fetch trade buckets configuration");
-    }
-
-    if (!tradeBucketsConfig || tradeBucketsConfig.length === 0) {
-      throw new Error("No trade buckets configured for this contractor");
-    }
-
-    // Step 2: Fetch pricing config for min job, payment splits
+    // Step 1: Fetch pricing config for contractor
+    console.log("Fetching pricing config for contractor:", contractor_id);
     const { data: pricingConfig, error: configError } = await supabase
       .from('pricing_configs')
-      .select('min_job_cp, min_job_ic, low_range_multiplier, high_range_multiplier, payment_split_deposit, payment_split_progress, payment_split_final')
+      .select('*')
       .eq('contractor_id', contractor_id)
       .single();
 
     if (configError) {
       console.error("Error fetching pricing config:", configError);
+      throw new Error("Failed to fetch pricing configuration");
     }
 
-    // Step 3: Call AI to extract structured data (NO PRICING MATH)
-    console.log("Calling AI for data extraction:", message);
+    // Step 2: Call AI to parse project description
+    console.log("Calling AI with message:", message);
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -338,7 +390,7 @@ serve(async (req) => {
           type: "function",
           function: {
             name: "generate_estimate",
-            description: "Extract structured construction estimate data",
+            description: "Generate a structured construction estimate",
             parameters: estimateJsonSchema
           }
         }],
@@ -362,7 +414,7 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    console.log("AI extraction complete");
+    console.log("AI response received");
 
     // Extract tool call
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
@@ -383,40 +435,22 @@ serve(async (req) => {
       });
     }
 
-    // Calculate total sqft for sanity check
-    const dims = validated.data.dimensions;
-    const roomSqft = (dims.room_length_ft && dims.room_width_ft) 
-      ? dims.room_length_ft * dims.room_width_ft 
-      : validated.data.project_header.overall_size_sqft || 0;
-    const totalSqft = roomSqft || (dims.main_floor_sqft || 0) + (dims.shower_floor_sqft || 0);
+    // Step 3: Calculate pricing
+    console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets");
+    const pricing = calculatePricing(validated.data.trade_buckets, pricingConfig);
 
-    // Step 4: Calculate pricing using database-driven rates
-    console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets, total sqft:", totalSqft);
-    const pricing = calculatePricing(
-      validated.data.trade_buckets, 
-      tradeBucketsConfig as TradeBucketConfig[],
-      pricingConfig || {},
-      totalSqft
-    );
-
-    // Step 5: Build payment schedule
-    const paymentSchedule = {
-      deposit: Math.round(pricing.totals.total_cp * (pricingConfig?.payment_split_deposit || 0.65)),
-      progress: Math.round(pricing.totals.total_cp * (pricingConfig?.payment_split_progress || 0.25)),
-      final: Math.round(pricing.totals.total_cp * (pricingConfig?.payment_split_final || 0.10)),
-    };
-
-    // Step 6: Combine results
+    // Step 4: Combine results
     const result = {
       ...validated.data,
       pricing,
-      payment_schedule: paymentSchedule,
+      payment_schedule: {
+        deposit: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_deposit) || 0.65)),
+        progress: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_progress) || 0.25)),
+        final: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_final) || 0.10)),
+      }
     };
 
-    console.log("Final result - Total CP:", pricing.totals.total_cp, 
-      "Margin:", pricing.totals.overall_margin_percent + "%",
-      "$/sqft:", pricing.totals.price_per_sqft,
-      "Sanity check:", pricing.sanity_check.passed ? "PASSED" : "FAILED");
+    console.log("Final result - Total CP:", pricing.totals.total_cp, "Margin:", pricing.totals.overall_margin_percent.toFixed(1) + "%");
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

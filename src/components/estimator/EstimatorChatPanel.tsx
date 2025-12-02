@@ -5,28 +5,21 @@ import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 interface PricingLineItem {
-  trade_name: string;
-  display_name: string;
   category: string;
+  task_description: string;
   quantity: number;
   unit: string;
   ic_per_unit: number;
+  cp_per_unit: number;
   ic_total: number;
   cp_total: number;
   margin_percent: number;
-}
-
-interface SanityCheck {
-  passed: boolean;
-  threshold: number;
-  calculated_per_sqft: number;
-  total_sqft: number;
 }
 
 interface EstimateResponse {
@@ -44,7 +37,8 @@ interface EstimateResponse {
     main_floor_sqft?: number | null;
   };
   trade_buckets: Array<{
-    trade_name: string;
+    category: string;
+    task_description: string;
     quantity: number;
     unit: string;
   }>;
@@ -56,10 +50,7 @@ interface EstimateResponse {
       low_estimate: number;
       high_estimate: number;
       overall_margin_percent: number;
-      price_per_sqft: number;
-      applied_min_job: boolean;
     };
-    sanity_check: SanityCheck;
     warnings: string[];
   };
   payment_schedule: {
@@ -143,18 +134,16 @@ export function EstimatorChatPanel() {
     }
 
     try {
-      const roomSqft = (data.dimensions.room_length_ft && data.dimensions.room_width_ft) 
-        ? data.dimensions.room_length_ft * data.dimensions.room_width_ft 
-        : data.project_header.overall_size_sqft || 0;
-
       const estimateData = {
         contractor_id: contractor.id,
         created_by_profile_id: profile?.id || null,
         job_label: `${data.project_header.project_type} Remodel`,
         has_kitchen: data.project_header.project_type === 'Kitchen',
         has_bathrooms: data.project_header.project_type === 'Bathroom',
-        total_bathroom_sqft: data.project_header.project_type === 'Bathroom' ? roomSqft : 0,
-        total_kitchen_sqft: data.project_header.project_type === 'Kitchen' ? roomSqft : 0,
+        total_bathroom_sqft: data.project_header.project_type === 'Bathroom' 
+          ? (data.project_header.overall_size_sqft || 0) : 0,
+        total_kitchen_sqft: data.project_header.project_type === 'Kitchen' 
+          ? (data.project_header.overall_size_sqft || 0) : 0,
         bath_wall_tile_sqft: data.dimensions.shower_wall_sqft || 0,
         bath_shower_floor_tile_sqft: data.dimensions.shower_floor_sqft || 0,
         final_cp_total: data.pricing.totals.total_cp,
@@ -241,23 +230,17 @@ export function EstimatorChatPanel() {
         '',
       ];
       
-      if (response.pricing.sanity_check.total_sqft > 0) {
-        summaryParts.push(`📐 **Size:** ${response.pricing.sanity_check.total_sqft} sq ft • $${response.pricing.totals.price_per_sqft}/sqft`);
+      if (response.project_header.overall_size_sqft) {
+        summaryParts.push(`📐 **Size:** ${response.project_header.overall_size_sqft} sq ft`);
       }
       
-      summaryParts.push(`🔧 **Scope:** ${response.pricing.line_items.length} trade items`);
+      summaryParts.push(`🔧 **Scope:** ${response.trade_buckets.length} trade items`);
       summaryParts.push('');
       summaryParts.push(`**Investment Range:** ${formatCurrency(response.pricing.totals.low_estimate)} - ${formatCurrency(response.pricing.totals.high_estimate)}`);
       
-      // Add sanity check warning to message
-      if (!response.pricing.sanity_check.passed) {
-        summaryParts.push('');
-        summaryParts.push('🚨 **SANITY CHECK FAILED** - Price exceeds $320/sqft threshold. Review line items.');
-      }
-      
       if (response.pricing.warnings.length > 0) {
         summaryParts.push('');
-        summaryParts.push('⚠️ ' + response.pricing.warnings.filter(w => !w.includes('SANITY CHECK')).join(' | '));
+        summaryParts.push('⚠️ ' + response.pricing.warnings.join(' | '));
       }
       
       addAssistantMessage(summaryParts.join('\n'));
@@ -304,8 +287,6 @@ export function EstimatorChatPanel() {
     return acc;
   }, {} as Record<string, PricingLineItem[]>) || {};
 
-  const sanityCheckFailed = estimate?.pricing?.sanity_check && !estimate.pricing.sanity_check.passed;
-
   return (
     <div className="flex flex-col h-full glass-card-active relative overflow-hidden">
       {/* Subtle glow effect */}
@@ -321,7 +302,7 @@ export function EstimatorChatPanel() {
           </div>
           <div>
             <h2 className="font-display font-semibold text-lg text-foreground tracking-tight">AI Estimator</h2>
-            <p className="text-sm text-muted-foreground">Powered by database-driven pricing</p>
+            <p className="text-sm text-muted-foreground">Powered by real pricing data</p>
           </div>
         </div>
         <Button
@@ -356,38 +337,18 @@ export function EstimatorChatPanel() {
 
         {/* Quote Summary Card */}
         {estimate && (
-          <Card className={`animate-scale-in shadow-lg ${sanityCheckFailed ? 'border-destructive border-2' : 'border-primary/20'}`}>
+          <Card className="animate-scale-in border-primary/20 shadow-lg">
             <CardContent className="p-6">
-              {/* SANITY CHECK WARNING BANNER */}
-              {sanityCheckFailed && (
-                <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-xl flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-semibold text-destructive">Sanity Check Failed</h4>
-                    <p className="text-sm text-destructive/80 mt-1">
-                      Price exceeds ${estimate.pricing.sanity_check.threshold}/sqft threshold 
-                      (calculated: ${estimate.pricing.sanity_check.calculated_per_sqft}/sqft for {estimate.pricing.sanity_check.total_sqft} sqft).
-                      <strong className="block mt-1">Review line items before sending to customer.</strong>
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {/* Header with total */}
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="font-display font-semibold text-xl tracking-tight">Quote Ready</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {estimate.pricing.line_items.length} line items • {estimate.pricing.totals.overall_margin_percent}% margin
-                    {estimate.pricing.sanity_check.total_sqft > 0 && (
-                      <span className={sanityCheckFailed ? 'text-destructive font-medium' : ''}>
-                        {' '}• ${estimate.pricing.totals.price_per_sqft}/sqft
-                      </span>
-                    )}
+                    {estimate.trade_buckets.length} line items • {estimate.pricing.totals.overall_margin_percent.toFixed(0)}% margin
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className={`text-3xl font-bold ${sanityCheckFailed ? 'text-destructive' : 'text-primary'}`}>
+                  <div className="text-3xl font-bold text-primary">
                     {formatCurrency(estimate.pricing.totals.total_cp)}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -433,7 +394,7 @@ export function EstimatorChatPanel() {
                         {items.map((item, idx) => (
                           <div key={idx} className="flex items-center justify-between text-sm py-1">
                             <div className="flex-1">
-                              <span className="text-foreground">{item.display_name}</span>
+                              <span className="text-foreground">{item.task_description}</span>
                               <span className="text-muted-foreground ml-2">
                                 ({item.quantity} {item.unit})
                               </span>
@@ -460,9 +421,7 @@ export function EstimatorChatPanel() {
                     </div>
                     <div className="flex justify-between text-sm mt-1">
                       <span className="text-muted-foreground">Client Price</span>
-                      <span className={`font-semibold ${sanityCheckFailed ? 'text-destructive' : 'text-primary'}`}>
-                        {formatCurrency(estimate.pricing.totals.total_cp)}
-                      </span>
+                      <span className="font-semibold text-primary">{formatCurrency(estimate.pricing.totals.total_cp)}</span>
                     </div>
                     <div className="flex justify-between text-sm mt-1">
                       <span className="text-muted-foreground">Profit</span>
@@ -474,26 +433,14 @@ export function EstimatorChatPanel() {
                 </div>
               )}
 
-              {/* Warnings */}
-              {estimate.pricing.warnings.length > 0 && (
-                <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <div className="text-xs text-amber-600 space-y-1">
-                    {estimate.pricing.warnings.map((warning, idx) => (
-                      <p key={idx}>{warning}</p>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Action Buttons */}
               <div className="flex gap-3 mt-6">
                 <Button 
                   onClick={handleViewEstimate}
                   className="flex-1"
                   disabled={!savedEstimateId}
-                  variant={sanityCheckFailed ? "destructive" : "default"}
                 >
-                  {sanityCheckFailed ? 'Review & Fix' : 'View Details'}
+                  View Details
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
                 <Button 
