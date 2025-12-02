@@ -1,10 +1,262 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { EstimateSchema } from "./schemas.ts";
+import { EstimateSchema, type EstimateData } from "./schemas.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+// JSON Schema definition for tool calling (matches Zod schema)
+const estimateJsonSchema = {
+  type: "object",
+  properties: {
+    project_header: {
+      type: "object",
+      properties: {
+        client_name: { type: ["string", "null"] },
+        project_type: { type: "string", enum: ["Kitchen", "Bathroom", "Combination", "Other"] },
+        overall_size_sqft: { type: ["number", "null"] }
+      },
+      required: ["project_type"]
+    },
+    dimensions: {
+      type: "object",
+      properties: {
+        ceiling_height_ft: { type: "number" },
+        room_length_ft: { type: ["number", "null"] },
+        room_width_ft: { type: ["number", "null"] },
+        shower_length_ft: { type: ["number", "null"] },
+        shower_width_ft: { type: ["number", "null"] },
+        shower_floor_sqft: { type: ["number", "null"] },
+        shower_wall_sqft: { type: ["number", "null"] },
+        main_floor_sqft: { type: ["number", "null"] },
+        countertop_sqft: { type: ["number", "null"] }
+      },
+      required: ["ceiling_height_ft"]
+    },
+    trade_buckets: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          category: { type: "string" },
+          task_description: { type: "string" },
+          quantity: { type: "number" },
+          unit: { type: "string", enum: ["sqft", "ea", "lf"] }
+        },
+        required: ["category", "task_description", "quantity", "unit"]
+      }
+    },
+    allowances: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          item: { type: "string" },
+          quantity: { type: "number" },
+          notes: { type: "string" }
+        },
+        required: ["item", "quantity"]
+      }
+    },
+    exclusions: {
+      type: "array",
+      items: { type: "string" }
+    },
+    warnings: {
+      type: "array",
+      items: { type: "string" }
+    }
+  },
+  required: ["project_header", "dimensions", "trade_buckets"]
+};
+
+const systemPrompt = `### SYSTEM INSTRUCTION: Construction Estimator AI (TKE)
+
+**IDENTITY:**
+You are "TKE" (The Knowledgeable Estimator) - a precision-focused AI that converts natural language project descriptions into structured pricing payloads.
+
+**CRITICAL MEASUREMENT RULES:**
+
+1. **Bathroom Calculations:**
+   - Room floor sqft = length × width
+   - Shower floor sqft = shower_length × shower_width
+   - Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
+   - Example: "5x8 bathroom with 3x5 shower at 8ft ceiling"
+     → room: 40 sqft, shower floor: 15 sqft, shower walls: 128 sqft
+
+2. **Always Extract:**
+   - Ceiling height (default 8ft if not mentioned)
+   - Room dimensions (length × width)
+   - Shower dimensions separately from room
+   - Fixture counts (lights, heads, niches)
+
+3. **Trade Bucket Mapping:**
+   
+   **Demolition:**
+   - "demo_shower_only" → showers < 20 sqft, qty: 1
+   - "demo_small_bath" → bathrooms < 50 sqft, qty: 1
+   - "demo_large_bath" → bathrooms 50+ sqft, qty: 1
+   - "demo_kitchen" → kitchens, qty: 1
+   
+   **Plumbing:**
+   - "Plumbing - Shower Standard" → base shower rough-in, qty: 1
+   - "Plumbing - Extra Head" → each additional head beyond 1, qty: count
+   - "Plumbing - Toilet Swap" → toilet replacement, qty: count
+   - "Plumbing - Tub to Shower" → conversion, qty: 1
+   - "Plumbing - Freestanding Tub" → freestanding tub install, qty: 1
+   
+   **Tile:**
+   - "Tile - Wall" → shower/tub walls, qty: exact sqft
+   - "Tile - Shower Floor" → shower pan area, qty: exact sqft
+   - "Tile - Main Floor" → bathroom floor (minus shower), qty: exact sqft
+   
+   **Support Work:**
+   - "Waterproofing" → qty: total tile sqft
+   - "Cement Board" → qty: total tile sqft
+   
+   **Electrical:**
+   - "Electrical - Recessed Can" → qty: each light
+   - "Electrical - Vanity Light" → qty: each fixture
+   
+   **Glass:**
+   - "Glass - Shower Standard" → door + panel, qty: 1
+   - "Glass - Panel Only" → fixed panel, qty: 1
+   - "Glass - 90 Return" → corner enclosure, qty: 1
+   
+   **Vanity:**
+   - "Vanity - 30in" through "Vanity - 84in", qty: 1
+   - Include quartz countertop sqft if vanity mentioned
+   
+   **Framing:**
+   - "Framing - Standard" → blocking/support, qty: 1
+   - "Framing - Niche" → qty: each niche
+   
+   **Paint:**
+   - "Paint - Patch" → touch-up work, qty: 1
+   - "Paint - Full Bath" → complete paint, qty: 1
+
+4. **Inference Rules:**
+   - "Full gut remodel" → Demo + all trades
+   - "Shower remodel" → Demo + plumbing + tile + waterproofing + cement board + glass
+   - "Tile to ceiling" → Calculate full wall height
+   - No glass mentioned in shower → Still include if frameless/glass keywords present
+
+5. **Required Output:**
+   Always populate:
+   - project_header with type and size
+   - dimensions with all calculated measurements
+   - trade_buckets with EVERY applicable trade item
+   - allowances for fixtures/materials
+   - exclusions for out-of-scope items`;
+
+async function callAIWithRetry(
+  apiKey: string,
+  message: string,
+  context: Record<string, unknown>,
+  retryCount = 0
+): Promise<EstimateData> {
+  console.log(`Attempt ${retryCount + 1} of ${MAX_RETRIES}`);
+  
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt + `\n\n**CONTEXT:**\n${JSON.stringify(context || {})}` },
+        { role: "user", content: message }
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "generate_estimate",
+            description: "Generate a structured construction estimate from the project description. Always use this function to return the estimate data.",
+            parameters: estimateJsonSchema
+          }
+        }
+      ],
+      tool_choice: { type: "function", function: { name: "generate_estimate" } }
+    }),
+  });
+
+  if (!response.ok) {
+    const status = response.status;
+    const errorText = await response.text();
+    console.error(`AI gateway error (${status}):`, errorText);
+    
+    if (status === 429) {
+      throw { status: 429, message: "Rate limit exceeded. Please try again in a moment." };
+    }
+    if (status === 402) {
+      throw { status: 402, message: "AI service quota exceeded." };
+    }
+    throw new Error(`AI gateway error: ${status}`);
+  }
+
+  const data = await response.json();
+  console.log("AI response:", JSON.stringify(data, null, 2));
+  
+  // Extract from tool call response
+  const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+  
+  if (!toolCall || toolCall.function.name !== "generate_estimate") {
+    // Fallback: try to parse content directly
+    const content = data.choices?.[0]?.message?.content;
+    if (content) {
+      console.log("No tool call, attempting content parse:", content);
+      const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleanContent);
+      const validated = EstimateSchema.safeParse(parsed);
+      
+      if (validated.success) {
+        return validated.data;
+      }
+      throw new Error("Content parse failed validation");
+    }
+    throw new Error("No tool call in response");
+  }
+  
+  // Parse the tool call arguments
+  let estimateData: unknown;
+  try {
+    estimateData = JSON.parse(toolCall.function.arguments);
+  } catch (e) {
+    console.error("Failed to parse tool arguments:", toolCall.function.arguments);
+    throw new Error("Invalid JSON in tool response");
+  }
+  
+  console.log("Parsed estimate data:", JSON.stringify(estimateData, null, 2));
+  
+  // Validate with Zod
+  const validated = EstimateSchema.safeParse(estimateData);
+  
+  if (!validated.success) {
+    console.error("Zod validation failed:", validated.error.issues);
+    
+    // Retry if we have attempts left
+    if (retryCount < MAX_RETRIES - 1) {
+      console.log(`Validation failed, retrying in ${RETRY_DELAY_MS}ms...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      return callAIWithRetry(apiKey, message, context, retryCount + 1);
+    }
+    
+    throw {
+      status: 400,
+      message: "AI returned invalid data structure",
+      validation_errors: validated.error.issues
+    };
+  }
+  
+  return validated.data;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -19,217 +271,38 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `### SYSTEM INSTRUCTION: Construction Estimator AI
-
-**IDENTITY:**
-You are the "Estimaitor" Intelligence Engine. Convert natural language project descriptions into structured JSON pricing payloads with accurate dimensions and quantities.
-
-**CRITICAL MEASUREMENT EXTRACTION RULES:**
-
-1. **Bathroom Dimensions:**
-   - Extract room dimensions (length × width) to calculate floor_sqft
-   - Extract ceiling height (default 8 ft if not mentioned)
-   - For showers: Extract shower dimensions separately (e.g., "3x5 shower" = 15 sqft floor, ~64 sqft walls at 8ft height)
-   - Calculate wall tile area: (2 × (length + width)) × height_ft
-   - Calculate shower floor tile separately from main bathroom floor
-   - Example: "5x8 bathroom with 3x5 shower" = 40 sqft room, 15 sqft shower floor, 64 sqft shower walls
-
-2. **Kitchen Dimensions:**
-   - Extract total kitchen size in sqft
-   - Extract countertop linear feet or sqft (typical depth 2ft, so 10 LF = ~20 sqft)
-   - Extract backsplash area if mentioned (typical 18" high behind counters)
-
-3. **Scope Detection & Trade Buckets:**
-   - **Demo:** ALWAYS include for "full gut", "remodel", "renovation". Match to project size:
-     - "demo_shower_only" (showers under 20 sqft)
-     - "demo_small_bath" (bathrooms under 50 sqft)
-     - "demo_large_bath" (bathrooms 50+ sqft)
-     - "demo_kitchen" (kitchens)
-   
-   - **Plumbing:** Extract each fixture type and count:
-     - "Standard shower plumbing" (1 head, standard valve)
-     - "Extra shower head" (additional heads beyond 1)
-     - "Toilet swap" (toilet mentioned, not relocated)
-     - "Freestanding tub plumbing" (if freestanding tub mentioned)
-     - "Tub to shower conversion" (if converting tub to shower)
-   
-   - **Tile Work:** Calculate exact sqft for EACH surface:
-     - Wall tile: Calculate from shower/bathroom perimeter × height
-     - Shower floor tile: Shower floor area only
-     - Main floor tile: Bathroom floor area minus shower area
-   
-   - **Electrical:** Count each fixture:
-     - "Recessed can light" (count each can mentioned, default 2-3 for bathroom)
-     - "Vanity light fixture" (count each vanity)
-   
-   - **Glass:** Detect glass type from description:
-     - "frameless glass shower" or "glass enclosure" → "Glass Shower Standard"
-     - "glass panel only" → "Glass Panel Only"
-     - "90 degree return" → "Glass 90 Return"
-   
-   - **Vanity:** Extract size from description:
-     - "30", "36", "48", "54", "60", "72", "84" inch vanity
-     - Default to 48" if size not mentioned
-   
-   - **Framing:** Look for:
-     - "niche" → quantity count
-     - "blocking" or "framing" → "Standard Framing"
-   
-   - **Waterproofing:** Include for ALL tile work, match total tile area
-   
-   - **Cement Board:** Include for ALL tile work, match total tile area
-   
-   - **Paint:** Detect from keywords:
-     - "paint" mentioned → "Paint - Patch & Touch-up"
-     - "full paint" or "complete painting" → "Paint - Full Bathroom"
-
-4. **Quantity Calculation Logic:**
-   - If user says "3x5 shower": shower_floor_sqft = 15, shower_wall_sqft = 64 (perimeter 16 × 8ft height)
-   - If user says "tile entire bathroom": Include both shower walls AND main floor
-   - If user says "2 recessed lights": quantity = 2
-   - Always calculate waterproofing & cement board as same sqft as tile
-
-5. **Implicit Task Inference:**
-   - "Full gut" → Demo + all utilities (plumbing, electrical)
-   - "Shower remodel" → Demo shower + plumbing + tile + waterproofing + cement board + glass
-   - "Move toilet" → Toilet relocation plumbing (not just swap)
-   - "Add vanity light" → Electrical vanity light install
-
-**OUTPUT SCHEMA (STRICT JSON):**
-Return ONLY valid JSON. No markdown, no code blocks, no extra text.
-
-{
-  "project_header": {
-    "client_name": "string or null",
-    "project_type": "Bathroom|Kitchen|Combination",
-    "overall_size_sqft": number
-  },
-  "dimensions": {
-    "ceiling_height_ft": number,
-    "room_length_ft": number,
-    "room_width_ft": number,
-    "shower_length_ft": number,
-    "shower_width_ft": number,
-    "shower_floor_sqft": number,
-    "shower_wall_sqft": number,
-    "main_floor_sqft": number,
-    "countertop_sqft": number
-  },
-  "trade_buckets": [
-    {
-      "category": "Demolition|Plumbing|Tile|Waterproofing|Cement Board|Electrical|Glass|Vanity|Framing|Paint",
-      "task_description": "Specific action (e.g., 'Remove shower fixture and tile to studs')",
-      "quantity": number,
-      "unit": "sqft|ea|lf"
-    }
-  ],
-  "allowances": [
-    { "item": "string", "quantity": number, "notes": "string" }
-  ],
-  "exclusions": ["string"]
-}
-
-**CONVERSATION CONTEXT:**
-${JSON.stringify(context || {})}
-
-**CRITICAL:** 
-- Always calculate wall tile area from dimensions (not just room sqft)
-- Always separate shower floor tile from main floor tile
-- Always include waterproofing + cement board equal to total tile sqft
-- Count each electrical fixture explicitly
-- Match demo scope to project size (shower_only vs small_bath vs large_bath)
-
-Return ONLY the JSON object. No explanations, no markdown.`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI service quota exceeded." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI gateway error");
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    console.log("Processing message:", message);
+    console.log("Context:", JSON.stringify(context || {}));
     
-    if (!content) {
-      throw new Error("No response from AI");
-    }
-
-    console.log("Raw AI response:", content);
-
-    // Parse and validate the AI response
-    try {
-      const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
-      const parsedData = JSON.parse(cleanContent);
-      
-      // Validate against Zod schema
-      const validated = EstimateSchema.safeParse(parsedData);
-      
-      if (!validated.success) {
-        console.error("Validation failed:", validated.error.issues);
-        
-        // Return a helpful error with the validation issues
-        return new Response(JSON.stringify({ 
-          error: "AI returned invalid data structure",
-          validation_errors: validated.error.issues,
-          needsMoreInfo: true,
-          followUpQuestion: "I had trouble structuring that. Could you provide more specific details about the project dimensions and scope?"
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      // Return the validated, structured data
-      console.log("Validated data:", validated.data);
-      return new Response(JSON.stringify(validated.data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-      
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      
-      // Fallback: treat as conversational response
-      return new Response(JSON.stringify({ 
-        content: content,
-        isMarkdown: true,
-        needsMoreInfo: true
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const estimateData = await callAIWithRetry(LOVABLE_API_KEY, message, context || {});
+    
+    console.log("Final validated estimate:", JSON.stringify(estimateData, null, 2));
+    
+    return new Response(JSON.stringify(estimateData), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+    
   } catch (error) {
     console.error("Error in parse-project function:", error);
+    
+    // Handle typed errors
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+      const typedError = error as { status: number; message: string; validation_errors?: unknown };
+      return new Response(JSON.stringify({ 
+        error: typedError.message,
+        validation_errors: typedError.validation_errors,
+        needsMoreInfo: true,
+        followUpQuestion: "I had trouble structuring that estimate. Could you provide more specific details about dimensions and scope?"
+      }), {
+        status: typedError.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : "Unknown error",
       needsMoreInfo: true,
-      followUpQuestion: "I had trouble understanding that. Could you describe your project again?"
+      followUpQuestion: "I had trouble understanding that. Could you describe your project again with specific dimensions?"
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
