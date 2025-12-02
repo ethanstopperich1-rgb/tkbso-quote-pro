@@ -418,63 +418,6 @@ export default function EstimateDetail() {
             </CardContent>
           </Card>
 
-          {/* Scope of Work */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Scope of Work
-              </CardTitle>
-              {estimate.client_estimate_text ? (
-                <Button variant="ghost" size="sm" onClick={handleCopyText}>
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copy
-                </Button>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRegenerateScope}
-                  disabled={regenerating}
-                >
-                  {regenerating ? (
-                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-1" />
-                  )}
-                  Generate Scope
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {estimate.client_estimate_text ? (
-                <div className="prose prose-sm max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-sm text-foreground bg-muted/30 p-4 rounded-lg">
-                    {estimate.client_estimate_text}
-                  </pre>
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground italic mb-3">
-                    No scope text generated yet.
-                  </p>
-                  <Button 
-                    variant="secondary" 
-                    onClick={handleRegenerateScope}
-                    disabled={regenerating}
-                  >
-                    {regenerating ? (
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <FileText className="h-4 w-4 mr-2" />
-                    )}
-                    Generate Scope Text
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Internal Breakdown with Edit Pricing */}
           <PricingEditCard 
             estimate={estimate} 
