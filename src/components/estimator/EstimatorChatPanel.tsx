@@ -72,15 +72,17 @@ interface ConversationContext {
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Welcome to the TKBSO Estimator! ✨
+  content: `Welcome to **Estimaitor v2.0** ✨
 
-I can understand natural language, so just describe your project and I'll help create a quote.
+I'm your AI estimator. Just describe your project naturally and I'll help create a professional quote.
+
+**New:** Click **"Visual Takeoff"** in the header to measure rooms from floor plans!
 
 **Try something like:**
-- "Master bath remodel for John Smith, about 80 sqft, full gut with tile, glass, and new vanity"
-- "Kitchen refresh for the Johnsons at 123 Main St, 150 sqft, just countertops and paint"
+- "Master bath remodel for John Smith, about 80 sqft, full gut with tile and glass"
+- "Kitchen refresh at 123 Main St, 150 sqft, countertops and paint only"
 
-Or start simple and I'll ask follow-up questions!`,
+Start with any detail and I'll ask follow-ups as needed.`,
   timestamp: new Date(),
 };
 
@@ -94,7 +96,11 @@ const initialContext: ConversationContext = {
   details: {},
 };
 
-export function EstimatorChatPanel() {
+interface EstimatorChatPanelProps {
+  measuredSqft?: number | null;
+}
+
+export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
   const { state, updateClientInfo, updateTrades, addRoom, setProjectType, reset } = useEstimator();
   const { contractor, profile } = useAuth();
   const navigate = useNavigate();
@@ -104,6 +110,21 @@ export function EstimatorChatPanel() {
   const [isComplete, setIsComplete] = useState(false);
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Update context when measuredSqft changes
+  useEffect(() => {
+    if (measuredSqft) {
+      setContext(prev => ({
+        ...prev,
+        dimensions: {
+          ...prev.dimensions,
+          bathroomSqft: measuredSqft
+        }
+      }));
+      
+      addAssistantMessage(`✓ Visual takeoff complete! I've recorded ${measuredSqft.toFixed(0)} sq ft for the bathroom. Please continue describing your project.`);
+    }
+  }, [measuredSqft]);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

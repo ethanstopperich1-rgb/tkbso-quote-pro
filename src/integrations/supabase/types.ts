@@ -1017,6 +1017,85 @@ export type Database = {
           },
         ]
       }
+      takeoffs: {
+        Row: {
+          calculated_perimeter: number | null
+          calculated_sqft: number | null
+          calibration_points: Json | null
+          contractor_id: string
+          created_at: string
+          created_by_profile_id: string | null
+          estimate_id: string | null
+          id: string
+          image_height: number | null
+          image_url: string
+          image_width: number | null
+          notes: string | null
+          polygon_coordinates: Json | null
+          room_label: string | null
+          scale_ratio: number | null
+          updated_at: string
+        }
+        Insert: {
+          calculated_perimeter?: number | null
+          calculated_sqft?: number | null
+          calibration_points?: Json | null
+          contractor_id: string
+          created_at?: string
+          created_by_profile_id?: string | null
+          estimate_id?: string | null
+          id?: string
+          image_height?: number | null
+          image_url: string
+          image_width?: number | null
+          notes?: string | null
+          polygon_coordinates?: Json | null
+          room_label?: string | null
+          scale_ratio?: number | null
+          updated_at?: string
+        }
+        Update: {
+          calculated_perimeter?: number | null
+          calculated_sqft?: number | null
+          calibration_points?: Json | null
+          contractor_id?: string
+          created_at?: string
+          created_by_profile_id?: string | null
+          estimate_id?: string | null
+          id?: string
+          image_height?: number | null
+          image_url?: string
+          image_width?: number | null
+          notes?: string | null
+          polygon_coordinates?: Json | null
+          room_label?: string | null
+          scale_ratio?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "takeoffs_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "takeoffs_created_by_profile_id_fkey"
+            columns: ["created_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "takeoffs_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
