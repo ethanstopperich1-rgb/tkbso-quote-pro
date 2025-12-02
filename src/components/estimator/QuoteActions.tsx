@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEstimator } from '@/contexts/EstimatorContext';
 import { Button } from '@/components/ui/button';
-import { QuotePDFGenerator } from '@/components/QuotePDFGenerator';
+import { ProposalPdfGenerator, buildProposalData } from '@/components/pdf/ProposalPdfGenerator';
 import { FileText, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -110,7 +110,24 @@ export function QuoteActions() {
         )}
         
         {showPDFButton && state.finalQuote && (
-          <QuotePDFGenerator quote={state.finalQuote} />
+          <ProposalPdfGenerator 
+            proposalData={buildProposalData(
+              state.clientInfo.name || 'Homeowner',
+              state.clientInfo.address || '',
+              state.projectType || 'Bathroom',
+              state.recommendedPrice,
+              state.finalQuote.scopeOfWork.map(s => `${s.title}:\n${s.items.map(i => `• ${i}`).join('\n')}`).join('\n\n'),
+              {
+                city: state.clientInfo.city,
+                state: state.clientInfo.state,
+                zip: state.clientInfo.zip,
+                lowPrice: state.lowEstimate,
+                highPrice: state.highEstimate,
+                paymentSplit: { deposit: 0.65, progress: 0.25, final: 0.10 },
+              }
+            )}
+            size="sm"
+          />
         )}
       </div>
     </div>
