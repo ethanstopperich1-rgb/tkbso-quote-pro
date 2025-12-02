@@ -1,4 +1,4 @@
-import { LayoutDashboard, MessageSquare, FileText, DollarSign, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, MessageSquare, FileText, DollarSign, LogOut, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -11,12 +11,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Chat Estimator", url: "/estimator", icon: MessageSquare },
-  { title: "Estimates", url: "/estimates", icon: FileText },
+  { title: "Estimator", url: "/estimator", icon: MessageSquare },
+  { title: "Projects", url: "/estimates", icon: FileText },
   { title: "Pricing", url: "/pricing", icon: DollarSign },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
@@ -24,30 +26,40 @@ const navItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { profile, contractor, signOut } = useAuth();
+  const { state, toggleSidebar } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
+  const companyName = contractor?.settings?.companyProfile?.companyName || contractor?.name || 'My Company';
+  const logoUrl = contractor?.settings?.branding?.logoUrl;
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
+    <Sidebar 
+      className="border-r border-sidebar-border transition-all duration-300"
+      collapsible="icon"
+    >
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          {contractor?.settings?.branding?.logoUrl ? (
+          {logoUrl ? (
             <img 
-              src={contractor.settings.branding.logoUrl} 
+              src={logoUrl} 
               alt="Company logo" 
-              className="w-10 h-10 rounded-lg object-contain bg-white"
+              className="w-10 h-10 rounded-lg object-contain bg-white flex-shrink-0"
             />
           ) : (
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">
-                {(contractor?.settings?.companyProfile?.companyName || contractor?.name || 'TK').slice(0, 2).toUpperCase()}
+            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-accent-foreground">
+                {companyName.slice(0, 2).toUpperCase()}
               </span>
             </div>
           )}
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm text-foreground">
-              {contractor?.settings?.companyProfile?.companyName || contractor?.name || 'My Company'}
-            </span>
-            <span className="text-xs text-muted-foreground">Quote Creator</span>
-          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-sm text-sidebar-foreground truncate">
+                {companyName}
+              </span>
+              <span className="text-xs text-sidebar-foreground/60">Estimaitor</span>
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
@@ -63,15 +75,16 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`w-full ${
+                      tooltip={isCollapsed ? item.title : undefined}
+                      className={`w-full transition-colors ${
                         isActive
-                          ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                          : "hover:bg-sidebar-accent"
+                          ? "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
                       }`}
                     >
                       <NavLink to={item.url} className="flex items-center gap-3 px-3 py-2">
-                        <item.icon className="h-5 w-5" />
-                        <span className="font-medium">{item.title}</span>
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        {!isCollapsed && <span className="font-medium">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -84,21 +97,34 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">
-              {profile?.name || profile?.email || 'User'}
-            </span>
-            <span className="text-xs text-muted-foreground truncate">
-              {profile?.email}
-            </span>
+          {!isCollapsed && (
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-sidebar-foreground">
+                {profile?.name || profile?.email?.split('@')[0] || 'User'}
+              </span>
+              <span className="text-xs text-sidebar-foreground/60 truncate">
+                {profile?.email}
+              </span>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <button 
+              onClick={signOut}
+              className="flex items-center gap-2 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+              {!isCollapsed && <span>Sign Out</span>}
+            </button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/10"
+            >
+              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </Button>
           </div>
-          <button 
-            onClick={signOut}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Sign Out</span>
-          </button>
         </div>
       </SidebarFooter>
     </Sidebar>

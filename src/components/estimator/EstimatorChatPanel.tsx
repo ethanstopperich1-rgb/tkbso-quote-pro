@@ -5,14 +5,13 @@ import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Sparkles, Loader2, Ruler } from 'lucide-react';
+import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { calculateProjectPricing, TradeBucket, ProjectPricing } from '@/lib/trade-bucket-pricer';
-import { PricingBreakdown } from './PricingBreakdown';
 import { Tables } from '@/integrations/supabase/types';
-import { DimensionInputModal, DimensionData } from './DimensionInputModal';
+import { Card } from '@/components/ui/card';
 
 interface ParsedProject {
   clientInfo: {
@@ -76,17 +75,15 @@ interface ConversationContext {
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Welcome to **Estimaitor v2.0** ✨
+  content: `**Welcome to Estimaitor** ✨
 
-I'm your AI estimator. Just describe your project naturally and I'll help create a professional quote.
+I'm your AI estimator. Describe your project naturally and I'll create a professional quote.
 
-**New:** Click **"Visual Takeoff"** in the header to measure rooms from floor plans!
+**Examples:**
+- "Master bath remodel, 80 sqft, full gut with tile and glass"
+- "Kitchen refresh, 150 sqft, countertops and paint only"
 
-**Try something like:**
-- "Master bath remodel for John Smith, about 80 sqft, full gut with tile and glass"
-- "Kitchen refresh at 123 Main St, 150 sqft, countertops and paint only"
-
-Start with any detail and I'll ask follow-ups as needed.`,
+What project would you like to estimate?`,
   timestamp: new Date(),
 };
 
@@ -100,11 +97,7 @@ const initialContext: ConversationContext = {
   details: {},
 };
 
-interface EstimatorChatPanelProps {
-  measuredSqft?: number | null;
-}
-
-export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
+export function EstimatorChatPanel() {
   const { state, updateClientInfo, updateTrades, addRoom, setProjectType, reset } = useEstimator();
   const { contractor, profile } = useAuth();
   const navigate = useNavigate();
@@ -115,12 +108,8 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
   const [calculatedPricing, setCalculatedPricing] = useState<ProjectPricing | null>(null);
   const [pricingConfig, setPricingConfig] = useState<Tables<'pricing_configs'> | null>(null);
-  const [showDimensionModal, setShowDimensionModal] = useState(false);
-  const [missingDimensionFields, setMissingDimensionFields] = useState<string[]>([]);
-  const [detectedRoomType, setDetectedRoomType] = useState<'bathroom' | 'kitchen' | 'closet' | 'other'>('bathroom');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Fetch pricing config on mount
   useEffect(() => {
     const fetchPricingConfig = async () => {
       if (!contractor?.id) return;
@@ -145,21 +134,6 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
     fetchPricingConfig();
   }, [contractor?.id]);
   
-  // Update context when measuredSqft changes
-  useEffect(() => {
-    if (measuredSqft) {
-      setContext(prev => ({
-        ...prev,
-        dimensions: {
-          ...prev.dimensions,
-          bathroomSqft: measuredSqft
-        }
-      }));
-      
-      addAssistantMessage(`✓ Visual takeoff complete! I've recorded ${measuredSqft.toFixed(0)} sq ft for the bathroom. Please continue describing your project.`);
-    }
-  }, [measuredSqft]);
-  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -178,144 +152,67 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
     setMessages(prev => [...prev, message]);
   };
 
-  // Generate scope text for client-facing display
   const generateScopeText = (ctx: ConversationContext, bathScopeLevel: string): string => {
     const lines: string[] = [];
     
-    // Demo
     if (ctx.trades.includeDemo !== false) {
-      lines.push('DEMO:');
+      lines.push('**DEMO:**');
       if (ctx.projectType === 'bathroom') {
-        if (bathScopeLevel === 'shower_only') {
-          lines.push('• Remove existing shower fixtures, tile, and substrate');
-        } else {
-          lines.push('• Remove existing fixtures, tile, vanity, and toilet');
-        }
+        lines.push(bathScopeLevel === 'shower_only' 
+          ? '• Remove existing shower fixtures, tile, and substrate'
+          : '• Remove existing fixtures, tile, vanity, and toilet');
       } else if (ctx.projectType === 'kitchen') {
-        lines.push('• Remove existing cabinets, countertops, and appliances as needed');
+        lines.push('• Remove existing cabinets, countertops, and appliances');
       }
-      lines.push('• Protect adjacent areas and flooring');
       lines.push('• Debris removal and disposal');
       lines.push('');
     }
     
-    // Framing (bathroom only)
     if (ctx.projectType === 'bathroom') {
-      lines.push('FRAMING:');
-      lines.push('• Install blocking for shower fixtures and accessories');
-      lines.push('• Frame shower niche(s) as needed');
+      lines.push('**FRAMING:**');
+      lines.push('• Install blocking for fixtures and accessories');
       lines.push('');
     }
     
-    // Plumbing
     if (ctx.trades.includePlumbing !== false) {
-      lines.push('PLUMBING:');
+      lines.push('**PLUMBING:**');
       if (ctx.projectType === 'bathroom') {
-        if (bathScopeLevel === 'shower_only') {
-          lines.push('• Rough-in water supply and drain lines for new shower');
-          lines.push('• Install shower valve, trim, and showerhead');
-          lines.push('• Pressure test and leak verification');
-        } else {
-          lines.push('• Rough-in water supply and drain lines');
-          lines.push('• Install shower valve, trim, and fixtures');
-          lines.push('• Set and connect toilet');
-          lines.push('• Install vanity plumbing and faucet');
-          lines.push('• Final pressure testing and leak check');
+        lines.push('• Rough-in water supply and drain lines');
+        lines.push('• Install shower valve, trim, and fixtures');
+        if (bathScopeLevel !== 'shower_only') {
+          lines.push('• Set toilet and vanity plumbing');
         }
       } else if (ctx.projectType === 'kitchen') {
-        lines.push('• Install and connect kitchen sink and faucet');
-        lines.push('• Connect dishwasher and disposal if included');
-        lines.push('• Final pressure testing');
+        lines.push('• Install sink and faucet');
+        lines.push('• Connect dishwasher and disposal');
       }
       lines.push('');
     }
     
-    // Electrical
-    if (ctx.trades.includeElectrical) {
-      lines.push('ELECTRICAL:');
-      if (ctx.projectType === 'bathroom') {
-        if (ctx.details.numRecessedCans) {
-          lines.push(`• Install ${ctx.details.numRecessedCans} recessed light(s)`);
-        }
-        if (ctx.details.numVanityLights) {
-          lines.push(`• Install ${ctx.details.numVanityLights} vanity light fixture(s)`);
-        }
-        lines.push('• Install exhaust fan');
-        lines.push('• GFCI outlets per code');
-      } else if (ctx.projectType === 'kitchen') {
-        lines.push('• Install dedicated circuits as needed');
-        lines.push('• Install under-cabinet lighting');
-        lines.push('• Connect appliances per code');
-      }
-      lines.push('');
-    }
-    
-    // Tile Work
     if (ctx.trades.includeTile !== false && ctx.projectType === 'bathroom') {
-      lines.push('TILE WORK:');
-      lines.push('• Install waterproofing system (Schluter or equivalent)');
-      lines.push('• Level and prep substrate as needed');
-      lines.push('• Install wall tile in shower/wet areas');
-      lines.push('• Install shower floor tile with proper slope to drain');
-      if (bathScopeLevel !== 'shower_only') {
-        lines.push('• Install bathroom floor tile');
-      }
-      lines.push('• Grout, clean, and seal all tile');
-      lines.push('• Tile material to be supplied by homeowner');
+      lines.push('**TILE WORK:**');
+      lines.push('• Install waterproofing system');
+      lines.push('• Wall and floor tile installation');
+      lines.push('• Grout and seal');
       lines.push('');
     }
     
-    // Vanity (full bathroom only)
-    if (ctx.trades.includeVanity && bathScopeLevel !== 'shower_only') {
-      lines.push('VANITY:');
-      if (ctx.details.vanitySize) {
-        lines.push(`• Install ${ctx.details.vanitySize}" vanity with top and sink`);
-      } else {
-        lines.push('• Install vanity with top and sink');
-      }
-      lines.push('• Install mirror');
-      lines.push('• Connect plumbing and faucet');
-      lines.push('');
-    }
-    
-    // Glass
     if (ctx.trades.includeGlass) {
-      lines.push('SHOWER GLASS:');
-      if (ctx.details.glassType === 'panel') {
-        lines.push('• Glass panel installation');
-      } else if (ctx.details.glassType === '90_return') {
-        lines.push('• 90-degree return glass enclosure');
-      } else {
-        lines.push('• Frameless glass shower enclosure');
-      }
-      lines.push('• Field measurement after tile completion');
-      lines.push('• Custom hardware and seals');
-      lines.push('• Professional installation');
-      lines.push('');
-    }
-    
-    // Paint
-    if (ctx.trades.includePaint) {
-      lines.push('PAINTING:');
-      lines.push('• Patch and repair drywall as needed');
-      lines.push('• Prime and paint walls and ceiling');
-      lines.push('• Paint color to be selected by homeowner');
+      lines.push('**SHOWER GLASS:**');
+      lines.push('• Frameless glass enclosure');
       lines.push('');
     }
     
     return lines.join('\n');
   };
 
-  // Save estimate to database
   const saveEstimateToDatabase = async (ctx: ConversationContext): Promise<string | null> => {
     if (!contractor?.id) {
-      console.error('No contractor ID available');
       toast.error('You must be logged in to save estimates');
       return null;
     }
 
     try {
-      // Determine scope level
       let bathScopeLevel = 'none';
       let kitchenScopeLevel = 'none';
       
@@ -328,9 +225,7 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
                            ctx.scopeLevel === 'refresh' ? 'refresh' : 'full_gut';
       }
 
-      // Calculate tile areas from dimensions if available
       let wallTileSqft = 0;
-      let floorTileSqft = 0;
       let showerFloorSqft = 0;
       
       if (ctx.dimensions.showerLength && ctx.dimensions.showerWidth) {
@@ -340,20 +235,15 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
         showerFloorSqft = ctx.dimensions.showerLength * ctx.dimensions.showerWidth;
       }
 
-      // Use state's calculated pricing if available
       const finalCp = state.recommendedPrice || 0;
       const lowCp = state.lowEstimate || 0;
       const highCp = state.highEstimate || 0;
       const finalIc = state.internalCost || 0;
-
-      // Generate scope text
       const scopeText = generateScopeText(ctx, bathScopeLevel);
 
       const estimateData = {
         contractor_id: contractor.id,
         created_by_profile_id: profile?.id || null,
-        
-        // Client info
         client_name: ctx.clientInfo.name || null,
         client_phone: ctx.clientInfo.phone || null,
         client_email: ctx.clientInfo.email || null,
@@ -362,55 +252,37 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
         state: ctx.clientInfo.state || null,
         zip: ctx.clientInfo.zip || null,
         job_label: ctx.clientInfo.name ? `${ctx.clientInfo.name} - ${ctx.projectType || 'Remodel'}` : null,
-        
-        // Scope text for display
         client_estimate_text: scopeText,
-        
-        // Project type
         has_kitchen: ctx.projectType === 'kitchen',
         has_bathrooms: ctx.projectType === 'bathroom',
         has_closets: false,
         num_kitchens: ctx.projectType === 'kitchen' ? 1 : 0,
         num_bathrooms: ctx.projectType === 'bathroom' ? 1 : 0,
         num_closets: 0,
-        
-        // Dimensions
         total_bathroom_sqft: ctx.dimensions.bathroomSqft || 0,
         total_kitchen_sqft: ctx.dimensions.kitchenSqft || 0,
         bath_wall_tile_sqft: wallTileSqft,
-        bath_floor_tile_sqft: floorTileSqft,
+        bath_floor_tile_sqft: 0,
         bath_shower_floor_tile_sqft: showerFloorSqft,
         bath_shower_only_sqft: ctx.scopeLevel === 'shower_only' ? (ctx.dimensions.bathroomSqft || 15) : 0,
-        
-        // Scope levels
         bath_scope_level: bathScopeLevel,
         kitchen_scope_level: kitchenScopeLevel,
-        
-        // Trades
         include_demo: ctx.trades.includeDemo ?? true,
         include_plumbing: ctx.trades.includePlumbing ?? true,
         include_electrical: ctx.trades.includeElectrical ?? false,
         include_paint: ctx.trades.includePaint ?? false,
         include_glass: ctx.trades.includeGlass ?? false,
         include_waterproofing: ctx.trades.includeTile ?? true,
-        
-        // Details
         vanity_size: ctx.details.vanitySize || 'none',
         glass_type: ctx.details.glassType || 'none',
         num_recessed_cans: ctx.details.numRecessedCans || 0,
         num_vanity_lights: ctx.details.numVanityLights || 0,
-        
-        // Pricing (use state's calculated values)
         final_cp_total: finalCp,
         final_ic_total: finalIc,
         low_estimate_cp: lowCp,
         high_estimate_cp: highCp,
-        
-        // Status
         status: 'draft',
       };
-
-      console.log('Saving estimate:', estimateData);
 
       const { data, error } = await supabase
         .from('estimates')
@@ -424,8 +296,7 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
         return null;
       }
 
-      console.log('Estimate saved with ID:', data.id);
-      toast.success('Estimate saved successfully!');
+      toast.success('Estimate saved!');
       return data.id;
     } catch (err) {
       console.error('Exception saving estimate:', err);
@@ -435,7 +306,6 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
   };
 
   const applyParsedData = (parsed: ParsedProject) => {
-    // Update client info
     if (parsed.clientInfo.name || parsed.clientInfo.phone || parsed.clientInfo.email || parsed.clientInfo.address) {
       updateClientInfo({
         name: parsed.clientInfo.name || undefined,
@@ -448,12 +318,10 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
       });
     }
 
-    // Update project type
     if (parsed.projectType === 'kitchen' || parsed.projectType === 'bathroom') {
       setProjectType(parsed.projectType);
     }
 
-    // Update trades
     const tradesUpdate: Record<string, any> = {};
     if (parsed.trades.includeDemo !== null) tradesUpdate.includeDemo = parsed.trades.includeDemo;
     if (parsed.trades.includePlumbing !== null) tradesUpdate.includePlumbing = parsed.trades.includePlumbing;
@@ -467,65 +335,127 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
     if (parsed.trades.includeCountertops !== null) tradesUpdate.includeCountertops = parsed.trades.includeCountertops;
     if (parsed.trades.includeCabinets !== null) tradesUpdate.includeCabinetry = parsed.trades.includeCabinets;
     if (parsed.trades.includeElectrical !== null) tradesUpdate.includeElectrical = parsed.trades.includeElectrical;
-    if (parsed.trades.includePaint !== null) {
-      tradesUpdate.includePainting = parsed.trades.includePaint;
-      tradesUpdate.paintType = parsed.trades.includePaint ? 'full' : 'none';
-    }
+    if (parsed.trades.includePaint !== null) tradesUpdate.includePaint = parsed.trades.includePaint;
     if (parsed.trades.includeLVP !== null) tradesUpdate.includeLVP = parsed.trades.includeLVP;
-    
-    // Update details
-    if (parsed.details.vanitySize) tradesUpdate.vanitySize = parsed.details.vanitySize;
-    if (parsed.details.glassType) tradesUpdate.glassType = parsed.details.glassType;
-    if (parsed.details.numRecessedCans) tradesUpdate.numRecessedCans = parsed.details.numRecessedCans;
-    if (parsed.details.numVanityLights) tradesUpdate.numVanityLights = parsed.details.numVanityLights;
-    if (parsed.details.lvpSqft) tradesUpdate.lvpSqft = parsed.details.lvpSqft;
     
     if (Object.keys(tradesUpdate).length > 0) {
       updateTrades(tradesUpdate);
     }
-
-    // Add rooms
-    if (parsed.projectType === 'bathroom' && parsed.dimensions.bathroomSqft) {
-      addRoom({
-        type: 'bathroom',
-        name: 'Bathroom',
-        sqft: parsed.dimensions.bathroomSqft,
-        scopeLevel: (parsed.scopeLevel as any) || 'full_gut',
-      });
-    } else if (parsed.projectType === 'kitchen' && parsed.dimensions.kitchenSqft) {
-      addRoom({
-        type: 'kitchen',
-        name: 'Kitchen',
-        sqft: parsed.dimensions.kitchenSqft,
-        scopeLevel: (parsed.scopeLevel as any) || 'full_gut',
-      });
-    }
   };
 
-  const mergeContext = (parsed: ParsedProject): ConversationContext => {
+  const updateConversationContext = (parsed: ParsedProject): ConversationContext => {
     return {
-      clientInfo: { ...context.clientInfo, ...Object.fromEntries(Object.entries(parsed.clientInfo).filter(([_, v]) => v !== null)) },
+      clientInfo: {
+        ...context.clientInfo,
+        ...Object.fromEntries(
+          Object.entries(parsed.clientInfo).filter(([_, v]) => v !== null)
+        ),
+      },
       projectType: parsed.projectType || context.projectType,
       rooms: {
         bathrooms: parsed.rooms.bathrooms || context.rooms.bathrooms,
         kitchens: parsed.rooms.kitchens || context.rooms.kitchens,
       },
-      dimensions: { ...context.dimensions, ...Object.fromEntries(Object.entries(parsed.dimensions).filter(([_, v]) => v !== null)) },
+      dimensions: {
+        ...context.dimensions,
+        ...Object.fromEntries(
+          Object.entries(parsed.dimensions).filter(([_, v]) => v !== null)
+        ),
+      },
       scopeLevel: parsed.scopeLevel || context.scopeLevel,
-      trades: { ...context.trades, ...Object.fromEntries(Object.entries(parsed.trades).filter(([_, v]) => v !== null)) },
-      details: { ...context.details, ...Object.fromEntries(Object.entries(parsed.details).filter(([_, v]) => v !== null)) },
+      trades: {
+        ...context.trades,
+        ...Object.fromEntries(
+          Object.entries(parsed.trades).filter(([_, v]) => v !== null)
+        ),
+      },
+      details: {
+        ...context.details,
+        ...Object.fromEntries(
+          Object.entries(parsed.details).filter(([_, v]) => v !== null)
+        ),
+      },
     };
   };
 
-  const handleSendMessage = async (content: string) => {
-    // Check for reset commands
-    const lowerContent = content.toLowerCase().trim();
-    if (lowerContent === 'new' || lowerContent === 'restart' || lowerContent === 'start over') {
-      handleReset();
-      return;
+  const buildTradeBuckets = (ctx: ConversationContext): TradeBucket[] => {
+    const buckets: TradeBucket[] = [];
+    
+    if (!ctx.projectType) return buckets;
+    
+    const sqft = ctx.projectType === 'bathroom' 
+      ? (ctx.dimensions.bathroomSqft || 60)
+      : (ctx.dimensions.kitchenSqft || 120);
+    
+    const showerSqft = (ctx.dimensions.showerLength || 3) * (ctx.dimensions.showerWidth || 5);
+    const showerHeight = ctx.dimensions.showerHeight || 8;
+    const showerPerimeter = 2 * ((ctx.dimensions.showerLength || 3) + (ctx.dimensions.showerWidth || 5));
+    const wallTileSqft = showerPerimeter * showerHeight;
+    
+    if (ctx.projectType === 'bathroom') {
+      if (ctx.trades.includeDemo !== false) {
+        if (ctx.scopeLevel === 'shower_only') {
+          buckets.push({ category: 'demo', task_description: 'shower_only', quantity: 1, unit: 'each' });
+        } else if (sqft > 60) {
+          buckets.push({ category: 'demo', task_description: 'large_bath', quantity: 1, unit: 'each' });
+        } else {
+          buckets.push({ category: 'demo', task_description: 'small_bath', quantity: 1, unit: 'each' });
+        }
+        buckets.push({ category: 'demo', task_description: 'dumpster_bath', quantity: 1, unit: 'each' });
+      }
+      
+      buckets.push({ category: 'framing', task_description: 'standard', quantity: 1, unit: 'each' });
+      
+      if (ctx.trades.includePlumbing !== false) {
+        buckets.push({ category: 'plumbing', task_description: 'shower_standard', quantity: 1, unit: 'each' });
+        if (ctx.scopeLevel !== 'shower_only') {
+          buckets.push({ category: 'plumbing', task_description: 'toilet', quantity: 1, unit: 'each' });
+        }
+      }
+      
+      if (ctx.trades.includeTile !== false) {
+        buckets.push({ category: 'tile', task_description: 'wall', quantity: wallTileSqft, unit: 'sqft' });
+        buckets.push({ category: 'tile', task_description: 'shower_floor', quantity: showerSqft, unit: 'sqft' });
+        buckets.push({ category: 'waterproofing', task_description: 'standard', quantity: wallTileSqft + showerSqft, unit: 'sqft' });
+        if (ctx.scopeLevel !== 'shower_only') {
+          buckets.push({ category: 'tile', task_description: 'floor', quantity: sqft - showerSqft, unit: 'sqft' });
+        }
+      }
+      
+      if (ctx.trades.includeGlass) {
+        const glassType = ctx.details.glassType || 'door_panel';
+        if (glassType === 'panel') {
+          buckets.push({ category: 'glass', task_description: 'panel_only', quantity: 1, unit: 'each' });
+        } else if (glassType === '90_return') {
+          buckets.push({ category: 'glass', task_description: '90_return', quantity: 1, unit: 'each' });
+        } else {
+          buckets.push({ category: 'glass', task_description: 'shower_standard', quantity: 1, unit: 'each' });
+        }
+      }
+      
+      if (ctx.trades.includeVanity && ctx.scopeLevel !== 'shower_only') {
+        const vanitySize = ctx.details.vanitySize || '48';
+        buckets.push({ category: 'vanity', task_description: `bundle_${vanitySize}`, quantity: 1, unit: 'each' });
+      }
+      
+      if (ctx.trades.includeElectrical) {
+        if (ctx.details.numRecessedCans) {
+          buckets.push({ category: 'electrical', task_description: 'recessed_can', quantity: ctx.details.numRecessedCans, unit: 'each' });
+        }
+        if (ctx.details.numVanityLights) {
+          buckets.push({ category: 'electrical', task_description: 'vanity_light', quantity: ctx.details.numVanityLights, unit: 'each' });
+        }
+      }
+      
+      if (ctx.trades.includePaint) {
+        buckets.push({ category: 'paint', task_description: 'full_bath', quantity: 1, unit: 'each' });
+      }
     }
+    
+    return buckets;
+  };
 
-    // Add user message
+  const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -534,299 +464,157 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
     };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    
+
     try {
       const { data, error } = await supabase.functions.invoke('parse-project', {
-        body: { message: content, context },
+        body: { 
+          message: content,
+          conversationContext: context,
+          pricingConfig: pricingConfig,
+        }
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to process your message');
-      }
-
-      console.log('Raw edge function response:', data);
+      if (error) throw error;
       
-      // Check if we received trade_buckets (new structured format)
-      if (data?.trade_buckets && Array.isArray(data.trade_buckets) && pricingConfig) {
-        console.log('Processing trade buckets:', data.trade_buckets);
-        
-        // Detect project type for dimension modal
-        const projectType = data?.project_header?.project_type?.toLowerCase() || context.projectType;
-        const roomType = projectType === 'kitchen' ? 'kitchen' : 
-                         projectType === 'closet' ? 'closet' : 'bathroom';
-        setDetectedRoomType(roomType as any);
-        
-        // Check for missing dimensions
-        const missingFields = checkMissingDimensions(data, projectType);
-        
-        if (missingFields.length > 0) {
-          setMissingDimensionFields(missingFields);
-          setShowDimensionModal(true);
-          
-          // Build response with prompt to enter dimensions
-          let response = '📐 **I need some measurements to calculate accurate pricing.**\n\n';
-          response += `Missing: ${missingFields.join(', ')}\n\n`;
-          response += 'Please enter the dimensions in the dialog that just appeared, or click the **Dimensions** button below.';
-          
-          addAssistantMessage(response);
-          return;
-        }
-        
-        // Calculate pricing using the new calculator
-        const pricing = calculateProjectPricing(
-          data.trade_buckets as TradeBucket[],
-          pricingConfig
-        );
-        
-        setCalculatedPricing(pricing);
-        
-        // Build response message
-        let response = '✅ **Project Analysis Complete**\n\n';
-        
-        if (data.project_header) {
-          response += `**Client:** ${data.project_header.client_name || 'TBD'}\n`;
-          response += `**Project Type:** ${data.project_header.project_type}\n`;
-          if (data.project_header.overall_size_sqft) {
-            response += `**Size:** ${data.project_header.overall_size_sqft} sq ft\n`;
-          }
-          response += '\n';
-        }
-        
-        response += `**Estimated Investment:** $${pricing.totals.total_cp.toLocaleString()}\n`;
-        response += `**Margin:** ${pricing.totals.overall_margin_percent.toFixed(1)}%\n\n`;
-        
-        if (pricing.warnings.length > 0) {
-          response += '⚠️ ' + pricing.warnings.join('\n⚠️ ') + '\n\n';
-        }
-        
-        response += 'See the detailed breakdown below. What would you like to adjust?';
-        
-        addAssistantMessage(response);
-        return;
-      }
-
       const parsed = data as ParsedProject;
       
-      // Merge new data with existing context
-      const newContext = mergeContext(parsed);
+      applyParsedData(parsed);
+      
+      const newContext = updateConversationContext(parsed);
       setContext(newContext);
 
-      // Apply the parsed data to the estimator
-      applyParsedData(parsed);
-
-      // Build response message
-      let response = parsed.summary;
-      
       if (parsed.needsMoreInfo && parsed.followUpQuestion) {
-        response += `\n\n${parsed.followUpQuestion}`;
-      } else if (!parsed.needsMoreInfo) {
-        // Check if we have enough info to generate a quote
-        const hasClientName = newContext.clientInfo.name;
-        const hasProjectType = newContext.projectType;
-        const hasDimensions = newContext.dimensions.bathroomSqft || newContext.dimensions.kitchenSqft;
+        addAssistantMessage(parsed.followUpQuestion);
+      } else {
+        const tradeBuckets = buildTradeBuckets(newContext);
         
-        if (hasClientName && hasProjectType && hasDimensions) {
-          // Save to database
-          const estimateId = await saveEstimateToDatabase(newContext);
+        if (pricingConfig && tradeBuckets.length > 0) {
+          const pricing = calculateProjectPricing(tradeBuckets, pricingConfig);
+          setCalculatedPricing(pricing);
           
+          const estimateId = await saveEstimateToDatabase(newContext);
           if (estimateId) {
-            setIsComplete(true);
             setSavedEstimateId(estimateId);
-            response += `\n\n✅ **Quote saved!** [View your estimate](/estimates/${estimateId}) or navigate to the **Estimates** page.\n\nType **new** to start another estimate.`;
-          } else {
-            response += `\n\nI have all the information needed, but there was an issue saving the quote. Please try again or contact support.`;
           }
+          
+          setIsComplete(true);
+          
+          const summaryMessage = `**Quote Summary**
+
+**Project:** ${newContext.projectType === 'bathroom' ? 'Bathroom Remodel' : 'Kitchen Remodel'}
+${newContext.clientInfo.name ? `**Client:** ${newContext.clientInfo.name}` : ''}
+${newContext.dimensions.bathroomSqft ? `**Size:** ${newContext.dimensions.bathroomSqft} sq ft` : ''}
+
+**Estimated Investment:** $${pricing.totals.total_cp.toLocaleString()}
+
+Click below to view details or download PDF.`;
+          
+          addAssistantMessage(summaryMessage);
         } else {
-          // Ask for missing critical info
-          if (!hasClientName) {
-            response += `\n\nWhat is the client's name?`;
-          } else if (!hasProjectType) {
-            response += `\n\nIs this a **kitchen** or **bathroom** remodel?`;
-          } else if (!hasDimensions) {
-            response += `\n\nWhat is the room size in square feet?`;
-          }
+          addAssistantMessage(parsed.summary || "I've captured the project details. What else would you like to add?");
         }
       }
-
-      addAssistantMessage(response);
-    } catch (error) {
-      console.error('Error processing message:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
-      
-      if (errorMessage.includes('Rate limit')) {
-        toast.error('Rate limit reached. Please wait a moment and try again.');
-      } else {
-        toast.error('Failed to process message');
-      }
-      
-      addAssistantMessage("I had trouble understanding that. Could you try rephrasing? For example:\n\n\"Full bathroom remodel for John Smith, 75 sqft, includes tile, glass, and vanity\"");
+    } catch (err) {
+      console.error('Error processing message:', err);
+      addAssistantMessage("I encountered an issue. Could you rephrase your project description?");
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const handleReset = () => {
-    reset();
-    setContext(initialContext);
+
+  const handleStartNew = () => {
     setMessages([WELCOME_MESSAGE]);
+    setContext(initialContext);
     setIsComplete(false);
     setSavedEstimateId(null);
     setCalculatedPricing(null);
-    setShowDimensionModal(false);
-    setMissingDimensionFields([]);
+    reset();
   };
 
-  // Handle dimension modal submission
-  const handleDimensionSubmit = (data: DimensionData) => {
-    const newContext = { ...context };
-    
-    if (data.roomType === 'bathroom') {
-      if (data.roomLength && data.roomWidth) {
-        newContext.dimensions.bathroomSqft = data.roomLength * data.roomWidth;
-      }
-      if (data.showerLength && data.showerWidth) {
-        newContext.dimensions.showerLength = data.showerLength;
-        newContext.dimensions.showerWidth = data.showerWidth;
-        newContext.dimensions.showerHeight = data.showerHeight || data.ceilingHeight || 8;
-      }
-    } else if (data.roomType === 'kitchen') {
-      if (data.roomLength && data.roomWidth) {
-        newContext.dimensions.kitchenSqft = data.roomLength * data.roomWidth;
-      }
+  const handleViewEstimate = () => {
+    if (savedEstimateId) {
+      navigate(`/estimates/${savedEstimateId}`);
     }
-    
-    setContext(newContext);
-    
-    // Add confirmation message
-    const sqft = data.roomLength && data.roomWidth ? data.roomLength * data.roomWidth : 0;
-    let confirmMsg = `✓ **Dimensions recorded:**\n- Room: ${sqft} sq ft`;
-    
-    if (data.showerLength && data.showerWidth) {
-      const showerSqft = data.showerLength * data.showerWidth;
-      const showerHeight = data.showerHeight || data.ceilingHeight || 8;
-      const showerWallSqft = Math.round(2 * (data.showerLength + data.showerWidth) * showerHeight);
-      confirmMsg += `\n- Shower Floor: ${showerSqft} sq ft\n- Shower Walls: ${showerWallSqft} sq ft`;
-    }
-    
-    confirmMsg += '\n\nPlease continue describing your project or add more details.';
-    addAssistantMessage(confirmMsg);
-    
-    toast.success('Dimensions saved!');
   };
 
-  // Check for missing dimensions and show modal
-  const checkMissingDimensions = (data: any, projectType: string | null): string[] => {
-    const missing: string[] = [];
-    
-    if (projectType === 'bathroom' || data?.project_header?.project_type === 'Bathroom') {
-      if (!context.dimensions.bathroomSqft && !data?.dimensions?.main_floor_sqft) {
-        missing.push('Room size (sq ft)');
-      }
-      // Check for shower dimensions if tile work is detected
-      const hasTileWork = data?.trade_buckets?.some((b: any) => 
-        b.category?.toLowerCase().includes('tile') || 
-        b.task_description?.toLowerCase().includes('tile')
-      );
-      if (hasTileWork && !context.dimensions.showerLength && !data?.dimensions?.shower_length_ft) {
-        missing.push('Shower dimensions');
-      }
-    } else if (projectType === 'kitchen' || data?.project_header?.project_type === 'Kitchen') {
-      if (!context.dimensions.kitchenSqft && !data?.dimensions?.main_floor_sqft) {
-        missing.push('Kitchen size (sq ft)');
-      }
-      if (!data?.dimensions?.countertop_sqft) {
-        missing.push('Countertop area');
-      }
-    }
-    
-    return missing;
-  };
-
-  const getPlaceholder = () => {
-    if (isComplete) return "Type 'new' to start another estimate...";
-    if (!context.clientInfo.name) return "Describe your project (e.g., 'Master bath remodel for John Smith...')";
-    if (!context.projectType) return "Is this a kitchen or bathroom remodel?";
-    return "Add more details or ask questions...";
-  };
-  
   return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Dimension Input Modal */}
-      <DimensionInputModal
-        open={showDimensionModal}
-        onOpenChange={setShowDimensionModal}
-        missingFields={missingDimensionFields}
-        roomType={detectedRoomType}
-        onSubmit={handleDimensionSubmit}
-      />
-      
+    <div className="flex flex-col h-full bg-card rounded-xl border shadow-sm">
       {/* Header */}
-      <div className="border-b bg-card px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-sm">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-lg text-foreground">AI Estimator</h2>
-              <p className="text-xs text-muted-foreground">Describe your project naturally</p>
-            </div>
+      <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-accent" />
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDimensionModal(true)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Ruler className="w-4 h-4 mr-2" />
-              Dimensions
-            </Button>
-            {messages.length > 1 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleReset}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Start Over
-              </Button>
-            )}
+          <div>
+            <h2 className="font-semibold text-foreground">AI Estimator</h2>
+            <p className="text-xs text-muted-foreground">Describe your project naturally</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleStartNew}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          New Quote
+        </Button>
       </div>
-      
+
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-1">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
         
         {isLoading && (
-          <div className="flex items-center gap-3 text-muted-foreground ml-11">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Analyzing your project...</span>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Analyzing project...</span>
           </div>
+        )}
+
+        {/* Quote Summary Card */}
+        {isComplete && calculatedPricing && (
+          <Card className="p-6 bg-accent/5 border-accent/20">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg">Quote Ready</h3>
+              <span className="text-2xl font-bold text-accent">
+                ${calculatedPricing.totals.total_cp.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                onClick={handleViewEstimate}
+                className="flex-1"
+                disabled={!savedEstimateId}
+              >
+                View Details
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleViewEstimate}
+                disabled={!savedEstimateId}
+              >
+                <FileDown className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
+            </div>
+          </Card>
         )}
         
         <div ref={messagesEndRef} />
       </div>
-      
-      {/* Pricing Breakdown (if calculated) */}
-      {calculatedPricing && (
-        <div className="border-t bg-muted/30 p-6 max-h-96 overflow-y-auto">
-          <PricingBreakdown pricing={calculatedPricing} />
-        </div>
-      )}
-      
+
       {/* Input */}
-      <ChatInput
-        onSend={handleSendMessage}
-        disabled={isLoading}
-        placeholder={getPlaceholder()}
-      />
+      <div className="p-4 border-t">
+        <ChatInput 
+          onSend={handleSendMessage} 
+          disabled={isLoading}
+          placeholder="Describe your project..."
+        />
+      </div>
     </div>
   );
 }
