@@ -14,6 +14,7 @@ import { ProposalPdf } from '@/components/pdf/ProposalPdf';
 import { ClientInfoEditCard } from '@/components/estimates/ClientInfoEditCard';
 import { ConversationHistoryCard } from '@/components/estimates/ConversationHistoryCard';
 import { PricingEditCard } from '@/components/estimates/PricingEditCard';
+import { LineItemEditorCard } from '@/components/estimates/LineItemEditorCard';
 import { 
   ArrowLeft, 
   Download, 
@@ -431,6 +432,12 @@ export default function EstimateDetail() {
 
           {/* Internal Breakdown with Edit Pricing */}
           <PricingEditCard 
+            estimate={estimate} 
+            onUpdate={(updates) => setEstimate({ ...estimate, ...updates })} 
+          />
+
+          {/* Line Item Editor */}
+          <LineItemEditorCard 
             estimate={estimate} 
             onUpdate={(updates) => setEstimate({ ...estimate, ...updates })} 
           />
