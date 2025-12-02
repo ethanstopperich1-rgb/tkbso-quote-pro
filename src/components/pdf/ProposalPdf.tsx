@@ -145,6 +145,40 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   
+  // Signature Block
+  signatureSection: {
+    marginBottom: 20,
+  },
+  acceptanceText: {
+    fontSize: 10,
+    color: '#475569',
+    marginBottom: 16,
+    lineHeight: 1.4,
+  },
+  signatureRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 40,
+  },
+  signatureField: {
+    flex: 1,
+  },
+  signatureLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
+    marginBottom: 4,
+    height: 24,
+  },
+  signatureLabel: {
+    fontSize: 9,
+    color: '#64748b',
+  },
+  printedNameLabel: {
+    fontSize: 10,
+    color: '#475569',
+    marginTop: 8,
+  },
+  
   // Notes
   notesSection: {
     marginTop: 16,
@@ -435,6 +469,29 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
             <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
             <Text style={styles.paymentLabel}>Final – Due at project completion</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
+          </View>
+        </View>
+
+        {/* Signature Block */}
+        <View style={styles.signatureSection} wrap={false}>
+          <Text style={styles.sectionTitle}>Acceptance</Text>
+          <Text style={styles.acceptanceText}>
+            By signing below, I accept this quote and agree to the terms and payment schedule outlined above.
+          </Text>
+          <View style={styles.signatureRow}>
+            <View style={styles.signatureField}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Client Signature</Text>
+            </View>
+            <View style={styles.signatureField}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Date</Text>
+            </View>
+          </View>
+          <View style={styles.signatureRow}>
+            <View style={styles.signatureField}>
+              <Text style={styles.printedNameLabel}>Printed Name: _______________________________</Text>
+            </View>
           </View>
         </View>
 
