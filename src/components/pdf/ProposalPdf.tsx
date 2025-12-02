@@ -22,12 +22,12 @@ const styles = StyleSheet.create({
   // Header
   headerSection: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   logo: {
-    width: 160,
+    width: 220,
     height: 'auto',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   quoteTitle: {
     fontSize: 16,
@@ -285,7 +285,11 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
     const totals: Record<string, number> = {};
     
     for (const item of lineItems) {
-      const category = item.category || 'Other';
+      // Normalize category names (e.g., "Demo" -> "Demolition")
+      let category = item.category || 'Other';
+      if (category.toLowerCase() === 'demo') {
+        category = 'Demolition';
+      }
       if (!grouped[category]) {
         grouped[category] = [];
         totals[category] = 0;
