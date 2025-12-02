@@ -61,31 +61,35 @@ interface EstimateResponse {
   allowances: Array<{ item: string; quantity: number; notes?: string }>;
   exclusions: string[];
   warnings: string[];
-  // Error states
+  // Conversation states
   error?: string;
   needsMoreInfo?: boolean;
   followUpQuestion?: string;
+  parsed?: {
+    project_type?: string | null;
+    scope?: Record<string, string | null>;
+    dimensions?: Record<string, number | null>;
+    missing?: string[];
+  };
 }
 
 interface ConversationContext {
   projectType?: string;
-  dimensions?: Record<string, number>;
-  trades?: string[];
+  scope?: Record<string, string | null>;
+  dimensions?: Record<string, number | null>;
+}
+
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `**Welcome to Estimaitor** ✨
+  content: `Hey! What project are we estimating today?
 
-I'm your AI estimator. Describe your project naturally and I'll calculate a professional quote with real pricing.
-
-**Try something like:**
-- "5x8 bathroom with 3x5 shower, frameless glass, 48in vanity"
-- "Master bath full gut, 10x12, walk-in shower with bench"
-- "Guest bath refresh, just tile and paint"
-
-What project would you like to estimate?`,
+**Kitchen** or **Bathroom**?`,
   timestamp: new Date(),
 };
 
@@ -93,6 +97,7 @@ export function EstimatorChatPanel() {
   const { contractor, profile } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [context, setContext] = useState<ConversationContext>({});
   const [isLoading, setIsLoading] = useState(false);
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
@@ -116,6 +121,9 @@ export function EstimatorChatPanel() {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, message]);
+    
+    // Add to conversation history for AI context
+    setConversationHistory(prev => [...prev, { role: 'assistant', content }]);
   };
 
   const formatCurrency = (amount: number) => {
@@ -177,6 +185,7 @@ export function EstimatorChatPanel() {
       return;
     }
 
+    // Add user message to UI
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -184,8 +193,12 @@ export function EstimatorChatPanel() {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, userMessage]);
+    
+    // Add to conversation history
+    const updatedHistory = [...conversationHistory, { role: 'user' as const, content }];
+    setConversationHistory(updatedHistory);
+    
     setIsLoading(true);
-    setEstimate(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('calculate-estimate', {
@@ -193,6 +206,7 @@ export function EstimatorChatPanel() {
           message: content,
           context,
           contractor_id: contractor.id,
+          conversation_history: updatedHistory,
         }
       });
 
@@ -200,22 +214,24 @@ export function EstimatorChatPanel() {
       
       const response = data as EstimateResponse;
       
-      // Handle errors or follow-up questions
-      if (response.error || response.needsMoreInfo) {
-        addAssistantMessage(response.followUpQuestion || response.error || 
-          "I need more details. Could you specify dimensions and scope?");
+      // Handle follow-up questions (needs more info)
+      if (response.needsMoreInfo) {
+        const followUp = response.followUpQuestion || "Could you tell me more about the project?";
+        addAssistantMessage(followUp);
         
-        // Update context with any partial data
-        if (response.project_header) {
+        // Update context with parsed data
+        if (response.parsed) {
           setContext(prev => ({
             ...prev,
-            projectType: response.project_header.project_type,
+            projectType: response.parsed?.project_type || prev.projectType,
+            scope: { ...prev.scope, ...response.parsed?.scope },
+            dimensions: { ...prev.dimensions, ...response.parsed?.dimensions },
           }));
         }
         return;
       }
 
-      // We have a complete estimate
+      // We have a complete estimate!
       setEstimate(response);
       
       // Save to database
@@ -226,21 +242,11 @@ export function EstimatorChatPanel() {
 
       // Generate summary message
       const summaryParts = [
-        `**${response.project_header.project_type} Remodel Quote**`,
-        '',
+        `**${response.project_header.project_type} Quote Ready** ✓`,
       ];
       
       if (response.project_header.overall_size_sqft) {
-        summaryParts.push(`📐 **Size:** ${response.project_header.overall_size_sqft} sq ft`);
-      }
-      
-      summaryParts.push(`🔧 **Scope:** ${response.trade_buckets.length} trade items`);
-      summaryParts.push('');
-      summaryParts.push(`**Investment Range:** ${formatCurrency(response.pricing.totals.low_estimate)} - ${formatCurrency(response.pricing.totals.high_estimate)}`);
-      
-      if (response.pricing.warnings.length > 0) {
-        summaryParts.push('');
-        summaryParts.push('⚠️ ' + response.pricing.warnings.join(' | '));
+        summaryParts.push(`${response.project_header.overall_size_sqft} sq ft • ${response.trade_buckets.length} trade items`);
       }
       
       addAssistantMessage(summaryParts.join('\n'));
@@ -248,7 +254,6 @@ export function EstimatorChatPanel() {
     } catch (err) {
       console.error('Error processing message:', err);
       
-      // Check for specific error types
       if (err instanceof Error) {
         if (err.message.includes('429')) {
           toast.error('Rate limit exceeded. Please wait a moment.');
@@ -259,7 +264,7 @@ export function EstimatorChatPanel() {
         }
       }
       
-      addAssistantMessage("I encountered an issue processing your request. Please try describing your project again with specific dimensions.");
+      addAssistantMessage("Sorry, I had an issue. Let's try again - is this a kitchen or bathroom project?");
     } finally {
       setIsLoading(false);
     }
@@ -267,6 +272,7 @@ export function EstimatorChatPanel() {
 
   const handleStartNew = () => {
     setMessages([WELCOME_MESSAGE]);
+    setConversationHistory([]);
     setContext({});
     setEstimate(null);
     setSavedEstimateId(null);
@@ -302,7 +308,9 @@ export function EstimatorChatPanel() {
           </div>
           <div>
             <h2 className="font-display font-semibold text-lg text-foreground tracking-tight">AI Estimator</h2>
-            <p className="text-sm text-muted-foreground">Powered by real pricing data</p>
+            <p className="text-sm text-muted-foreground">
+              {context.projectType ? `${context.projectType} Project` : 'Powered by real pricing'}
+            </p>
           </div>
         </div>
         <Button
@@ -331,7 +339,9 @@ export function EstimatorChatPanel() {
             <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
             </div>
-            <span className="text-sm">Calculating estimate...</span>
+            <span className="text-sm">
+              {estimate ? 'Calculating...' : 'Thinking...'}
+            </span>
           </div>
         )}
 
@@ -464,7 +474,11 @@ export function EstimatorChatPanel() {
         <ChatInput 
           onSend={handleSendMessage} 
           disabled={isLoading}
-          placeholder="Describe your project..."
+          placeholder={
+            !context.projectType 
+              ? "Kitchen or bathroom?" 
+              : `Describe the ${context.projectType.toLowerCase()} scope...`
+          }
         />
       </div>
     </div>

@@ -192,6 +192,17 @@ function mapCategoryToPricing(
     return { ic: Number(config.quartz_ic_per_sqft) || 15, cp: Number(config.quartz_cp_per_sqft) || 50, unit: 'sqft' };
   }
 
+  // Cabinets (Kitchen)
+  if (categoryLower.includes('cabinet')) {
+    // Kitchen cabinets - use per sqft pricing
+    return { ic: Number(config.kitchen_ic_per_sqft) || 128, cp: Number(config.kitchen_cp_per_sqft) || 190, unit: 'sqft' };
+  }
+
+  // Backsplash
+  if (categoryLower.includes('backsplash')) {
+    return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
+  }
+
   return null;
 }
 
@@ -306,41 +317,131 @@ const estimateJsonSchema = {
   required: ["project_header", "dimensions", "trade_buckets"]
 };
 
-const systemPrompt = `### SYSTEM: Construction Estimator AI (TKE)
+// Conversational analysis schema
+const analysisJsonSchema = {
+  type: "object",
+  properties: {
+    action: { 
+      type: "string", 
+      enum: ["ask_question", "generate_estimate"],
+      description: "Whether to ask a follow-up question or generate the estimate"
+    },
+    project_type: { 
+      type: ["string", "null"], 
+      enum: ["Kitchen", "Bathroom", "Combination", null],
+      description: "Detected project type, or null if unclear"
+    },
+    has_enough_info: { 
+      type: "boolean",
+      description: "True if we have enough details to generate a quote"
+    },
+    missing_info: {
+      type: "array",
+      items: { type: "string" },
+      description: "List of missing information needed"
+    },
+    follow_up_question: {
+      type: ["string", "null"],
+      description: "The question to ask if action is ask_question"
+    },
+    parsed_scope: {
+      type: "object",
+      description: "What we understood from the user's input",
+      properties: {
+        demo: { type: ["string", "null"] },
+        cabinets: { type: ["string", "null"] },
+        countertops: { type: ["string", "null"] },
+        backsplash: { type: ["string", "null"] },
+        flooring: { type: ["string", "null"] },
+        tile: { type: ["string", "null"] },
+        plumbing: { type: ["string", "null"] },
+        electrical: { type: ["string", "null"] },
+        glass: { type: ["string", "null"] },
+        vanity: { type: ["string", "null"] },
+        paint: { type: ["string", "null"] }
+      }
+    },
+    parsed_dimensions: {
+      type: "object",
+      properties: {
+        room_sqft: { type: ["number", "null"] },
+        room_length: { type: ["number", "null"] },
+        room_width: { type: ["number", "null"] },
+        shower_length: { type: ["number", "null"] },
+        shower_width: { type: ["number", "null"] },
+        countertop_sqft: { type: ["number", "null"] }
+      }
+    }
+  },
+  required: ["action", "has_enough_info", "missing_info"]
+};
 
-You convert natural language project descriptions into structured pricing payloads.
+const conversationalSystemPrompt = `You are a construction estimator assistant helping contractors quickly build quotes. Your job is to:
 
-**MEASUREMENT RULES:**
-- Room floor sqft = length × width
-- Shower floor sqft = shower_length × shower_width  
-- Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
-- Default ceiling height: 8ft
+1. UNDERSTAND the project type (Kitchen or Bathroom)
+2. GATHER scope details naturally 
+3. ASK for dimensions when needed
+4. GENERATE quote only when you have enough info
 
-**TRADE BUCKET MAPPING:**
+## CONVERSATION FLOW
 
-**Demolition:** demo_shower_only (showers <20 sqft), demo_small_bath (<50 sqft), demo_large_bath (50+ sqft), demo_kitchen
+**Step 1 - Identify Project Type**
+If unclear, ask: "Is this a kitchen or bathroom project?"
 
-**Plumbing:** Plumbing - Shower Standard, Plumbing - Extra Head, Plumbing - Toilet Swap, Plumbing - Tub to Shower, Plumbing - Freestanding Tub
+**Step 2 - Understand Scope (Project-Specific)**
 
-**Tile:** Tile - Wall (sqft), Tile - Shower Floor (sqft), Tile - Main Floor (sqft)
+FOR KITCHENS, understand:
+- Demo level: full gut, partial, refresh
+- Cabinets: new cabinets, reface, paint existing, none
+- Countertops: new quartz, keep existing
+- Backsplash: full height, standard 4", none
+- Flooring: new tile/LVP, keep existing
+- Appliances: replacing any? (we don't price these, just note)
 
-**Support:** Waterproofing (=total tile sqft), Cement Board (=total tile sqft)
+FOR BATHROOMS, understand:
+- Demo level: full gut, shower only, cosmetic refresh
+- Shower/tub: walk-in shower, tub-to-shower conversion, keep tub
+- Tile: wall tile height (full height vs wainscot), floor tile
+- Glass: frameless, framed, curtain
+- Vanity: size (30", 36", 48", 60", etc) or keep existing
+- Toilet: replace or keep
+- Lighting: recessed cans, vanity light
 
-**Electrical:** Electrical - Recessed Can (ea), Electrical - Vanity Light (ea)
+**Step 3 - Get Dimensions**
+Once scope is clear, ask for dimensions:
+- Kitchen: total sqft, countertop linear feet
+- Bathroom: room size (LxW), shower size (LxW)
 
-**Glass:** Glass - Shower Standard, Glass - Panel Only, Glass - 90 Return
+## NATURAL LANGUAGE PARSING
 
-**Vanity:** Vanity - 30in through Vanity - 84in
+Contractors speak in shorthand. Parse these correctly:
+- "full demo tops and cabinets no floor" = full demo, new countertops, new cabinets, NO flooring
+- "full height quartz backsplash" = quartz backsplash floor to ceiling
+- "tile to ceiling" = wall tile from floor to ceiling (usually 8-9ft)
+- "3x5 shower" = 3ft x 5ft shower = 15 sqft floor
+- "48 vanity" = 48 inch vanity
+- "2 cans" = 2 recessed lights
+- "no tub, walk in shower" = tub-to-shower conversion
+- "just tile and paint" = cosmetic refresh, tile + paint only
 
-**Framing:** Framing - Standard, Framing - Niche (ea)
+## DECISION RULES
 
-**Paint:** Paint - Patch, Paint - Full Bath
+**Generate estimate when you have:**
+- Kitchen: project type + demo level + cabinet scope + counter scope + backsplash + room size
+- Bathroom: project type + demo level + shower/tub scope + tile scope + glass type + vanity size + room size + shower size
 
-**INFERENCE:**
-- "Full gut" → Demo + all trades
-- "Shower remodel" → Demo + plumbing + tile + waterproofing + cement board + glass
-- "Tile to ceiling" → Calculate full wall height
-- Always include waterproofing + cement board = total tile sqft`;
+**Ask follow-up when missing:**
+- Critical dimensions (room size, shower size)
+- Unclear scope (what's included/excluded)
+
+## RESPONSE STYLE
+
+Keep questions SHORT and SPECIFIC. One question at a time.
+Good: "What size is the shower? (like 3x5 or 4x6)"
+Bad: "Can you tell me the shower dimensions, tile height, glass type, and vanity size?"
+
+When parsing scope, confirm what you understood:
+"Got it - full gut, new cabinets + quartz tops, full height backsplash, keeping existing floor. What's the kitchen size in sqft?"`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -348,7 +449,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, contractor_id } = await req.json();
+    const { message, context, contractor_id, conversation_history } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -372,8 +473,129 @@ serve(async (req) => {
       throw new Error("Failed to fetch pricing configuration");
     }
 
-    // Step 2: Call AI to parse project description
-    console.log("Calling AI with message:", message);
+    // Build conversation messages
+    const conversationMessages = [];
+    if (conversation_history && Array.isArray(conversation_history)) {
+      for (const msg of conversation_history) {
+        conversationMessages.push({
+          role: msg.role === 'assistant' ? 'assistant' : 'user',
+          content: msg.content
+        });
+      }
+    }
+    conversationMessages.push({ role: 'user', content: message });
+
+    // Step 2: First, analyze if we have enough info
+    console.log("Analyzing conversation for completeness...");
+    const analysisResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: conversationalSystemPrompt + `\n\nCURRENT CONTEXT: ${JSON.stringify(context || {})}` },
+          ...conversationMessages
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "analyze_conversation",
+            description: "Analyze the conversation to determine if we have enough info or need to ask more questions",
+            parameters: analysisJsonSchema
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "analyze_conversation" } }
+      }),
+    });
+
+    if (!analysisResponse.ok) {
+      const status = analysisResponse.status;
+      if (status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      if (status === 402) {
+        return new Response(JSON.stringify({ error: "AI quota exceeded" }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      throw new Error(`AI error: ${status}`);
+    }
+
+    const analysisData = await analysisResponse.json();
+    const analysisToolCall = analysisData.choices?.[0]?.message?.tool_calls?.[0];
+    
+    if (!analysisToolCall) {
+      throw new Error("No analysis tool call in AI response");
+    }
+
+    const analysis = JSON.parse(analysisToolCall.function.arguments);
+    console.log("Analysis result:", JSON.stringify(analysis, null, 2));
+
+    // If we need more info, return the follow-up question
+    if (analysis.action === "ask_question" || !analysis.has_enough_info) {
+      return new Response(JSON.stringify({
+        needsMoreInfo: true,
+        followUpQuestion: analysis.follow_up_question || "Could you provide more details about the project?",
+        parsed: {
+          project_type: analysis.project_type,
+          scope: analysis.parsed_scope,
+          dimensions: analysis.parsed_dimensions,
+          missing: analysis.missing_info
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Step 3: We have enough info - generate the estimate
+    console.log("Generating estimate with full context...");
+    
+    const estimateSystemPrompt = `You are a construction estimator. Convert the conversation into a structured estimate.
+
+MEASUREMENT RULES:
+- Room floor sqft = length × width
+- Shower floor sqft = shower_length × shower_width  
+- Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
+- Default ceiling height: 8ft
+
+TRADE BUCKET MAPPING:
+
+**Demolition:** demo_shower_only (showers <20 sqft), demo_small_bath (<50 sqft), demo_large_bath (50+ sqft), demo_kitchen
+
+**Plumbing:** Plumbing - Shower Standard, Plumbing - Extra Head, Plumbing - Toilet Swap, Plumbing - Tub to Shower, Plumbing - Freestanding Tub
+
+**Tile:** Tile - Wall (sqft), Tile - Shower Floor (sqft), Tile - Main Floor (sqft)
+
+**Support:** Waterproofing (=total tile sqft), Cement Board (=total tile sqft)
+
+**Electrical:** Electrical - Recessed Can (ea), Electrical - Vanity Light (ea), Electrical - Kitchen Package (ea)
+
+**Glass:** Glass - Shower Standard, Glass - Panel Only, Glass - 90 Return
+
+**Vanity:** Vanity - 30in through Vanity - 84in
+
+**Cabinets:** Cabinets - Kitchen (use room sqft as quantity)
+
+**Countertops:** Quartz - Countertop (sqft)
+
+**Backsplash:** Backsplash - Tile (sqft)
+
+**Framing:** Framing - Standard, Framing - Niche (ea)
+
+**Paint:** Paint - Patch, Paint - Full Bath
+
+INFERENCE:
+- "Full gut" → Demo + all trades
+- "Shower remodel" → Demo + plumbing + tile + waterproofing + cement board + glass
+- "Tile to ceiling" or "full height" → Calculate full wall height (8ft)
+- Always include waterproofing + cement board = total tile sqft
+- "no floor" or "keep floor" → EXCLUDE floor tile from trade_buckets`;
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -383,8 +605,9 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt + `\n\nCONTEXT: ${JSON.stringify(context || {})}` },
-          { role: "user", content: message }
+          { role: "system", content: estimateSystemPrompt },
+          ...conversationMessages,
+          { role: "user", content: `Based on the entire conversation above, generate the structured estimate. Use the parsed data: ${JSON.stringify(analysis.parsed_scope)} and dimensions: ${JSON.stringify(analysis.parsed_dimensions)}` }
         ],
         tools: [{
           type: "function",
@@ -399,22 +622,11 @@ serve(async (req) => {
     });
 
     if (!aiResponse.ok) {
-      const status = aiResponse.status;
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI quota exceeded" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
-      throw new Error(`AI error: ${status}`);
+      throw new Error(`AI error: ${aiResponse.status}`);
     }
 
     const aiData = await aiResponse.json();
-    console.log("AI response received");
+    console.log("Estimate AI response received");
 
     // Extract tool call
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
@@ -429,17 +641,17 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: "Invalid AI response",
         needsMoreInfo: true,
-        followUpQuestion: "Could you provide more details about dimensions and scope?"
+        followUpQuestion: "I had trouble generating the estimate. Could you provide the room dimensions again?"
       }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    // Step 3: Calculate pricing
+    // Step 4: Calculate pricing
     console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets");
     const pricing = calculatePricing(validated.data.trade_buckets, pricingConfig);
 
-    // Step 4: Combine results
+    // Step 5: Combine results
     const result = {
       ...validated.data,
       pricing,
@@ -461,7 +673,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       error: error instanceof Error ? error.message : "Unknown error",
       needsMoreInfo: true,
-      followUpQuestion: "I had trouble processing that. Could you describe the project again?"
+      followUpQuestion: "I had trouble processing that. What type of project is this - kitchen or bathroom?"
     }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
