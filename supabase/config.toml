@@ -1,1 +1,7 @@
 project_id = "bepdsritihnkfseurqjl"
+
+[functions.parse-project]
+verify_jwt = false
+
+[functions.bigbox-product-lookup]
+verify_jwt = false
