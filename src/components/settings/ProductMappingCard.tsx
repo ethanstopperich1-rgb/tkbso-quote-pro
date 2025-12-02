@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProductMappingTestPanel } from "./ProductMappingTestPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -182,8 +183,11 @@ export function ProductMappingCard() {
   });
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="space-y-6">
+      <ProductMappingTestPanel />
+      
+      <Card>
+        <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
@@ -341,5 +345,6 @@ export function ProductMappingCard() {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
