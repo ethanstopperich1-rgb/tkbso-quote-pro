@@ -527,6 +527,15 @@ serve(async (req) => {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
+      if (status === 503) {
+        console.log("AI service temporarily unavailable (503), returning friendly message");
+        return new Response(JSON.stringify({
+          needsMoreInfo: true,
+          followUpQuestion: "I'm experiencing a brief hiccup. Please try sending your message again in a moment."
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
       throw new Error(`AI error: ${status}`);
     }
 
@@ -626,7 +635,17 @@ INFERENCE:
     });
 
     if (!aiResponse.ok) {
-      throw new Error(`AI error: ${aiResponse.status}`);
+      const status = aiResponse.status;
+      if (status === 503) {
+        console.log("AI service temporarily unavailable (503) during estimate generation");
+        return new Response(JSON.stringify({
+          needsMoreInfo: true,
+          followUpQuestion: "I'm experiencing a brief hiccup while generating your estimate. Please try again in a moment."
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      throw new Error(`AI error: ${status}`);
     }
 
     const aiData = await aiResponse.json();
