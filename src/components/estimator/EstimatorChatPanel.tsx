@@ -135,13 +135,19 @@ export function EstimatorChatPanel() {
     }).format(amount);
   };
 
-  const saveEstimateToDatabase = async (data: EstimateResponse): Promise<string | null> => {
+  const saveEstimateToDatabase = async (data: EstimateResponse, chatHistory: ConversationMessage[]): Promise<string | null> => {
     if (!contractor?.id) {
       toast.error('You must be logged in to save estimates');
       return null;
     }
 
     try {
+      // Include conversation history in the payload
+      const payloadWithHistory = {
+        ...data,
+        conversation_history: chatHistory,
+      };
+
       const estimateData = {
         contractor_id: contractor.id,
         created_by_profile_id: profile?.id || null,
@@ -158,7 +164,7 @@ export function EstimatorChatPanel() {
         final_ic_total: data.pricing.totals.total_ic,
         low_estimate_cp: data.pricing.totals.low_estimate,
         high_estimate_cp: data.pricing.totals.high_estimate,
-        internal_json_payload: JSON.parse(JSON.stringify(data)),
+        internal_json_payload: JSON.parse(JSON.stringify(payloadWithHistory)),
         status: 'draft',
       };
 
@@ -234,8 +240,8 @@ export function EstimatorChatPanel() {
       // We have a complete estimate!
       setEstimate(response);
       
-      // Save to database
-      const estimateId = await saveEstimateToDatabase(response);
+      // Save to database with conversation history
+      const estimateId = await saveEstimateToDatabase(response, updatedHistory);
       if (estimateId) {
         setSavedEstimateId(estimateId);
       }

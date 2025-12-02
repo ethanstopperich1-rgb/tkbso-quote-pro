@@ -12,6 +12,8 @@ import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
 import { ProposalPdf } from '@/components/pdf/ProposalPdf';
 import { ClientInfoEditCard } from '@/components/estimates/ClientInfoEditCard';
+import { ConversationHistoryCard } from '@/components/estimates/ConversationHistoryCard';
+import { PricingEditCard } from '@/components/estimates/PricingEditCard';
 import { 
   ArrowLeft, 
   Download, 
@@ -427,37 +429,16 @@ export default function EstimateDetail() {
             </CardContent>
           </Card>
 
-          {/* Internal Breakdown (only visible to contractor) */}
-          <Card className="border-amber-200 bg-amber-50/30">
-            <CardHeader>
-              <CardTitle className="text-lg text-amber-800">Internal Breakdown</CardTitle>
-              <p className="text-xs text-amber-600">This section is NOT shown on the client PDF</p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Internal Cost</p>
-                  <p className="font-semibold">{formatCurrency(estimate.final_ic_total)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Client Price</p>
-                  <p className="font-semibold">{formatCurrency(estimate.final_cp_total)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Margin</p>
-                  <p className="font-semibold text-emerald-600">
-                    {estimate.final_cp_total > 0
-                      ? formatPercentage((estimate.final_cp_total - estimate.final_ic_total) / estimate.final_cp_total)
-                      : '0%'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Gross Profit</p>
-                  <p className="font-semibold">{formatCurrency(estimate.final_cp_total - estimate.final_ic_total)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Internal Breakdown with Edit Pricing */}
+          <PricingEditCard 
+            estimate={estimate} 
+            onUpdate={(updates) => setEstimate({ ...estimate, ...updates })} 
+          />
+
+          {/* Conversation History */}
+          <ConversationHistoryCard 
+            conversationHistory={(estimate.internal_json_payload as any)?.conversation_history}
+          />
         </div>
 
         {/* Right Column - Client & Project Info */}
