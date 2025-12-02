@@ -30,14 +30,14 @@ export function ProductMappingTestPanel() {
 
       setTestResult({
         success: true,
-        productsFound: data?.products?.length || 0,
-        sampleProduct: data?.products?.[0] || null,
+        productsFound: data?.search_results?.length || 0,
+        sampleProduct: data?.search_results?.[0] || null,
         rawData: data,
       });
 
       toast({
         title: "BigBox API Connected",
-        description: `Found ${data?.products?.length || 0} products`,
+        description: `Found ${data?.search_results?.length || 0} products`,
       });
     } catch (error: any) {
       setTestResult({
@@ -111,12 +111,12 @@ export function ProductMappingTestPanel() {
                   <div className="border-t pt-3 mt-3">
                     <p className="text-xs font-medium mb-2">Sample Product:</p>
                     <div className="space-y-1 text-sm">
-                      <p className="font-medium">{testResult.sampleProduct.title}</p>
+                      <p className="font-medium">{testResult.sampleProduct.product?.title}</p>
                       <p className="text-muted-foreground text-xs">
-                        SKU: {testResult.sampleProduct.product_id}
+                        SKU: {testResult.sampleProduct.product?.item_id}
                       </p>
                       <p className="font-bold text-lg">
-                        ${testResult.sampleProduct.pricing?.current_price || 'N/A'}
+                        ${testResult.sampleProduct.offers?.primary?.price || 'N/A'}
                       </p>
                     </div>
                   </div>

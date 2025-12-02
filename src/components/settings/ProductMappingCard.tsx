@@ -74,9 +74,9 @@ export function ProductMappingCard() {
 
       if (error) throw error;
 
-      setSearchResults(data.products || []);
+      setSearchResults(data.search_results || []);
       
-      if (!data.products || data.products.length === 0) {
+      if (!data.search_results || data.search_results.length === 0) {
         toast({
           title: "No products found",
           description: "Try a different search term",
@@ -94,7 +94,7 @@ export function ProductMappingCard() {
   };
 
   const addMappingMutation = useMutation({
-    mutationFn: async (product: any) => {
+    mutationFn: async (result: any) => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('contractor_id')
@@ -106,12 +106,12 @@ export function ProductMappingCard() {
         .from('product_mappings')
         .insert({
           contractor_id: profile.contractor_id,
-          sku: product.product_id,
-          product_name: product.title,
-          product_description: product.description,
+          sku: result.product?.item_id,
+          product_name: result.product?.title,
+          product_description: result.product?.brand || '',
           trade_bucket: selectedTradeBucket,
           pricing_field: selectedPricingField,
-          current_price: product.pricing?.current_price || 0,
+          current_price: result.offers?.primary?.price || 0,
           is_active: true,
         });
 
@@ -229,14 +229,14 @@ export function ProductMappingCard() {
 
                   {searchResults.length > 0 && (
                     <div className="space-y-2">
-                      {searchResults.map((product: any) => (
-                        <Card key={product.product_id} className="p-4">
+                      {searchResults.map((result: any) => (
+                        <Card key={result.product?.item_id} className="p-4">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
-                              <h4 className="font-medium">{product.title}</h4>
-                              <p className="text-sm text-muted-foreground">{product.product_id}</p>
+                              <h4 className="font-medium">{result.product?.title}</h4>
+                              <p className="text-sm text-muted-foreground">SKU: {result.product?.item_id}</p>
                               <p className="text-lg font-bold mt-2">
-                                ${product.pricing?.current_price || 'N/A'}
+                                ${result.offers?.primary?.price || 'N/A'}
                               </p>
                             </div>
                             <div className="space-y-2 ml-4">
@@ -259,7 +259,7 @@ export function ProductMappingCard() {
                               />
                               <Button
                                 size="sm"
-                                onClick={() => addMappingMutation.mutate(product)}
+                                onClick={() => addMappingMutation.mutate(result)}
                                 disabled={!selectedTradeBucket || !selectedPricingField}
                               >
                                 Map Product
