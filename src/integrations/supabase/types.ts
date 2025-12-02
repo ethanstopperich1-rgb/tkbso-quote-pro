@@ -471,6 +471,7 @@ export type Database = {
           bath_partial_multiplier: number | null
           bath_refresh_multiplier: number | null
           bath_shower_only_multiplier: number | null
+          bathroom_target_margin: number | null
           cabinet_markup_multiplier_no_gc: number | null
           cabinet_markup_multiplier_with_gc: number | null
           cement_board_cp_per_sqft: number | null
@@ -480,6 +481,7 @@ export type Database = {
           contractor_id: string
           created_at: string | null
           currency: string | null
+          demo_haul_margin: number | null
           demo_kitchen_cp: number | null
           demo_kitchen_ic: number | null
           demo_large_bath_cp: number | null
@@ -496,6 +498,7 @@ export type Database = {
           electrical_hood_relocation_cp: number | null
           electrical_kitchen_package_cp: number | null
           electrical_kitchen_package_ic: number | null
+          electrical_margin: number | null
           electrical_microwave_circuit_cp: number | null
           electrical_small_package_cp: number | null
           electrical_small_package_ic: number | null
@@ -511,6 +514,7 @@ export type Database = {
           floor_leveling_small_ic: number | null
           frameless_glass_cp_per_sqft: number | null
           frameless_glass_ic_per_sqft: number | null
+          framing_margin: number | null
           framing_pony_wall_cp: number | null
           framing_pony_wall_ic: number | null
           framing_standard_cp: number | null
@@ -533,6 +537,7 @@ export type Database = {
           kitchen_ic_per_sqft: number | null
           kitchen_partial_multiplier: number | null
           kitchen_refresh_multiplier: number | null
+          kitchen_target_margin: number | null
           lighting_fixture_allowance_cp: number | null
           low_range_multiplier: number | null
           lvp_cp_per_sqft: number | null
@@ -559,6 +564,7 @@ export type Database = {
           plumbing_shower_standard_ic: number | null
           plumbing_smart_valve_cp: number | null
           plumbing_smart_valve_ic: number | null
+          plumbing_standard_margin: number | null
           plumbing_toilet_cp: number | null
           plumbing_toilet_ic: number | null
           plumbing_toilet_relocation_cp: number | null
@@ -566,6 +572,7 @@ export type Database = {
           plumbing_tub_freestanding_ic: number | null
           plumbing_tub_to_shower_cp: number | null
           plumbing_tub_to_shower_ic: number | null
+          quartz_countertop_margin: number | null
           quartz_cp_per_sqft: number | null
           quartz_faucet_drill_cp: number | null
           quartz_ic_per_sqft: number | null
@@ -603,8 +610,10 @@ export type Database = {
           vanity_84_bundle_cp: number | null
           vanity_84_bundle_ic: number | null
           vanity_only_48_cp: number | null
+          wall_tile_labor_margin: number | null
           waterproofing_cp_per_sqft: number | null
           waterproofing_ic_per_sqft: number | null
+          waterproofing_margin: number | null
         }
         Insert: {
           barrier_cp_per_sqft?: number | null
@@ -614,6 +623,7 @@ export type Database = {
           bath_partial_multiplier?: number | null
           bath_refresh_multiplier?: number | null
           bath_shower_only_multiplier?: number | null
+          bathroom_target_margin?: number | null
           cabinet_markup_multiplier_no_gc?: number | null
           cabinet_markup_multiplier_with_gc?: number | null
           cement_board_cp_per_sqft?: number | null
@@ -623,6 +633,7 @@ export type Database = {
           contractor_id: string
           created_at?: string | null
           currency?: string | null
+          demo_haul_margin?: number | null
           demo_kitchen_cp?: number | null
           demo_kitchen_ic?: number | null
           demo_large_bath_cp?: number | null
@@ -639,6 +650,7 @@ export type Database = {
           electrical_hood_relocation_cp?: number | null
           electrical_kitchen_package_cp?: number | null
           electrical_kitchen_package_ic?: number | null
+          electrical_margin?: number | null
           electrical_microwave_circuit_cp?: number | null
           electrical_small_package_cp?: number | null
           electrical_small_package_ic?: number | null
@@ -654,6 +666,7 @@ export type Database = {
           floor_leveling_small_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
+          framing_margin?: number | null
           framing_pony_wall_cp?: number | null
           framing_pony_wall_ic?: number | null
           framing_standard_cp?: number | null
@@ -676,6 +689,7 @@ export type Database = {
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
+          kitchen_target_margin?: number | null
           lighting_fixture_allowance_cp?: number | null
           low_range_multiplier?: number | null
           lvp_cp_per_sqft?: number | null
@@ -702,6 +716,7 @@ export type Database = {
           plumbing_shower_standard_ic?: number | null
           plumbing_smart_valve_cp?: number | null
           plumbing_smart_valve_ic?: number | null
+          plumbing_standard_margin?: number | null
           plumbing_toilet_cp?: number | null
           plumbing_toilet_ic?: number | null
           plumbing_toilet_relocation_cp?: number | null
@@ -709,6 +724,7 @@ export type Database = {
           plumbing_tub_freestanding_ic?: number | null
           plumbing_tub_to_shower_cp?: number | null
           plumbing_tub_to_shower_ic?: number | null
+          quartz_countertop_margin?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
@@ -746,8 +762,10 @@ export type Database = {
           vanity_84_bundle_cp?: number | null
           vanity_84_bundle_ic?: number | null
           vanity_only_48_cp?: number | null
+          wall_tile_labor_margin?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
+          waterproofing_margin?: number | null
         }
         Update: {
           barrier_cp_per_sqft?: number | null
@@ -757,6 +775,7 @@ export type Database = {
           bath_partial_multiplier?: number | null
           bath_refresh_multiplier?: number | null
           bath_shower_only_multiplier?: number | null
+          bathroom_target_margin?: number | null
           cabinet_markup_multiplier_no_gc?: number | null
           cabinet_markup_multiplier_with_gc?: number | null
           cement_board_cp_per_sqft?: number | null
@@ -766,6 +785,7 @@ export type Database = {
           contractor_id?: string
           created_at?: string | null
           currency?: string | null
+          demo_haul_margin?: number | null
           demo_kitchen_cp?: number | null
           demo_kitchen_ic?: number | null
           demo_large_bath_cp?: number | null
@@ -782,6 +802,7 @@ export type Database = {
           electrical_hood_relocation_cp?: number | null
           electrical_kitchen_package_cp?: number | null
           electrical_kitchen_package_ic?: number | null
+          electrical_margin?: number | null
           electrical_microwave_circuit_cp?: number | null
           electrical_small_package_cp?: number | null
           electrical_small_package_ic?: number | null
@@ -797,6 +818,7 @@ export type Database = {
           floor_leveling_small_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
+          framing_margin?: number | null
           framing_pony_wall_cp?: number | null
           framing_pony_wall_ic?: number | null
           framing_standard_cp?: number | null
@@ -819,6 +841,7 @@ export type Database = {
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
+          kitchen_target_margin?: number | null
           lighting_fixture_allowance_cp?: number | null
           low_range_multiplier?: number | null
           lvp_cp_per_sqft?: number | null
@@ -845,6 +868,7 @@ export type Database = {
           plumbing_shower_standard_ic?: number | null
           plumbing_smart_valve_cp?: number | null
           plumbing_smart_valve_ic?: number | null
+          plumbing_standard_margin?: number | null
           plumbing_toilet_cp?: number | null
           plumbing_toilet_ic?: number | null
           plumbing_toilet_relocation_cp?: number | null
@@ -852,6 +876,7 @@ export type Database = {
           plumbing_tub_freestanding_ic?: number | null
           plumbing_tub_to_shower_cp?: number | null
           plumbing_tub_to_shower_ic?: number | null
+          quartz_countertop_margin?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
@@ -889,8 +914,10 @@ export type Database = {
           vanity_84_bundle_cp?: number | null
           vanity_84_bundle_ic?: number | null
           vanity_only_48_cp?: number | null
+          wall_tile_labor_margin?: number | null
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
+          waterproofing_margin?: number | null
         }
         Relationships: [
           {

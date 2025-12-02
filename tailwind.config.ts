@@ -14,41 +14,29 @@ export default {
   	},
   	extend: {
   		fontFamily: {
-  			display: [
-  				'Playfair Display',
-  				'serif'
-  			],
   			sans: [
-  				'Source Sans Pro',
-  				'ui-sans-serif',
-  				'system-ui',
+  				'Inter',
   				'-apple-system',
   				'BlinkMacSystemFont',
   				'Segoe UI',
   				'Roboto',
   				'Helvetica Neue',
   				'Arial',
-  				'Noto Sans',
   				'sans-serif'
   			],
-  			serif: [
-  				'Source Serif Pro',
-  				'ui-serif',
-  				'Georgia',
-  				'Cambria',
-  				'Times New Roman',
-  				'Times',
-  				'serif'
+  			display: [
+  				'Inter',
+  				'-apple-system',
+  				'BlinkMacSystemFont',
+  				'sans-serif'
   			],
   			mono: [
-  				'Source Code Pro',
+  				'Roboto Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
   				'Monaco',
   				'Consolas',
-  				'Liberation Mono',
-  				'Courier New',
   				'monospace'
   			]
   		},
@@ -86,12 +74,11 @@ export default {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
-  			tkbso: {
-  				blue: 'hsl(var(--tkbso-blue))',
-  				'blue-light': 'hsl(var(--tkbso-blue-light))',
-  				gray: 'hsl(var(--tkbso-gray))',
-  				'gray-dark': 'hsl(var(--tkbso-gray-dark))',
-  				gold: 'hsl(var(--tkbso-gold))'
+  			estimaitor: {
+  				navy: 'hsl(var(--estimaitor-navy))',
+  				'navy-light': 'hsl(var(--estimaitor-navy-light))',
+  				teal: 'hsl(var(--estimaitor-teal))',
+  				'teal-light': 'hsl(var(--estimaitor-teal-light))'
   			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
