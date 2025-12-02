@@ -270,6 +270,24 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Trade descriptions for professional appearance
+const tradeDescriptions: Record<string, string> = {
+  'Demolition': 'Complete demolition of existing fixtures, flooring, and wall surfaces. Includes debris removal, dumpster, and site protection.',
+  'Plumbing': 'All plumbing rough-in and finish work including supply lines, drains, and fixture installation.',
+  'Tile': 'Professional tile installation including wall tile, floor tile, and waterproofing membrane system.',
+  'Tile & Waterproofing': 'Professional tile installation with complete waterproofing system for shower and wet areas.',
+  'Electrical': 'Electrical work including lighting fixtures, switches, outlets, and code-compliant wiring.',
+  'Vanity': 'Vanity cabinet installation with countertop, sink, and faucet.',
+  'Cabinetry': 'Cabinet installation including hardware and final adjustments.',
+  'Countertops': 'Quartz countertop fabrication and installation with undermount sink cutout.',
+  'Shower Glass': 'Custom frameless glass enclosure with hardware and professional installation.',
+  'Painting': 'Interior painting including wall prep, primer, and finish coat.',
+  'Support': 'Structural support work including cement board installation and waterproofing.',
+  'Framing': 'Framing and blocking for fixtures, niches, and structural support.',
+  'Glass': 'Custom glass enclosure with hardware and professional installation.',
+  'Other': 'Additional work as specified in project scope.',
+};
+
 function buildTradeGroups(estimate: Estimate): TradeGroup[] {
   const groups: TradeGroup[] = [];
 
@@ -281,7 +299,6 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
   }> | undefined;
 
   if (lineItems && lineItems.length > 0) {
-    const grouped: Record<string, LineItem[]> = {};
     const totals: Record<string, number> = {};
     
     for (const item of lineItems) {
@@ -290,19 +307,21 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
       if (category.toLowerCase() === 'demo') {
         category = 'Demolition';
       }
-      if (!grouped[category]) {
-        grouped[category] = [];
+      if (!totals[category]) {
         totals[category] = 0;
       }
-      grouped[category].push({
-        description: item.task_description,
-        price: item.cp_total,
-      });
       totals[category] += item.cp_total || 0;
     }
     
-    for (const [trade, items] of Object.entries(grouped)) {
-      groups.push({ trade, items, total: totals[trade] });
+    // Create groups with clean descriptions (no line items)
+    for (const [trade, total] of Object.entries(totals)) {
+      if (total > 0) {
+        groups.push({
+          trade,
+          items: [{ description: tradeDescriptions[trade] || `${trade} work as specified.` }],
+          total,
+        });
+      }
     }
   } else {
     if (estimate.include_demo !== false && (estimate.demo_cp_total || 0) > 0) {
@@ -463,19 +482,13 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
         {/* Trade Breakdown */}
         {tradeGroups.map((group, idx) => (
           <View key={idx} style={styles.tradeSection} wrap={false}>
-            <Text style={styles.tradeHeader}>{group.trade}</Text>
-            {group.items.map((item, itemIdx) => (
-              <View key={itemIdx} style={styles.lineItem}>
-                <Text style={styles.lineItemText}>• {item.description}</Text>
-                {item.price !== undefined && item.price > 0 && (
-                  <Text style={styles.lineItemPrice}>{formatCurrency(item.price)}</Text>
-                )}
-              </View>
-            ))}
-            <View style={styles.tradeTotalRow}>
-              <Text style={styles.tradeTotalText}>Subtotal:</Text>
-              <Text style={styles.tradeTotalPrice}>{formatCurrency(group.total)}</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#1e3a8a', paddingBottom: 2, marginBottom: 4 }}>
+              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>{group.trade}</Text>
+              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>{formatCurrency(group.total)}</Text>
             </View>
+            <Text style={{ fontSize: 9, color: '#475569', paddingLeft: 4, lineHeight: 1.4 }}>
+              {group.items[0]?.description}
+            </Text>
           </View>
         ))}
 
