@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.bigbox-product-lookup]
 verify_jwt = false
+
+[functions.calculate-estimate]
+verify_jwt = false
