@@ -3,6 +3,7 @@ import { Send, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -115,14 +116,17 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t bg-card p-4">
-      <div className="max-w-4xl mx-auto flex gap-2">
+    <div className="border-t bg-card px-6 py-4">
+      <div className="max-w-4xl mx-auto flex gap-3">
         <Button
           variant={isListening ? "default" : "outline"}
           size="icon"
           onClick={toggleListening}
           disabled={disabled}
-          className={isListening ? "bg-red-500 hover:bg-red-600 animate-pulse" : ""}
+          className={cn(
+            isListening && "bg-red-500 hover:bg-red-600 animate-pulse",
+            "flex-shrink-0"
+          )}
           title={isListening ? "Stop listening" : "Start voice input"}
         >
           {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -133,25 +137,24 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder || "Describe your project... (or click mic to speak)"}
-          className="min-h-[60px] max-h-[200px] resize-none"
+          className="min-h-[56px] max-h-[200px] resize-none text-sm"
           disabled={disabled}
         />
         
         <Button 
           onClick={handleSend} 
           disabled={!input.trim() || disabled}
-          className="px-4 self-end"
+          className="px-6 self-end flex-shrink-0"
+          size="default"
         >
           <Send className="w-4 h-4" />
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground text-center mt-2">
-        {isListening ? (
-          <span className="text-red-500 font-medium">🎤 Listening...</span>
-        ) : (
-          "Press Enter to send • Shift+Enter for new line • Click mic to speak"
-        )}
-      </p>
+      {isListening && (
+        <p className="text-xs text-red-500 font-medium text-center mt-2 animate-pulse">
+          🎤 Listening...
+        </p>
+      )}
     </div>
   );
 }

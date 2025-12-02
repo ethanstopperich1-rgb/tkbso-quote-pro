@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { EstimateSchema } from "./schemas.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -180,36 +181,45 @@ Return ONLY the JSON object. No explanations, no markdown.`;
       throw new Error("No response from AI");
     }
 
-    // TKE can return either Markdown (Phases 1-2) or structured data (Phase 3)
-    // Try to detect which format we received
-    let parsed;
-    
-    // Check if response contains the structured table format (Phase 3)
-    if (content.includes("✅ Scope & Variable Extraction") || content.includes("Trade Bucket Triggers")) {
-      // This is Phase 3 Markdown output - return as-is for display
-      return new Response(JSON.stringify({ 
-        content: content,
-        isMarkdown: true,
-        phase: 3
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    
-    // Try to parse as JSON (legacy format or structured data)
+    console.log("Raw AI response:", content);
+
+    // Parse and validate the AI response
     try {
       const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
-      parsed = JSON.parse(cleanContent);
+      const parsedData = JSON.parse(cleanContent);
       
-      return new Response(JSON.stringify(parsed), {
+      // Validate against Zod schema
+      const validated = EstimateSchema.safeParse(parsedData);
+      
+      if (!validated.success) {
+        console.error("Validation failed:", validated.error.issues);
+        
+        // Return a helpful error with the validation issues
+        return new Response(JSON.stringify({ 
+          error: "AI returned invalid data structure",
+          validation_errors: validated.error.issues,
+          needsMoreInfo: true,
+          followUpQuestion: "I had trouble structuring that. Could you provide more specific details about the project dimensions and scope?"
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Return the validated, structured data
+      console.log("Validated data:", validated.data);
+      return new Response(JSON.stringify(validated.data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    } catch (e) {
-      // Not JSON - treat as Markdown response (Phases 1-2)
+      
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      
+      // Fallback: treat as conversational response
       return new Response(JSON.stringify({ 
         content: content,
         isMarkdown: true,
-        phase: content.toLowerCase().includes("thank you") ? 3 : 1
+        needsMoreInfo: true
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
