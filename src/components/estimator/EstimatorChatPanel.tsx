@@ -658,12 +658,14 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="border-b px-4 py-3 bg-card">
+      <div className="border-b bg-card px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-sm">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
             <div>
-              <h2 className="font-display font-semibold text-foreground">TKBSO AI Estimator</h2>
+              <h2 className="font-semibold text-lg text-foreground">AI Estimator</h2>
               <p className="text-xs text-muted-foreground">Describe your project naturally</p>
             </div>
           </div>
@@ -672,9 +674,9 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
               variant="ghost"
               size="sm"
               onClick={handleReset}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              <RotateCcw className="w-4 h-4 mr-1" />
+              <RotateCcw className="w-4 h-4 mr-2" />
               Start Over
             </Button>
           )}
@@ -682,13 +684,13 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
       </div>
       
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-1">
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
         
         {isLoading && (
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-3 text-muted-foreground ml-11">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span className="text-sm">Analyzing your project...</span>
           </div>
@@ -699,7 +701,7 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
       
       {/* Pricing Breakdown (if calculated) */}
       {calculatedPricing && (
-        <div className="border-t bg-muted/30 p-4 max-h-96 overflow-y-auto">
+        <div className="border-t bg-muted/30 p-6 max-h-96 overflow-y-auto">
           <PricingBreakdown pricing={calculatedPricing} />
         </div>
       )}
