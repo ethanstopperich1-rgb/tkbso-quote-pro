@@ -5,13 +5,14 @@ import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Sparkles, Loader2 } from 'lucide-react';
+import { RotateCcw, Sparkles, Loader2, Ruler } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { calculateProjectPricing, TradeBucket, ProjectPricing } from '@/lib/trade-bucket-pricer';
 import { PricingBreakdown } from './PricingBreakdown';
 import { Tables } from '@/integrations/supabase/types';
+import { DimensionInputModal, DimensionData } from './DimensionInputModal';
 
 interface ParsedProject {
   clientInfo: {
@@ -114,6 +115,9 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
   const [calculatedPricing, setCalculatedPricing] = useState<ProjectPricing | null>(null);
   const [pricingConfig, setPricingConfig] = useState<Tables<'pricing_configs'> | null>(null);
+  const [showDimensionModal, setShowDimensionModal] = useState(false);
+  const [missingDimensionFields, setMissingDimensionFields] = useState<string[]>([]);
+  const [detectedRoomType, setDetectedRoomType] = useState<'bathroom' | 'kitchen' | 'closet' | 'other'>('bathroom');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Fetch pricing config on mount
@@ -547,6 +551,28 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
       if (data?.trade_buckets && Array.isArray(data.trade_buckets) && pricingConfig) {
         console.log('Processing trade buckets:', data.trade_buckets);
         
+        // Detect project type for dimension modal
+        const projectType = data?.project_header?.project_type?.toLowerCase() || context.projectType;
+        const roomType = projectType === 'kitchen' ? 'kitchen' : 
+                         projectType === 'closet' ? 'closet' : 'bathroom';
+        setDetectedRoomType(roomType as any);
+        
+        // Check for missing dimensions
+        const missingFields = checkMissingDimensions(data, projectType);
+        
+        if (missingFields.length > 0) {
+          setMissingDimensionFields(missingFields);
+          setShowDimensionModal(true);
+          
+          // Build response with prompt to enter dimensions
+          let response = '📐 **I need some measurements to calculate accurate pricing.**\n\n';
+          response += `Missing: ${missingFields.join(', ')}\n\n`;
+          response += 'Please enter the dimensions in the dialog that just appeared, or click the **Dimensions** button below.';
+          
+          addAssistantMessage(response);
+          return;
+        }
+        
         // Calculate pricing using the new calculator
         const pricing = calculateProjectPricing(
           data.trade_buckets as TradeBucket[],
@@ -646,6 +672,75 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
     setMessages([WELCOME_MESSAGE]);
     setIsComplete(false);
     setSavedEstimateId(null);
+    setCalculatedPricing(null);
+    setShowDimensionModal(false);
+    setMissingDimensionFields([]);
+  };
+
+  // Handle dimension modal submission
+  const handleDimensionSubmit = (data: DimensionData) => {
+    const newContext = { ...context };
+    
+    if (data.roomType === 'bathroom') {
+      if (data.roomLength && data.roomWidth) {
+        newContext.dimensions.bathroomSqft = data.roomLength * data.roomWidth;
+      }
+      if (data.showerLength && data.showerWidth) {
+        newContext.dimensions.showerLength = data.showerLength;
+        newContext.dimensions.showerWidth = data.showerWidth;
+        newContext.dimensions.showerHeight = data.showerHeight || data.ceilingHeight || 8;
+      }
+    } else if (data.roomType === 'kitchen') {
+      if (data.roomLength && data.roomWidth) {
+        newContext.dimensions.kitchenSqft = data.roomLength * data.roomWidth;
+      }
+    }
+    
+    setContext(newContext);
+    
+    // Add confirmation message
+    const sqft = data.roomLength && data.roomWidth ? data.roomLength * data.roomWidth : 0;
+    let confirmMsg = `✓ **Dimensions recorded:**\n- Room: ${sqft} sq ft`;
+    
+    if (data.showerLength && data.showerWidth) {
+      const showerSqft = data.showerLength * data.showerWidth;
+      const showerHeight = data.showerHeight || data.ceilingHeight || 8;
+      const showerWallSqft = Math.round(2 * (data.showerLength + data.showerWidth) * showerHeight);
+      confirmMsg += `\n- Shower Floor: ${showerSqft} sq ft\n- Shower Walls: ${showerWallSqft} sq ft`;
+    }
+    
+    confirmMsg += '\n\nPlease continue describing your project or add more details.';
+    addAssistantMessage(confirmMsg);
+    
+    toast.success('Dimensions saved!');
+  };
+
+  // Check for missing dimensions and show modal
+  const checkMissingDimensions = (data: any, projectType: string | null): string[] => {
+    const missing: string[] = [];
+    
+    if (projectType === 'bathroom' || data?.project_header?.project_type === 'Bathroom') {
+      if (!context.dimensions.bathroomSqft && !data?.dimensions?.main_floor_sqft) {
+        missing.push('Room size (sq ft)');
+      }
+      // Check for shower dimensions if tile work is detected
+      const hasTileWork = data?.trade_buckets?.some((b: any) => 
+        b.category?.toLowerCase().includes('tile') || 
+        b.task_description?.toLowerCase().includes('tile')
+      );
+      if (hasTileWork && !context.dimensions.showerLength && !data?.dimensions?.shower_length_ft) {
+        missing.push('Shower dimensions');
+      }
+    } else if (projectType === 'kitchen' || data?.project_header?.project_type === 'Kitchen') {
+      if (!context.dimensions.kitchenSqft && !data?.dimensions?.main_floor_sqft) {
+        missing.push('Kitchen size (sq ft)');
+      }
+      if (!data?.dimensions?.countertop_sqft) {
+        missing.push('Countertop area');
+      }
+    }
+    
+    return missing;
   };
 
   const getPlaceholder = () => {
@@ -657,6 +752,15 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
   
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Dimension Input Modal */}
+      <DimensionInputModal
+        open={showDimensionModal}
+        onOpenChange={setShowDimensionModal}
+        missingFields={missingDimensionFields}
+        roomType={detectedRoomType}
+        onSubmit={handleDimensionSubmit}
+      />
+      
       {/* Header */}
       <div className="border-b bg-card px-6 py-4">
         <div className="flex items-center justify-between">
@@ -669,17 +773,28 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
               <p className="text-xs text-muted-foreground">Describe your project naturally</p>
             </div>
           </div>
-          {messages.length > 1 && (
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={handleReset}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted"
+              onClick={() => setShowDimensionModal(true)}
+              className="text-muted-foreground hover:text-foreground"
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Start Over
+              <Ruler className="w-4 h-4 mr-2" />
+              Dimensions
             </Button>
-          )}
+            {messages.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Start Over
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       
