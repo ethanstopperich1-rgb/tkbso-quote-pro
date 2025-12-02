@@ -3,14 +3,23 @@ import { Message } from "@/types/estimator";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { QuickStartCards } from "./QuickStartCards";
-import { processUserMessage, resetEstimator } from "@/lib/estimator-engine";
 import { Button } from "./ui/button";
 import { RotateCcw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Welcome to the TKBSO AI Estimator! I'll help you create professional quotes in 4 steps:\n\n**1. Collect inputs** — project type, room size, scope\n**2. Confirm assumptions** — review before pricing\n**3. Client details** — name, phone, address\n**4. Generate quote** — TKBSO-style proposal ready to download\n\n**Tell me about your project to get started:**`,
+  content: `Welcome! I'm **TKE** (The Knowledgeable Estimator), your AI-powered estimator for The Kitchen & Bath Store of Orlando.
+
+I'll guide you through a structured 4-phase workflow:
+
+**Phase 1:** Scope Ingestion — I'll listen to your project description
+**Phase 2:** Question & Refinement — I'll ask key clarifying questions
+**Phase 3:** Data Extraction — I'll output structured scope details
+**Phase 4:** Image Processing — Upload floor plans for automated takeoffs (optional)
+
+Let's begin! **Describe your project:**`,
   timestamp: new Date(),
 };
 
@@ -38,26 +47,52 @@ export function EstimatorChat() {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 700));
+    try {
+      // Call the parse-project edge function with conversation context
+      const { data, error } = await supabase.functions.invoke('parse-project', {
+        body: { 
+          message: content,
+          context: { messages: messages.slice(1) } // Exclude welcome message
+        }
+      });
 
-    // Process and get response
-    const { response, quote } = processUserMessage(content);
-    
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: response,
-      timestamp: new Date(),
-      quote,
-    };
-    
-    setMessages(prev => [...prev, assistantMessage]);
-    setIsTyping(false);
+      if (error) throw error;
+
+      // Handle Markdown response (Phases 1-3)
+      if (data?.isMarkdown) {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: data.content,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        // Handle JSON response (legacy or structured data)
+        const response = data?.followUpQuestion || data?.summary || "I'm processing your request...";
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I encountered an error processing your request. Please try rephrasing your project description.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleReset = () => {
-    resetEstimator();
     setMessages([WELCOME_MESSAGE]);
   };
 
