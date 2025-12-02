@@ -1,4 +1,3 @@
-import { Brain, Ruler } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
@@ -10,9 +9,6 @@ export function Header({ onOpenTakeoff }: HeaderProps) {
     <header className="border-b bg-primary px-6 py-3 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent">
-            <Brain className="w-5 h-5 text-white" />
-          </div>
           <div>
             <h1 className="text-lg font-bold text-primary-foreground tracking-tight">
               Estimaitor
@@ -29,7 +25,7 @@ export function Header({ onOpenTakeoff }: HeaderProps) {
               onClick={onOpenTakeoff}
               className="bg-white/10 hover:bg-white/20 text-white border-white/20"
             >
-              <Ruler className="w-4 h-4 mr-2" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M21 3 9 15"/><path d="M12 3H3v18h18v-9"/><path d="M16 3h5v5"/><path d="M14 15H9v-5"/></svg>
               Visual Takeoff
             </Button>
           )}
