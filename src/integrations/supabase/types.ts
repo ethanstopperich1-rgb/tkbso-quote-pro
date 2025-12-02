@@ -902,6 +902,59 @@ export type Database = {
           },
         ]
       }
+      product_mappings: {
+        Row: {
+          contractor_id: string
+          created_at: string
+          current_price: number
+          id: string
+          is_active: boolean
+          last_synced_at: string | null
+          pricing_field: string
+          product_description: string | null
+          product_name: string
+          sku: string
+          trade_bucket: string
+          updated_at: string
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string
+          current_price: number
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string | null
+          pricing_field: string
+          product_description?: string | null
+          product_name: string
+          sku: string
+          trade_bucket: string
+          updated_at?: string
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string
+          current_price?: number
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string | null
+          pricing_field?: string
+          product_description?: string | null
+          product_name?: string
+          sku?: string
+          trade_bucket?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_mappings_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           contractor_id: string | null
