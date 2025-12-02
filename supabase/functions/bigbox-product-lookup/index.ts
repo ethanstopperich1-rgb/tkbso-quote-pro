@@ -28,36 +28,40 @@ serve(async (req) => {
     let bigboxResponse;
 
     if (action === 'search') {
-      // Search for products by query
-      const searchUrl = `https://www.bigboxapi.com/api/v1/search`;
+      // Search for products by query using GET with query params
+      const searchParams = new URLSearchParams({
+        api_key: bigboxApiKey,
+        type: 'search',
+        search_term: search,
+        zip_code: zip_code,
+      });
+      
+      const searchUrl = `https://api.bigboxapi.com/request?${searchParams.toString()}`;
+      console.log('BigBox search URL:', searchUrl.replace(bigboxApiKey, 'HIDDEN'));
+      
       bigboxResponse = await fetch(searchUrl, {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': bigboxApiKey,
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          type: 'search',
-          search_term: search,
-          zip_code: zip_code,
-          output: 'json',
-        }),
       });
     } else if (action === 'product') {
-      // Get specific product details by SKU
-      const productUrl = `https://www.bigboxapi.com/api/v1/product`;
+      // Get specific product details by SKU using GET with query params
+      const productParams = new URLSearchParams({
+        api_key: bigboxApiKey,
+        type: 'product',
+        product_id: sku,
+        zip_code: zip_code,
+      });
+      
+      const productUrl = `https://api.bigboxapi.com/request?${productParams.toString()}`;
+      console.log('BigBox product URL:', productUrl.replace(bigboxApiKey, 'HIDDEN'));
+      
       bigboxResponse = await fetch(productUrl, {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': bigboxApiKey,
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          type: 'product',
-          product_id: sku,
-          zip_code: zip_code,
-          output: 'json',
-        }),
       });
     } else if (action === 'sync_prices') {
       // Sync prices for all active product mappings
@@ -101,24 +105,25 @@ serve(async (req) => {
       // Fetch current prices for each SKU
       for (const mapping of mappings || []) {
         try {
-          const productUrl = `https://www.bigboxapi.com/api/v1/product`;
+          const productParams = new URLSearchParams({
+            api_key: bigboxApiKey,
+            type: 'product',
+            product_id: mapping.sku,
+            zip_code: zip_code,
+          });
+          
+          const productUrl = `https://api.bigboxapi.com/request?${productParams.toString()}`;
           const productResponse = await fetch(productUrl, {
-            method: 'POST',
+            method: 'GET',
             headers: {
-              'Content-Type': 'application/json',
-              'X-API-KEY': bigboxApiKey,
+              'Accept': 'application/json',
             },
-            body: JSON.stringify({
-              type: 'product',
-              product_id: mapping.sku,
-              zip_code: zip_code,
-              output: 'json',
-            }),
           });
 
           if (productResponse.ok) {
-            const productData = await productResponse.json();
-            const newPrice = productData.product?.pricing?.current_price || mapping.current_price;
+            const responseText = await productResponse.text();
+            const productData = JSON.parse(responseText);
+            const newPrice = productData.product?.offers?.primary?.price || mapping.current_price;
 
             // Update mapping with new price
             const { error: updateError } = await supabase
@@ -165,13 +170,27 @@ serve(async (req) => {
       throw new Error('Invalid action');
     }
 
+    console.log('BigBox Response Status:', bigboxResponse.status);
+    console.log('BigBox Response Headers:', Object.fromEntries(bigboxResponse.headers.entries()));
+    
     if (!bigboxResponse.ok) {
       const errorText = await bigboxResponse.text();
-      console.error('BigBox API error:', errorText);
-      throw new Error(`BigBox API error: ${bigboxResponse.status} - ${errorText}`);
+      console.error('BigBox API error response:', errorText);
+      throw new Error(`BigBox API returned ${bigboxResponse.status}: ${errorText.substring(0, 200)}`);
     }
 
-    const data = await bigboxResponse.json();
+    // Get response text first to debug
+    const responseText = await bigboxResponse.text();
+    console.log('BigBox raw response (first 500 chars):', responseText.substring(0, 500));
+    
+    // Try to parse as JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse BigBox response as JSON:', parseError);
+      throw new Error(`BigBox API returned invalid JSON. Response starts with: ${responseText.substring(0, 100)}`);
+    }
 
     return new Response(
       JSON.stringify(data),
