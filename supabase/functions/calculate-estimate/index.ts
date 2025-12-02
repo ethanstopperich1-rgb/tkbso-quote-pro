@@ -63,46 +63,47 @@ interface PricingResult {
 }
 
 // Map trade bucket categories to pricing_configs fields
+// Returns ic, cp, unit, and whether this is a flat rate (ignore quantity)
 function mapCategoryToPricing(
   category: string,
   taskDescription: string,
   config: PricingConfig
-): { ic: number; cp: number; unit: string } | null {
+): { ic: number; cp: number; unit: string; flatRate?: boolean } | null {
   const categoryLower = category.toLowerCase();
   const taskLower = taskDescription.toLowerCase();
 
-  // Demolition
+  // Demolition - FLAT RATE (always quantity = 1)
   if (categoryLower.includes('demo')) {
     if (taskLower.includes('shower') && taskLower.includes('only')) {
-      return { ic: Number(config.demo_shower_only_ic) || 900, cp: Number(config.demo_shower_only_cp) || 1450, unit: 'ea' };
+      return { ic: Number(config.demo_shower_only_ic) || 900, cp: Number(config.demo_shower_only_cp) || 1450, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('small')) {
-      return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea' };
+      return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('large')) {
-      return { ic: Number(config.demo_large_bath_ic) || 1650, cp: Number(config.demo_large_bath_cp) || 2500, unit: 'ea' };
+      return { ic: Number(config.demo_large_bath_ic) || 1650, cp: Number(config.demo_large_bath_cp) || 2500, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('kitchen')) {
-      return { ic: Number(config.demo_kitchen_ic) || 1750, cp: Number(config.demo_kitchen_cp) || 2800, unit: 'ea' };
+      return { ic: Number(config.demo_kitchen_ic) || 1750, cp: Number(config.demo_kitchen_cp) || 2800, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea' };
+    return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea', flatRate: true };
   }
 
-  // Plumbing
+  // Plumbing - FLAT RATE packages
   if (categoryLower.includes('plumb')) {
     if (taskLower.includes('toilet') && !taskLower.includes('relocation')) {
-      return { ic: Number(config.plumbing_toilet_ic) || 350, cp: Number(config.plumbing_toilet_cp) || 690, unit: 'ea' };
+      return { ic: Number(config.plumbing_toilet_ic) || 350, cp: Number(config.plumbing_toilet_cp) || 690, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('shower') && taskLower.includes('standard')) {
-      return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea' };
+      return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('extra head') || taskLower.includes('additional head')) {
-      return { ic: Number(config.plumbing_extra_head_ic) || 625, cp: Number(config.plumbing_extra_head_cp) || 1100, unit: 'ea' };
+      return { ic: Number(config.plumbing_extra_head_ic) || 625, cp: Number(config.plumbing_extra_head_cp) || 1100, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('freestanding')) {
-      return { ic: Number(config.plumbing_tub_freestanding_ic) || 3300, cp: Number(config.plumbing_tub_freestanding_cp) || 4800, unit: 'ea' };
+      return { ic: Number(config.plumbing_tub_freestanding_ic) || 3300, cp: Number(config.plumbing_tub_freestanding_cp) || 4800, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('tub to shower') || taskLower.includes('conversion')) {
-      return { ic: Number(config.plumbing_tub_to_shower_ic) || 2550, cp: Number(config.plumbing_tub_to_shower_cp) || 4200, unit: 'ea' };
+      return { ic: Number(config.plumbing_tub_to_shower_ic) || 2550, cp: Number(config.plumbing_tub_to_shower_cp) || 4200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('linear drain')) {
-      return { ic: Number(config.plumbing_linear_drain_ic) || 750, cp: Number(config.plumbing_linear_drain_cp) || 1550, unit: 'ea' };
+      return { ic: Number(config.plumbing_linear_drain_ic) || 750, cp: Number(config.plumbing_linear_drain_cp) || 1550, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('smart valve')) {
-      return { ic: Number(config.plumbing_smart_valve_ic) || 1350, cp: Number(config.plumbing_smart_valve_cp) || 2450, unit: 'ea' };
+      return { ic: Number(config.plumbing_smart_valve_ic) || 1350, cp: Number(config.plumbing_smart_valve_cp) || 2450, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea' };
+    return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea', flatRate: true };
   }
 
   // Tile
@@ -139,52 +140,52 @@ function mapCategoryToPricing(
     return { ic: Number(config.electrical_small_package_ic) || 250, cp: Number(config.electrical_small_package_cp) || 400, unit: 'ea' };
   }
 
-  // Framing
+  // Framing - FLAT RATE (niches can be counted)
   if (categoryLower.includes('fram')) {
     if (taskLower.includes('niche')) {
       return { ic: Number(config.niche_ic_each) || 300, cp: Number(config.niche_cp_each) || 550, unit: 'ea' };
     } else if (taskLower.includes('pony wall')) {
-      return { ic: Number(config.framing_pony_wall_ic) || 450, cp: Number(config.framing_pony_wall_cp) || 850, unit: 'ea' };
+      return { ic: Number(config.framing_pony_wall_ic) || 450, cp: Number(config.framing_pony_wall_cp) || 850, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea' };
+    return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea', flatRate: true };
   }
 
-  // Glass
+  // Glass - FLAT RATE packages
   if (categoryLower.includes('glass')) {
     if (taskLower.includes('90') || taskLower.includes('return')) {
-      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea' };
+      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('panel only')) {
-      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1450, unit: 'ea' };
+      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1450, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2100, unit: 'ea' };
+    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2100, unit: 'ea', flatRate: true };
   }
 
-  // Paint
+  // Paint - FLAT RATE packages
   if (categoryLower.includes('paint')) {
     if (taskLower.includes('full')) {
-      return { ic: Number(config.paint_full_bath_ic) || 1200, cp: Number(config.paint_full_bath_cp) || 1900, unit: 'ea' };
+      return { ic: Number(config.paint_full_bath_ic) || 1200, cp: Number(config.paint_full_bath_cp) || 1900, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1000, unit: 'ea' };
+    return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1000, unit: 'ea', flatRate: true };
   }
 
-  // Vanity
+  // Vanity - FLAT RATE bundles
   if (categoryLower.includes('vanity')) {
     if (taskLower.includes('30')) {
-      return { ic: Number(config.vanity_30_bundle_ic) || 1100, cp: Number(config.vanity_30_bundle_cp) || 1800, unit: 'ea' };
+      return { ic: Number(config.vanity_30_bundle_ic) || 1100, cp: Number(config.vanity_30_bundle_cp) || 1800, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('36')) {
-      return { ic: Number(config.vanity_36_bundle_ic) || 1300, cp: Number(config.vanity_36_bundle_cp) || 2100, unit: 'ea' };
+      return { ic: Number(config.vanity_36_bundle_ic) || 1300, cp: Number(config.vanity_36_bundle_cp) || 2100, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('48')) {
-      return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea' };
+      return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('54')) {
-      return { ic: Number(config.vanity_54_bundle_ic) || 1900, cp: Number(config.vanity_54_bundle_cp) || 3000, unit: 'ea' };
+      return { ic: Number(config.vanity_54_bundle_ic) || 1900, cp: Number(config.vanity_54_bundle_cp) || 3000, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('60')) {
-      return { ic: Number(config.vanity_60_bundle_ic) || 2200, cp: Number(config.vanity_60_bundle_cp) || 3500, unit: 'ea' };
+      return { ic: Number(config.vanity_60_bundle_ic) || 2200, cp: Number(config.vanity_60_bundle_cp) || 3500, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('72')) {
-      return { ic: Number(config.vanity_72_bundle_ic) || 2600, cp: Number(config.vanity_72_bundle_cp) || 4200, unit: 'ea' };
+      return { ic: Number(config.vanity_72_bundle_ic) || 2600, cp: Number(config.vanity_72_bundle_cp) || 4200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('84')) {
-      return { ic: Number(config.vanity_84_bundle_ic) || 3200, cp: Number(config.vanity_84_bundle_cp) || 5000, unit: 'ea' };
+      return { ic: Number(config.vanity_84_bundle_ic) || 3200, cp: Number(config.vanity_84_bundle_cp) || 5000, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea' };
+    return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
   }
 
   // Quartz/Countertops
@@ -218,14 +219,17 @@ function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: P
       continue;
     }
 
-    const icTotal = mapping.ic * bucket.quantity;
-    const cpTotal = mapping.cp * bucket.quantity;
+    // For flat rate items, force quantity to 1 (these are packages, not per-unit)
+    const effectiveQuantity = mapping.flatRate ? 1 : bucket.quantity;
+    
+    const icTotal = mapping.ic * effectiveQuantity;
+    const cpTotal = mapping.cp * effectiveQuantity;
     const marginPercent = cpTotal > 0 ? ((cpTotal - icTotal) / cpTotal) * 100 : 0;
 
     lineItems.push({
       category: bucket.category,
       task_description: bucket.task_description,
-      quantity: bucket.quantity,
+      quantity: effectiveQuantity,
       unit: bucket.unit || mapping.unit,
       ic_per_unit: mapping.ic,
       cp_per_unit: mapping.cp,
