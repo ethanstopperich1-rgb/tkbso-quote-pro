@@ -1,74 +1,76 @@
 import { useState, useRef, useEffect } from 'react';
-import { useEstimator } from '@/contexts/EstimatorContext';
 import { useAuth } from '@/hooks/useAuth';
 import { ChatMessage } from '@/components/ChatMessage';
 import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { calculateProjectPricing, TradeBucket, ProjectPricing } from '@/lib/trade-bucket-pricer';
-import { Tables } from '@/integrations/supabase/types';
 
-interface ParsedProject {
-  clientInfo: {
-    name: string | null;
-    phone: string | null;
-    email: string | null;
-    address: string | null;
-    city: string | null;
-    state: string | null;
-    zip: string | null;
-  };
-  projectType: 'kitchen' | 'bathroom' | 'both' | null;
-  rooms: {
-    bathrooms: number;
-    kitchens: number;
+interface PricingLineItem {
+  category: string;
+  task_description: string;
+  quantity: number;
+  unit: string;
+  ic_per_unit: number;
+  cp_per_unit: number;
+  ic_total: number;
+  cp_total: number;
+  margin_percent: number;
+}
+
+interface EstimateResponse {
+  project_header: {
+    client_name?: string | null;
+    project_type: string;
+    overall_size_sqft?: number | null;
   };
   dimensions: {
-    bathroomSqft: number | null;
-    kitchenSqft: number | null;
-    showerLength: number | null;
-    showerWidth: number | null;
-    showerHeight: number | null;
+    ceiling_height_ft: number;
+    room_length_ft?: number | null;
+    room_width_ft?: number | null;
+    shower_floor_sqft?: number | null;
+    shower_wall_sqft?: number | null;
+    main_floor_sqft?: number | null;
   };
-  scopeLevel: 'full' | 'partial' | 'refresh' | 'shower_only' | null;
-  trades: {
-    includeDemo: boolean | null;
-    includePlumbing: boolean | null;
-    includeTile: boolean | null;
-    includeGlass: boolean | null;
-    includeVanity: boolean | null;
-    includeCountertops: boolean | null;
-    includeCabinets: boolean | null;
-    includeElectrical: boolean | null;
-    includePaint: boolean | null;
-    includeLVP: boolean | null;
+  trade_buckets: Array<{
+    category: string;
+    task_description: string;
+    quantity: number;
+    unit: string;
+  }>;
+  pricing: {
+    line_items: PricingLineItem[];
+    totals: {
+      total_ic: number;
+      total_cp: number;
+      low_estimate: number;
+      high_estimate: number;
+      overall_margin_percent: number;
+    };
+    warnings: string[];
   };
-  details: {
-    vanitySize: '30' | '36' | '48' | '54' | '60' | '72' | '84' | null;
-    glassType: 'panel' | 'door_panel' | '90_return' | 'frameless' | null;
-    hasNiche: boolean | null;
-    hasBench: boolean | null;
-    numRecessedCans: number | null;
-    numVanityLights: number | null;
-    lvpSqft: number | null;
+  payment_schedule: {
+    deposit: number;
+    progress: number;
+    final: number;
   };
-  needsMoreInfo: boolean;
-  followUpQuestion: string | null;
-  summary: string;
+  allowances: Array<{ item: string; quantity: number; notes?: string }>;
+  exclusions: string[];
+  warnings: string[];
+  // Error states
+  error?: string;
+  needsMoreInfo?: boolean;
+  followUpQuestion?: string;
 }
 
 interface ConversationContext {
-  clientInfo: Partial<ParsedProject['clientInfo']>;
-  projectType: string | null;
-  rooms: ParsedProject['rooms'];
-  dimensions: Partial<ParsedProject['dimensions']>;
-  scopeLevel: string | null;
-  trades: Partial<ParsedProject['trades']>;
-  details: Partial<ParsedProject['details']>;
+  projectType?: string;
+  dimensions?: Record<string, number>;
+  trades?: string[];
 }
 
 const WELCOME_MESSAGE: Message = {
@@ -76,62 +78,27 @@ const WELCOME_MESSAGE: Message = {
   role: 'assistant',
   content: `**Welcome to Estimaitor** ✨
 
-I'm your AI estimator. Describe your project naturally and I'll create a professional quote.
+I'm your AI estimator. Describe your project naturally and I'll calculate a professional quote with real pricing.
 
-**Examples:**
-- "Master bath remodel, 80 sqft, full gut with tile and glass"
-- "Kitchen refresh, 150 sqft, countertops and paint only"
+**Try something like:**
+- "5x8 bathroom with 3x5 shower, frameless glass, 48in vanity"
+- "Master bath full gut, 10x12, walk-in shower with bench"
+- "Guest bath refresh, just tile and paint"
 
 What project would you like to estimate?`,
   timestamp: new Date(),
 };
 
-const initialContext: ConversationContext = {
-  clientInfo: {},
-  projectType: null,
-  rooms: { bathrooms: 0, kitchens: 0 },
-  dimensions: {},
-  scopeLevel: null,
-  trades: {},
-  details: {},
-};
-
 export function EstimatorChatPanel() {
-  const { state, updateClientInfo, updateTrades, addRoom, setProjectType, reset } = useEstimator();
   const { contractor, profile } = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
-  const [context, setContext] = useState<ConversationContext>(initialContext);
+  const [context, setContext] = useState<ConversationContext>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+  const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
-  const [calculatedPricing, setCalculatedPricing] = useState<ProjectPricing | null>(null);
-  const [pricingConfig, setPricingConfig] = useState<Tables<'pricing_configs'> | null>(null);
+  const [showLineItems, setShowLineItems] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    const fetchPricingConfig = async () => {
-      if (!contractor?.id) return;
-      
-      const { data, error } = await supabase
-        .from('pricing_configs')
-        .select('*')
-        .eq('contractor_id', contractor.id)
-        .maybeSingle();
-        
-      if (error) {
-        console.error('Error fetching pricing config:', error);
-        toast.error('Failed to load pricing configuration');
-        return;
-      }
-      
-      if (data) {
-        setPricingConfig(data);
-      }
-    };
-    
-    fetchPricingConfig();
-  }, [contractor?.id]);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -139,7 +106,7 @@ export function EstimatorChatPanel() {
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, estimate]);
 
   const addAssistantMessage = (content: string) => {
     const message: Message = {
@@ -151,310 +118,65 @@ export function EstimatorChatPanel() {
     setMessages(prev => [...prev, message]);
   };
 
-  const generateScopeText = (ctx: ConversationContext, bathScopeLevel: string): string => {
-    const lines: string[] = [];
-    
-    if (ctx.trades.includeDemo !== false) {
-      lines.push('**DEMO:**');
-      if (ctx.projectType === 'bathroom') {
-        lines.push(bathScopeLevel === 'shower_only' 
-          ? '• Remove existing shower fixtures, tile, and substrate'
-          : '• Remove existing fixtures, tile, vanity, and toilet');
-      } else if (ctx.projectType === 'kitchen') {
-        lines.push('• Remove existing cabinets, countertops, and appliances');
-      }
-      lines.push('• Debris removal and disposal');
-      lines.push('');
-    }
-    
-    if (ctx.projectType === 'bathroom') {
-      lines.push('**FRAMING:**');
-      lines.push('• Install blocking for fixtures and accessories');
-      lines.push('');
-    }
-    
-    if (ctx.trades.includePlumbing !== false) {
-      lines.push('**PLUMBING:**');
-      if (ctx.projectType === 'bathroom') {
-        lines.push('• Rough-in water supply and drain lines');
-        lines.push('• Install shower valve, trim, and fixtures');
-        if (bathScopeLevel !== 'shower_only') {
-          lines.push('• Set toilet and vanity plumbing');
-        }
-      } else if (ctx.projectType === 'kitchen') {
-        lines.push('• Install sink and faucet');
-        lines.push('• Connect dishwasher and disposal');
-      }
-      lines.push('');
-    }
-    
-    if (ctx.trades.includeTile !== false && ctx.projectType === 'bathroom') {
-      lines.push('**TILE WORK:**');
-      lines.push('• Install waterproofing system');
-      lines.push('• Wall and floor tile installation');
-      lines.push('• Grout and seal');
-      lines.push('');
-    }
-    
-    if (ctx.trades.includeGlass) {
-      lines.push('**SHOWER GLASS:**');
-      lines.push('• Frameless glass enclosure');
-      lines.push('');
-    }
-    
-    return lines.join('\n');
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
-  const saveEstimateToDatabase = async (ctx: ConversationContext): Promise<string | null> => {
+  const saveEstimateToDatabase = async (data: EstimateResponse): Promise<string | null> => {
     if (!contractor?.id) {
       toast.error('You must be logged in to save estimates');
       return null;
     }
 
     try {
-      let bathScopeLevel = 'none';
-      let kitchenScopeLevel = 'none';
-      
-      if (ctx.projectType === 'bathroom') {
-        bathScopeLevel = ctx.scopeLevel === 'shower_only' ? 'shower_only' : 
-                         ctx.scopeLevel === 'partial' ? 'partial' : 
-                         ctx.scopeLevel === 'refresh' ? 'refresh' : 'full_gut';
-      } else if (ctx.projectType === 'kitchen') {
-        kitchenScopeLevel = ctx.scopeLevel === 'partial' ? 'partial' : 
-                           ctx.scopeLevel === 'refresh' ? 'refresh' : 'full_gut';
-      }
-
-      let wallTileSqft = 0;
-      let showerFloorSqft = 0;
-      
-      if (ctx.dimensions.showerLength && ctx.dimensions.showerWidth) {
-        const height = ctx.dimensions.showerHeight || 8;
-        const perimeter = 2 * (ctx.dimensions.showerLength + ctx.dimensions.showerWidth);
-        wallTileSqft = perimeter * height;
-        showerFloorSqft = ctx.dimensions.showerLength * ctx.dimensions.showerWidth;
-      }
-
-      const finalCp = state.recommendedPrice || 0;
-      const lowCp = state.lowEstimate || 0;
-      const highCp = state.highEstimate || 0;
-      const finalIc = state.internalCost || 0;
-      const scopeText = generateScopeText(ctx, bathScopeLevel);
-
       const estimateData = {
         contractor_id: contractor.id,
         created_by_profile_id: profile?.id || null,
-        client_name: ctx.clientInfo.name || null,
-        client_phone: ctx.clientInfo.phone || null,
-        client_email: ctx.clientInfo.email || null,
-        property_address: ctx.clientInfo.address || null,
-        city: ctx.clientInfo.city || null,
-        state: ctx.clientInfo.state || null,
-        zip: ctx.clientInfo.zip || null,
-        job_label: ctx.clientInfo.name ? `${ctx.clientInfo.name} - ${ctx.projectType || 'Remodel'}` : null,
-        client_estimate_text: scopeText,
-        has_kitchen: ctx.projectType === 'kitchen',
-        has_bathrooms: ctx.projectType === 'bathroom',
-        has_closets: false,
-        num_kitchens: ctx.projectType === 'kitchen' ? 1 : 0,
-        num_bathrooms: ctx.projectType === 'bathroom' ? 1 : 0,
-        num_closets: 0,
-        total_bathroom_sqft: ctx.dimensions.bathroomSqft || 0,
-        total_kitchen_sqft: ctx.dimensions.kitchenSqft || 0,
-        bath_wall_tile_sqft: wallTileSqft,
-        bath_floor_tile_sqft: 0,
-        bath_shower_floor_tile_sqft: showerFloorSqft,
-        bath_shower_only_sqft: ctx.scopeLevel === 'shower_only' ? (ctx.dimensions.bathroomSqft || 15) : 0,
-        bath_scope_level: bathScopeLevel,
-        kitchen_scope_level: kitchenScopeLevel,
-        include_demo: ctx.trades.includeDemo ?? true,
-        include_plumbing: ctx.trades.includePlumbing ?? true,
-        include_electrical: ctx.trades.includeElectrical ?? false,
-        include_paint: ctx.trades.includePaint ?? false,
-        include_glass: ctx.trades.includeGlass ?? false,
-        include_waterproofing: ctx.trades.includeTile ?? true,
-        vanity_size: ctx.details.vanitySize || 'none',
-        glass_type: ctx.details.glassType || 'none',
-        num_recessed_cans: ctx.details.numRecessedCans || 0,
-        num_vanity_lights: ctx.details.numVanityLights || 0,
-        final_cp_total: finalCp,
-        final_ic_total: finalIc,
-        low_estimate_cp: lowCp,
-        high_estimate_cp: highCp,
+        job_label: `${data.project_header.project_type} Remodel`,
+        has_kitchen: data.project_header.project_type === 'Kitchen',
+        has_bathrooms: data.project_header.project_type === 'Bathroom',
+        total_bathroom_sqft: data.project_header.project_type === 'Bathroom' 
+          ? (data.project_header.overall_size_sqft || 0) : 0,
+        total_kitchen_sqft: data.project_header.project_type === 'Kitchen' 
+          ? (data.project_header.overall_size_sqft || 0) : 0,
+        bath_wall_tile_sqft: data.dimensions.shower_wall_sqft || 0,
+        bath_shower_floor_tile_sqft: data.dimensions.shower_floor_sqft || 0,
+        final_cp_total: data.pricing.totals.total_cp,
+        final_ic_total: data.pricing.totals.total_ic,
+        low_estimate_cp: data.pricing.totals.low_estimate,
+        high_estimate_cp: data.pricing.totals.high_estimate,
+        internal_json_payload: JSON.parse(JSON.stringify(data)),
         status: 'draft',
       };
 
-      const { data, error } = await supabase
+      const { data: saved, error } = await supabase
         .from('estimates')
-        .insert(estimateData)
+        .insert([estimateData])
         .select('id')
         .single();
 
-      if (error) {
-        console.error('Error saving estimate:', error);
-        toast.error('Failed to save estimate: ' + error.message);
-        return null;
-      }
+      if (error) throw error;
 
       toast.success('Estimate saved!');
-      return data.id;
+      return saved.id;
     } catch (err) {
-      console.error('Exception saving estimate:', err);
+      console.error('Error saving estimate:', err);
       toast.error('Failed to save estimate');
       return null;
     }
   };
 
-  const applyParsedData = (parsed: ParsedProject) => {
-    if (parsed.clientInfo.name || parsed.clientInfo.phone || parsed.clientInfo.email || parsed.clientInfo.address) {
-      updateClientInfo({
-        name: parsed.clientInfo.name || undefined,
-        phone: parsed.clientInfo.phone || undefined,
-        email: parsed.clientInfo.email || undefined,
-        address: parsed.clientInfo.address || undefined,
-        city: parsed.clientInfo.city || undefined,
-        state: parsed.clientInfo.state || undefined,
-        zip: parsed.clientInfo.zip || undefined,
-      });
-    }
-
-    if (parsed.projectType === 'kitchen' || parsed.projectType === 'bathroom') {
-      setProjectType(parsed.projectType);
-    }
-
-    const tradesUpdate: Record<string, any> = {};
-    if (parsed.trades.includeDemo !== null) tradesUpdate.includeDemo = parsed.trades.includeDemo;
-    if (parsed.trades.includePlumbing !== null) tradesUpdate.includePlumbing = parsed.trades.includePlumbing;
-    if (parsed.trades.includeTile !== null) {
-      tradesUpdate.includeTile = parsed.trades.includeTile;
-      tradesUpdate.includeCementBoard = parsed.trades.includeTile;
-      tradesUpdate.includeWaterproofing = parsed.trades.includeTile;
-    }
-    if (parsed.trades.includeGlass !== null) tradesUpdate.includeGlass = parsed.trades.includeGlass;
-    if (parsed.trades.includeVanity !== null) tradesUpdate.includeVanity = parsed.trades.includeVanity;
-    if (parsed.trades.includeCountertops !== null) tradesUpdate.includeCountertops = parsed.trades.includeCountertops;
-    if (parsed.trades.includeCabinets !== null) tradesUpdate.includeCabinetry = parsed.trades.includeCabinets;
-    if (parsed.trades.includeElectrical !== null) tradesUpdate.includeElectrical = parsed.trades.includeElectrical;
-    if (parsed.trades.includePaint !== null) tradesUpdate.includePaint = parsed.trades.includePaint;
-    if (parsed.trades.includeLVP !== null) tradesUpdate.includeLVP = parsed.trades.includeLVP;
-    
-    if (Object.keys(tradesUpdate).length > 0) {
-      updateTrades(tradesUpdate);
-    }
-  };
-
-  const updateConversationContext = (parsed: ParsedProject): ConversationContext => {
-    return {
-      clientInfo: {
-        ...context.clientInfo,
-        ...Object.fromEntries(
-          Object.entries(parsed.clientInfo).filter(([_, v]) => v !== null)
-        ),
-      },
-      projectType: parsed.projectType || context.projectType,
-      rooms: {
-        bathrooms: parsed.rooms.bathrooms || context.rooms.bathrooms,
-        kitchens: parsed.rooms.kitchens || context.rooms.kitchens,
-      },
-      dimensions: {
-        ...context.dimensions,
-        ...Object.fromEntries(
-          Object.entries(parsed.dimensions).filter(([_, v]) => v !== null)
-        ),
-      },
-      scopeLevel: parsed.scopeLevel || context.scopeLevel,
-      trades: {
-        ...context.trades,
-        ...Object.fromEntries(
-          Object.entries(parsed.trades).filter(([_, v]) => v !== null)
-        ),
-      },
-      details: {
-        ...context.details,
-        ...Object.fromEntries(
-          Object.entries(parsed.details).filter(([_, v]) => v !== null)
-        ),
-      },
-    };
-  };
-
-  const buildTradeBuckets = (ctx: ConversationContext): TradeBucket[] => {
-    const buckets: TradeBucket[] = [];
-    
-    if (!ctx.projectType) return buckets;
-    
-    const sqft = ctx.projectType === 'bathroom' 
-      ? (ctx.dimensions.bathroomSqft || 60)
-      : (ctx.dimensions.kitchenSqft || 120);
-    
-    const showerSqft = (ctx.dimensions.showerLength || 3) * (ctx.dimensions.showerWidth || 5);
-    const showerHeight = ctx.dimensions.showerHeight || 8;
-    const showerPerimeter = 2 * ((ctx.dimensions.showerLength || 3) + (ctx.dimensions.showerWidth || 5));
-    const wallTileSqft = showerPerimeter * showerHeight;
-    
-    if (ctx.projectType === 'bathroom') {
-      if (ctx.trades.includeDemo !== false) {
-        if (ctx.scopeLevel === 'shower_only') {
-          buckets.push({ category: 'demo', task_description: 'shower_only', quantity: 1, unit: 'each' });
-        } else if (sqft > 60) {
-          buckets.push({ category: 'demo', task_description: 'large_bath', quantity: 1, unit: 'each' });
-        } else {
-          buckets.push({ category: 'demo', task_description: 'small_bath', quantity: 1, unit: 'each' });
-        }
-        buckets.push({ category: 'demo', task_description: 'dumpster_bath', quantity: 1, unit: 'each' });
-      }
-      
-      buckets.push({ category: 'framing', task_description: 'standard', quantity: 1, unit: 'each' });
-      
-      if (ctx.trades.includePlumbing !== false) {
-        buckets.push({ category: 'plumbing', task_description: 'shower_standard', quantity: 1, unit: 'each' });
-        if (ctx.scopeLevel !== 'shower_only') {
-          buckets.push({ category: 'plumbing', task_description: 'toilet', quantity: 1, unit: 'each' });
-        }
-      }
-      
-      if (ctx.trades.includeTile !== false) {
-        buckets.push({ category: 'tile', task_description: 'wall', quantity: wallTileSqft, unit: 'sqft' });
-        buckets.push({ category: 'tile', task_description: 'shower_floor', quantity: showerSqft, unit: 'sqft' });
-        buckets.push({ category: 'waterproofing', task_description: 'standard', quantity: wallTileSqft + showerSqft, unit: 'sqft' });
-        if (ctx.scopeLevel !== 'shower_only') {
-          buckets.push({ category: 'tile', task_description: 'floor', quantity: sqft - showerSqft, unit: 'sqft' });
-        }
-      }
-      
-      if (ctx.trades.includeGlass) {
-        const glassType = ctx.details.glassType || 'door_panel';
-        if (glassType === 'panel') {
-          buckets.push({ category: 'glass', task_description: 'panel_only', quantity: 1, unit: 'each' });
-        } else if (glassType === '90_return') {
-          buckets.push({ category: 'glass', task_description: '90_return', quantity: 1, unit: 'each' });
-        } else {
-          buckets.push({ category: 'glass', task_description: 'shower_standard', quantity: 1, unit: 'each' });
-        }
-      }
-      
-      if (ctx.trades.includeVanity && ctx.scopeLevel !== 'shower_only') {
-        const vanitySize = ctx.details.vanitySize || '48';
-        buckets.push({ category: 'vanity', task_description: `bundle_${vanitySize}`, quantity: 1, unit: 'each' });
-      }
-      
-      if (ctx.trades.includeElectrical) {
-        if (ctx.details.numRecessedCans) {
-          buckets.push({ category: 'electrical', task_description: 'recessed_can', quantity: ctx.details.numRecessedCans, unit: 'each' });
-        }
-        if (ctx.details.numVanityLights) {
-          buckets.push({ category: 'electrical', task_description: 'vanity_light', quantity: ctx.details.numVanityLights, unit: 'each' });
-        }
-      }
-      
-      if (ctx.trades.includePaint) {
-        buckets.push({ category: 'paint', task_description: 'full_bath', quantity: 1, unit: 'each' });
-      }
-    }
-    
-    return buckets;
-  };
-
   const handleSendMessage = async (content: string) => {
+    if (!contractor?.id) {
+      toast.error('Please log in to create estimates');
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -463,59 +185,81 @@ export function EstimatorChatPanel() {
     };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    setEstimate(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('parse-project', {
+      const { data, error } = await supabase.functions.invoke('calculate-estimate', {
         body: { 
           message: content,
-          conversationContext: context,
-          pricingConfig: pricingConfig,
+          context,
+          contractor_id: contractor.id,
         }
       });
 
       if (error) throw error;
       
-      const parsed = data as ParsedProject;
+      const response = data as EstimateResponse;
       
-      applyParsedData(parsed);
-      
-      const newContext = updateConversationContext(parsed);
-      setContext(newContext);
-
-      if (parsed.needsMoreInfo && parsed.followUpQuestion) {
-        addAssistantMessage(parsed.followUpQuestion);
-      } else {
-        const tradeBuckets = buildTradeBuckets(newContext);
+      // Handle errors or follow-up questions
+      if (response.error || response.needsMoreInfo) {
+        addAssistantMessage(response.followUpQuestion || response.error || 
+          "I need more details. Could you specify dimensions and scope?");
         
-        if (pricingConfig && tradeBuckets.length > 0) {
-          const pricing = calculateProjectPricing(tradeBuckets, pricingConfig);
-          setCalculatedPricing(pricing);
-          
-          const estimateId = await saveEstimateToDatabase(newContext);
-          if (estimateId) {
-            setSavedEstimateId(estimateId);
-          }
-          
-          setIsComplete(true);
-          
-          const summaryMessage = `**Quote Summary**
-
-**Project:** ${newContext.projectType === 'bathroom' ? 'Bathroom Remodel' : 'Kitchen Remodel'}
-${newContext.clientInfo.name ? `**Client:** ${newContext.clientInfo.name}` : ''}
-${newContext.dimensions.bathroomSqft ? `**Size:** ${newContext.dimensions.bathroomSqft} sq ft` : ''}
-
-**Estimated Investment:** $${pricing.totals.total_cp.toLocaleString()}
-
-Click below to view details or download PDF.`;
-          
-          addAssistantMessage(summaryMessage);
-        } else {
-          addAssistantMessage(parsed.summary || "I've captured the project details. What else would you like to add?");
+        // Update context with any partial data
+        if (response.project_header) {
+          setContext(prev => ({
+            ...prev,
+            projectType: response.project_header.project_type,
+          }));
         }
+        return;
       }
+
+      // We have a complete estimate
+      setEstimate(response);
+      
+      // Save to database
+      const estimateId = await saveEstimateToDatabase(response);
+      if (estimateId) {
+        setSavedEstimateId(estimateId);
+      }
+
+      // Generate summary message
+      const summaryParts = [
+        `**${response.project_header.project_type} Remodel Quote**`,
+        '',
+      ];
+      
+      if (response.project_header.overall_size_sqft) {
+        summaryParts.push(`📐 **Size:** ${response.project_header.overall_size_sqft} sq ft`);
+      }
+      
+      summaryParts.push(`🔧 **Scope:** ${response.trade_buckets.length} trade items`);
+      summaryParts.push('');
+      summaryParts.push(`**Investment Range:** ${formatCurrency(response.pricing.totals.low_estimate)} - ${formatCurrency(response.pricing.totals.high_estimate)}`);
+      
+      if (response.pricing.warnings.length > 0) {
+        summaryParts.push('');
+        summaryParts.push('⚠️ ' + response.pricing.warnings.join(' | '));
+      }
+      
+      addAssistantMessage(summaryParts.join('\n'));
+      
     } catch (err) {
       console.error('Error processing message:', err);
-      addAssistantMessage("I encountered an issue. Could you rephrase your project description?");
+      
+      // Check for specific error types
+      if (err instanceof Error) {
+        if (err.message.includes('429')) {
+          toast.error('Rate limit exceeded. Please wait a moment.');
+        } else if (err.message.includes('402')) {
+          toast.error('AI quota exceeded. Please try again later.');
+        } else {
+          toast.error('Failed to process request');
+        }
+      }
+      
+      addAssistantMessage("I encountered an issue processing your request. Please try describing your project again with specific dimensions.");
     } finally {
       setIsLoading(false);
     }
@@ -523,11 +267,10 @@ Click below to view details or download PDF.`;
 
   const handleStartNew = () => {
     setMessages([WELCOME_MESSAGE]);
-    setContext(initialContext);
-    setIsComplete(false);
+    setContext({});
+    setEstimate(null);
     setSavedEstimateId(null);
-    setCalculatedPricing(null);
-    reset();
+    setShowLineItems(false);
   };
 
   const handleViewEstimate = () => {
@@ -536,29 +279,37 @@ Click below to view details or download PDF.`;
     }
   };
 
+  // Group line items by category
+  const groupedLineItems = estimate?.pricing.line_items.reduce((acc, item) => {
+    const cat = item.category;
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {} as Record<string, PricingLineItem[]>) || {};
+
   return (
     <div className="flex flex-col h-full glass-card-active relative overflow-hidden">
-      {/* Subtle glow effect behind chat */}
+      {/* Subtle glow effect */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
-      <div className="relative flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+      <div className="relative flex items-center justify-between px-6 py-5 border-b border-border">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center border border-accent/30 shadow-glow">
-            <Sparkles className="h-5 w-5 text-accent" />
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+            <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h2 className="font-display font-semibold text-lg text-foreground tracking-tight">AI Estimator</h2>
-            <p className="text-sm text-muted-foreground">Describe your project naturally</p>
+            <p className="text-sm text-muted-foreground">Powered by real pricing data</p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleStartNew}
-          className="text-muted-foreground hover:text-foreground hover:bg-white/[0.06] rounded-xl transition-all duration-300 hover:scale-105"
+          className="text-muted-foreground hover:text-foreground rounded-xl"
         >
           <RotateCcw className="h-4 w-4 mr-2" />
           New Quote
@@ -577,48 +328,139 @@ Click below to view details or download PDF.`;
         
         {isLoading && (
           <div className="flex items-center gap-3 text-muted-foreground animate-fade-in">
-            <div className="w-9 h-9 rounded-xl bg-accent/20 flex items-center justify-center border border-accent/30">
-              <Loader2 className="h-4 w-4 animate-spin text-accent" />
+            <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
             </div>
-            <span className="text-sm">Analyzing project...</span>
+            <span className="text-sm">Calculating estimate...</span>
           </div>
         )}
 
         {/* Quote Summary Card */}
-        {isComplete && calculatedPricing && (
-          <div className="quote-card animate-scale-in">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-display font-semibold text-xl tracking-tight">Quote Ready</h3>
-              <span className="stat-value">
-                ${calculatedPricing.totals.total_cp.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex gap-3">
-              <Button 
-                onClick={handleViewEstimate}
-                className="flex-1 glass-button"
-                disabled={!savedEstimateId}
+        {estimate && (
+          <Card className="animate-scale-in border-primary/20 shadow-lg">
+            <CardContent className="p-6">
+              {/* Header with total */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-display font-semibold text-xl tracking-tight">Quote Ready</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {estimate.trade_buckets.length} line items • {estimate.pricing.totals.overall_margin_percent.toFixed(0)}% margin
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-primary">
+                    {formatCurrency(estimate.pricing.totals.total_cp)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Range: {formatCurrency(estimate.pricing.totals.low_estimate)} - {formatCurrency(estimate.pricing.totals.high_estimate)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Schedule */}
+              <div className="grid grid-cols-3 gap-3 mb-6 p-4 bg-muted/50 rounded-xl">
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Deposit (65%)</div>
+                  <div className="font-semibold">{formatCurrency(estimate.payment_schedule.deposit)}</div>
+                </div>
+                <div className="text-center border-x border-border">
+                  <div className="text-xs text-muted-foreground mb-1">Progress (25%)</div>
+                  <div className="font-semibold">{formatCurrency(estimate.payment_schedule.progress)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Final (10%)</div>
+                  <div className="font-semibold">{formatCurrency(estimate.payment_schedule.final)}</div>
+                </div>
+              </div>
+
+              {/* Line Items Toggle */}
+              <button
+                onClick={() => setShowLineItems(!showLineItems)}
+                className="w-full flex items-center justify-between py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                View Details
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-              <Button 
-                onClick={handleViewEstimate}
-                disabled={!savedEstimateId}
-                className="glass-button-secondary"
-              >
-                <FileDown className="h-4 w-4 mr-2" />
-                PDF
-              </Button>
-            </div>
-          </div>
+                <span>View pricing breakdown</span>
+                {showLineItems ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+
+              {/* Expanded Line Items */}
+              {showLineItems && (
+                <div className="mt-4 space-y-4 border-t border-border pt-4">
+                  {Object.entries(groupedLineItems).map(([category, items]) => (
+                    <div key={category}>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                        {category}
+                      </h4>
+                      <div className="space-y-1">
+                        {items.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm py-1">
+                            <div className="flex-1">
+                              <span className="text-foreground">{item.task_description}</span>
+                              <span className="text-muted-foreground ml-2">
+                                ({item.quantity} {item.unit})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="text-muted-foreground text-xs">
+                                IC: {formatCurrency(item.ic_total)}
+                              </span>
+                              <span className="font-medium">
+                                {formatCurrency(item.cp_total)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Totals */}
+                  <div className="border-t border-border pt-3 mt-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Internal Cost</span>
+                      <span>{formatCurrency(estimate.pricing.totals.total_ic)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">Client Price</span>
+                      <span className="font-semibold text-primary">{formatCurrency(estimate.pricing.totals.total_cp)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">Profit</span>
+                      <span className="text-green-600">
+                        {formatCurrency(estimate.pricing.totals.total_cp - estimate.pricing.totals.total_ic)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-6">
+                <Button 
+                  onClick={handleViewEstimate}
+                  className="flex-1"
+                  disabled={!savedEstimateId}
+                >
+                  View Details
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={handleViewEstimate}
+                  disabled={!savedEstimateId}
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  PDF
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
         
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="relative p-4 border-t border-white/[0.06]">
+      <div className="relative p-4 border-t border-border">
         <ChatInput 
           onSend={handleSendMessage} 
           disabled={isLoading}
