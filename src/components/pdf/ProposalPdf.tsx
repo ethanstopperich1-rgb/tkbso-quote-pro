@@ -270,22 +270,22 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Trade descriptions for professional appearance
+// Trade descriptions for professional appearance - using action verb template
 const tradeDescriptions: Record<string, string> = {
-  'Demolition': 'Complete demolition of existing fixtures, flooring, and wall surfaces. Includes debris removal, dumpster, and site protection.',
-  'Plumbing': 'All plumbing rough-in and finish work including supply lines, drains, and fixture installation.',
-  'Tile': 'Professional tile installation including wall tile, floor tile, and waterproofing membrane system.',
-  'Tile & Waterproofing': 'Professional tile installation with complete waterproofing system for shower and wet areas.',
-  'Electrical': 'Electrical work including lighting fixtures, switches, outlets, and code-compliant wiring.',
-  'Vanity': 'Vanity cabinet installation with countertop, sink, and faucet.',
-  'Cabinetry': 'Cabinet installation including hardware and final adjustments.',
-  'Countertops': 'Quartz countertop fabrication and installation with undermount sink cutout.',
-  'Shower Glass': 'Custom frameless glass enclosure with hardware and professional installation.',
-  'Painting': 'Interior painting including wall prep, primer, and finish coat.',
-  'Support': 'Structural support work including cement board installation and waterproofing.',
-  'Framing': 'Framing and blocking for fixtures, niches, and structural support.',
-  'Glass': 'Custom glass enclosure with hardware and professional installation.',
-  'Other': 'Additional work as specified in project scope.',
+  'Demolition': 'Remove all existing fixtures, tile, flooring, and wall surfaces to prepare for new construction. Includes dumpster rental, debris hauling, and floor/wall protection. Excludes structural modifications or hazardous material abatement.',
+  'Plumbing': 'Install new supply lines, drains, and fixtures to meet current code requirements. Includes rough-in, trim-out, and final connections for all specified fixtures. Excludes water heater replacement or main line work.',
+  'Tile': 'Install ceramic or porcelain tile on walls and floors per design specifications. Includes surface preparation, waterproofing membrane, tile setting, and grouting. Excludes specialty stone or custom mosaic patterns.',
+  'Tile & Waterproofing': 'Install complete tile system with waterproofing for wet areas. Includes cement board, waterproof membrane, tile installation, and grout sealing. Excludes heated flooring systems.',
+  'Electrical': 'Update electrical to support new lighting and outlet requirements. Includes recessed lighting, vanity fixtures, GFCI outlets, and switches. Excludes panel upgrades or new circuit additions beyond scope.',
+  'Vanity': 'Install new vanity cabinet with countertop, sink, and faucet. Includes leveling, securing, plumbing connections, and hardware installation. Excludes custom cabinetry or specialty stone tops.',
+  'Cabinetry': 'Install new cabinetry per approved layout and design. Includes cabinet assembly, mounting, hardware installation, and final adjustments. Excludes custom millwork or built-in furniture.',
+  'Countertops': 'Fabricate and install quartz countertops with specified edge profile. Includes templating, sink cutout, faucet holes, and seaming. Excludes backsplash tile or specialty stone materials.',
+  'Shower Glass': 'Install frameless glass shower enclosure with premium hardware. Includes precise measurement, custom fabrication, and professional installation. Excludes specialty coatings or steam door configurations.',
+  'Painting': 'Prepare and paint all affected surfaces to match existing or new color scheme. Includes patching, priming, and two finish coats. Excludes wallpaper removal or specialty finishes.',
+  'Support': 'Install cement board and structural backing for tile and fixtures. Includes waterproofing, blocking for grab bars, and niche framing. Excludes structural wall modifications.',
+  'Framing': 'Build or modify framing to support new layout and fixtures. Includes blocking, niche construction, and pony wall framing. Excludes load-bearing wall changes or engineering.',
+  'Glass': 'Install custom glass enclosure with hardware and professional fitting. Includes measurement, fabrication, and secure mounting. Excludes specialty glass treatments.',
+  'Other': 'Complete additional work as specified in project scope and approved change orders.',
 };
 
 function buildTradeGroups(estimate: Estimate): TradeGroup[] {
