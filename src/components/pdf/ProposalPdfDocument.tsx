@@ -24,35 +24,38 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 10,
     color: '#1e293b',
+    justifyContent: 'flex-start',
   },
-  // Page 1 Styles
+  // Header + Client Group (never separate)
+  headerGroup: {
+    marginBottom: 20,
+  },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 15,
   },
   logo: {
-    width: 180,
-    height: 60,
+    width: 150,
+    height: 50,
     objectFit: 'contain',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   companyName: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 700,
     color: '#0f172a',
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   tagline: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#64748b',
     textAlign: 'center',
   },
   clientBlock: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 25,
-    paddingBottom: 15,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
@@ -60,14 +63,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   clientLabel: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#64748b',
-    marginBottom: 3,
+    marginBottom: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   clientValue: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 600,
     color: '#0f172a',
   },
@@ -75,82 +78,77 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 700,
     color: '#0f172a',
-    marginBottom: 12,
-    paddingBottom: 6,
+    marginBottom: 8,
+    paddingBottom: 4,
     borderBottomWidth: 2,
     borderBottomColor: '#0ea5e9',
   },
   descriptionBox: {
     backgroundColor: '#f8fafc',
-    borderRadius: 6,
-    padding: 16,
-    marginBottom: 25,
+    borderRadius: 4,
+    padding: 10,
+    marginBottom: 15,
   },
   bulletItem: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   bullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: '#0ea5e9',
-    marginRight: 10,
-    marginTop: 4,
+    marginRight: 8,
+    marginTop: 3,
   },
   bulletText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 1.5,
+    fontSize: 10,
+    lineHeight: 1.4,
     color: '#334155',
   },
   priceBox: {
     backgroundColor: '#0f172a',
-    borderRadius: 8,
-    padding: 20,
-    marginTop: 'auto',
+    borderRadius: 6,
+    padding: 12,
+    marginBottom: 15,
     alignItems: 'center',
   },
   priceLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#94a3b8',
-    marginBottom: 5,
+    marginBottom: 3,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   priceValue: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 700,
     color: '#ffffff',
   },
-  priceNote: {
-    fontSize: 8,
-    color: '#64748b',
-    marginTop: 5,
-  },
-  // Page 2 Styles - Scope Table
+  // Scope Table Styles
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#0f172a',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginBottom: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 3,
+    marginBottom: 1,
   },
   tableHeaderText: {
     color: '#ffffff',
     fontWeight: 600,
-    fontSize: 9,
+    fontSize: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
@@ -158,57 +156,57 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   categoryCol: {
-    width: '20%',
+    width: '18%',
   },
   taskCol: {
-    width: '65%',
+    width: '67%',
   },
   includedCol: {
     width: '15%',
     alignItems: 'center',
   },
   categoryText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 600,
     color: '#0f172a',
   },
   taskText: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#475569',
-    lineHeight: 1.4,
+    lineHeight: 1.3,
   },
   includedBadge: {
     backgroundColor: '#dcfce7',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   includedText: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#15803d',
     fontWeight: 600,
   },
   excludedBadge: {
     backgroundColor: '#fee2e2',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   excludedText: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#b91c1c',
     fontWeight: 600,
   },
-  // Page 3 Styles - Payment & Signature
+  // Page 2 Styles - Payment & Signature
   milestoneSection: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   milestoneBar: {
     flexDirection: 'row',
-    height: 40,
-    borderRadius: 6,
+    height: 30,
+    borderRadius: 4,
     overflow: 'hidden',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   milestone65: {
     width: '65%',
@@ -229,100 +227,100 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   milestonePercent: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 700,
     color: '#ffffff',
   },
   milestoneDetails: {
-    marginTop: 5,
+    marginTop: 4,
   },
   milestoneRow: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 6,
     alignItems: 'flex-start',
   },
   milestoneAmount: {
-    width: 90,
-    fontSize: 12,
+    width: 80,
+    fontSize: 11,
     fontWeight: 600,
     color: '#0f172a',
   },
   milestoneLabel: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 9,
     color: '#64748b',
   },
   notesSection: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   noteBox: {
     backgroundColor: '#fffbeb',
     borderLeftWidth: 3,
     borderLeftColor: '#f59e0b',
-    padding: 12,
-    marginBottom: 10,
-    borderRadius: 4,
+    padding: 8,
+    marginBottom: 6,
+    borderRadius: 3,
   },
   noteTitle: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: 600,
     color: '#92400e',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   noteText: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#78350f',
-    lineHeight: 1.4,
+    lineHeight: 1.3,
   },
   signatureSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 40,
+    marginTop: 25,
   },
   signatureBox: {
     width: '45%',
   },
   signatureLabel: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#64748b',
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   signatureLine: {
     borderBottomWidth: 1,
     borderBottomColor: '#0f172a',
-    height: 30,
-    marginBottom: 5,
+    height: 25,
+    marginBottom: 4,
   },
   dateLabel: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#94a3b8',
-    marginTop: 15,
+    marginTop: 10,
   },
   dateLine: {
     borderBottomWidth: 1,
     borderBottomColor: '#cbd5e1',
-    width: 120,
-    height: 20,
+    width: 100,
+    height: 15,
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 25,
     left: 40,
     right: 40,
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
-    paddingTop: 10,
+    paddingTop: 8,
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#94a3b8',
   },
   pageNumber: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#64748b',
   },
 });
@@ -384,65 +382,57 @@ export function ProposalPdfDocument({
 
   return (
     <Document>
-      {/* PAGE 1: Executive Summary */}
+      {/* PAGE 1: Executive Summary + Scope */}
       <Page size="LETTER" style={styles.page}>
-        {/* Header with Logo */}
-        <View style={styles.header}>
-          {logoUrl && <Image src={logoUrl} style={styles.logo} />}
-          <Text style={styles.companyName}>THE KITCHEN AND BATH STORE OF ORLANDO</Text>
-          <Text style={styles.tagline}>Professional Remodeling Services</Text>
-        </View>
-
-        {/* Client Information Block */}
-        <View style={styles.clientBlock}>
-          <View style={styles.clientInfo}>
-            <Text style={styles.clientLabel}>Project For</Text>
-            <Text style={styles.clientValue}>{clientName || 'Homeowner'}</Text>
-            <Text style={{ ...styles.clientValue, fontSize: 10, fontWeight: 400, marginTop: 4, color: '#475569' }}>
-              {fullAddress || 'Address TBD'}
-            </Text>
+        {/* Header Group - Logo + Client Info (never separate) */}
+        <View style={styles.headerGroup} wrap={false}>
+          <View style={styles.header}>
+            {logoUrl && <Image src={logoUrl} style={styles.logo} />}
+            <Text style={styles.companyName}>THE KITCHEN AND BATH STORE OF ORLANDO</Text>
+            <Text style={styles.tagline}>Professional Remodeling Services</Text>
           </View>
-          <View style={styles.dateBlock}>
-            <Text style={styles.clientLabel}>Date</Text>
-            <Text style={styles.clientValue}>{date}</Text>
-            <Text style={{ ...styles.clientLabel, marginTop: 10 }}>Project Type</Text>
-            <Text style={{ ...styles.clientValue, fontSize: 10 }}>{projectType} Remodel</Text>
+
+          <View style={styles.clientBlock}>
+            <View style={styles.clientInfo}>
+              <Text style={styles.clientLabel}>Project For</Text>
+              <Text style={styles.clientValue}>{clientName || 'Homeowner'}</Text>
+              <Text style={{ fontSize: 9, color: '#475569', marginTop: 2 }}>
+                {fullAddress || 'Address TBD'}
+              </Text>
+            </View>
+            <View style={styles.dateBlock}>
+              <Text style={styles.clientLabel}>Date</Text>
+              <Text style={styles.clientValue}>{date}</Text>
+              <Text style={{ ...styles.clientLabel, marginTop: 8 }}>Project Type</Text>
+              <Text style={{ fontSize: 9, fontWeight: 600, color: '#0f172a' }}>{projectType} Remodel</Text>
+            </View>
           </View>
         </View>
 
         {/* Description of Work */}
-        <Text style={styles.sectionTitle}>Description of Work</Text>
-        <View style={styles.descriptionBox}>
-          {summaryBullets.map((bullet, index) => (
-            <View key={index} style={styles.bulletItem}>
-              <View style={styles.bullet} />
-              <Text style={styles.bulletText}>{bullet}</Text>
-            </View>
-          ))}
+        <View wrap={false}>
+          <Text style={styles.sectionTitle}>Description of Work</Text>
+          <View style={styles.descriptionBox}>
+            {summaryBullets.map((bullet, index) => (
+              <View key={index} style={styles.bulletItem}>
+                <View style={styles.bullet} />
+                <Text style={styles.bulletText}>{bullet}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Total Investment Box */}
-        <View style={styles.priceBox}>
+        <View style={styles.priceBox} wrap={false}>
           <Text style={styles.priceLabel}>Total Investment</Text>
           <Text style={styles.priceValue}>
             ${totalPrice.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </Text>
-          <Text style={styles.priceNote}>See payment schedule on page 3</Text>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>{contractorName}</Text>
-          <Text style={styles.pageNumber}>Page 1 of 3</Text>
-        </View>
-      </Page>
-
-      {/* PAGE 2: Detailed Scope */}
-      <Page size="LETTER" style={styles.page}>
+        {/* Scope Table */}
         <Text style={styles.sectionTitle}>Detailed Scope of Work</Text>
-
-        {/* Table Header */}
-        <View style={styles.tableHeader}>
+        <View style={styles.tableHeader} wrap={false}>
           <View style={styles.categoryCol}>
             <Text style={styles.tableHeaderText}>Category</Text>
           </View>
@@ -454,9 +444,8 @@ export function ProposalPdfDocument({
           </View>
         </View>
 
-        {/* Table Rows */}
         {scopeItems.map((item, index) => (
-          <View key={index} style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}>
+          <View key={index} style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]} wrap={false}>
             <View style={styles.categoryCol}>
               <Text style={styles.categoryText}>{item.category}</Text>
             </View>
@@ -478,19 +467,18 @@ export function ProposalPdfDocument({
         ))}
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>{clientName} - {projectType} Remodel</Text>
-          <Text style={styles.pageNumber}>Page 2 of 3</Text>
+        <View style={styles.footer} fixed>
+          <Text style={styles.footerText}>{contractorName}</Text>
+          <Text style={styles.pageNumber}>Page 1 of 2</Text>
         </View>
       </Page>
 
-      {/* PAGE 3: Payment & Signature */}
+      {/* PAGE 2: Payment & Signature */}
       <Page size="LETTER" style={styles.page}>
-        {/* Payment Milestones */}
-        <View style={styles.milestoneSection}>
+        {/* Payment Milestones - keep together */}
+        <View style={styles.milestoneSection} wrap={false}>
           <Text style={styles.sectionTitle}>Payment Schedule</Text>
           
-          {/* Visual Bar */}
           <View style={styles.milestoneBar}>
             <View style={styles.milestone65}>
               <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.deposit * 100)}%</Text>
@@ -503,7 +491,6 @@ export function ProposalPdfDocument({
             </View>
           </View>
 
-          {/* Milestone Details */}
           <View style={styles.milestoneDetails}>
             <View style={styles.milestoneRow}>
               <Text style={styles.milestoneAmount}>
@@ -532,8 +519,8 @@ export function ProposalPdfDocument({
           </View>
         </View>
 
-        {/* Project Notes */}
-        <View style={styles.notesSection}>
+        {/* Project Notes - keep together */}
+        <View style={styles.notesSection} wrap={false}>
           <Text style={styles.sectionTitle}>Project Notes</Text>
           
           <View style={styles.noteBox}>
@@ -561,8 +548,8 @@ export function ProposalPdfDocument({
           </View>
         </View>
 
-        {/* Signature Section */}
-        <View style={styles.signatureSection}>
+        {/* Signature Section - keep together */}
+        <View style={styles.signatureSection} wrap={false}>
           <View style={styles.signatureBox}>
             <Text style={styles.signatureLabel}>Homeowner Approval</Text>
             <View style={styles.signatureLine} />
@@ -576,9 +563,9 @@ export function ProposalPdfDocument({
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <View style={styles.footer} fixed>
           <Text style={styles.footerText}>{contractorPhone} | {contractorEmail}</Text>
-          <Text style={styles.pageNumber}>Page 3 of 3</Text>
+          <Text style={styles.pageNumber}>Page 2 of 2</Text>
         </View>
       </Page>
     </Document>
