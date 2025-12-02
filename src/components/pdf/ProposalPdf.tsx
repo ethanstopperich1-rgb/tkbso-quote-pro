@@ -14,75 +14,102 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 10,
-    padding: 40,
+    padding: 50,
+    paddingBottom: 70,
     backgroundColor: '#ffffff',
-    justifyContent: 'flex-start',
   },
   
   // Header
   headerSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   logo: {
-    width: 200,
+    width: 160,
     height: 'auto',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   quoteTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
     textAlign: 'center',
-    marginBottom: 8,
+  },
+  quoteDate: {
+    fontSize: 9,
+    color: '#64748b',
+    textAlign: 'center',
+    marginTop: 2,
   },
   
   // Client Info
   clientSection: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    marginBottom: 20,
-    borderRadius: 4,
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
-  clientName: {
-    fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
+  clientRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  clientLabel: {
+    width: 60,
+    fontSize: 9,
+    color: '#64748b',
+  },
+  clientValue: {
+    flex: 1,
+    fontSize: 9,
     color: '#1e293b',
-    marginBottom: 8,
-  },
-  clientDetail: {
-    fontSize: 10,
-    color: '#475569',
-    marginBottom: 3,
   },
   
   // Trade Section
   tradeSection: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   tradeHeader: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
-    backgroundColor: '#f1f5f9',
-    padding: 8,
-    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e3a8a',
+    paddingBottom: 2,
+    marginBottom: 4,
   },
   lineItem: {
     flexDirection: 'row',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingVertical: 2,
+    paddingLeft: 6,
   },
   lineItemText: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 9,
     color: '#475569',
   },
   lineItemPrice: {
-    width: 80,
-    fontSize: 10,
+    width: 65,
+    fontSize: 9,
+    color: '#1e293b',
+    textAlign: 'right',
+  },
+  tradeTotalRow: {
+    flexDirection: 'row',
+    paddingTop: 2,
+    paddingLeft: 6,
+  },
+  tradeTotalText: {
+    flex: 1,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e293b',
+    textAlign: 'right',
+    paddingRight: 6,
+  },
+  tradeTotalPrice: {
+    width: 65,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     textAlign: 'right',
   },
@@ -90,56 +117,57 @@ const styles = StyleSheet.create({
   // Final Price
   finalPriceSection: {
     backgroundColor: '#1e3a8a',
-    padding: 20,
-    marginVertical: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   finalPriceLabel: {
     fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
     color: '#ffffff',
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 6,
+    letterSpacing: 0.5,
   },
   finalPriceAmount: {
-    fontSize: 28,
+    fontSize: 20,
     fontFamily: 'Helvetica-Bold',
     color: '#ffffff',
   },
   
   // Payment Milestones
   paymentSection: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
-    marginBottom: 10,
-    paddingBottom: 6,
+    marginBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+    paddingBottom: 3,
   },
   paymentRow: {
     flexDirection: 'row',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingVertical: 3,
   },
   paymentPercent: {
-    width: 50,
-    fontSize: 11,
+    width: 35,
+    fontSize: 9,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
   },
   paymentLabel: {
     flex: 1,
-    fontSize: 10,
+    fontSize: 9,
     color: '#475569',
   },
   paymentAmount: {
-    width: 80,
-    fontSize: 11,
+    width: 65,
+    fontSize: 9,
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     textAlign: 'right',
@@ -147,18 +175,17 @@ const styles = StyleSheet.create({
   
   // Signature Block
   signatureSection: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   acceptanceText: {
-    fontSize: 10,
+    fontSize: 8,
     color: '#475569',
-    marginBottom: 16,
+    marginBottom: 10,
     lineHeight: 1.4,
   },
   signatureRow: {
     flexDirection: 'row',
-    marginBottom: 12,
-    gap: 40,
+    gap: 24,
   },
   signatureField: {
     flex: 1,
@@ -166,51 +193,53 @@ const styles = StyleSheet.create({
   signatureLine: {
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
-    marginBottom: 4,
-    height: 24,
+    marginBottom: 2,
+    height: 18,
   },
   signatureLabel: {
-    fontSize: 9,
+    fontSize: 7,
     color: '#64748b',
   },
-  printedNameLabel: {
-    fontSize: 10,
-    color: '#475569',
+  printedNameRow: {
     marginTop: 8,
+  },
+  printedNameLabel: {
+    fontSize: 8,
+    color: '#475569',
   },
   
   // Notes
   notesSection: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#fefce8',
-    borderRadius: 4,
+    padding: 8,
+    backgroundColor: '#f8fafc',
+    borderLeftWidth: 3,
+    borderLeftColor: '#1e3a8a',
   },
   notesTitle: {
-    fontSize: 11,
+    fontSize: 8,
     fontFamily: 'Helvetica-Bold',
-    color: '#713f12',
-    marginBottom: 6,
+    color: '#1e293b',
+    marginBottom: 3,
   },
   notesText: {
-    fontSize: 9,
-    color: '#854d0e',
+    fontSize: 7,
+    color: '#475569',
     lineHeight: 1.5,
   },
   
   // Footer
   pageFooter: {
     position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
+    bottom: 25,
+    left: 50,
+    right: 50,
     textAlign: 'center',
-    paddingTop: 10,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#94a3b8',
   },
 });
@@ -244,7 +273,6 @@ function formatCurrency(amount: number): string {
 function buildTradeGroups(estimate: Estimate): TradeGroup[] {
   const groups: TradeGroup[] = [];
 
-  // Check for line items in internal_json_payload
   const payload = estimate.internal_json_payload as Record<string, unknown> | null;
   const lineItems = (payload?.pricing as Record<string, unknown>)?.line_items as Array<{
     category: string;
@@ -253,7 +281,6 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
   }> | undefined;
 
   if (lineItems && lineItems.length > 0) {
-    // Group line items by category
     const grouped: Record<string, LineItem[]> = {};
     const totals: Record<string, number> = {};
     
@@ -274,7 +301,6 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
       groups.push({ trade, items, total: totals[trade] });
     }
   } else {
-    // Build from estimate fields
     if (estimate.include_demo !== false && (estimate.demo_cp_total || 0) > 0) {
       groups.push({
         trade: 'Demolition',
@@ -392,13 +418,12 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
     day: 'numeric',
   });
 
-  // Project notes
   const notes = estimate.job_notes || defaults.termsText || 'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are included unless noted otherwise.';
 
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
-        {/* Header with Logo Centered */}
+        {/* Header */}
         <View style={styles.headerSection} wrap={false}>
           {branding.logoUrl ? (
             <Image src={branding.logoUrl} style={styles.logo} />
@@ -406,27 +431,35 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
             <Image src={tkbsoLogo} style={styles.logo} />
           )}
           <Text style={styles.quoteTitle}>Quote for {clientName}</Text>
+          <Text style={styles.quoteDate}>{currentDate}</Text>
         </View>
 
-        {/* Client Contact Info & Address */}
+        {/* Client Info */}
         <View style={styles.clientSection} wrap={false}>
-          <Text style={styles.clientName}>{clientName}</Text>
           {estimate.client_phone && (
-            <Text style={styles.clientDetail}>Phone: {estimate.client_phone}</Text>
+            <View style={styles.clientRow}>
+              <Text style={styles.clientLabel}>Phone:</Text>
+              <Text style={styles.clientValue}>{estimate.client_phone}</Text>
+            </View>
           )}
           {estimate.client_email && (
-            <Text style={styles.clientDetail}>Email: {estimate.client_email}</Text>
+            <View style={styles.clientRow}>
+              <Text style={styles.clientLabel}>Email:</Text>
+              <Text style={styles.clientValue}>{estimate.client_email}</Text>
+            </View>
           )}
           {fullAddress && (
-            <Text style={styles.clientDetail}>Address: {fullAddress}</Text>
+            <View style={styles.clientRow}>
+              <Text style={styles.clientLabel}>Property:</Text>
+              <Text style={styles.clientValue}>{fullAddress}</Text>
+            </View>
           )}
-          <Text style={styles.clientDetail}>Date: {currentDate}</Text>
         </View>
 
-        {/* Trade-by-Trade Breakdown */}
+        {/* Trade Breakdown */}
         {tradeGroups.map((group, idx) => (
           <View key={idx} style={styles.tradeSection} wrap={false}>
-            <Text style={styles.tradeHeader}>{group.trade.toUpperCase()}</Text>
+            <Text style={styles.tradeHeader}>{group.trade}</Text>
             {group.items.map((item, itemIdx) => (
               <View key={itemIdx} style={styles.lineItem}>
                 <Text style={styles.lineItemText}>• {item.description}</Text>
@@ -435,13 +468,9 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
                 )}
               </View>
             ))}
-            <View style={[styles.lineItem, { backgroundColor: '#f8fafc' }]}>
-              <Text style={[styles.lineItemText, { fontFamily: 'Helvetica-Bold' }]}>
-                {group.trade} Total
-              </Text>
-              <Text style={[styles.lineItemPrice, { fontFamily: 'Helvetica-Bold' }]}>
-                {formatCurrency(group.total)}
-              </Text>
+            <View style={styles.tradeTotalRow}>
+              <Text style={styles.tradeTotalText}>Subtotal:</Text>
+              <Text style={styles.tradeTotalPrice}>{formatCurrency(group.total)}</Text>
             </View>
           </View>
         ))}
@@ -452,31 +481,31 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           <Text style={styles.finalPriceAmount}>{formatCurrency(totalCost)}</Text>
         </View>
 
-        {/* Payment Milestones */}
+        {/* Payment Schedule */}
         <View style={styles.paymentSection} wrap={false}>
           <Text style={styles.sectionTitle}>Payment Schedule</Text>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Deposit – Due upon contract signing</Text>
+            <Text style={styles.paymentLabel}>Deposit – Due upon signing</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Progress – Due at rough-in completion</Text>
+            <Text style={styles.paymentLabel}>Progress – Due at rough-in</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Final – Due at project completion</Text>
+            <Text style={styles.paymentLabel}>Final – Due at completion</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
           </View>
         </View>
 
-        {/* Signature Block */}
+        {/* Signature */}
         <View style={styles.signatureSection} wrap={false}>
           <Text style={styles.sectionTitle}>Acceptance</Text>
           <Text style={styles.acceptanceText}>
-            By signing below, I accept this quote and agree to the terms and payment schedule outlined above.
+            By signing below, I accept this quote and agree to the terms and payment schedule.
           </Text>
           <View style={styles.signatureRow}>
             <View style={styles.signatureField}>
@@ -488,23 +517,21 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
               <Text style={styles.signatureLabel}>Date</Text>
             </View>
           </View>
-          <View style={styles.signatureRow}>
-            <View style={styles.signatureField}>
-              <Text style={styles.printedNameLabel}>Printed Name: _______________________________</Text>
-            </View>
+          <View style={styles.printedNameRow}>
+            <Text style={styles.printedNameLabel}>Print Name: _________________________________</Text>
           </View>
         </View>
 
-        {/* General Notes */}
+        {/* Notes */}
         <View style={styles.notesSection} wrap={false}>
-          <Text style={styles.notesTitle}>Project Notes</Text>
+          <Text style={styles.notesTitle}>Notes</Text>
           <Text style={styles.notesText}>{notes}</Text>
         </View>
 
         {/* Footer */}
         <View style={styles.pageFooter} fixed>
           <Text style={styles.footerText}>
-            {companyName}{companyPhone ? ` | ${companyPhone}` : ''}{companyEmail ? ` | ${companyEmail}` : ''}
+            {companyName}{companyPhone ? ` • ${companyPhone}` : ''}{companyEmail ? ` • ${companyEmail}` : ''}
           </Text>
         </View>
       </Page>
