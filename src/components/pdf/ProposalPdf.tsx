@@ -248,8 +248,8 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
   const payload = estimate.internal_json_payload as Record<string, unknown> | null;
   const lineItems = (payload?.pricing as Record<string, unknown>)?.line_items as Array<{
     category: string;
-    description: string;
-    cp: number;
+    task_description: string;
+    cp_total: number;
   }> | undefined;
 
   if (lineItems && lineItems.length > 0) {
@@ -264,10 +264,10 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
         totals[category] = 0;
       }
       grouped[category].push({
-        description: item.description,
-        price: item.cp,
+        description: item.task_description,
+        price: item.cp_total,
       });
-      totals[category] += item.cp || 0;
+      totals[category] += item.cp_total || 0;
     }
     
     for (const [trade, items] of Object.entries(grouped)) {
