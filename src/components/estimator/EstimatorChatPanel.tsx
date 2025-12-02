@@ -9,6 +9,9 @@ import { RotateCcw, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { calculateProjectPricing, TradeBucket, ProjectPricing } from '@/lib/trade-bucket-pricer';
+import { PricingBreakdown } from './PricingBreakdown';
+import { Tables } from '@/integrations/supabase/types';
 
 interface ParsedProject {
   clientInfo: {
@@ -109,7 +112,34 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
+  const [calculatedPricing, setCalculatedPricing] = useState<ProjectPricing | null>(null);
+  const [pricingConfig, setPricingConfig] = useState<Tables<'pricing_configs'> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch pricing config on mount
+  useEffect(() => {
+    const fetchPricingConfig = async () => {
+      if (!contractor?.id) return;
+      
+      const { data, error } = await supabase
+        .from('pricing_configs')
+        .select('*')
+        .eq('contractor_id', contractor.id)
+        .maybeSingle();
+        
+      if (error) {
+        console.error('Error fetching pricing config:', error);
+        toast.error('Failed to load pricing configuration');
+        return;
+      }
+      
+      if (data) {
+        setPricingConfig(data);
+      }
+    };
+    
+    fetchPricingConfig();
+  }, [contractor?.id]);
   
   // Update context when measuredSqft changes
   useEffect(() => {
@@ -511,6 +541,45 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
         throw new Error(error.message || 'Failed to process your message');
       }
 
+      console.log('Raw edge function response:', data);
+      
+      // Check if we received trade_buckets (new structured format)
+      if (data?.trade_buckets && Array.isArray(data.trade_buckets) && pricingConfig) {
+        console.log('Processing trade buckets:', data.trade_buckets);
+        
+        // Calculate pricing using the new calculator
+        const pricing = calculateProjectPricing(
+          data.trade_buckets as TradeBucket[],
+          pricingConfig
+        );
+        
+        setCalculatedPricing(pricing);
+        
+        // Build response message
+        let response = '✅ **Project Analysis Complete**\n\n';
+        
+        if (data.project_header) {
+          response += `**Client:** ${data.project_header.client_name || 'TBD'}\n`;
+          response += `**Project Type:** ${data.project_header.project_type}\n`;
+          if (data.project_header.overall_size_sqft) {
+            response += `**Size:** ${data.project_header.overall_size_sqft} sq ft\n`;
+          }
+          response += '\n';
+        }
+        
+        response += `**Estimated Investment:** $${pricing.totals.total_cp.toLocaleString()}\n`;
+        response += `**Margin:** ${pricing.totals.overall_margin_percent.toFixed(1)}%\n\n`;
+        
+        if (pricing.warnings.length > 0) {
+          response += '⚠️ ' + pricing.warnings.join('\n⚠️ ') + '\n\n';
+        }
+        
+        response += 'See the detailed breakdown below. What would you like to adjust?';
+        
+        addAssistantMessage(response);
+        return;
+      }
+
       const parsed = data as ParsedProject;
       
       // Merge new data with existing context
@@ -627,6 +696,13 @@ export function EstimatorChatPanel({ measuredSqft }: EstimatorChatPanelProps) {
         
         <div ref={messagesEndRef} />
       </div>
+      
+      {/* Pricing Breakdown (if calculated) */}
+      {calculatedPricing && (
+        <div className="border-t bg-muted/30 p-4 max-h-96 overflow-y-auto">
+          <PricingBreakdown pricing={calculatedPricing} />
+        </div>
+      )}
       
       {/* Input */}
       <ChatInput
