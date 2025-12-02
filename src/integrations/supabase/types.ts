@@ -1096,6 +1096,59 @@ export type Database = {
           },
         ]
       }
+      trade_buckets_config: {
+        Row: {
+          category: string
+          contractor_id: string
+          created_at: string
+          description: string | null
+          display_name: string
+          ic_per_unit: number
+          id: string
+          is_active: boolean
+          margin_percent: number
+          trade_name: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          contractor_id: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          ic_per_unit?: number
+          id?: string
+          is_active?: boolean
+          margin_percent?: number
+          trade_name: string
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          contractor_id?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          ic_per_unit?: number
+          id?: string
+          is_active?: boolean
+          margin_percent?: number
+          trade_name?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_buckets_config_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1129,6 +1182,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      seed_trade_buckets_for_contractor: {
+        Args: { p_contractor_id: string }
+        Returns: undefined
       }
     }
     Enums: {
