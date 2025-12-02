@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { calculateProjectPricing, TradeBucket, ProjectPricing } from '@/lib/trade-bucket-pricer';
 import { Tables } from '@/integrations/supabase/types';
-import { Card } from '@/components/ui/card';
 
 interface ParsedProject {
   clientInfo: {
@@ -538,23 +537,28 @@ Click below to view details or download PDF.`;
   };
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-xl border shadow-sm">
+    <div className="flex flex-col h-full glass-card-active relative overflow-hidden">
+      {/* Subtle glow effect behind chat */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-accent" />
+      <div className="relative flex items-center justify-between px-6 py-5 border-b border-white/[0.06]">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center border border-accent/30 shadow-glow">
+            <Sparkles className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <h2 className="font-semibold text-foreground">AI Estimator</h2>
-            <p className="text-xs text-muted-foreground">Describe your project naturally</p>
+            <h2 className="font-display font-semibold text-lg text-foreground tracking-tight">AI Estimator</h2>
+            <p className="text-sm text-muted-foreground">Describe your project naturally</p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleStartNew}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground hover:bg-white/[0.06] rounded-xl transition-all duration-300 hover:scale-105"
         >
           <RotateCcw className="h-4 w-4 mr-2" />
           New Quote
@@ -562,53 +566,59 @@ Click below to view details or download PDF.`;
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
+      <div className="relative flex-1 overflow-y-auto p-6 space-y-5">
+        {messages.map((message, index) => (
+          <ChatMessage 
+            key={message.id} 
+            message={message} 
+            isNew={index === messages.length - 1 && message.role === 'assistant'}
+          />
         ))}
         
         {isLoading && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="flex items-center gap-3 text-muted-foreground animate-fade-in">
+            <div className="w-9 h-9 rounded-xl bg-accent/20 flex items-center justify-center border border-accent/30">
+              <Loader2 className="h-4 w-4 animate-spin text-accent" />
+            </div>
             <span className="text-sm">Analyzing project...</span>
           </div>
         )}
 
         {/* Quote Summary Card */}
         {isComplete && calculatedPricing && (
-          <Card className="p-6 bg-accent/5 border-accent/20">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-lg">Quote Ready</h3>
-              <span className="text-2xl font-bold text-accent">
+          <div className="quote-card animate-scale-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-display font-semibold text-xl tracking-tight">Quote Ready</h3>
+              <span className="stat-value">
                 ${calculatedPricing.totals.total_cp.toLocaleString()}
               </span>
             </div>
             <div className="flex gap-3">
               <Button 
                 onClick={handleViewEstimate}
-                className="flex-1"
+                className="flex-1 glass-button"
                 disabled={!savedEstimateId}
               >
                 View Details
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Button 
-                variant="outline"
                 onClick={handleViewEstimate}
                 disabled={!savedEstimateId}
+                className="glass-button-secondary"
               >
                 <FileDown className="h-4 w-4 mr-2" />
                 PDF
               </Button>
             </div>
-          </Card>
+          </div>
         )}
         
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t">
+      <div className="relative p-4 border-t border-white/[0.06]">
         <ChatInput 
           onSend={handleSendMessage} 
           disabled={isLoading}

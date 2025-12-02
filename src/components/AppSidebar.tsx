@@ -34,7 +34,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className="border-r border-sidebar-border transition-all duration-300"
+      className="sidebar-glass transition-all duration-300"
       collapsible="icon"
     >
       <SidebarHeader className="p-4">
@@ -43,21 +43,21 @@ export function AppSidebar() {
             <img 
               src={logoUrl} 
               alt="Company logo" 
-              className="w-10 h-10 rounded-lg object-contain bg-white flex-shrink-0"
+              className="w-10 h-10 rounded-xl object-contain bg-white/10 flex-shrink-0 border border-white/10"
             />
           ) : (
-            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-accent-foreground">
+            <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0 border border-accent/30">
+              <span className="text-sm font-bold text-accent">
                 {companyName.slice(0, 2).toUpperCase()}
               </span>
             </div>
           )}
           {!isCollapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-sm text-sidebar-foreground truncate">
+              <span className="font-display font-semibold text-sm text-sidebar-foreground truncate tracking-tight">
                 {companyName}
               </span>
-              <span className="text-xs text-sidebar-foreground/60">Estimaitor</span>
+              <span className="text-xs text-sidebar-foreground/50">Estimaitor</span>
             </div>
           )}
         </div>
@@ -76,13 +76,13 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       tooltip={isCollapsed ? item.title : undefined}
-                      className={`w-full transition-colors ${
+                      className={`w-full rounded-xl transition-all duration-300 ${
                         isActive
-                          ? "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground"
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
+                          ? "bg-accent text-accent-foreground shadow-glow hover:bg-accent hover:text-accent-foreground"
+                          : "text-sidebar-foreground/70 hover:bg-white/[0.06] hover:text-sidebar-foreground"
                       }`}
                     >
-                      <NavLink to={item.url} className="flex items-center gap-3 px-3 py-2">
+                      <NavLink to={item.url} className="flex items-center gap-3 px-3 py-2.5">
                         <item.icon className="h-5 w-5 flex-shrink-0" />
                         {!isCollapsed && <span className="font-medium">{item.title}</span>}
                       </NavLink>
@@ -95,14 +95,14 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
+      <SidebarFooter className="p-4 border-t border-white/[0.06]">
         <div className="flex flex-col gap-3">
           {!isCollapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-medium text-sidebar-foreground">
                 {profile?.name || profile?.email?.split('@')[0] || 'User'}
               </span>
-              <span className="text-xs text-sidebar-foreground/60 truncate">
+              <span className="text-xs text-sidebar-foreground/50 truncate">
                 {profile?.email}
               </span>
             </div>
@@ -110,7 +110,7 @@ export function AppSidebar() {
           <div className="flex items-center justify-between">
             <button 
               onClick={signOut}
-              className="flex items-center gap-2 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+              className="flex items-center gap-2 text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground transition-all duration-300 hover:scale-105"
               title="Sign Out"
             >
               <LogOut className="h-4 w-4" />
@@ -120,7 +120,7 @@ export function AppSidebar() {
               variant="ghost"
               size="icon"
               onClick={toggleSidebar}
-              className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/10"
+              className="h-8 w-8 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-white/[0.06] transition-all duration-300"
             >
               {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>

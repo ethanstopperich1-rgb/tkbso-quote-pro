@@ -2,138 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap');
-
 @layer base {
   :root {
-    /* Premium SaaS Palette - Linear/Stripe inspired */
-    --background: 222 47% 97%;  /* #F8FAFC - Slate 50 */
-    --foreground: 215 25% 20%;   /* #334155 - Slate 700 */
+    /* Navy Glass Theme - Deep Dark Mode */
+    --background: 222 47% 5%;       /* Near black with navy tint */
+    --foreground: 210 40% 98%;       /* Soft white */
 
-    --card: 0 0% 100%;
-    --card-foreground: 215 25% 20%;
+    --card: 222 47% 8%;              /* Slightly lighter navy */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 20%;
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
 
-    /* Deep Navy - Slate 900 */
-    --primary: 222 47% 11%;     /* #0F172A */
-    --primary-foreground: 0 0% 100%;
-
-    /* Vibrant Blue - Sky 500 */
-    --accent: 199 89% 48%;      /* #0EA5E9 */
-    --accent-foreground: 0 0% 100%;
-
-    --secondary: 215 16% 47%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 214 32% 91%;      /* Subtle borders */
-    --input: 214 32% 91%;
-    --ring: 199 89% 48%;
-
-    --radius: 0.5rem;
-
-    /* Chat bubble colors - iMessage style */
-    --chat-user: 199 89% 48%;   /* Blue for user */
-    --chat-user-foreground: 0 0% 100%;
-    --chat-ai: 220 13% 91%;     /* Light grey for AI */
-    --chat-ai-foreground: 215 25% 20%;
-
-    /* Section colors for quotes */
-    --section-client: 145 60% 45%;
-    --section-internal: 35 90% 55%;
-
-    --sidebar-background: 222 47% 11%;  /* Dark Navy */
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 199 89% 48%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 199 89% 48%;
-    --chart-1: 199 89% 48%;
-    --chart-2: 200 98% 39%;
-    --chart-3: 201 96% 32%;
-    --chart-4: 199 89% 48%;
-    --chart-5: 215 16% 47%;
-    --sidebar: 222 47% 11%;
-    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Inter', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
-    --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --tracking-normal: 0em;
-    --spacing: 0.25rem;
-  }
-
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 98%;
-
-    --card: 217 33% 17%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 217 33% 17%;
-    --popover-foreground: 0 0% 98%;
-
+    /* Primary - Deep Navy */
     --primary: 222 47% 11%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 210 40% 98%;
 
+    /* Accent - Electric Sky Blue */
     --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 222 47% 5%;
 
-    --secondary: 215 20% 40%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary - Muted Navy */
+    --secondary: 215 25% 27%;
+    --secondary-foreground: 210 40% 98%;
 
+    /* Muted - Subtle gray */
     --muted: 217 33% 17%;
-    --muted-foreground: 215 16% 65%;
+    --muted-foreground: 215 20% 65%;
 
+    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 217 33% 24%;
-    --input: 217 33% 24%;
+    /* Borders & Inputs */
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
     --ring: 199 89% 48%;
 
-    --chat-user: 199 89% 48%;
-    --chat-user-foreground: 0 0% 100%;
-    --chat-ai: 217 33% 24%;
-    --chat-ai-foreground: 0 0% 98%;
+    /* Glow effects */
+    --glow: 199 89% 48%;
+    --glow-muted: 199 50% 30%;
 
-    --sidebar-background: 215 35% 18%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 180 85% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 180 75% 65%;
-    --sidebar-accent-foreground: 215 35% 18%;
-    --sidebar-border: 215 25% 25%;
-    --sidebar-ring: 180 85% 50%;
-    --chart-1: 180 85% 50%;
-    --chart-2: 180 75% 65%;
-    --chart-3: 215 40% 45%;
-    --chart-4: 215 45% 35%;
-    --chart-5: 215 20% 35%;
-    --sidebar: 215 35% 18%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    /* Sidebar */
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 222 47% 5%;
+    --sidebar-accent: 199 89% 48%;
+    --sidebar-accent-foreground: 222 47% 5%;
+    --sidebar-border: 217 33% 15%;
+    --sidebar-ring: 199 89% 48%;
+
+    /* Radius */
+    --radius: 1rem;
+
+    /* Shadows - Dark mode optimized */
+    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+    --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+
+    /* Chart colors */
+    --chart-1: 199 89% 48%;
+    --chart-2: 200 98% 39%;
+    --chart-3: 172 66% 50%;
+    --chart-4: 158 64% 52%;
+    --chart-5: 215 20% 65%;
+  }
+
+  /* Remove light mode - always dark */
+  .light {
+    --background: 222 47% 5%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 210 40% 98%;
+    --accent: 199 89% 48%;
+    --accent-foreground: 222 47% 5%;
+    --secondary: 215 25% 27%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 199 89% 48%;
   }
 }
 
@@ -142,48 +100,120 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  html {
+    font-size: 16px;
   }
 
-  h1, h2, h3, h4 {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: radial-gradient(ellipse at top, hsl(222 47% 11%), hsl(222 47% 5%) 50%, hsl(0 0% 0%));
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
     font-weight: 600;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
+  /* Glass Card - Core glass morphism effect */
+  .glass-card {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-glass rounded-2xl;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+  }
+
+  /* Glass Card with glow */
+  .glass-card-glow {
+    @apply glass-card;
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* Active glass card with accent glow */
+  .glass-card-active {
+    @apply glass-card;
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 30px -5px hsl(199 89% 48% / 0.3),
+      0 0 60px -10px hsl(199 89% 48% / 0.15);
+  }
+
+  /* Glass Input - Bottom border focus style */
+  .glass-input {
+    @apply bg-white/[0.05] border-0 border-b-2 border-white/10 rounded-t-xl rounded-b-none px-4 py-3;
+    @apply focus:border-b-accent focus:bg-white/[0.08] focus:outline-none focus:ring-0;
+    @apply placeholder:text-muted-foreground/50 transition-all duration-300;
+  }
+
+  /* Glass Button - Hover scale + glow */
+  .glass-button {
+    @apply bg-accent text-accent-foreground font-semibold rounded-2xl px-6 py-3;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:scale-105 hover:shadow-glow-lg;
+    @apply active:scale-100 active:shadow-glow;
+  }
+
+  .glass-button-secondary {
+    @apply bg-white/[0.08] text-foreground border border-white/10 font-medium rounded-2xl px-6 py-3;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:bg-white/[0.12] hover:scale-105 hover:border-white/20;
+    @apply active:scale-100;
+  }
+
+  /* Chat bubbles - Glass style */
   .chat-bubble-user {
-    @apply bg-accent text-white rounded-2xl rounded-br-sm px-4 py-2.5 max-w-[80%] shadow-sm;
+    @apply bg-accent text-accent-foreground rounded-2xl rounded-br-md px-4 py-3 max-w-[85%];
+    @apply shadow-lg shadow-accent/20;
   }
 
   .chat-bubble-ai {
-    @apply bg-muted text-foreground rounded-2xl rounded-bl-sm px-4 py-2.5 max-w-[80%] shadow-sm;
+    @apply glass-card rounded-2xl rounded-bl-md px-4 py-3 max-w-[85%];
+    @apply border-white/[0.08];
   }
 
-  .quote-section {
-    @apply border rounded-lg p-4 mb-4;
+  /* Glow container for chat */
+  .chat-glow-container {
+    @apply relative;
+  }
+  
+  .chat-glow-container::before {
+    content: '';
+    @apply absolute -inset-4 rounded-3xl opacity-50 blur-2xl pointer-events-none;
+    background: radial-gradient(ellipse at center, hsl(199 89% 48% / 0.15) 0%, transparent 70%);
   }
 
-  .quote-section-client {
-    @apply border-l-4 border-l-emerald-500 bg-emerald-50/50;
+  /* Quote Summary Card */
+  .quote-card {
+    @apply glass-card-active p-6;
   }
 
-  .quote-section-internal {
-    @apply border-l-4 border-l-amber-500 bg-amber-50/50;
+  /* Sidebar glass style */
+  .sidebar-glass {
+    @apply bg-black/40 backdrop-blur-xl border-r border-white/[0.06];
   }
 
-  .section-badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide;
+  /* Stats/Metric display */
+  .stat-value {
+    @apply text-3xl font-bold font-display tracking-tight;
+    background: linear-gradient(135deg, hsl(199 89% 60%) 0%, hsl(199 89% 48%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .section-badge-client {
-    @apply bg-emerald-100 text-emerald-800;
-  }
-
-  .section-badge-internal {
-    @apply bg-amber-100 text-amber-800;
+  /* Loading shimmer effect */
+  .shimmer {
+    @apply animate-shimmer bg-shimmer bg-[length:200%_100%];
   }
 }
 
@@ -192,31 +222,58 @@
     text-wrap: balance;
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
+  /* Gradient text utility */
+  .text-gradient-accent {
+    background: linear-gradient(135deg, hsl(199 89% 65%) 0%, hsl(199 89% 48%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  .animate-slide-up {
-    animation: slideUp 0.4s ease-out forwards;
+  /* Subtle grid background */
+  .bg-grid {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Noise texture overlay */
+  .bg-noise {
+    position: relative;
+  }
+  .bg-noise::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    mix-blend-mode: overlay;
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(217 33% 20%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(217 33% 30%);
+}
+
+/* Selection styling */
+::selection {
+  background: hsl(199 89% 48% / 0.3);
+  color: inherit;
 }
