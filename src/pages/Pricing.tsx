@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PricingConfig } from '@/types/database';
 import { Save, RefreshCw, RotateCcw } from 'lucide-react';
-import { Bath, ChefHat, Package, Wrench } from 'lucide-react';
+import { Bath, ChefHat, Package, Wrench, HardHat } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -174,6 +174,30 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   // Minimums
   min_job_ic: 10500,
   min_job_cp: 15000,
+  
+  // Structural / Complex Work
+  wall_removal_ic: 1800,
+  wall_removal_cp: 2800,
+  door_relocation_ic: 1400,
+  door_relocation_cp: 2200,
+  door_closure_ic: 700,
+  door_closure_cp: 1100,
+  entrance_enlargement_ic: 1100,
+  entrance_enlargement_cp: 1700,
+  soffit_removal_ic: 950,
+  soffit_removal_cp: 1500,
+  shower_enlargement_ic: 2000,
+  shower_enlargement_cp: 3200,
+  tub_relocation_ic: 3000,
+  tub_relocation_cp: 4800,
+  toilet_relocation_ic: 1400,
+  toilet_relocation_cp: 2200,
+  alcove_builtin_ic: 1050,
+  alcove_builtin_cp: 1650,
+  closet_reframe_ic: 1400,
+  closet_reframe_cp: 2200,
+  drywall_ic_per_sqft: 9,
+  drywall_cp_per_sqft: 15,
 };
 
 // Market description default
@@ -490,6 +514,120 @@ export default function Pricing() {
     },
   ];
 
+  // Build structural / complex work trade buckets
+  const structuralBuckets: TradeBucket[] = [
+    {
+      key: 'wall_removal',
+      name: 'Wall Removal / Rebuild',
+      description: 'Remove or relocate interior walls, includes framing, drywall patching, and finish work.',
+      unit: 'each',
+      icField: 'wall_removal_ic',
+      cpField: 'wall_removal_cp',
+      icValue: config.wall_removal_ic ?? 1800,
+      cpValue: config.wall_removal_cp ?? 2800,
+    },
+    {
+      key: 'door_relocation',
+      name: 'Door Relocation',
+      description: 'Move existing doorway to new location, frame new opening, close old opening.',
+      unit: 'each',
+      icField: 'door_relocation_ic',
+      cpField: 'door_relocation_cp',
+      icValue: config.door_relocation_ic ?? 1400,
+      cpValue: config.door_relocation_cp ?? 2200,
+    },
+    {
+      key: 'door_closure',
+      name: 'Door Closure',
+      description: 'Close/seal existing doorway, frame, drywall, and finish.',
+      unit: 'each',
+      icField: 'door_closure_ic',
+      cpField: 'door_closure_cp',
+      icValue: config.door_closure_ic ?? 700,
+      cpValue: config.door_closure_cp ?? 1100,
+    },
+    {
+      key: 'entrance_enlargement',
+      name: 'Entrance Enlargement',
+      description: 'Widen or heighten existing doorway opening.',
+      unit: 'each',
+      icField: 'entrance_enlargement_ic',
+      cpField: 'entrance_enlargement_cp',
+      icValue: config.entrance_enlargement_ic ?? 1100,
+      cpValue: config.entrance_enlargement_cp ?? 1700,
+    },
+    {
+      key: 'soffit_removal',
+      name: 'Soffit Removal',
+      description: 'Remove soffit/bulkhead above cabinets or ceiling, includes patching.',
+      unit: 'each',
+      icField: 'soffit_removal_ic',
+      cpField: 'soffit_removal_cp',
+      icValue: config.soffit_removal_ic ?? 950,
+      cpValue: config.soffit_removal_cp ?? 1500,
+    },
+    {
+      key: 'shower_enlargement',
+      name: 'Shower Enlargement',
+      description: 'Expand shower footprint into adjacent space, includes framing and waterproofing prep.',
+      unit: 'each',
+      icField: 'shower_enlargement_ic',
+      cpField: 'shower_enlargement_cp',
+      icValue: config.shower_enlargement_ic ?? 2000,
+      cpValue: config.shower_enlargement_cp ?? 3200,
+    },
+    {
+      key: 'tub_relocation',
+      name: 'Tub Relocation',
+      description: 'Move tub to new location, includes plumbing rough-in and drain relocation.',
+      unit: 'each',
+      icField: 'tub_relocation_ic',
+      cpField: 'tub_relocation_cp',
+      icValue: config.tub_relocation_ic ?? 3000,
+      cpValue: config.tub_relocation_cp ?? 4800,
+    },
+    {
+      key: 'toilet_relocation',
+      name: 'Toilet Relocation',
+      description: 'Move toilet to new location, includes drain relocation and floor patching.',
+      unit: 'each',
+      icField: 'toilet_relocation_ic',
+      cpField: 'toilet_relocation_cp',
+      icValue: config.toilet_relocation_ic ?? 1400,
+      cpValue: config.toilet_relocation_cp ?? 2200,
+    },
+    {
+      key: 'alcove_builtin',
+      name: 'Alcove / Built-in',
+      description: 'Build alcove, recessed shelf, or built-in storage area.',
+      unit: 'each',
+      icField: 'alcove_builtin_ic',
+      cpField: 'alcove_builtin_cp',
+      icValue: config.alcove_builtin_ic ?? 1050,
+      cpValue: config.alcove_builtin_cp ?? 1650,
+    },
+    {
+      key: 'closet_reframe',
+      name: 'Closet Reframe / Buildout',
+      description: 'Reframe closet space, expand or reconfigure layout.',
+      unit: 'each',
+      icField: 'closet_reframe_ic',
+      cpField: 'closet_reframe_cp',
+      icValue: config.closet_reframe_ic ?? 1400,
+      cpValue: config.closet_reframe_cp ?? 2200,
+    },
+    {
+      key: 'drywall',
+      name: 'Drywall (Large Area)',
+      description: 'Drywall installation and finishing for large areas.',
+      unit: 'per sqft',
+      icField: 'drywall_ic_per_sqft',
+      cpField: 'drywall_cp_per_sqft',
+      icValue: config.drywall_ic_per_sqft ?? 9,
+      cpValue: config.drywall_cp_per_sqft ?? 15,
+    },
+  ];
+
   // Build allowances
   const allowances = [
     {
@@ -694,6 +832,16 @@ export default function Pricing() {
           description="Trade buckets for closet buildout and expansion estimates."
           icon={<Package className="h-5 w-5 text-primary" />}
           buckets={closetBuckets}
+          onChange={handleChange}
+          targetMargin={config.target_margin}
+        />
+
+        {/* 5. Structural / Complex Work */}
+        <TradeBucketsCard
+          title="Structural / Complex Work"
+          description="Trade buckets for major layout changes, relocations, wall work, and structural modifications."
+          icon={<HardHat className="h-5 w-5 text-primary" />}
+          buckets={structuralBuckets}
           onChange={handleChange}
           targetMargin={config.target_margin}
         />

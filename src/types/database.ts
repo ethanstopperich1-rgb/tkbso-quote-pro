@@ -221,6 +221,30 @@ export interface PricingConfig {
   quartz_sink_cutout_cp: number;
   quartz_faucet_drill_cp: number;
   
+  // Structural / Complex Work
+  wall_removal_ic: number;
+  wall_removal_cp: number;
+  door_relocation_ic: number;
+  door_relocation_cp: number;
+  door_closure_ic: number;
+  door_closure_cp: number;
+  entrance_enlargement_ic: number;
+  entrance_enlargement_cp: number;
+  soffit_removal_ic: number;
+  soffit_removal_cp: number;
+  shower_enlargement_ic: number;
+  shower_enlargement_cp: number;
+  tub_relocation_ic: number;
+  tub_relocation_cp: number;
+  toilet_relocation_ic: number;
+  toilet_relocation_cp: number;
+  alcove_builtin_ic: number;
+  alcove_builtin_cp: number;
+  closet_reframe_ic: number;
+  closet_reframe_cp: number;
+  drywall_ic_per_sqft: number;
+  drywall_cp_per_sqft: number;
+  
   created_at: string;
   updated_at: string;
 }
