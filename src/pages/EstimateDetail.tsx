@@ -174,6 +174,7 @@ export default function EstimateDetail() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState<'low' | 'recommended' | 'high'>('recommended');
 
   useEffect(() => {
     async function fetchData() {
@@ -226,10 +227,22 @@ export default function EstimateDetail() {
     
     setDownloading(true);
     try {
+      // Create estimate with selected price level
+      const selectedPrice = selectedPriceLevel === 'low' 
+        ? estimate.low_estimate_cp 
+        : selectedPriceLevel === 'high' 
+          ? estimate.high_estimate_cp 
+          : estimate.final_cp_total;
+      
+      const estimateForPdf = {
+        ...estimate,
+        final_cp_total: selectedPrice,
+      };
+      
       const blob = await pdf(
         <ProposalPdf 
           contractor={contractor} 
-          estimate={estimate} 
+          estimate={estimateForPdf} 
           pricingConfig={pricingConfig || undefined} 
         />
       ).toBlob();
@@ -356,20 +369,52 @@ export default function EstimateDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  onClick={() => setSelectedPriceLevel('low')}
+                  className={`p-3 rounded-lg text-center transition-all ${
+                    selectedPriceLevel === 'low'
+                      ? 'bg-primary/10 ring-2 ring-primary'
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
                   <p className="text-sm text-muted-foreground">Low</p>
-                  <p className="text-xl font-semibold">{formatCurrency(estimate.low_estimate_cp)}</p>
-                </div>
-                <div className="bg-primary/10 rounded-lg p-3">
-                  <p className="text-sm text-primary font-medium">Recommended</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(estimate.final_cp_total)}</p>
-                </div>
-                <div>
+                  <p className={`text-xl font-semibold ${selectedPriceLevel === 'low' ? 'text-primary' : ''}`}>
+                    {formatCurrency(estimate.low_estimate_cp)}
+                  </p>
+                </button>
+                <button
+                  onClick={() => setSelectedPriceLevel('recommended')}
+                  className={`p-3 rounded-lg text-center transition-all ${
+                    selectedPriceLevel === 'recommended'
+                      ? 'bg-primary/10 ring-2 ring-primary'
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
+                  <p className={`text-sm font-medium ${selectedPriceLevel === 'recommended' ? 'text-primary' : 'text-muted-foreground'}`}>
+                    Recommended
+                  </p>
+                  <p className={`text-2xl font-bold ${selectedPriceLevel === 'recommended' ? 'text-primary' : ''}`}>
+                    {formatCurrency(estimate.final_cp_total)}
+                  </p>
+                </button>
+                <button
+                  onClick={() => setSelectedPriceLevel('high')}
+                  className={`p-3 rounded-lg text-center transition-all ${
+                    selectedPriceLevel === 'high'
+                      ? 'bg-primary/10 ring-2 ring-primary'
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
                   <p className="text-sm text-muted-foreground">High</p>
-                  <p className="text-xl font-semibold">{formatCurrency(estimate.high_estimate_cp)}</p>
-                </div>
+                  <p className={`text-xl font-semibold ${selectedPriceLevel === 'high' ? 'text-primary' : ''}`}>
+                    {formatCurrency(estimate.high_estimate_cp)}
+                  </p>
+                </button>
               </div>
+              <p className="text-xs text-muted-foreground text-center mt-3">
+                Click to select which price to use on the PDF
+              </p>
             </CardContent>
           </Card>
 
