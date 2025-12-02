@@ -11,6 +11,7 @@ import { BrandingCard } from '@/components/settings/BrandingCard';
 import { LicensesCard } from '@/components/settings/LicensesCard';
 import { InsuranceCard } from '@/components/settings/InsuranceCard';
 import { DefaultsCard } from '@/components/settings/DefaultsCard';
+import { ProductMappingCard } from '@/components/settings/ProductMappingCard';
 
 export default function Settings() {
   const { contractor } = useAuth();
@@ -119,7 +120,7 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto gap-1 bg-muted p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 h-auto gap-1 bg-muted p-1 rounded-lg">
           <TabsTrigger value="company" className="data-[state=active]:bg-background">
             Company
           </TabsTrigger>
@@ -134,6 +135,9 @@ export default function Settings() {
           </TabsTrigger>
           <TabsTrigger value="defaults" className="data-[state=active]:bg-background">
             Defaults
+          </TabsTrigger>
+          <TabsTrigger value="products" className="data-[state=active]:bg-background">
+            Products
           </TabsTrigger>
         </TabsList>
 
@@ -172,6 +176,10 @@ export default function Settings() {
             data={settings.defaults}
             onChange={(value) => updateSettings('defaults', value)}
           />
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-6">
+          <ProductMappingCard />
         </TabsContent>
       </Tabs>
 
