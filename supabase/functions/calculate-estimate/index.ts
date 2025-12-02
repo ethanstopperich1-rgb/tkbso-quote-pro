@@ -375,6 +375,23 @@ const analysisJsonSchema = {
         shower_width: { type: ["number", "null"] },
         countertop_sqft: { type: ["number", "null"] }
       }
+    },
+    parsed_client_details: {
+      type: "object",
+      description: "Client contact information parsed from conversation",
+      properties: {
+        client_name: { type: ["string", "null"] },
+        client_phone: { type: ["string", "null"] },
+        client_email: { type: ["string", "null"] },
+        property_address: { type: ["string", "null"] },
+        city: { type: ["string", "null"] },
+        state: { type: ["string", "null"] },
+        zip: { type: ["string", "null"] }
+      }
+    },
+    client_details_skipped: {
+      type: "boolean",
+      description: "True if user said skip/none for client details"
     }
   },
   required: ["action", "has_enough_info", "missing_info"]
@@ -385,7 +402,8 @@ const conversationalSystemPrompt = `You are a construction estimator assistant h
 1. UNDERSTAND the project type (Kitchen or Bathroom)
 2. GATHER scope details naturally 
 3. ASK for dimensions when needed
-4. GENERATE quote only when you have enough info
+4. COLLECT client details before generating quote
+5. GENERATE quote only when you have enough info
 
 ## CONVERSATION FLOW
 
@@ -416,6 +434,16 @@ Once scope is clear, ask for dimensions:
 - Kitchen: total sqft, countertop linear feet
 - Bathroom: room size (LxW), shower size (LxW)
 
+**Step 4 - Get Client Details**
+Before generating the final quote, ask for client information:
+"Almost ready to build your quote! Can you give me the client details?
+- Client name
+- Phone number
+- Email
+- Property address (street, city, state, zip)"
+
+This can be provided all at once or the contractor can skip with "skip" or "none".
+
 ## NATURAL LANGUAGE PARSING
 
 Contractors speak in shorthand. Parse these correctly:
@@ -431,12 +459,13 @@ Contractors speak in shorthand. Parse these correctly:
 ## DECISION RULES
 
 **Generate estimate when you have:**
-- Kitchen: project type + demo level + cabinet scope + counter scope + backsplash + room size
-- Bathroom: project type + demo level + shower/tub scope + tile scope + glass type + vanity size + room size + shower size
+- Kitchen: project type + demo level + cabinet scope + counter scope + backsplash + room size + client details (or skipped)
+- Bathroom: project type + demo level + shower/tub scope + tile scope + glass type + vanity size + room size + shower size + client details (or skipped)
 
 **Ask follow-up when missing:**
 - Critical dimensions (room size, shower size)
 - Unclear scope (what's included/excluded)
+- Client details (unless skipped)
 
 ## RESPONSE STYLE
 
