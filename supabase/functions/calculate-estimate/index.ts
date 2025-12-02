@@ -88,8 +88,14 @@ function mapCategoryToPricing(
 
   // Plumbing - FLAT RATE packages
   if (categoryLower.includes('plumb')) {
-    if (taskLower.includes('toilet') && !taskLower.includes('relocation')) {
+    if (taskLower.includes('toilet') && taskLower.includes('reloc')) {
+      // Toilet relocation - expensive due to drain work
+      return { ic: 1100, cp: 2200, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('toilet')) {
       return { ic: Number(config.plumbing_toilet_ic) || 350, cp: Number(config.plumbing_toilet_cp) || 690, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('tub') && taskLower.includes('reloc')) {
+      // Tub relocation - major plumbing work
+      return { ic: 2800, cp: 4800, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('shower') && taskLower.includes('standard')) {
       return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('extra head') || taskLower.includes('additional head')) {
@@ -108,7 +114,7 @@ function mapCategoryToPricing(
 
   // Tile
   if (categoryLower.includes('tile')) {
-    if (taskLower.includes('wall')) {
+    if (taskLower.includes('wall') || taskLower.includes('surround')) {
       return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
     } else if (taskLower.includes('shower floor')) {
       return { ic: Number(config.tile_shower_floor_ic_per_sqft) || 6, cp: Number(config.tile_shower_floor_cp_per_sqft) || 14, unit: 'sqft' };
@@ -136,16 +142,46 @@ function mapCategoryToPricing(
       return { ic: Number(config.electrical_vanity_light_ic) || 200, cp: Number(config.electrical_vanity_light_cp) || 350, unit: 'ea' };
     } else if (taskLower.includes('kitchen')) {
       return { ic: Number(config.electrical_kitchen_package_ic) || 950, cp: Number(config.electrical_kitchen_package_cp) || 1750, unit: 'ea' };
+    } else if (taskLower.includes('reloc')) {
+      // Switch/outlet relocation
+      return { ic: 150, cp: 300, unit: 'ea' };
     }
     return { ic: Number(config.electrical_small_package_ic) || 250, cp: Number(config.electrical_small_package_cp) || 400, unit: 'ea' };
   }
 
-  // Framing - FLAT RATE (niches can be counted)
-  if (categoryLower.includes('fram')) {
+  // Framing / Structural - CRITICAL FOR COMPLEX JOBS
+  if (categoryLower.includes('fram') || categoryLower.includes('structural')) {
     if (taskLower.includes('niche')) {
       return { ic: Number(config.niche_ic_each) || 300, cp: Number(config.niche_cp_each) || 550, unit: 'ea' };
     } else if (taskLower.includes('pony wall')) {
       return { ic: Number(config.framing_pony_wall_ic) || 450, cp: Number(config.framing_pony_wall_cp) || 850, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('wall remov') || taskLower.includes('remove wall')) {
+      // Non-load-bearing wall removal
+      return { ic: 1500, cp: 2800, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('wall build') || taskLower.includes('new wall')) {
+      // Build new wall (per linear foot)
+      return { ic: 35, cp: 65, unit: 'lf' };
+    } else if (taskLower.includes('door') && taskLower.includes('reloc')) {
+      // Door relocation - framing new opening + closing old
+      return { ic: 1200, cp: 2200, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('door') && taskLower.includes('clos')) {
+      // Close off existing doorway
+      return { ic: 600, cp: 1100, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('door') && taskLower.includes('enlarg')) {
+      // Enlarge doorway/entrance
+      return { ic: 900, cp: 1700, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('soffit')) {
+      // Soffit removal
+      return { ic: 800, cp: 1500, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('shower') && taskLower.includes('enlarg')) {
+      // Enlarge shower footprint
+      return { ic: 1800, cp: 3200, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('alcove') || taskLower.includes('built-in')) {
+      // Build alcove/built-in
+      return { ic: 900, cp: 1650, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('bench')) {
+      // Shower bench framing
+      return { ic: 400, cp: 750, unit: 'ea' };
     }
     return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea', flatRate: true };
   }
@@ -168,9 +204,25 @@ function mapCategoryToPricing(
     return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1000, unit: 'ea', flatRate: true };
   }
 
+  // Drywall - for structural work
+  if (categoryLower.includes('drywall')) {
+    if (taskLower.includes('new wall') || taskLower.includes('full wall')) {
+      return { ic: 8, cp: 15, unit: 'sqft' };
+    } else if (taskLower.includes('patch')) {
+      return { ic: 400, cp: 750, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('ceiling')) {
+      return { ic: 10, cp: 18, unit: 'sqft' };
+    }
+    return { ic: 8, cp: 15, unit: 'sqft' };
+  }
+
   // Vanity - FLAT RATE bundles
   if (categoryLower.includes('vanity')) {
-    if (taskLower.includes('30')) {
+    // Check for custom/oversized vanity (100"+)
+    if (taskLower.includes('custom') || taskLower.includes('150') || taskLower.includes('120') || taskLower.includes('100')) {
+      // Custom oversized vanity - price as double 72" or more
+      return { ic: 6500, cp: 10500, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('30')) {
       return { ic: Number(config.vanity_30_bundle_ic) || 1100, cp: Number(config.vanity_30_bundle_cp) || 1800, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('36')) {
       return { ic: Number(config.vanity_36_bundle_ic) || 1300, cp: Number(config.vanity_36_bundle_cp) || 2100, unit: 'ea', flatRate: true };
@@ -195,13 +247,23 @@ function mapCategoryToPricing(
 
   // Cabinets (Kitchen)
   if (categoryLower.includes('cabinet')) {
-    // Kitchen cabinets - use per sqft pricing
     return { ic: Number(config.kitchen_ic_per_sqft) || 128, cp: Number(config.kitchen_cp_per_sqft) || 190, unit: 'sqft' };
   }
 
   // Backsplash
   if (categoryLower.includes('backsplash')) {
     return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
+  }
+
+  // Closet work
+  if (categoryLower.includes('closet')) {
+    if (taskLower.includes('system') || taskLower.includes('organizer')) {
+      return { ic: 1800, cp: 3200, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('reframe') || taskLower.includes('square off')) {
+      return { ic: 1200, cp: 2200, unit: 'ea', flatRate: true };
+    }
+    // Basic closet work per sqft
+    return { ic: Number(config.closet_ic_per_sqft) || 55, cp: Number(config.closet_cp_per_sqft) || 90, unit: 'sqft' };
   }
 
   return null;
@@ -400,10 +462,24 @@ const analysisJsonSchema = {
 const conversationalSystemPrompt = `You are a construction estimator assistant helping contractors quickly build quotes. Your job is to:
 
 1. UNDERSTAND the project type (Kitchen or Bathroom)
-2. GATHER scope details naturally 
+2. GATHER scope details naturally - LET THE USER FINISH describing the project
 3. ASK for dimensions when needed
 4. COLLECT client details before generating quote
 5. GENERATE quote only when you have enough info
+
+## CRITICAL: BE PATIENT AND FLEXIBLE
+
+**DO NOT repeatedly ask for the same thing.** If the user says "let me get through all of the project first" or continues describing scope, LISTEN AND ACCUMULATE the information. Only ask for dimensions ONCE, after they've finished describing the full scope.
+
+**COMPLEX JOBS**: Contractors may describe complex work like:
+- Moving walls, removing walls, enlarging openings
+- Relocating bathroom entrances, closing off doorways
+- Enlarging showers, relocating tubs
+- Soffit removal, framing alcoves
+- Closet modifications
+- Custom/oversized vanities (100"+)
+
+CAPTURE ALL OF THIS. These are critical for pricing. Do not dismiss or ignore structural work.
 
 ## CONVERSATION FLOW
 
@@ -412,27 +488,31 @@ If unclear, ask: "Is this a kitchen or bathroom project?"
 
 **Step 2 - Understand Scope (Project-Specific)**
 
+FOR BATHROOMS, understand:
+- Demo level: full gut, shower only, cosmetic refresh
+- Shower/tub: walk-in shower, tub-to-shower conversion, keep tub
+- Tile: wall tile height (full height vs wainscot), floor tile areas
+- Glass: frameless, framed, curtain
+- Vanity: size or custom dimensions
+- Toilet: replace, relocate, or keep
+- Lighting: recessed cans, vanity light
+- STRUCTURAL: wall changes, entrance changes, soffit removal
+- PLUMBING RELOCATIONS: tub relocation, toilet relocation, drain changes
+- CLOSETS: if mentioned, capture scope
+
 FOR KITCHENS, understand:
 - Demo level: full gut, partial, refresh
 - Cabinets: new cabinets, reface, paint existing, none
 - Countertops: new quartz, keep existing
 - Backsplash: full height, standard 4", none
 - Flooring: new tile/LVP, keep existing
-- Appliances: replacing any? (we don't price these, just note)
-
-FOR BATHROOMS, understand:
-- Demo level: full gut, shower only, cosmetic refresh
-- Shower/tub: walk-in shower, tub-to-shower conversion, keep tub
-- Tile: wall tile height (full height vs wainscot), floor tile
-- Glass: frameless, framed, curtain
-- Vanity: size (30", 36", 48", 60", etc) or keep existing
-- Toilet: replace or keep
-- Lighting: recessed cans, vanity light
 
 **Step 3 - Get Dimensions**
-Once scope is clear, ask for dimensions:
+Once scope is clear (user has finished describing), ask for dimensions:
 - Kitchen: total sqft, countertop linear feet
-- Bathroom: room size (LxW), shower size (LxW)
+- Bathroom: room size (LxW or sqft), shower size (LxW or sqft)
+
+If user gives sqft instead of LxW, that's fine - use it.
 
 **Step 4 - Get Client Details**
 Before generating the final quote, ask for client information:
@@ -448,33 +528,33 @@ This can be provided all at once or the contractor can skip with "skip" or "none
 
 Contractors speak in shorthand. Parse these correctly:
 - "full demo tops and cabinets no floor" = full demo, new countertops, new cabinets, NO flooring
-- "full height quartz backsplash" = quartz backsplash floor to ceiling
 - "tile to ceiling" = wall tile from floor to ceiling (usually 8-9ft)
 - "3x5 shower" = 3ft x 5ft shower = 15 sqft floor
 - "48 vanity" = 48 inch vanity
-- "2 cans" = 2 recessed lights
-- "no tub, walk in shower" = tub-to-shower conversion
-- "just tile and paint" = cosmetic refresh, tile + paint only
+- "150 inch vanity" or "150in vanity" = CUSTOM oversized vanity, very expensive
+- "relocating tub 48 inches" = tub relocation (different from tub-to-shower conversion)
+- "linear drain" = linear/trench drain in shower
+- "removing soffits" = soffit removal (framing + drywall work)
+- "enlarging entrance" = door/entrance expansion (framing work)
+- "closing off doorway" = door closure (framing + drywall)
+- "move entrance to perpendicular wall" = door relocation (major framing)
 
 ## DECISION RULES
 
 **Generate estimate when you have:**
-- Kitchen: project type + demo level + cabinet scope + counter scope + backsplash + room size + client details (or skipped)
-- Bathroom: project type + demo level + shower/tub scope + tile scope + glass type + vanity size + room size + shower size + client details (or skipped)
+- Project type + demo level + main scope items + room size + client details (or skipped)
 
 **Ask follow-up when missing:**
-- Critical dimensions (room size, shower size)
-- Unclear scope (what's included/excluded)
+- Critical dimensions (room size, shower size) - but only ONCE
 - Client details (unless skipped)
 
 ## RESPONSE STYLE
 
 Keep questions SHORT and SPECIFIC. One question at a time.
-Good: "What size is the shower? (like 3x5 or 4x6)"
-Bad: "Can you tell me the shower dimensions, tile height, glass type, and vanity size?"
+If user is still describing the project, acknowledge what you've captured and wait for more.
+Good: "Got it - I'll note the soffit removal and entrance relocation. Keep going!"
+Bad: "I still need the room dimensions..." (when user said they'll provide them later)`;
 
-When parsing scope, confirm what you understood:
-"Got it - full gut, new cabinets + quartz tops, full height backsplash, keeping existing floor. What's the kitchen size in sqft?"`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -711,7 +791,9 @@ INFERENCE:
         deposit: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_deposit) || 0.65)),
         progress: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_progress) || 0.25)),
         final: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_final) || 0.10)),
-      }
+      },
+      // Include client details from analysis
+      client_details: analysis.parsed_client_details || {}
     };
 
     console.log("Final result - Total CP:", pricing.totals.total_cp, "Margin:", pricing.totals.overall_margin_percent.toFixed(1) + "%");

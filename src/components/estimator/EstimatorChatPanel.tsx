@@ -148,10 +148,15 @@ export function EstimatorChatPanel() {
         conversation_history: chatHistory,
       };
 
+      // Extract client details from the internal payload if available
+      const clientDetails = (data as any).client_details || {};
+
       const estimateData = {
         contractor_id: contractor.id,
         created_by_profile_id: profile?.id || null,
-        job_label: `${data.project_header.project_type} Remodel`,
+        job_label: clientDetails.client_name 
+          ? `${data.project_header.project_type} Remodel - ${clientDetails.client_name}`
+          : `${data.project_header.project_type} Remodel`,
         has_kitchen: data.project_header.project_type === 'Kitchen',
         has_bathrooms: data.project_header.project_type === 'Bathroom',
         total_bathroom_sqft: data.project_header.project_type === 'Bathroom' 
@@ -166,6 +171,14 @@ export function EstimatorChatPanel() {
         high_estimate_cp: data.pricing.totals.high_estimate,
         internal_json_payload: JSON.parse(JSON.stringify(payloadWithHistory)),
         status: 'draft',
+        // Client information fields
+        client_name: clientDetails.client_name || data.project_header.client_name || null,
+        client_phone: clientDetails.client_phone || null,
+        client_email: clientDetails.client_email || null,
+        property_address: clientDetails.property_address || null,
+        city: clientDetails.city || null,
+        state: clientDetails.state || null,
+        zip: clientDetails.zip || null,
       };
 
       const { data: saved, error } = await supabase
