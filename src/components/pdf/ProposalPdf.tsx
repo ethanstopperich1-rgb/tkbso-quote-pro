@@ -587,11 +587,9 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           <Text style={styles.notesText}>{notes}</Text>
         </View>
 
-        {/* Footer */}
+        {/* Footer - minimal since contact info is in header */}
         <View style={styles.pageFooter} fixed>
-          <Text style={styles.footerText}>
-            {companyName}{companyPhone ? ` • ${companyPhone}` : ''}{companyEmail ? ` • ${companyEmail}` : ''}
-          </Text>
+          <Text style={styles.footerText}>{companyName}</Text>
         </View>
       </Page>
     </Document>
