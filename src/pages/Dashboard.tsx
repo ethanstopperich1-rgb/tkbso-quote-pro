@@ -64,42 +64,42 @@ export default function Dashboard() {
   }, [contractor]);
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground font-display">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-display">
           Welcome back{profile?.name ? `, ${profile.name}` : ''}!
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm sm:text-base text-muted-foreground mt-1">
           {contractor?.name || "Here's what's happening with your estimates this month."}
         </p>
       </div>
 
       {/* Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
         <Link to="/estimator">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer border border-border">
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-                <MessageSquare className="h-6 w-6 text-primary-foreground" />
+          <Card className="hover:shadow-md transition-shadow cursor-pointer border border-border h-full">
+            <CardContent className="flex items-center gap-3 sm:gap-4 p-4 sm:p-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Open Chat Estimator</h3>
-                <p className="text-sm text-muted-foreground">Start a new estimate conversation</p>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">Open Chat Estimator</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Start a new estimate conversation</p>
               </div>
             </CardContent>
           </Card>
         </Link>
 
         <Link to="/pricing">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer border border-border">
-            <CardContent className="flex items-center gap-4 p-6">
-              <div className="w-12 h-12 rounded-lg bg-amber-500 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-white" />
+          <Card className="hover:shadow-md transition-shadow cursor-pointer border border-border h-full">
+            <CardContent className="flex items-center gap-3 sm:gap-4 p-4 sm:p-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Edit Pricing Allowances</h3>
-                <p className="text-sm text-muted-foreground">Configure your cost and price rates</p>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">Edit Pricing Allowances</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">Configure your cost and price rates</p>
               </div>
             </CardContent>
           </Card>
@@ -107,48 +107,48 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <Card className="border border-border">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Estimates This Month</p>
-                <p className="text-3xl font-bold text-foreground mt-1">{stats.estimatesThisMonth}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Estimates This Month</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">{stats.estimatesThisMonth}</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-sky-600" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-sky-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border border-border">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Average Estimate Value</p>
-                <p className="text-3xl font-bold text-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">Average Estimate Value</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
                   {formatCurrency(stats.averageValue)}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border border-border">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-3xl font-bold text-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Value</p>
+                <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
                   {formatCurrency(stats.totalValue)}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-orange-600" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
               </div>
             </div>
           </CardContent>
@@ -157,23 +157,23 @@ export default function Dashboard() {
 
       {/* Recent Estimates */}
       <Card className="border border-border">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 px-4 sm:px-6">
           <div>
-            <CardTitle className="text-xl font-bold font-display">Recent Estimates</CardTitle>
-            <p className="text-sm text-muted-foreground">Your latest estimates</p>
+            <CardTitle className="text-lg sm:text-xl font-bold font-display">Recent Estimates</CardTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground">Your latest estimates</p>
           </div>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
             <Link to="/estimates">View All</Link>
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           {loading ? (
             <p className="text-muted-foreground text-sm py-4">Loading...</p>
           ) : recentEstimates.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">No estimates yet</p>
+              <p className="text-muted-foreground mb-4 text-sm">No estimates yet</p>
               <Link to="/estimator">
-                <Button>Create Your First Quote</Button>
+                <Button size="sm">Create Your First Quote</Button>
               </Link>
             </div>
           ) : (
@@ -182,20 +182,20 @@ export default function Dashboard() {
                 <Link 
                   key={estimate.id} 
                   to={`/estimates/${estimate.id}`}
-                  className="flex items-center justify-between py-4 first:pt-0 last:pb-0 hover:bg-muted/50 -mx-4 px-4 transition-colors"
+                  className="flex items-center justify-between py-3 sm:py-4 first:pt-0 last:pb-0 hover:bg-muted/50 -mx-4 px-4 transition-colors"
                 >
-                  <div>
-                    <p className="font-medium text-foreground">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-foreground text-sm sm:text-base truncate">
                       {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
                     </p>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {new Date(estimate.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">{formatCurrency(estimate.final_cp_total)}</p>
-                    <p className="text-sm text-muted-foreground capitalize">{estimate.status}</p>
+                  <div className="text-right flex-shrink-0 ml-4">
+                    <p className="font-semibold text-foreground text-sm sm:text-base">{formatCurrency(estimate.final_cp_total)}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground capitalize">{estimate.status}</p>
                   </div>
                 </Link>
               ))}

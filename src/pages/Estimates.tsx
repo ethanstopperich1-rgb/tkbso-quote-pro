@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -84,14 +84,15 @@ export default function Estimates() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 md:p-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground font-display">Estimates</h1>
-          <p className="text-muted-foreground mt-1">View and manage all your quotes</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-display">Estimates</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">View and manage all your quotes</p>
         </div>
-        <Link to="/estimator">
-          <Button>
+        <Link to="/estimator" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             New Quote
           </Button>
@@ -99,10 +100,10 @@ export default function Estimates() {
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
+      <Card className="mb-4 sm:mb-6">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col gap-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by job name, client, or city..."
@@ -111,11 +112,12 @@ export default function Estimates() {
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
               <Button
                 variant={statusFilter === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('all')}
+                className="flex-shrink-0"
               >
                 All
               </Button>
@@ -123,6 +125,7 @@ export default function Estimates() {
                 variant={statusFilter === 'draft' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('draft')}
+                className="flex-shrink-0"
               >
                 Draft
               </Button>
@@ -130,6 +133,7 @@ export default function Estimates() {
                 variant={statusFilter === 'sent' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('sent')}
+                className="flex-shrink-0"
               >
                 Sent
               </Button>
@@ -137,6 +141,7 @@ export default function Estimates() {
                 variant={statusFilter === 'won' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter('won')}
+                className="flex-shrink-0"
               >
                 Won
               </Button>
@@ -148,62 +153,64 @@ export default function Estimates() {
       {/* Estimates List */}
       {loading ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading estimates...</p>
+          <p className="text-muted-foreground text-sm">Loading estimates...</p>
         </div>
       ) : filteredEstimates.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No estimates found</h3>
-            <p className="text-muted-foreground mb-4">
+            <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold mb-2">No estimates found</h3>
+            <p className="text-sm text-muted-foreground mb-4">
               {searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your filters'
                 : 'Start by creating your first quote'}
             </p>
             {!searchQuery && statusFilter === 'all' && (
               <Link to="/estimator">
-                <Button>Create Your First Quote</Button>
+                <Button size="sm">Create Your First Quote</Button>
               </Link>
             )}
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {filteredEstimates.map((estimate) => (
             <Link key={estimate.id} to={`/estimates/${estimate.id}`}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg bg-secondary">
-                        <FileText className="h-5 w-5 text-secondary-foreground" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start sm:items-center gap-3">
+                      <div className="p-2 sm:p-3 rounded-lg bg-secondary flex-shrink-0">
+                        <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold text-sm sm:text-base truncate">
                             {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
                           </h3>
-                          <Badge className={getStatusColor(estimate.status)}>
+                          <Badge className={`${getStatusColor(estimate.status)} text-xs`}>
                             {estimate.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {getProjectSummary(estimate)}
                         </p>
                         {(estimate.city || estimate.state) && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                             <MapPin className="h-3 w-3" />
                             {[estimate.city, estimate.state].filter(Boolean).join(', ')}
                           </p>
                         )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold">{formatCurrency(estimate.final_cp_total)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatCurrency(estimate.low_estimate_cp)} - {formatCurrency(estimate.high_estimate_cp)}
-                      </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end mt-1">
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-0 border-t sm:border-t-0 pt-2 sm:pt-0">
+                      <div className="text-left sm:text-right">
+                        <p className="text-base sm:text-lg font-bold">{formatCurrency(estimate.final_cp_total)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatCurrency(estimate.low_estimate_cp)} - {formatCurrency(estimate.high_estimate_cp)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {new Date(estimate.created_at).toLocaleDateString()}
                       </p>

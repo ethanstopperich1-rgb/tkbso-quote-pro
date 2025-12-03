@@ -291,7 +291,7 @@ export default function EstimateDetail() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center">
+      <div className="p-4 sm:p-8 flex items-center justify-center">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -299,7 +299,7 @@ export default function EstimateDetail() {
 
   if (!estimate) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <p className="text-muted-foreground">Estimate not found.</p>
         <Link to="/estimates">
           <Button variant="ghost" className="mt-4">
@@ -319,25 +319,25 @@ export default function EstimateDetail() {
   ].filter(Boolean).join(', ');
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div className="flex items-start gap-3 sm:gap-4">
           <Link to="/estimates">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold font-display">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold font-display truncate">
                 {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
               </h1>
               <Badge className={getStatusColor(estimate.status)}>
                 {estimate.status}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Created {new Date(estimate.created_at).toLocaleDateString()}
             </p>
           </div>
@@ -346,7 +346,8 @@ export default function EstimateDetail() {
         <Button 
           onClick={handleDownloadPdf} 
           disabled={downloading || !estimate.final_cp_total}
-          className="gap-2"
+          className="gap-2 w-full sm:w-auto"
+          size="sm"
         >
           {downloading ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -357,63 +358,63 @@ export default function EstimateDetail() {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column - Details */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-4 sm:space-y-6">
           {/* Price Summary Card */}
           <Card className="border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Investment Summary
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <button
                   onClick={() => setSelectedPriceLevel('low')}
-                  className={`p-3 rounded-lg text-center transition-all ${
+                  className={`p-2 sm:p-3 rounded-lg text-center transition-all ${
                     selectedPriceLevel === 'low'
                       ? 'bg-primary/10 ring-2 ring-primary'
                       : 'hover:bg-muted/50'
                   }`}
                 >
-                  <p className="text-sm text-muted-foreground">Low</p>
-                  <p className={`text-xl font-semibold ${selectedPriceLevel === 'low' ? 'text-primary' : ''}`}>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Low</p>
+                  <p className={`text-base sm:text-xl font-semibold ${selectedPriceLevel === 'low' ? 'text-primary' : ''}`}>
                     {formatCurrency(estimate.low_estimate_cp)}
                   </p>
                 </button>
                 <button
                   onClick={() => setSelectedPriceLevel('recommended')}
-                  className={`p-3 rounded-lg text-center transition-all ${
+                  className={`p-2 sm:p-3 rounded-lg text-center transition-all ${
                     selectedPriceLevel === 'recommended'
                       ? 'bg-primary/10 ring-2 ring-primary'
                       : 'hover:bg-muted/50'
                   }`}
                 >
-                  <p className={`text-sm font-medium ${selectedPriceLevel === 'recommended' ? 'text-primary' : 'text-muted-foreground'}`}>
-                    Recommended
+                  <p className={`text-xs sm:text-sm font-medium ${selectedPriceLevel === 'recommended' ? 'text-primary' : 'text-muted-foreground'}`}>
+                    Rec
                   </p>
-                  <p className={`text-2xl font-bold ${selectedPriceLevel === 'recommended' ? 'text-primary' : ''}`}>
+                  <p className={`text-lg sm:text-2xl font-bold ${selectedPriceLevel === 'recommended' ? 'text-primary' : ''}`}>
                     {formatCurrency(estimate.final_cp_total)}
                   </p>
                 </button>
                 <button
                   onClick={() => setSelectedPriceLevel('high')}
-                  className={`p-3 rounded-lg text-center transition-all ${
+                  className={`p-2 sm:p-3 rounded-lg text-center transition-all ${
                     selectedPriceLevel === 'high'
                       ? 'bg-primary/10 ring-2 ring-primary'
                       : 'hover:bg-muted/50'
                   }`}
                 >
-                  <p className="text-sm text-muted-foreground">High</p>
-                  <p className={`text-xl font-semibold ${selectedPriceLevel === 'high' ? 'text-primary' : ''}`}>
+                  <p className="text-xs sm:text-sm text-muted-foreground">High</p>
+                  <p className={`text-base sm:text-xl font-semibold ${selectedPriceLevel === 'high' ? 'text-primary' : ''}`}>
                     {formatCurrency(estimate.high_estimate_cp)}
                   </p>
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                Click to select which price to use on the PDF
+              <p className="text-[10px] sm:text-xs text-muted-foreground text-center mt-2 sm:mt-3">
+                Tap to select price for PDF
               </p>
             </CardContent>
           </Card>
@@ -437,7 +438,7 @@ export default function EstimateDetail() {
         </div>
 
         {/* Right Column - Client & Project Info */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Client Info - Editable */}
           <ClientInfoEditCard 
             estimate={estimate} 
@@ -446,10 +447,10 @@ export default function EstimateDetail() {
 
           {/* Project Summary */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Project Summary</CardTitle>
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardTitle className="text-base sm:text-lg">Project Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
+            <CardContent className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               {estimate.has_kitchen && estimate.num_kitchens > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Kitchens</span>
@@ -482,14 +483,14 @@ export default function EstimateDetail() {
 
           {/* Dates */}
           <Card>
-            <CardContent className="pt-6 space-y-2 text-sm">
+            <CardContent className="pt-4 sm:pt-6 space-y-2 text-xs sm:text-sm">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground">Created:</span>
                 <span>{new Date(estimate.created_at).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                 <span className="text-muted-foreground">Updated:</span>
                 <span>{new Date(estimate.updated_at).toLocaleDateString()}</span>
               </div>

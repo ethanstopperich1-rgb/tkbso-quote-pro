@@ -215,6 +215,7 @@ export default function Pricing() {
   const [marketDescription, setMarketDescription] = useState(DEFAULT_MARKET_DESCRIPTION);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('global');
 
   useEffect(() => {
     async function fetchConfig() {
@@ -771,48 +772,47 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground font-display">Pricing Configuration</h1>
-          <p className="text-muted-foreground mt-1">
-            Configure trade buckets, allowances, and reference rates for TKBSO estimates
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-display">Pricing Configuration</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            Configure trade buckets, allowances, and reference rates
           </p>
         </div>
         <div className="flex gap-2">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline">
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset to Defaults
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+                <RotateCcw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Reset</span>
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="mx-4 sm:mx-auto max-w-md">
               <AlertDialogHeader>
                 <AlertDialogTitle>Reset to TKBSO Defaults?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will reset all pricing values to the standard TKBSO rates for the Orlando market. 
-                  Your current values will be replaced, but you'll need to click "Save" to persist the changes.
+                  This will reset all pricing values to the standard TKBSO rates. You'll need to save to persist.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetToDefaults}>
-                  Reset Values
+              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetToDefaults} className="w-full sm:w-auto">
+                  Reset
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
+          <Button onClick={handleSave} disabled={saving} size="sm" className="flex-1 sm:flex-none">
+            <Save className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* 1. Global Settings */}
         <GlobalSettingsCard
           targetMargin={config.target_margin}
@@ -836,7 +836,7 @@ export default function Pricing() {
         {/* 3. Bathroom Trade Buckets */}
         <TradeBucketsCard
           title="Bathroom Trade Buckets"
-          description="The PRIMARY pricing engine for bathroom estimates. Each bucket represents a trade with configurable IC and CP rates."
+          description="PRIMARY pricing engine for bathroom estimates."
           icon={<Bath className="h-5 w-5 text-primary" />}
           buckets={bathroomBuckets}
           onChange={handleChange}
@@ -855,7 +855,7 @@ export default function Pricing() {
 
         <TradeBucketsCard
           title="Closet Trade Buckets"
-          description="Trade buckets for closet buildout and expansion estimates."
+          description="Trade buckets for closet buildout and expansion."
           icon={<Package className="h-5 w-5 text-primary" />}
           buckets={closetBuckets}
           onChange={handleChange}
@@ -865,37 +865,33 @@ export default function Pricing() {
         {/* 5. Structural / Complex Work */}
         <TradeBucketsCard
           title="Structural / Complex Work"
-          description="Trade buckets for major layout changes, relocations, wall work, and structural modifications."
+          description="Major layout changes and relocations."
           icon={<HardHat className="h-5 w-5 text-primary" />}
           buckets={structuralBuckets}
           onChange={handleChange}
           targetMargin={config.target_margin}
         />
 
-        {/* 5. Allowances */}
+        {/* 6. Allowances */}
         <AllowancesCard
           allowances={allowances}
           onChange={handleChange}
         />
-
       </div>
 
       {/* Sticky Save Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-4 flex justify-end gap-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-3 sm:p-4 z-50">
         <div className="max-w-6xl mx-auto w-full flex justify-end gap-2">
-          <Button variant="outline" onClick={handleResetToDefaults}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset
+          <Button variant="outline" onClick={handleResetToDefaults} size="sm">
+            <RotateCcw className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Reset</span>
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save Changes'}
+          <Button onClick={handleSave} disabled={saving} size="sm">
+            <Save className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="text-xs sm:text-sm">{saving ? 'Saving...' : 'Save'}</span>
           </Button>
         </div>
       </div>
-
-      {/* Bottom padding for sticky bar */}
-      <div className="h-24" />
     </div>
   );
 }
