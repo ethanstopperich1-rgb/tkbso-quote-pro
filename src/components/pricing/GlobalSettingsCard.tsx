@@ -3,22 +3,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Target } from 'lucide-react';
+import { Settings, Target, Percent } from 'lucide-react';
 
 interface GlobalSettingsCardProps {
   targetMargin: number;
+  managementFeePercent: number;
   marketDescription: string;
   onTargetMarginChange: (value: number) => void;
+  onManagementFeeChange: (value: number) => void;
   onMarketDescriptionChange: (value: string) => void;
 }
 
 export function GlobalSettingsCard({
   targetMargin,
+  managementFeePercent,
   marketDescription,
   onTargetMarginChange,
+  onManagementFeeChange,
   onMarketDescriptionChange,
 }: GlobalSettingsCardProps) {
   const marginPercent = Math.round(targetMargin * 100);
+  const feePercent = Math.round(managementFeePercent * 100);
   
   return (
     <Card>
@@ -32,7 +37,7 @@ export function GlobalSettingsCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <Label htmlFor="targetMargin" className="flex items-center gap-2">
               <Target className="h-4 w-4 text-muted-foreground" />
@@ -53,7 +58,31 @@ export function GlobalSettingsCard({
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              High-level target blended margin for full projects. Used for sanity checks and UI hints.
+              High-level target blended margin for full projects.
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="managementFee" className="flex items-center gap-2">
+              <Percent className="h-4 w-4 text-muted-foreground" />
+              Management Fee (%)
+            </Label>
+            <div className="flex items-center gap-3">
+              <Input
+                id="managementFee"
+                type="number"
+                min={0}
+                max={50}
+                value={feePercent}
+                onChange={(e) => onManagementFeeChange(parseFloat(e.target.value) / 100)}
+                className="w-24"
+              />
+              <Badge variant="secondary">
+                {feePercent}%
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Default fee when management fee is enabled on a project.
             </p>
           </div>
           
@@ -68,7 +97,7 @@ export function GlobalSettingsCard({
               className="resize-none"
             />
             <p className="text-xs text-muted-foreground">
-              Reference description for your service area and market positioning.
+              Reference description for your service area.
             </p>
           </div>
         </div>

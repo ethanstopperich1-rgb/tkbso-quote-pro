@@ -91,6 +91,9 @@ export interface PricingConfig {
   low_range_multiplier: number;
   high_range_multiplier: number;
   
+  // Management Fee
+  management_fee_percent: number;
+  
   // Payment splits
   payment_split_deposit: number;
   payment_split_progress: number;
