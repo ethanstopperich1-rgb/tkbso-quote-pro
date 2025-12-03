@@ -313,21 +313,21 @@ export function EstimatorChatPanel() {
   }, {} as Record<string, PricingLineItem[]>) || {};
 
   return (
-    <div className="flex flex-col h-full glass-card-active relative overflow-hidden">
-      {/* Subtle glow effect */}
-      <div className="absolute inset-0 pointer-events-none">
+    <div className="flex flex-col h-full glass-card-active relative overflow-hidden rounded-xl sm:rounded-2xl">
+      {/* Subtle glow effect - hidden on mobile for performance */}
+      <div className="absolute inset-0 pointer-events-none hidden sm:block">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <div className="relative flex items-center justify-between px-6 py-5 border-b border-border">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
-            <Sparkles className="h-5 w-5 text-primary" />
+      {/* Header - compact on mobile */}
+      <div className="relative flex items-center justify-between px-3 py-3 sm:px-6 sm:py-5 border-b border-border">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </div>
           <div>
-            <h2 className="font-display font-semibold text-lg text-foreground tracking-tight">AI Estimator</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="font-display font-semibold text-base sm:text-lg text-foreground tracking-tight">AI Estimator</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
               {context.projectType ? `${context.projectType} Project` : 'Powered by real pricing'}
             </p>
           </div>
@@ -336,15 +336,15 @@ export function EstimatorChatPanel() {
           variant="ghost"
           size="sm"
           onClick={handleStartNew}
-          className="text-muted-foreground hover:text-foreground rounded-xl"
+          className="text-muted-foreground hover:text-foreground rounded-lg sm:rounded-xl h-8 sm:h-9 px-2 sm:px-3"
         >
-          <RotateCcw className="h-4 w-4 mr-2" />
-          New Quote
+          <RotateCcw className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">New Quote</span>
         </Button>
       </div>
 
       {/* Messages */}
-      <div className="relative flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="relative flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-5">
         {messages.map((message, index) => (
           <ChatMessage 
             key={message.id} 
@@ -367,17 +367,17 @@ export function EstimatorChatPanel() {
         {/* Quote Summary Card */}
         {estimate && (
           <Card className="animate-scale-in border-primary/20 shadow-lg">
-            <CardContent className="p-6">
-              {/* Header with total */}
-              <div className="flex items-center justify-between mb-6">
+            <CardContent className="p-4 sm:p-6">
+              {/* Header with total - stacks on mobile */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
                 <div>
-                  <h3 className="font-display font-semibold text-xl tracking-tight">Quote Ready</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {estimate.trade_buckets.length} line items • {estimate.pricing.totals.overall_margin_percent.toFixed(0)}% margin
+                  <h3 className="font-display font-semibold text-lg sm:text-xl tracking-tight">Quote Ready</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                    {estimate.trade_buckets.length} items • {estimate.pricing.totals.overall_margin_percent.toFixed(0)}% margin
                   </p>
                 </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-primary">
+                <div className="sm:text-right">
+                  <div className="text-2xl sm:text-3xl font-bold text-primary">
                     {formatCurrency(estimate.pricing.totals.total_cp)}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -386,19 +386,19 @@ export function EstimatorChatPanel() {
                 </div>
               </div>
 
-              {/* Payment Schedule */}
-              <div className="grid grid-cols-3 gap-3 mb-6 p-4 bg-muted/50 rounded-xl">
-                <div className="text-center">
-                  <div className="text-xs text-muted-foreground mb-1">Deposit (65%)</div>
-                  <div className="font-semibold">{formatCurrency(estimate.payment_schedule.deposit)}</div>
+              {/* Payment Schedule - stacks on mobile */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-muted/50 rounded-lg sm:rounded-xl">
+                <div className="flex justify-between sm:justify-center sm:flex-col sm:text-center py-1 sm:py-0">
+                  <div className="text-xs text-muted-foreground sm:mb-1">Deposit (65%)</div>
+                  <div className="font-semibold text-sm sm:text-base">{formatCurrency(estimate.payment_schedule.deposit)}</div>
                 </div>
-                <div className="text-center border-x border-border">
-                  <div className="text-xs text-muted-foreground mb-1">Progress (25%)</div>
-                  <div className="font-semibold">{formatCurrency(estimate.payment_schedule.progress)}</div>
+                <div className="flex justify-between sm:justify-center sm:flex-col sm:text-center border-t sm:border-t-0 sm:border-x border-border py-1 sm:py-0 pt-2 sm:pt-0">
+                  <div className="text-xs text-muted-foreground sm:mb-1">Progress (25%)</div>
+                  <div className="font-semibold text-sm sm:text-base">{formatCurrency(estimate.payment_schedule.progress)}</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xs text-muted-foreground mb-1">Final (10%)</div>
-                  <div className="font-semibold">{formatCurrency(estimate.payment_schedule.final)}</div>
+                <div className="flex justify-between sm:justify-center sm:flex-col sm:text-center border-t sm:border-t-0 border-border py-1 sm:py-0 pt-2 sm:pt-0">
+                  <div className="text-xs text-muted-foreground sm:mb-1">Final (10%)</div>
+                  <div className="font-semibold text-sm sm:text-base">{formatCurrency(estimate.payment_schedule.final)}</div>
                 </div>
               </div>
 
@@ -413,22 +413,22 @@ export function EstimatorChatPanel() {
 
               {/* Expanded Line Items */}
               {showLineItems && (
-                <div className="mt-4 space-y-4 border-t border-border pt-4">
+                <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 border-t border-border pt-3 sm:pt-4">
                   {Object.entries(groupedLineItems).map(([category, items]) => (
                     <div key={category}>
-                      <h4 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                      <h4 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
                         {category}
                       </h4>
-                      <div className="space-y-1">
+                      <div className="space-y-2 sm:space-y-1">
                         {items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm py-1">
-                            <div className="flex-1">
+                          <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm py-1.5 sm:py-1 border-b sm:border-b-0 border-border/50 last:border-b-0">
+                            <div className="flex-1 mb-1 sm:mb-0">
                               <span className="text-foreground">{item.task_description}</span>
-                              <span className="text-muted-foreground ml-2">
+                              <span className="text-muted-foreground ml-1 sm:ml-2">
                                 ({item.quantity} {item.unit})
                               </span>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
                               <span className="text-muted-foreground text-xs">
                                 IC: {formatCurrency(item.ic_total)}
                               </span>
@@ -443,16 +443,16 @@ export function EstimatorChatPanel() {
                   ))}
                   
                   {/* Totals */}
-                  <div className="border-t border-border pt-3 mt-4">
-                    <div className="flex justify-between text-sm">
+                  <div className="border-t border-border pt-3 mt-3 sm:mt-4">
+                    <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-muted-foreground">Internal Cost</span>
                       <span>{formatCurrency(estimate.pricing.totals.total_ic)}</span>
                     </div>
-                    <div className="flex justify-between text-sm mt-1">
+                    <div className="flex justify-between text-xs sm:text-sm mt-1">
                       <span className="text-muted-foreground">Client Price</span>
                       <span className="font-semibold text-primary">{formatCurrency(estimate.pricing.totals.total_cp)}</span>
                     </div>
-                    <div className="flex justify-between text-sm mt-1">
+                    <div className="flex justify-between text-xs sm:text-sm mt-1">
                       <span className="text-muted-foreground">Profit</span>
                       <span className="text-green-600">
                         {formatCurrency(estimate.pricing.totals.total_cp - estimate.pricing.totals.total_ic)}
@@ -463,10 +463,10 @@ export function EstimatorChatPanel() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3 mt-6">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
                 <Button 
                   onClick={handleViewEstimate}
-                  className="flex-1"
+                  className="flex-1 h-10 sm:h-11 text-sm sm:text-base"
                   disabled={!savedEstimateId}
                 >
                   View Details
@@ -476,6 +476,7 @@ export function EstimatorChatPanel() {
                   variant="outline"
                   onClick={handleViewEstimate}
                   disabled={!savedEstimateId}
+                  className="h-10 sm:h-11 text-sm sm:text-base"
                 >
                   <FileDown className="h-4 w-4 mr-2" />
                   PDF
@@ -488,8 +489,8 @@ export function EstimatorChatPanel() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="relative p-4 border-t border-border">
+      {/* Input - compact on mobile */}
+      <div className="relative p-2 sm:p-4 border-t border-border">
         <ChatInput 
           onSend={handleSendMessage} 
           disabled={isLoading}
