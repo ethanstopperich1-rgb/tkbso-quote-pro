@@ -68,25 +68,25 @@ export function ChatMessage({ message, isNew = false }: ChatMessageProps) {
   
   return (
     <div className={cn(
-      "flex gap-3 animate-fade-in",
+      "flex gap-2 sm:gap-3 animate-fade-in",
       isUser ? "justify-end" : "justify-start"
     )}>
       {/* AI Avatar */}
       {!isUser && (
-        <div className="w-9 h-9 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0 border border-accent/30 shadow-glow">
-          <Bot className="w-4 h-4 text-accent" />
+        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0 border border-primary/30">
+          <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
         </div>
       )}
       
-      <div className={cn("max-w-[80%]", isUser ? "order-first" : "")}>
+      <div className={cn("max-w-[85%] sm:max-w-[80%]", isUser ? "order-first" : "")}>
         {isUser ? (
-          <div className="chat-bubble-user">
-            <p className="text-[0.9375rem] leading-relaxed whitespace-pre-wrap">{message.content}</p>
+          <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-3 py-2 sm:px-4 sm:py-2.5">
+            <p className="text-sm sm:text-[0.9375rem] leading-relaxed whitespace-pre-wrap">{message.content}</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="chat-bubble-ai">
-              <div className="text-[0.9375rem] leading-relaxed whitespace-pre-wrap">
+          <div className="space-y-2 sm:space-y-3">
+            <div className="bg-muted/50 text-foreground rounded-2xl rounded-bl-md px-3 py-2 sm:px-4 sm:py-2.5 border border-border">
+              <div className="text-sm sm:text-[0.9375rem] leading-relaxed whitespace-pre-wrap">
                 {isNew && !isWelcome ? (
                   <TypewriterText text={message.content} speed={12} />
                 ) : (
@@ -99,7 +99,7 @@ export function ChatMessage({ message, isNew = false }: ChatMessageProps) {
         )}
         
         <p className={cn(
-          "text-[10px] text-muted-foreground/50 mt-1.5 font-medium",
+          "text-[10px] text-muted-foreground/50 mt-1 sm:mt-1.5 font-medium",
           isUser ? "text-right" : "text-left"
         )}>
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -108,8 +108,8 @@ export function ChatMessage({ message, isNew = false }: ChatMessageProps) {
       
       {/* User Avatar */}
       {isUser && (
-        <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center flex-shrink-0 shadow-lg shadow-accent/20">
-          <User className="w-4 h-4 text-accent-foreground" />
+        <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
+          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
         </div>
       )}
     </div>

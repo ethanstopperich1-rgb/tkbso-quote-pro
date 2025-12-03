@@ -111,9 +111,9 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
   return (
     <div 
       className={cn(
-        "relative flex items-end gap-2 p-3 rounded-2xl transition-all duration-300",
-        "bg-white/[0.03] border border-white/[0.08]",
-        isFocused && "border-accent/50 bg-white/[0.05] shadow-glow"
+        "relative flex items-end gap-2 p-2 sm:p-3 rounded-xl sm:rounded-2xl transition-all duration-300",
+        "bg-muted/30 border border-border",
+        isFocused && "border-primary/50 bg-muted/50 shadow-sm"
       )}
     >
       <textarea
@@ -127,14 +127,14 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
         disabled={disabled}
         rows={1}
         className={cn(
-          "flex-1 bg-transparent border-0 resize-none text-base",
+          "flex-1 bg-transparent border-0 resize-none text-sm sm:text-base",
           "placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0",
           "disabled:opacity-50 disabled:cursor-not-allowed",
-          "min-h-[44px] max-h-[150px] py-2.5 px-2"
+          "min-h-[40px] sm:min-h-[44px] max-h-[120px] sm:max-h-[150px] py-2 sm:py-2.5 px-1 sm:px-2"
         )}
       />
 
-      <div className="flex items-center gap-1.5 pb-1">
+      <div className="flex items-center gap-1 sm:gap-1.5 pb-0.5 sm:pb-1">
         <Button
           type="button"
           variant="ghost"
@@ -142,10 +142,10 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
           onClick={toggleListening}
           disabled={disabled}
           className={cn(
-            "h-9 w-9 rounded-xl transition-all duration-300",
+            "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl transition-all duration-300",
             isListening 
-              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30 animate-pulse" 
-              : "text-muted-foreground hover:text-foreground hover:bg-white/[0.08]"
+              ? "bg-destructive/20 text-destructive hover:bg-destructive/30 animate-pulse" 
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
           )}
         >
           {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -156,10 +156,9 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
           onClick={handleSend}
           disabled={disabled || !input.trim()}
           className={cn(
-            "h-9 w-9 rounded-xl p-0 transition-all duration-300",
-            "bg-accent hover:bg-accent/90",
-            "hover:scale-105 hover:shadow-glow",
-            "disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+            "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl p-0 transition-all duration-300",
+            "bg-primary hover:bg-primary/90",
+            "disabled:opacity-50"
           )}
         >
           {disabled ? (
