@@ -245,6 +245,12 @@ export interface PricingConfig {
   drywall_ic_per_sqft: number;
   drywall_cp_per_sqft: number;
   
+  // Cabinet pricing (per linear foot)
+  cabinet_lf_ic: number;
+  cabinet_lf_cp: number;
+  cabinet_install_only_lf_ic: number;
+  cabinet_install_only_lf_cp: number;
+  
   created_at: string;
   updated_at: string;
 }

@@ -474,6 +474,10 @@ export type Database = {
           bath_refresh_multiplier: number | null
           bath_shower_only_multiplier: number | null
           bathroom_target_margin: number | null
+          cabinet_install_only_lf_cp: number | null
+          cabinet_install_only_lf_ic: number | null
+          cabinet_lf_cp: number | null
+          cabinet_lf_ic: number | null
           cabinet_markup_multiplier_no_gc: number | null
           cabinet_markup_multiplier_with_gc: number | null
           cement_board_cp_per_sqft: number | null
@@ -648,6 +652,10 @@ export type Database = {
           bath_refresh_multiplier?: number | null
           bath_shower_only_multiplier?: number | null
           bathroom_target_margin?: number | null
+          cabinet_install_only_lf_cp?: number | null
+          cabinet_install_only_lf_ic?: number | null
+          cabinet_lf_cp?: number | null
+          cabinet_lf_ic?: number | null
           cabinet_markup_multiplier_no_gc?: number | null
           cabinet_markup_multiplier_with_gc?: number | null
           cement_board_cp_per_sqft?: number | null
@@ -822,6 +830,10 @@ export type Database = {
           bath_refresh_multiplier?: number | null
           bath_shower_only_multiplier?: number | null
           bathroom_target_margin?: number | null
+          cabinet_install_only_lf_cp?: number | null
+          cabinet_install_only_lf_ic?: number | null
+          cabinet_lf_cp?: number | null
+          cabinet_lf_ic?: number | null
           cabinet_markup_multiplier_no_gc?: number | null
           cabinet_markup_multiplier_with_gc?: number | null
           cement_board_cp_per_sqft?: number | null
