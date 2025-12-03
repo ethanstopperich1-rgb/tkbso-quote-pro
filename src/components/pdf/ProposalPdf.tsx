@@ -14,26 +14,31 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 10,
-    padding: 50,
+    paddingTop: 0,
     paddingBottom: 70,
+    paddingHorizontal: 50,
     backgroundColor: '#ffffff',
   },
   
-  // Header
-  headerSection: {
+  // Header with large logo banner
+  headerBanner: {
+    backgroundColor: '#1e3a8a',
+    marginHorizontal: -50,
+    paddingVertical: 20,
+    paddingHorizontal: 50,
     alignItems: 'center',
     marginBottom: 20,
   },
   logo: {
-    width: 220,
+    width: 280,
     height: 'auto',
-    marginBottom: 16,
   },
   quoteTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
     textAlign: 'center',
+    marginTop: 16,
   },
   quoteDate: {
     fontSize: 9,
@@ -446,13 +451,17 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
-        {/* Header */}
-        <View style={styles.headerSection} wrap={false}>
+        {/* Header Banner with Logo */}
+        <View style={styles.headerBanner} wrap={false}>
           {branding.logoUrl ? (
             <Image src={branding.logoUrl} style={styles.logo} />
           ) : (
             <Image src={tkbsoLogo} style={styles.logo} />
           )}
+        </View>
+
+        {/* Quote Title */}
+        <View wrap={false}>
           <Text style={styles.quoteTitle}>Quote for {clientName}</Text>
           <Text style={styles.quoteDate}>{currentDate}</Text>
         </View>
@@ -492,23 +501,27 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           </View>
         ))}
 
-        {/* Management Fee (if applicable) */}
-        {estimate.include_management_fee && (estimate.management_fee_cp || 0) > 0 && (
-          <View style={styles.tradeSection} wrap={false}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#1e3a8a', paddingBottom: 2, marginBottom: 4 }}>
-              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>Project Management</Text>
-              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>{formatCurrency(estimate.management_fee_cp)}</Text>
-            </View>
-            <Text style={{ fontSize: 9, color: '#475569', paddingLeft: 4, lineHeight: 1.4 }}>
-              Dedicated project oversight including scheduling, quality control, and communication coordination throughout the project.
-            </Text>
-          </View>
-        )}
+        {/* Subtotal + Management Fee + Total */}
+        <View wrap={false} style={{ marginTop: 8 }}>
+          {/* Show subtotal if there's a management fee */}
+          {estimate.include_management_fee && (estimate.management_fee_cp || 0) > 0 && (
+            <>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
+                <Text style={{ fontSize: 10, color: '#475569' }}>Subtotal</Text>
+                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e293b' }}>{formatCurrency(totalCost - (estimate.management_fee_cp || 0))}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Text style={{ fontSize: 10, color: '#475569' }}>Project Management Fee ({((estimate.management_fee_percent || 0) * 100).toFixed(0)}%)</Text>
+                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e293b' }}>{formatCurrency(estimate.management_fee_cp)}</Text>
+              </View>
+            </>
+          )}
 
-        {/* Final Price */}
-        <View style={styles.finalPriceSection} wrap={false}>
-          <Text style={styles.finalPriceLabel}>Total Investment</Text>
-          <Text style={styles.finalPriceAmount}>{formatCurrency(totalCost)}</Text>
+          {/* Final Total */}
+          <View style={styles.finalPriceSection}>
+            <Text style={styles.finalPriceLabel}>Total Investment</Text>
+            <Text style={styles.finalPriceAmount}>{formatCurrency(totalCost)}</Text>
+          </View>
         </View>
 
         {/* Payment Schedule */}
