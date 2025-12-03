@@ -34,6 +34,15 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
   );
   const [defaultFeePercent, setDefaultFeePercent] = useState(15);
 
+  // Sync local state when estimate prop changes (e.g., after save or external update)
+  useEffect(() => {
+    setIncludeManagementFee(estimate.include_management_fee || false);
+    setManagementFeePercent(
+      (estimate.management_fee_percent ? estimate.management_fee_percent * 100 : defaultFeePercent).toString()
+    );
+    setSellPrice(estimate.final_cp_total?.toString() || '');
+  }, [estimate.include_management_fee, estimate.management_fee_percent, estimate.final_cp_total, defaultFeePercent]);
+
   // Fetch default fee from pricing config
   useEffect(() => {
     async function fetchConfig() {
