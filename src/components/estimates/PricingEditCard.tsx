@@ -125,6 +125,42 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
   const displayIc = estimate.final_ic_total || 0;
   const displayCp = estimate.final_cp_total || 0;
 
+  // Quick save for management fee toggle
+  const handleQuickFeeToggle = async (enabled: boolean) => {
+    const newFeePercent = parseFloat(managementFeePercent) / 100 || defaultFeePercent / 100;
+    const newFeeIc = enabled ? Math.round(baseIcTotal * newFeePercent) : 0;
+    const newFeeCp = enabled ? Math.round(baseCpTotal * newFeePercent) : 0;
+    const newIcTotal = baseIcTotal + newFeeIc;
+    const newCpTotal = baseCpTotal + newFeeCp;
+
+    const dbUpdates = {
+      final_ic_total: newIcTotal,
+      final_cp_total: newCpTotal,
+      low_estimate_cp: newCpTotal * 0.95,
+      high_estimate_cp: newCpTotal * 1.05,
+      include_management_fee: enabled,
+      management_fee_percent: newFeePercent,
+      management_fee_ic: newFeeIc,
+      management_fee_cp: newFeeCp,
+    };
+
+    try {
+      const { error } = await supabase
+        .from('estimates')
+        .update(dbUpdates)
+        .eq('id', estimate.id);
+
+      if (error) throw error;
+
+      setIncludeManagementFee(enabled);
+      onUpdate(dbUpdates as Partial<Estimate>);
+      toast.success(enabled ? 'Management fee added!' : 'Management fee removed');
+    } catch (error) {
+      console.error('Error updating management fee:', error);
+      toast.error('Failed to update management fee');
+    }
+  };
+
   if (!isEditing) {
     return (
       <Card className="border-amber-200 bg-amber-50/30">
@@ -138,7 +174,7 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
             Edit Pricing
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Internal Cost</p>
@@ -161,14 +197,25 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
               <p className="font-semibold">{formatCurrency(displayCp - displayIc)}</p>
             </div>
           </div>
-          {estimate.include_management_fee && estimate.management_fee_cp > 0 && (
-            <div className="mt-4 pt-3 border-t border-amber-200">
-              <div className="flex justify-between text-sm">
-                <span className="text-amber-700">Includes Management Fee ({(estimate.management_fee_percent * 100).toFixed(0)}%)</span>
-                <span className="font-medium text-amber-800">{formatCurrency(estimate.management_fee_cp)}</span>
+
+          {/* Management Fee Quick Toggle */}
+          <div className="pt-3 border-t border-amber-200">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium text-amber-800">Management Fee</Label>
+                <p className="text-xs text-amber-600">
+                  {includeManagementFee 
+                    ? `${(parseFloat(managementFeePercent) || defaultFeePercent).toFixed(0)}% = ${formatCurrency(estimate.management_fee_cp || Math.round(baseCpTotal * (parseFloat(managementFeePercent) / 100 || defaultFeePercent / 100)))}`
+                    : `Add ${defaultFeePercent.toFixed(0)}% fee`
+                  }
+                </p>
               </div>
+              <Switch
+                checked={includeManagementFee}
+                onCheckedChange={handleQuickFeeToggle}
+              />
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     );
