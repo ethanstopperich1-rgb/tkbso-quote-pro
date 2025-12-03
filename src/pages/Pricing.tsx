@@ -816,8 +816,10 @@ export default function Pricing() {
         {/* 1. Global Settings */}
         <GlobalSettingsCard
           targetMargin={config.target_margin}
+          managementFeePercent={config.management_fee_percent ?? 0.15}
           marketDescription={marketDescription}
           onTargetMarginChange={(value) => handleChange('target_margin', value)}
+          onManagementFeeChange={(value) => handleChange('management_fee_percent', value)}
           onMarketDescriptionChange={setMarketDescription}
         />
 

@@ -10,8 +10,6 @@ import { CompanyProfileCard } from '@/components/settings/CompanyProfileCard';
 import { BrandingCard } from '@/components/settings/BrandingCard';
 import { LicensesCard } from '@/components/settings/LicensesCard';
 import { InsuranceCard } from '@/components/settings/InsuranceCard';
-import { DefaultsCard } from '@/components/settings/DefaultsCard';
-import { ProductMappingCard } from '@/components/settings/ProductMappingCard';
 
 export default function Settings() {
   const { contractor } = useAuth();
@@ -115,13 +113,13 @@ export default function Settings() {
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold font-display text-foreground">Settings</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1">
-          Manage your company profile, branding, and business defaults
+          Manage your company profile, branding, and compliance
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-6 h-auto gap-1 bg-muted p-1 rounded-lg">
+          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-4 h-auto gap-1 bg-muted p-1 rounded-lg">
             <TabsTrigger value="company" className="data-[state=active]:bg-background text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
               Company
             </TabsTrigger>
@@ -133,12 +131,6 @@ export default function Settings() {
             </TabsTrigger>
             <TabsTrigger value="insurance" className="data-[state=active]:bg-background text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
               Insurance
-            </TabsTrigger>
-            <TabsTrigger value="defaults" className="data-[state=active]:bg-background text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              Defaults
-            </TabsTrigger>
-            <TabsTrigger value="products" className="data-[state=active]:bg-background text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-              Products
             </TabsTrigger>
           </TabsList>
         </div>
@@ -171,17 +163,6 @@ export default function Settings() {
             onChange={(value) => updateSettings('insurance', value)}
             contractorId={contractor?.id}
           />
-        </TabsContent>
-
-        <TabsContent value="defaults" className="space-y-4 sm:space-y-6">
-          <DefaultsCard
-            data={settings.defaults}
-            onChange={(value) => updateSettings('defaults', value)}
-          />
-        </TabsContent>
-
-        <TabsContent value="products" className="space-y-4 sm:space-y-6">
-          <ProductMappingCard />
         </TabsContent>
       </Tabs>
 
