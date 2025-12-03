@@ -103,7 +103,12 @@ export function LineItemEditorCard({ estimate, onUpdate }: LineItemEditorCardPro
 
   const handleEditItem = (index: number) => {
     setEditingIndex(index);
-    setEditForm({ ...lineItems[index] });
+    const item = lineItems[index];
+    setEditForm({ 
+      ...item,
+      ic_total: item.ic_total,
+      cp_total: item.cp_total,
+    });
   };
 
   const handleCancelEdit = () => {
@@ -114,16 +119,23 @@ export function LineItemEditorCard({ estimate, onUpdate }: LineItemEditorCardPro
   const handleSaveItemEdit = () => {
     if (editingIndex === null) return;
 
-    const quantity = editForm.quantity || 0;
-    const icPerUnit = editForm.ic_per_unit || 0;
-    const cpPerUnit = editForm.cp_per_unit || 0;
+    const quantity = editForm.quantity || 1;
+    const icTotal = editForm.ic_total ?? (quantity * (editForm.ic_per_unit || 0));
+    const cpTotal = editForm.cp_total ?? (quantity * (editForm.cp_per_unit || 0));
+    
+    // Back-calculate per-unit from totals
+    const icPerUnit = quantity > 0 ? icTotal / quantity : 0;
+    const cpPerUnit = quantity > 0 ? cpTotal / quantity : 0;
     
     const updatedItem: LineItem = {
       ...lineItems[editingIndex],
       ...editForm,
-      ic_total: quantity * icPerUnit,
-      cp_total: quantity * cpPerUnit,
-      margin_percent: cpPerUnit > 0 ? ((cpPerUnit - icPerUnit) / cpPerUnit) * 100 : 0,
+      quantity,
+      ic_per_unit: Math.round(icPerUnit * 100) / 100,
+      cp_per_unit: Math.round(cpPerUnit * 100) / 100,
+      ic_total: Math.round(icTotal * 100) / 100,
+      cp_total: Math.round(cpTotal * 100) / 100,
+      margin_percent: cpTotal > 0 ? ((cpTotal - icTotal) / cpTotal) * 100 : 0,
     };
 
     const newItems = [...lineItems];
@@ -398,24 +410,26 @@ export function LineItemEditorCard({ estimate, onUpdate }: LineItemEditorCardPro
                             <Input
                               type="number"
                               value={editForm.quantity}
-                              onChange={(e) => setEditForm({ ...editForm, quantity: parseFloat(e.target.value) || 0 })}
+                              onChange={(e) => setEditForm({ ...editForm, quantity: parseFloat(e.target.value) || 1 })}
                               className="h-8 w-16 text-right"
                             />
                           </TableCell>
                           <TableCell>
                             <Input
                               type="number"
-                              value={editForm.ic_per_unit}
-                              onChange={(e) => setEditForm({ ...editForm, ic_per_unit: parseFloat(e.target.value) || 0 })}
-                              className="h-8 w-20 text-right"
+                              value={editForm.ic_total}
+                              onChange={(e) => setEditForm({ ...editForm, ic_total: parseFloat(e.target.value) || 0 })}
+                              className="h-8 w-24 text-right"
+                              placeholder="IC Total"
                             />
                           </TableCell>
                           <TableCell>
                             <Input
                               type="number"
-                              value={editForm.cp_per_unit}
-                              onChange={(e) => setEditForm({ ...editForm, cp_per_unit: parseFloat(e.target.value) || 0 })}
-                              className="h-8 w-20 text-right"
+                              value={editForm.cp_total}
+                              onChange={(e) => setEditForm({ ...editForm, cp_total: parseFloat(e.target.value) || 0 })}
+                              className="h-8 w-24 text-right"
+                              placeholder="CP Total"
                             />
                           </TableCell>
                           <TableCell>
