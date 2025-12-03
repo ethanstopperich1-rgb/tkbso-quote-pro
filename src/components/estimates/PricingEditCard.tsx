@@ -101,7 +101,47 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
       const lowMultiplier = 0.95;
       const highMultiplier = 1.05;
       
-      const dbUpdates = {
+      // Scale line items proportionally if price changed
+      let updatedPayload = estimate.internal_json_payload;
+      const payload = estimate.internal_json_payload as any;
+      
+      if (payload?.pricing?.line_items && payload?.pricing?.totals?.total_cp) {
+        const originalTotalCp = payload.pricing.totals.total_cp;
+        // Calculate new base CP (without management fee) from calculatedPrice
+        const newBaseCp = calculatedPrice - managementFeeCp;
+        
+        if (originalTotalCp > 0 && Math.abs(newBaseCp - originalTotalCp) > 1) {
+          const scaleFactor = newBaseCp / originalTotalCp;
+          
+          const scaledLineItems = payload.pricing.line_items.map((item: any) => ({
+            ...item,
+            cp_total: Math.round(item.cp_total * scaleFactor * 100) / 100,
+            cp_per_unit: item.cp_per_unit ? Math.round(item.cp_per_unit * scaleFactor * 100) / 100 : item.cp_per_unit,
+            margin_percent: item.ic_total > 0 
+              ? Math.round(((item.cp_total * scaleFactor - item.ic_total) / (item.cp_total * scaleFactor)) * 10000) / 100
+              : item.margin_percent,
+          }));
+          
+          updatedPayload = {
+            ...payload,
+            pricing: {
+              ...payload.pricing,
+              line_items: scaledLineItems,
+              totals: {
+                ...payload.pricing.totals,
+                total_cp: newBaseCp,
+                overall_margin_percent: internalCostWithFee > 0 
+                  ? ((calculatedPrice - internalCostWithFee) / calculatedPrice) * 100 
+                  : 0,
+                low_estimate: calculatedPrice * lowMultiplier,
+                high_estimate: calculatedPrice * highMultiplier,
+              },
+            },
+          };
+        }
+      }
+      
+      const dbUpdates: Record<string, any> = {
         final_ic_total: internalCostWithFee,
         final_cp_total: calculatedPrice,
         low_estimate_cp: calculatedPrice * lowMultiplier,
@@ -110,6 +150,7 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
         management_fee_percent: feePercent,
         management_fee_ic: managementFeeIc,
         management_fee_cp: managementFeeCp,
+        internal_json_payload: updatedPayload,
       };
 
       const { error } = await supabase
