@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
   headerBanner: {
     backgroundColor: '#1e3a8a',
     marginHorizontal: -50,
-    paddingVertical: 20,
+    paddingVertical: 24,
     paddingHorizontal: 50,
     alignItems: 'center',
     marginBottom: 20,
@@ -32,6 +32,18 @@ const styles = StyleSheet.create({
   logo: {
     width: 280,
     height: 'auto',
+    marginBottom: 10,
+  },
+  headerContactRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
+    marginTop: 6,
+  },
+  headerContactText: {
+    fontSize: 9,
+    color: '#ffffff',
+    opacity: 0.9,
   },
   quoteTitle: {
     fontSize: 18,
@@ -451,13 +463,17 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
-        {/* Header Banner with Logo */}
+        {/* Header Banner with Logo + Contact Info */}
         <View style={styles.headerBanner} wrap={false}>
           {branding.logoUrl ? (
             <Image src={branding.logoUrl} style={styles.logo} />
           ) : (
             <Image src={tkbsoLogo} style={styles.logo} />
           )}
+          <View style={styles.headerContactRow}>
+            {companyPhone && <Text style={styles.headerContactText}>{companyPhone}</Text>}
+            {companyEmail && <Text style={styles.headerContactText}>{companyEmail}</Text>}
+          </View>
         </View>
 
         {/* Quote Title */}
