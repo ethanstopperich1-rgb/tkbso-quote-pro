@@ -422,7 +422,7 @@ export default function EstimateDetail() {
           {/* Internal Breakdown with Edit Pricing */}
           <PricingEditCard 
             estimate={estimate} 
-            onUpdate={(updates) => setEstimate({ ...estimate, ...updates })} 
+            onUpdate={(updates) => setEstimate(prev => prev ? { ...prev, ...updates } : prev)} 
           />
 
           {/* Line Item Editor */}
