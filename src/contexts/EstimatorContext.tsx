@@ -132,6 +132,13 @@ export interface ProjectState {
   pricingMode: PricingMode;
   overrideValue: number | null; // Price in dollars or margin as decimal (0.40 = 40%)
   
+  // Management fee
+  includeManagementFee: boolean;
+  managementFeePercent: number;
+  
+  // Labor only mode
+  laborOnly: boolean;
+  
   // Calculated values from TKBSO pricing
   pricingResult: TKBSOPricingResult | null;
   baseInternalCost: number;
@@ -142,6 +149,7 @@ export interface ProjectState {
   calculatedMargin: number;
   profit: number;
   marginStatus: MarginStatus | null;
+  managementFeeAmount: number;
   
   // Lock status
   isLocked: boolean;
@@ -222,6 +230,9 @@ const initialState: ProjectState = {
   clientInfo: {},
   pricingMode: 'auto',
   overrideValue: null,
+  includeManagementFee: false,
+  managementFeePercent: 0.15,
+  laborOnly: false,
   pricingResult: null,
   baseInternalCost: 0,
   internalCost: 0,
@@ -231,6 +242,7 @@ const initialState: ProjectState = {
   calculatedMargin: 0,
   profit: 0,
   marginStatus: null,
+  managementFeeAmount: 0,
   isLocked: false,
   lockedAt: null,
   finalQuote: null,
@@ -267,6 +279,10 @@ interface EstimatorContextType {
   setTargetMargin: (margin: number) => void;
   resetToAutoMargin: () => void;
   lockEstimate: () => void;
+  
+  // Management fee & labor only
+  setManagementFee: (enabled: boolean, percent?: number) => void;
+  setLaborOnly: (enabled: boolean) => void;
   
   // Quote generation
   generateQuote: () => Quote;
@@ -481,17 +497,26 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     const profit = finalCP - baseIC;
     const marginStatus = getMarginStatus(finalMargin);
     
+    // Calculate management fee if enabled
+    let managementFeeAmount = 0;
+    let finalPriceWithFee = finalCP;
+    if (newState.includeManagementFee && newState.managementFeePercent > 0) {
+      managementFeeAmount = Math.round(finalCP * newState.managementFeePercent);
+      finalPriceWithFee = finalCP + managementFeeAmount;
+    }
+    
     return {
       ...newState,
       pricingResult,
       baseInternalCost: baseIC,
       internalCost: baseIC,
-      recommendedPrice: Math.round(finalCP),
-      lowEstimate: Math.round(finalCP * 0.95),
-      highEstimate: Math.round(finalCP * 1.05),
+      recommendedPrice: Math.round(finalPriceWithFee),
+      lowEstimate: Math.round(finalPriceWithFee * 0.95),
+      highEstimate: Math.round(finalPriceWithFee * 1.05),
       calculatedMargin: finalMargin,
-      profit: Math.round(profit),
+      profit: Math.round(profit + managementFeeAmount),
       marginStatus,
+      managementFeeAmount,
     };
   }, []);
   
@@ -607,7 +632,32 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       lockedAt: new Date(),
     }));
   }, []);
-  
+
+  const setManagementFee = useCallback((enabled: boolean, percent?: number) => {
+    setState(prev => recalculatePrices({ 
+      ...prev, 
+      includeManagementFee: enabled,
+      managementFeePercent: percent ?? prev.managementFeePercent,
+    }));
+  }, [recalculatePrices]);
+
+  const setLaborOnly = useCallback((enabled: boolean) => {
+    setState(prev => recalculatePrices({ 
+      ...prev, 
+      laborOnly: enabled,
+      // When labor-only, turn off material allowances
+      trades: enabled ? {
+        ...prev.trades,
+        includeTileMaterialAllowance: false,
+        includePlumbingFixtureAllowance: false,
+        includeMirrorAllowance: false,
+        includeLightingFixtureAllowance: false,
+        includeToiletAllowance: false,
+        includeSinkFaucetAllowance: false,
+      } : prev.trades
+    }));
+  }, [recalculatePrices]);
+
   const generateQuote = useCallback((): Quote => {
     const { rooms, clientInfo, location, hasGC, needsPermit, lowEstimate, highEstimate, recommendedPrice, internalCost, qualityLevel, calculatedMargin, pricingResult } = state;
     
@@ -927,6 +977,8 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       setTargetMargin,
       resetToAutoMargin,
       lockEstimate,
+      setManagementFee,
+      setLaborOnly,
       generateQuote,
       setFinalQuote,
       reset,

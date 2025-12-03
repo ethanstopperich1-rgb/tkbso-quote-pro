@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import { formatCurrency } from '@/lib/tkbso-pricing';
-import { DollarSign, Percent, Sparkles, Lock, TrendingUp, AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react';
+import { DollarSign, Percent, Sparkles, Lock, TrendingUp, AlertCircle, AlertTriangle, CheckCircle, Briefcase, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function FinalSalesControls() {
@@ -17,7 +18,9 @@ export function FinalSalesControls() {
     setSellingPrice, 
     setTargetMargin, 
     resetToAutoMargin,
-    lockEstimate 
+    lockEstimate,
+    setManagementFee,
+    setLaborOnly
   } = useEstimator();
   
   const { 
@@ -33,7 +36,11 @@ export function FinalSalesControls() {
     projectType,
     marginStatus,
     pricingResult,
-    isLocked 
+    isLocked,
+    includeManagementFee,
+    managementFeePercent,
+    managementFeeAmount,
+    laborOnly
   } = state;
   
   const [inputPrice, setInputPrice] = useState<string>(
@@ -115,6 +122,50 @@ export function FinalSalesControls() {
             </AlertDescription>
           </Alert>
         )}
+        
+        {/* Job Type Toggles */}
+        <div className="space-y-3 pb-3 border-b">
+          {/* Labor Only Toggle */}
+          <div className={cn(
+            "flex items-center justify-between rounded-lg border p-3",
+            laborOnly ? "border-blue-500 bg-blue-50/50" : "border-border"
+          )}>
+            <div className="flex items-center gap-2">
+              <Wrench className={cn("w-4 h-4", laborOnly ? "text-blue-600" : "text-muted-foreground")} />
+              <div>
+                <Label className="font-medium cursor-pointer">Labor Only</Label>
+                <p className="text-xs text-muted-foreground">Customer supplies materials</p>
+              </div>
+            </div>
+            <Switch 
+              checked={laborOnly} 
+              onCheckedChange={(checked) => setLaborOnly(checked)}
+              disabled={isLocked}
+            />
+          </div>
+          
+          {/* Management Fee Toggle */}
+          <div className={cn(
+            "flex items-center justify-between rounded-lg border p-3",
+            includeManagementFee ? "border-amber-500 bg-amber-50/50" : "border-border"
+          )}>
+            <div className="flex items-center gap-2">
+              <Briefcase className={cn("w-4 h-4", includeManagementFee ? "text-amber-600" : "text-muted-foreground")} />
+              <div>
+                <Label className="font-medium cursor-pointer">Management Fee</Label>
+                <p className="text-xs text-muted-foreground">
+                  Add {(managementFeePercent * 100).toFixed(0)}% fee 
+                  {includeManagementFee && ` (+${formatCurrency(managementFeeAmount)})`}
+                </p>
+              </div>
+            </div>
+            <Switch 
+              checked={includeManagementFee} 
+              onCheckedChange={(checked) => setManagementFee(checked)}
+              disabled={isLocked}
+            />
+          </div>
+        </div>
         
         {/* Pricing Mode Selection */}
         <RadioGroup
