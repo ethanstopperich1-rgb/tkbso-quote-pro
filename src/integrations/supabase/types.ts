@@ -208,6 +208,7 @@ export type Database = {
           include_demo: boolean | null
           include_electrical: boolean | null
           include_glass: boolean | null
+          include_management_fee: boolean | null
           include_paint: boolean | null
           include_plumbing: boolean | null
           include_waterproofing: boolean | null
@@ -223,6 +224,9 @@ export type Database = {
           lighting_cp_total: number | null
           lighting_ic_total: number | null
           low_estimate_cp: number | null
+          management_fee_cp: number | null
+          management_fee_ic: number | null
+          management_fee_percent: number | null
           needs_gc_partner: boolean | null
           num_bathrooms: number | null
           num_closets: number | null
@@ -302,6 +306,7 @@ export type Database = {
           include_demo?: boolean | null
           include_electrical?: boolean | null
           include_glass?: boolean | null
+          include_management_fee?: boolean | null
           include_paint?: boolean | null
           include_plumbing?: boolean | null
           include_waterproofing?: boolean | null
@@ -317,6 +322,9 @@ export type Database = {
           lighting_cp_total?: number | null
           lighting_ic_total?: number | null
           low_estimate_cp?: number | null
+          management_fee_cp?: number | null
+          management_fee_ic?: number | null
+          management_fee_percent?: number | null
           needs_gc_partner?: boolean | null
           num_bathrooms?: number | null
           num_closets?: number | null
@@ -396,6 +404,7 @@ export type Database = {
           include_demo?: boolean | null
           include_electrical?: boolean | null
           include_glass?: boolean | null
+          include_management_fee?: boolean | null
           include_paint?: boolean | null
           include_plumbing?: boolean | null
           include_waterproofing?: boolean | null
@@ -411,6 +420,9 @@ export type Database = {
           lighting_cp_total?: number | null
           lighting_ic_total?: number | null
           low_estimate_cp?: number | null
+          management_fee_cp?: number | null
+          management_fee_ic?: number | null
+          management_fee_percent?: number | null
           needs_gc_partner?: boolean | null
           num_bathrooms?: number | null
           num_closets?: number | null
@@ -558,6 +570,7 @@ export type Database = {
           low_range_multiplier: number | null
           lvp_cp_per_sqft: number | null
           lvp_ic_per_sqft: number | null
+          management_fee_percent: number | null
           min_job_cp: number | null
           min_job_ic: number | null
           mirror_allowance_cp: number | null
@@ -736,6 +749,7 @@ export type Database = {
           low_range_multiplier?: number | null
           lvp_cp_per_sqft?: number | null
           lvp_ic_per_sqft?: number | null
+          management_fee_percent?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
           mirror_allowance_cp?: number | null
@@ -914,6 +928,7 @@ export type Database = {
           low_range_multiplier?: number | null
           lvp_cp_per_sqft?: number | null
           lvp_ic_per_sqft?: number | null
+          management_fee_percent?: number | null
           min_job_cp?: number | null
           min_job_ic?: number | null
           mirror_allowance_cp?: number | null

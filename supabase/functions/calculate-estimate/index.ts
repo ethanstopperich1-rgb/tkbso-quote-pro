@@ -377,6 +377,44 @@ function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: P
   };
 }
 
+// Calculate management fee and apply to totals
+function applyManagementFee(
+  pricing: ReturnType<typeof calculatePricing>,
+  includeManagementFee: boolean,
+  managementFeePercent: number
+) {
+  if (!includeManagementFee || managementFeePercent <= 0) {
+    return {
+      ...pricing,
+      management_fee: { ic: 0, cp: 0, percent: 0 }
+    };
+  }
+
+  const feeIc = Math.round(pricing.totals.total_ic * managementFeePercent);
+  const feeCp = Math.round(pricing.totals.total_cp * managementFeePercent);
+  
+  const newTotalIc = pricing.totals.total_ic + feeIc;
+  const newTotalCp = pricing.totals.total_cp + feeCp;
+
+  return {
+    ...pricing,
+    totals: {
+      ...pricing.totals,
+      total_ic: newTotalIc,
+      total_cp: newTotalCp,
+      low_estimate: Math.round(newTotalCp * 0.95),
+      high_estimate: Math.round(newTotalCp * 1.05),
+      overall_margin_percent: newTotalCp > 0 ? ((newTotalCp - newTotalIc) / newTotalCp) * 100 : 0,
+    },
+    management_fee: {
+      ic: feeIc,
+      cp: feeCp,
+      percent: managementFeePercent * 100
+    },
+    warnings: [...pricing.warnings, `Management fee (${(managementFeePercent * 100).toFixed(0)}%) applied: $${feeCp.toLocaleString()}`]
+  };
+}
+
 // JSON Schema for tool calling
 const estimateJsonSchema = {
   type: "object",
@@ -881,24 +919,31 @@ LABOR ONLY PROJECTS:
     // Step 4: Calculate pricing
     const laborOnly = validated.data.project_header.labor_only || false;
     console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets", laborOnly ? "(LABOR ONLY)" : "");
-    const pricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly);
+    const basePricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly);
+
+    // Management fee is optional - include config for frontend toggle
+    const managementFeePercent = Number(pricingConfig.management_fee_percent) || 0.15;
 
     // Step 5: Combine results (skip material allowances if labor-only)
     const allowances = laborOnly ? [] : (validated.data.allowances || []);
     const result = {
       ...validated.data,
       allowances,
-      pricing,
+      pricing: basePricing,
+      management_fee_config: {
+        default_percent: managementFeePercent,
+        enabled: false // Frontend toggles this
+      },
       payment_schedule: {
-        deposit: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_deposit) || 0.65)),
-        progress: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_progress) || 0.25)),
-        final: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_final) || 0.10)),
+        deposit: Math.round(basePricing.totals.total_cp * (Number(pricingConfig.payment_split_deposit) || 0.65)),
+        progress: Math.round(basePricing.totals.total_cp * (Number(pricingConfig.payment_split_progress) || 0.25)),
+        final: Math.round(basePricing.totals.total_cp * (Number(pricingConfig.payment_split_final) || 0.10)),
       },
       // Include client details from analysis
       client_details: analysis.parsed_client_details || {}
     };
 
-    console.log("Final result - Total CP:", pricing.totals.total_cp, "Margin:", pricing.totals.overall_margin_percent.toFixed(1) + "%");
+    console.log("Final result - Total CP:", basePricing.totals.total_cp, "Margin:", basePricing.totals.overall_margin_percent.toFixed(1) + "%");
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
