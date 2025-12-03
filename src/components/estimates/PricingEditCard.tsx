@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { DollarSign, Save, X, Edit2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { DollarSign, Save, X, Edit2, Percent } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
-import { Estimate } from '@/types/database';
+import { Estimate, PricingConfig } from '@/types/database';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PricingEditCardProps {
   estimate: Estimate;
@@ -18,33 +20,71 @@ interface PricingEditCardProps {
 type OverrideMode = 'auto' | 'sell_price' | 'target_margin';
 
 export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
+  const { contractor } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [mode, setMode] = useState<OverrideMode>('auto');
   const [sellPrice, setSellPrice] = useState(estimate.final_cp_total?.toString() || '');
   const [targetMargin, setTargetMargin] = useState('38');
   const [saving, setSaving] = useState(false);
+  
+  // Management fee state
+  const [includeManagementFee, setIncludeManagementFee] = useState(estimate.include_management_fee || false);
+  const [managementFeePercent, setManagementFeePercent] = useState(
+    (estimate.management_fee_percent ? estimate.management_fee_percent * 100 : 15).toString()
+  );
+  const [defaultFeePercent, setDefaultFeePercent] = useState(15);
 
-  const internalCost = estimate.final_ic_total || 0;
+  // Fetch default fee from pricing config
+  useEffect(() => {
+    async function fetchConfig() {
+      if (!contractor) return;
+      const { data } = await supabase
+        .from('pricing_configs')
+        .select('management_fee_percent')
+        .eq('contractor_id', contractor.id)
+        .single();
+      if (data?.management_fee_percent) {
+        setDefaultFeePercent(data.management_fee_percent * 100);
+        if (!estimate.management_fee_percent) {
+          setManagementFeePercent((data.management_fee_percent * 100).toString());
+        }
+      }
+    }
+    fetchConfig();
+  }, [contractor, estimate.management_fee_percent]);
+
+  // Base values (without current management fee)
+  const baseIcTotal = (estimate.final_ic_total || 0) - (estimate.management_fee_ic || 0);
+  const baseCpTotal = (estimate.final_cp_total || 0) - (estimate.management_fee_cp || 0);
+
+  // Calculate management fee amounts
+  const feePercent = parseFloat(managementFeePercent) / 100 || 0;
+  const managementFeeIc = includeManagementFee ? Math.round(baseIcTotal * feePercent) : 0;
+  const managementFeeCp = includeManagementFee ? Math.round(baseCpTotal * feePercent) : 0;
+
+  // Final totals with management fee
+  const internalCostWithFee = baseIcTotal + managementFeeIc;
   
   // Calculate preview values based on mode
   const getCalculatedPrice = (): number => {
+    const basePrice = baseCpTotal + managementFeeCp;
     if (mode === 'auto') {
-      return estimate.final_cp_total || 0;
+      return basePrice;
     } else if (mode === 'sell_price') {
       return parseFloat(sellPrice) || 0;
     } else {
       // target_margin mode: CP = IC / (1 - margin)
       const margin = parseFloat(targetMargin) / 100;
-      if (margin >= 1) return internalCost * 2;
-      return internalCost / (1 - margin);
+      if (margin >= 1) return internalCostWithFee * 2;
+      return internalCostWithFee / (1 - margin);
     }
   };
 
   const calculatedPrice = getCalculatedPrice();
   const calculatedMargin = calculatedPrice > 0 
-    ? ((calculatedPrice - internalCost) / calculatedPrice) * 100 
+    ? ((calculatedPrice - internalCostWithFee) / calculatedPrice) * 100 
     : 0;
-  const calculatedProfit = calculatedPrice - internalCost;
+  const calculatedProfit = calculatedPrice - internalCostWithFee;
 
   const handleSave = async () => {
     setSaving(true);
@@ -52,20 +92,25 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
       const lowMultiplier = 0.95;
       const highMultiplier = 1.05;
       
-      const updates = {
+      const dbUpdates = {
+        final_ic_total: internalCostWithFee,
         final_cp_total: calculatedPrice,
         low_estimate_cp: calculatedPrice * lowMultiplier,
         high_estimate_cp: calculatedPrice * highMultiplier,
+        include_management_fee: includeManagementFee,
+        management_fee_percent: feePercent,
+        management_fee_ic: managementFeeIc,
+        management_fee_cp: managementFeeCp,
       };
 
       const { error } = await supabase
         .from('estimates')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', estimate.id);
 
       if (error) throw error;
 
-      onUpdate(updates);
+      onUpdate(dbUpdates as Partial<Estimate>);
       setIsEditing(false);
       toast.success('Pricing updated!');
     } catch (error) {
@@ -75,6 +120,10 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
       setSaving(false);
     }
   };
+
+  // Current display values for read-only view
+  const displayIc = estimate.final_ic_total || 0;
+  const displayCp = estimate.final_cp_total || 0;
 
   if (!isEditing) {
     return (
@@ -93,25 +142,33 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Internal Cost</p>
-              <p className="font-semibold">{formatCurrency(internalCost)}</p>
+              <p className="font-semibold">{formatCurrency(displayIc)}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Client Price</p>
-              <p className="font-semibold">{formatCurrency(estimate.final_cp_total)}</p>
+              <p className="font-semibold">{formatCurrency(displayCp)}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Margin</p>
               <p className="font-semibold text-emerald-600">
-                {estimate.final_cp_total > 0
-                  ? formatPercentage((estimate.final_cp_total - internalCost) / estimate.final_cp_total)
+                {displayCp > 0
+                  ? formatPercentage((displayCp - displayIc) / displayCp)
                   : '0%'}
               </p>
             </div>
             <div>
               <p className="text-muted-foreground">Gross Profit</p>
-              <p className="font-semibold">{formatCurrency(estimate.final_cp_total - internalCost)}</p>
+              <p className="font-semibold">{formatCurrency(displayCp - displayIc)}</p>
             </div>
           </div>
+          {estimate.include_management_fee && estimate.management_fee_cp > 0 && (
+            <div className="mt-4 pt-3 border-t border-amber-200">
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-700">Includes Management Fee ({(estimate.management_fee_percent * 100).toFixed(0)}%)</span>
+                <span className="font-medium text-amber-800">{formatCurrency(estimate.management_fee_cp)}</span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -129,6 +186,44 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Management Fee Toggle */}
+        <div className="p-4 bg-muted/30 rounded-lg space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Management Fee</Label>
+              <p className="text-xs text-muted-foreground">Add percentage-based management fee</p>
+            </div>
+            <Switch
+              checked={includeManagementFee}
+              onCheckedChange={setIncludeManagementFee}
+            />
+          </div>
+          
+          {includeManagementFee && (
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <Label htmlFor="feePercent" className="text-xs text-muted-foreground">Fee %</Label>
+                <div className="relative">
+                  <Input
+                    id="feePercent"
+                    type="number"
+                    value={managementFeePercent}
+                    onChange={(e) => setManagementFeePercent(e.target.value)}
+                    className="pr-8"
+                    min="0"
+                    max="50"
+                  />
+                  <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Fee Amount</p>
+                <p className="text-sm font-medium">{formatCurrency(managementFeeCp)}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <RadioGroup value={mode} onValueChange={(v) => setMode(v as OverrideMode)}>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="auto" id="auto" />
@@ -176,8 +271,18 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
         <div className="p-4 bg-muted/50 rounded-lg space-y-2 text-sm">
           <p className="font-medium text-muted-foreground mb-3">Preview</p>
           <div className="flex justify-between">
-            <span>Internal Cost:</span>
-            <span>{formatCurrency(internalCost)}</span>
+            <span>Base Internal Cost:</span>
+            <span>{formatCurrency(baseIcTotal)}</span>
+          </div>
+          {includeManagementFee && (
+            <div className="flex justify-between text-amber-700">
+              <span>+ Management Fee ({managementFeePercent}%):</span>
+              <span>{formatCurrency(managementFeeIc)}</span>
+            </div>
+          )}
+          <div className="flex justify-between border-t pt-2">
+            <span>Total Internal Cost:</span>
+            <span>{formatCurrency(internalCostWithFee)}</span>
           </div>
           <div className="flex justify-between font-semibold text-primary">
             <span>Client Price:</span>

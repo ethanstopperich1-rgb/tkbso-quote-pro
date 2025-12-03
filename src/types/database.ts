@@ -408,6 +408,12 @@ export interface Estimate {
   internal_json_payload: Record<string, unknown> | null;
   status: 'draft' | 'sent' | 'won' | 'lost';
   
+  // Management fee fields
+  include_management_fee: boolean;
+  management_fee_percent: number;
+  management_fee_ic: number;
+  management_fee_cp: number;
+  
   created_at: string;
   updated_at: string;
 }
