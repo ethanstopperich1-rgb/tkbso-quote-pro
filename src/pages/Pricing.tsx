@@ -21,7 +21,7 @@ import { GlobalSettingsCard } from '@/components/pricing/GlobalSettingsCard';
 import { PerSqftReferenceCard } from '@/components/pricing/PerSqftReferenceCard';
 import { TradeBucketsCard, TradeBucket } from '@/components/pricing/TradeBucketsCard';
 import { AllowancesCard } from '@/components/pricing/AllowancesCard';
-import { BathroomPreviewCard } from '@/components/pricing/BathroomPreviewCard';
+
 
 // TKBSO Default Values - Updated Jan 2025
 const TKBSO_DEFAULTS: Partial<PricingConfig> = {
@@ -852,8 +852,6 @@ export default function Pricing() {
           onChange={handleChange}
         />
 
-        {/* 6. Bathroom Price Preview */}
-        <BathroomPreviewCard config={config} />
       </div>
 
       {/* Sticky Save Bar */}
