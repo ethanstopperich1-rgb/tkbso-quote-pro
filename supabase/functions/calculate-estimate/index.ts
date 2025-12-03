@@ -88,7 +88,10 @@ function mapCategoryToPricing(
 
   // Plumbing - FLAT RATE packages
   if (categoryLower.includes('plumb')) {
-    if (taskLower.includes('toilet') && taskLower.includes('reloc')) {
+    if (taskLower.includes('reconnect') || taskLower.includes('hook up') || taskLower.includes('hookup')) {
+      // Kitchen plumbing reconnect (sink, dishwasher, etc.)
+      return { ic: 800, cp: 1400, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('toilet') && taskLower.includes('reloc')) {
       // Toilet relocation - expensive due to drain work
       return { ic: 1100, cp: 2200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('toilet')) {
@@ -140,6 +143,12 @@ function mapCategoryToPricing(
       return { ic: Number(config.recessed_can_ic_each) || 65, cp: Number(config.recessed_can_cp_each) || 110, unit: 'ea' };
     } else if (taskLower.includes('vanity light')) {
       return { ic: Number(config.electrical_vanity_light_ic) || 200, cp: Number(config.electrical_vanity_light_cp) || 350, unit: 'ea' };
+    } else if (taskLower.includes('pendant')) {
+      // Pendant light installation (kitchen island, bar, etc.)
+      return { ic: 150, cp: 275, unit: 'ea' };
+    } else if (taskLower.includes('under cabinet') || taskLower.includes('undercabinet')) {
+      // Under-cabinet LED lighting package
+      return { ic: 350, cp: 600, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('kitchen')) {
       return { ic: Number(config.electrical_kitchen_package_ic) || 950, cp: Number(config.electrical_kitchen_package_cp) || 1750, unit: 'ea' };
     } else if (taskLower.includes('reloc')) {
@@ -245,9 +254,17 @@ function mapCategoryToPricing(
     return { ic: Number(config.quartz_ic_per_sqft) || 15, cp: Number(config.quartz_cp_per_sqft) || 50, unit: 'sqft' };
   }
 
-  // Cabinets (Kitchen)
+  // Cabinets (Kitchen) - Priced per linear foot, NOT per sqft of kitchen floor
+  // Typical kitchen: 15-25 LF base + 10-20 LF wall = material + installation
   if (categoryLower.includes('cabinet')) {
-    return { ic: Number(config.kitchen_ic_per_sqft) || 128, cp: Number(config.kitchen_cp_per_sqft) || 190, unit: 'sqft' };
+    // Check if this is installation labor or full cabinet package
+    if (taskLower.includes('labor') || taskLower.includes('install')) {
+      // Installation labor only - $50 IC / $85 CP per LF
+      return { ic: 50, cp: 85, unit: 'lf' };
+    }
+    // Full cabinet package (material + labor) - $250 IC / $400 CP per LF
+    // This is reasonable for mid-grade stock/semi-custom cabinets installed
+    return { ic: 250, cp: 400, unit: 'lf' };
   }
 
   // Backsplash
@@ -684,24 +701,38 @@ MEASUREMENT RULES:
 - Shower floor sqft = shower_length × shower_width  
 - Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
 - Default ceiling height: 8ft
+- Cabinet linear feet estimation:
+  - Small kitchen (<120 sqft): ~15-18 LF
+  - Medium kitchen (120-200 sqft): ~20-25 LF
+  - Large kitchen (200+ sqft): ~28-35 LF
+  - This includes base + wall cabinets combined for pricing
 
 TRADE BUCKET MAPPING:
 
 **Demolition:** demo_shower_only (showers <20 sqft), demo_small_bath (<50 sqft), demo_large_bath (50+ sqft), demo_kitchen
 
-**Plumbing:** Plumbing - Shower Standard, Plumbing - Extra Head, Plumbing - Toilet Swap, Plumbing - Tub to Shower, Plumbing - Freestanding Tub
+**Plumbing:** 
+- Plumbing - Shower Standard, Plumbing - Extra Head, Plumbing - Toilet Swap
+- Plumbing - Tub to Shower, Plumbing - Freestanding Tub
+- Plumbing - Reconnect (kitchen sink/dishwasher hookup) - unit: ea
 
 **Tile:** Tile - Wall (sqft), Tile - Shower Floor (sqft), Tile - Main Floor (sqft)
 
 **Support:** Waterproofing (=total tile sqft), Cement Board (=total tile sqft)
 
-**Electrical:** Electrical - Recessed Can (ea), Electrical - Vanity Light (ea), Electrical - Kitchen Package (ea)
+**Electrical:** 
+- Electrical - Recessed Can (ea), Electrical - Vanity Light (ea)
+- Electrical - Pendant Light (ea) - for kitchen island/bar pendants
+- Electrical - Under Cabinet Lighting (ea) - LED strips/pucks
+- Electrical - Kitchen Package (ea) - for comprehensive kitchen electrical
 
 **Glass:** Glass - Shower Standard, Glass - Panel Only, Glass - 90 Return
 
 **Vanity:** Vanity - 30in through Vanity - 84in
 
-**Cabinets:** Cabinets - Kitchen (use room sqft as quantity)
+**Cabinets (CRITICAL - USE LINEAR FEET, NOT SQFT):**
+- Cabinets - Kitchen (LF) - estimate linear feet based on kitchen size
+- Example: 12x14 kitchen (168 sqft) ≈ 22-25 LF of cabinets
 
 **Countertops:** Quartz - Countertop (sqft)
 
@@ -711,12 +742,21 @@ TRADE BUCKET MAPPING:
 
 **Paint:** Paint - Patch, Paint - Full Bath
 
+MATERIAL ALLOWANCES (add to allowances array):
+- Kitchen with new cabinets → include "Cabinet Materials" allowance
+- Kitchen with countertops → include "Countertop Slab" allowance  
+- Backsplash → include "Backsplash Tile Material" allowance
+- Bathroom tile → include "Tile Material" allowance
+- New sink → include "Sink" allowance
+- New faucet → include "Faucet" allowance
+
 INFERENCE:
 - "Full gut" → Demo + all trades
 - "Shower remodel" → Demo + plumbing + tile + waterproofing + cement board + glass
 - "Tile to ceiling" or "full height" → Calculate full wall height (8ft)
 - Always include waterproofing + cement board = total tile sqft
-- "no floor" or "keep floor" → EXCLUDE floor tile from trade_buckets`;
+- "no floor" or "keep floor" → EXCLUDE floor tile from trade_buckets
+- "new cabinets" → Cabinets trade bucket (LF) + Cabinet Materials allowance`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
