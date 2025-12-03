@@ -269,7 +269,8 @@ interface ProposalPdfProps {
 
 interface LineItem {
   description: string;
-  price?: number;
+  quantity?: number;
+  unit?: string;
 }
 
 interface TradeGroup {
@@ -287,24 +288,6 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Trade descriptions for professional appearance - using action verb template
-const tradeDescriptions: Record<string, string> = {
-  'Demolition': 'Remove all existing fixtures, tile, flooring, and wall surfaces to prepare for new construction. Includes dumpster rental, debris hauling, and floor/wall protection. Excludes structural modifications or hazardous material abatement.',
-  'Plumbing': 'Install new supply lines, drains, and fixtures to meet current code requirements. Includes rough-in, trim-out, and final connections for all specified fixtures. Excludes water heater replacement or main line work.',
-  'Tile': 'Install ceramic or porcelain tile on walls and floors per design specifications. Includes surface preparation, waterproofing membrane, tile setting, and grouting. Excludes specialty stone or custom mosaic patterns.',
-  'Tile & Waterproofing': 'Install complete tile system with waterproofing for wet areas. Includes cement board, waterproof membrane, tile installation, and grout sealing. Excludes heated flooring systems.',
-  'Electrical': 'Update electrical to support new lighting and outlet requirements. Includes recessed lighting, vanity fixtures, GFCI outlets, and switches. Excludes panel upgrades or new circuit additions beyond scope.',
-  'Vanity': 'Install new vanity cabinet with countertop, sink, and faucet. Includes leveling, securing, plumbing connections, and hardware installation. Excludes custom cabinetry or specialty stone tops.',
-  'Cabinetry': 'Install new cabinetry per approved layout and design. Includes cabinet assembly, mounting, hardware installation, and final adjustments. Excludes custom millwork or built-in furniture.',
-  'Countertops': 'Fabricate and install quartz countertops with specified edge profile. Includes templating, sink cutout, faucet holes, and seaming. Excludes backsplash tile or specialty stone materials.',
-  'Shower Glass': 'Install frameless glass shower enclosure with premium hardware. Includes precise measurement, custom fabrication, and professional installation. Excludes specialty coatings or steam door configurations.',
-  'Painting': 'Prepare and paint all affected surfaces to match existing or new color scheme. Includes patching, priming, and two finish coats. Excludes wallpaper removal or specialty finishes.',
-  'Support': 'Install cement board and structural backing for tile and fixtures. Includes waterproofing, blocking for grab bars, and niche framing. Excludes structural wall modifications.',
-  'Framing': 'Build or modify framing to support new layout and fixtures. Includes blocking, niche construction, and pony wall framing. Excludes load-bearing wall changes or engineering.',
-  'Glass': 'Install custom glass enclosure with hardware and professional fitting. Includes measurement, fabrication, and secure mounting. Excludes specialty glass treatments.',
-  'Other': 'Complete additional work as specified in project scope and approved change orders.',
-};
-
 function buildTradeGroups(estimate: Estimate): TradeGroup[] {
   const groups: TradeGroup[] = [];
 
@@ -313,34 +296,46 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
     category: string;
     task_description: string;
     cp_total: number;
+    quantity?: number;
+    unit?: string;
   }> | undefined;
 
   if (lineItems && lineItems.length > 0) {
-    const totals: Record<string, number> = {};
+    // Group line items by category
+    const grouped: Record<string, { items: LineItem[]; total: number }> = {};
     
     for (const item of lineItems) {
-      // Normalize category names (e.g., "Demo" -> "Demolition")
+      // Normalize category names
       let category = item.category || 'Other';
       if (category.toLowerCase() === 'demo') {
         category = 'Demolition';
       }
-      if (!totals[category]) {
-        totals[category] = 0;
+      
+      if (!grouped[category]) {
+        grouped[category] = { items: [], total: 0 };
       }
-      totals[category] += item.cp_total || 0;
+      
+      // Add the actual line item description with quantity/unit
+      grouped[category].items.push({
+        description: item.task_description,
+        quantity: item.quantity,
+        unit: item.unit,
+      });
+      grouped[category].total += item.cp_total || 0;
     }
     
-    // Create groups with clean descriptions (no line items)
-    for (const [trade, total] of Object.entries(totals)) {
-      if (total > 0) {
+    // Convert to array
+    for (const [trade, data] of Object.entries(grouped)) {
+      if (data.total > 0) {
         groups.push({
           trade,
-          items: [{ description: tradeDescriptions[trade] || `${trade} work as specified.` }],
-          total,
+          items: data.items,
+          total: data.total,
         });
       }
     }
   } else {
+    // Fallback to legacy estimate fields
     if (estimate.include_demo !== false && (estimate.demo_cp_total || 0) > 0) {
       groups.push({
         trade: 'Demolition',
@@ -511,9 +506,11 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
               <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>{group.trade}</Text>
               <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>{formatCurrency(group.total)}</Text>
             </View>
-            <Text style={{ fontSize: 9, color: '#475569', paddingLeft: 4, lineHeight: 1.4 }}>
-              {group.items[0]?.description}
-            </Text>
+            {group.items.map((item, itemIdx) => (
+              <Text key={itemIdx} style={{ fontSize: 9, color: '#475569', paddingLeft: 4, lineHeight: 1.4, marginBottom: 2 }}>
+                • {item.description}{item.quantity && item.unit ? ` (${item.quantity} ${item.unit})` : ''}
+              </Text>
+            ))}
           </View>
         ))}
 
