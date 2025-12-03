@@ -460,11 +460,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
       <Page size="LETTER" style={styles.page} wrap>
         {/* Header Banner with Logo + Contact Info */}
         <View style={styles.headerBanner} wrap={false}>
-          {branding.logoUrl ? (
-            <Image src={branding.logoUrl} style={styles.logo} />
-          ) : (
-            <Image src={tkbsoLogo} style={styles.logo} />
-          )}
+          <Image src={tkbsoLogo} style={styles.logo} />
           <View style={styles.headerContactRow}>
             {companyPhone && <Text style={styles.headerContactText}>{companyPhone}</Text>}
             {companyEmail && <Text style={styles.headerContactText}>{companyEmail}</Text>}
