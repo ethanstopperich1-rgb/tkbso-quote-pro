@@ -13,6 +13,7 @@ const EstimateSchema = z.object({
     client_name: z.string().nullable().optional(),
     project_type: z.enum(["Kitchen", "Bathroom", "Combination", "Other"]),
     overall_size_sqft: z.number().nullable().optional(),
+    labor_only: z.boolean().default(false),
   }),
   dimensions: z.object({
     ceiling_height_ft: z.number().default(8),
@@ -64,10 +65,12 @@ interface PricingResult {
 
 // Map trade bucket categories to pricing_configs fields
 // Returns ic, cp, unit, and whether this is a flat rate (ignore quantity)
+// laborOnly: when true, use install-only rates (no material component)
 function mapCategoryToPricing(
   category: string,
   taskDescription: string,
-  config: PricingConfig
+  config: PricingConfig,
+  laborOnly: boolean = false
 ): { ic: number; cp: number; unit: string; flatRate?: boolean } | null {
   const categoryLower = category.toLowerCase();
   const taskLower = taskDescription.toLowerCase();
@@ -195,16 +198,6 @@ function mapCategoryToPricing(
     return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea', flatRate: true };
   }
 
-  // Glass - FLAT RATE packages
-  if (categoryLower.includes('glass')) {
-    if (taskLower.includes('90') || taskLower.includes('return')) {
-      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('panel only')) {
-      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1450, unit: 'ea', flatRate: true };
-    }
-    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2100, unit: 'ea', flatRate: true };
-  }
-
   // Paint - FLAT RATE packages
   if (categoryLower.includes('paint')) {
     if (taskLower.includes('full')) {
@@ -225,8 +218,12 @@ function mapCategoryToPricing(
     return { ic: 8, cp: 15, unit: 'sqft' };
   }
 
-  // Vanity - FLAT RATE bundles
+  // Vanity - FLAT RATE bundles (labor-only uses install rates only)
   if (categoryLower.includes('vanity')) {
+    // Labor-only: vanity installation labor (customer supplies vanity)
+    if (laborOnly) {
+      return { ic: 350, cp: 650, unit: 'ea', flatRate: true }; // Install labor only
+    }
     // Check for custom/oversized vanity (100"+)
     if (taskLower.includes('custom') || taskLower.includes('150') || taskLower.includes('120') || taskLower.includes('100')) {
       // Custom oversized vanity - price as double 72" or more
@@ -249,17 +246,20 @@ function mapCategoryToPricing(
     return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
   }
 
-  // Quartz/Countertops
+  // Quartz/Countertops (labor-only uses fabrication/install labor only)
   if (categoryLower.includes('quartz') || categoryLower.includes('countertop')) {
+    if (laborOnly) {
+      // Install labor only - template, fabrication, install without slab cost
+      return { ic: 25, cp: 45, unit: 'sqft' };
+    }
     return { ic: Number(config.quartz_ic_per_sqft) || 15, cp: Number(config.quartz_cp_per_sqft) || 50, unit: 'sqft' };
   }
 
   // Cabinets (Kitchen) - Priced per linear foot, NOT per sqft of kitchen floor
   // Typical kitchen: 15-25 LF base + 10-20 LF wall = material + installation
   if (categoryLower.includes('cabinet')) {
-    // Check if this is installation labor only or full cabinet package
-    if (taskLower.includes('labor') || taskLower.includes('install only')) {
-      // Installation labor only - use config values
+    // Labor-only OR explicit install-only task: use install labor rates
+    if (laborOnly || taskLower.includes('labor') || taskLower.includes('install only')) {
       return { 
         ic: Number(config.cabinet_install_only_lf_ic) || 50, 
         cp: Number(config.cabinet_install_only_lf_cp) || 85, 
@@ -272,6 +272,20 @@ function mapCategoryToPricing(
       cp: Number(config.cabinet_lf_cp) || 400, 
       unit: 'lf' 
     };
+  }
+
+  // Glass (labor-only uses install labor only)
+  if (categoryLower.includes('glass')) {
+    if (laborOnly) {
+      // Glass installation labor only (customer supplies glass)
+      return { ic: 400, cp: 750, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('90') || taskLower.includes('return')) {
+      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('panel only')) {
+      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1450, unit: 'ea', flatRate: true };
+    }
+    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2100, unit: 'ea', flatRate: true };
   }
 
   // Backsplash
@@ -293,12 +307,16 @@ function mapCategoryToPricing(
   return null;
 }
 
-function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: PricingConfig) {
+function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: PricingConfig, laborOnly: boolean = false) {
   const lineItems: PricingResult[] = [];
   const warnings: string[] = [];
 
+  if (laborOnly) {
+    warnings.push("LABOR ONLY: Customer supplies materials - material allowances excluded");
+  }
+
   for (const bucket of tradeBuckets) {
-    const mapping = mapCategoryToPricing(bucket.category, bucket.task_description, config);
+    const mapping = mapCategoryToPricing(bucket.category, bucket.task_description, config, laborOnly);
 
     if (!mapping) {
       warnings.push(`No pricing found for: ${bucket.category} - ${bucket.task_description}`);
@@ -368,7 +386,8 @@ const estimateJsonSchema = {
       properties: {
         client_name: { type: ["string", "null"] },
         project_type: { type: "string", enum: ["Kitchen", "Bathroom", "Combination", "Other"] },
-        overall_size_sqft: { type: ["number", "null"] }
+        overall_size_sqft: { type: ["number", "null"] },
+        labor_only: { type: "boolean", description: "True if labor-only project (customer supplies materials)" }
       },
       required: ["project_type"]
     },
@@ -478,6 +497,14 @@ const analysisJsonSchema = {
     client_details_skipped: {
       type: "boolean",
       description: "True if user said skip/none for client details"
+    },
+    labor_only: {
+      type: "boolean",
+      description: "True if this is a labor-only project where customer supplies materials"
+    },
+    labor_only_confirmed: {
+      type: "boolean", 
+      description: "True if labor-only status has been confirmed with contractor"
     }
   },
   required: ["action", "has_enough_info", "missing_info"]
@@ -486,10 +513,29 @@ const analysisJsonSchema = {
 const conversationalSystemPrompt = `You are a construction estimator assistant helping contractors quickly build quotes. Your job is to:
 
 1. UNDERSTAND the project type (Kitchen or Bathroom)
-2. GATHER scope details naturally - LET THE USER FINISH describing the project
-3. ASK for dimensions when needed
-4. COLLECT client details before generating quote
-5. GENERATE quote only when you have enough info
+2. DETECT if this is LABOR ONLY (customer supplies materials)
+3. GATHER scope details naturally - LET THE USER FINISH describing the project
+4. ASK for dimensions when needed
+5. COLLECT client details before generating quote
+6. GENERATE quote only when you have enough info
+
+## CRITICAL: LABOR ONLY DETECTION
+
+**DETECT LABOR ONLY projects** when contractor says things like:
+- "labor only", "install only", "installation only"
+- "customer supplied materials", "homeowner provides materials"
+- "just the install", "no materials", "they have the materials"
+- "installing their [tile/cabinets/vanity/etc]"
+
+**When you detect labor-only keywords:**
+1. Acknowledge: "Got it - this is a labor-only project where the customer is supplying the materials."
+2. Confirm: "Just to confirm, you're providing LABOR ONLY and the customer is supplying: [list detected items]?"
+3. Once confirmed, mark labor_only: true in the estimate
+
+**Labor-only affects pricing:**
+- NO material allowances (tile, fixtures, countertops, etc.)
+- Installation labor rates only (not material + labor bundles)
+- Demo, framing, waterproofing, cement board remain the same
 
 ## CRITICAL: BE PATIENT AND FLEXIBLE
 
@@ -763,7 +809,13 @@ INFERENCE:
 - "Tile to ceiling" or "full height" → Calculate full wall height (8ft)
 - Always include waterproofing + cement board = total tile sqft
 - "no floor" or "keep floor" → EXCLUDE floor tile from trade_buckets
-- "new cabinets" → Cabinets trade bucket (LF) + Cabinet Materials allowance`;
+- "new cabinets" → Cabinets trade bucket (LF) + Cabinet Materials allowance
+
+LABOR ONLY PROJECTS:
+- If "labor_only" is true in the context or conversation mentions "labor only", "install only", "customer supplies materials"
+- Set project_header.labor_only = true
+- Still include all trade_buckets (labor will be calculated at install-only rates)
+- DO NOT include material allowances in the allowances array`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -776,7 +828,7 @@ INFERENCE:
         messages: [
           { role: "system", content: estimateSystemPrompt },
           ...conversationMessages,
-          { role: "user", content: `Based on the entire conversation above, generate the structured estimate. Use the parsed data: ${JSON.stringify(analysis.parsed_scope)} and dimensions: ${JSON.stringify(analysis.parsed_dimensions)}` }
+          { role: "user", content: `Based on the entire conversation above, generate the structured estimate. Use the parsed data: ${JSON.stringify(analysis.parsed_scope)} and dimensions: ${JSON.stringify(analysis.parsed_dimensions)}. Labor only: ${analysis.labor_only || false}` }
         ],
         tools: [{
           type: "function",
@@ -827,12 +879,15 @@ INFERENCE:
     }
 
     // Step 4: Calculate pricing
-    console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets");
-    const pricing = calculatePricing(validated.data.trade_buckets, pricingConfig);
+    const laborOnly = validated.data.project_header.labor_only || false;
+    console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets", laborOnly ? "(LABOR ONLY)" : "");
+    const pricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly);
 
-    // Step 5: Combine results
+    // Step 5: Combine results (skip material allowances if labor-only)
+    const allowances = laborOnly ? [] : (validated.data.allowances || []);
     const result = {
       ...validated.data,
+      allowances,
       pricing,
       payment_schedule: {
         deposit: Math.round(pricing.totals.total_cp * (Number(pricingConfig.payment_split_deposit) || 0.65)),
