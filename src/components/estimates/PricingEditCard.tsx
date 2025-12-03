@@ -200,16 +200,35 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
 
           {/* Management Fee Quick Toggle */}
           <div className="pt-3 border-t border-amber-200">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1 space-y-0.5">
                 <Label className="text-sm font-medium text-amber-800">Management Fee</Label>
-                <p className="text-xs text-amber-600">
-                  {includeManagementFee 
-                    ? `${(parseFloat(managementFeePercent) || defaultFeePercent).toFixed(0)}% = ${formatCurrency(estimate.management_fee_cp || Math.round(baseCpTotal * (parseFloat(managementFeePercent) / 100 || defaultFeePercent / 100)))}`
-                    : `Add ${defaultFeePercent.toFixed(0)}% fee`
-                  }
-                </p>
+                {!includeManagementFee && (
+                  <p className="text-xs text-amber-600">Add {defaultFeePercent.toFixed(0)}% fee</p>
+                )}
               </div>
+              {includeManagementFee && (
+                <div className="flex items-center gap-2">
+                  <div className="relative w-20">
+                    <Input
+                      type="number"
+                      value={managementFeePercent}
+                      onChange={(e) => setManagementFeePercent(e.target.value)}
+                      onBlur={() => {
+                        const pct = parseFloat(managementFeePercent) / 100 || 0;
+                        if (pct > 0) handleQuickFeeToggle(true);
+                      }}
+                      className="h-8 pr-6 text-sm"
+                      min="0"
+                      max="50"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                  </div>
+                  <span className="text-sm font-medium text-amber-800 whitespace-nowrap">
+                    = {formatCurrency(Math.round(baseCpTotal * (parseFloat(managementFeePercent) / 100 || 0)))}
+                  </span>
+                </div>
+              )}
               <Switch
                 checked={includeManagementFee}
                 onCheckedChange={handleQuickFeeToggle}
