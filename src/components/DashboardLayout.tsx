@@ -1,11 +1,13 @@
 import { Outlet } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function DashboardLayout() {
   const { contractor } = useAuth();
+  const isMobile = useIsMobile();
 
   // Apply dynamic brand color from tenant settings
   useEffect(() => {
@@ -23,10 +25,17 @@ export function DashboardLayout() {
   }, [contractor?.settings?.branding?.primaryColor]);
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={!isMobile}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <main className="flex-1 overflow-auto">
+          {/* Mobile header with menu trigger */}
+          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm md:hidden">
+            <SidebarTrigger className="h-9 w-9" />
+            <span className="font-display font-semibold text-foreground">
+              {contractor?.settings?.companyProfile?.companyName || contractor?.name || 'Estimaitor'}
+            </span>
+          </div>
           <Outlet />
         </main>
       </div>
