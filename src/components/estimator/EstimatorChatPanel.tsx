@@ -319,49 +319,48 @@ export function EstimatorChatPanel() {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Header - compact on mobile with navigation */}
+      {/* Header - navigation on mobile only, clean look on tablet/desktop */}
       <div className="relative flex items-center justify-between px-3 py-3 sm:px-6 sm:py-5 border-b border-border">
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Menu dropdown for navigation */}
-          <div className="relative group">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="h-8 w-8 sm:h-10 sm:w-10 p-0 rounded-lg sm:rounded-xl hover:bg-muted"
-            >
-              <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-            </Button>
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Mobile: Menu button for navigation */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="h-8 w-8 p-0 rounded-lg hover:bg-muted sm:hidden"
+          >
+            <Menu className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          {/* Desktop/Tablet: Sparkles icon */}
+          <div className="hidden sm:flex w-10 h-10 rounded-xl bg-primary/20 items-center justify-center border border-primary/30">
+            <Sparkles className="h-5 w-5 text-primary" />
           </div>
-          <div className="h-6 w-px bg-border hidden sm:block" />
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary hidden sm:block" />
-            <div>
-              <h2 className="font-display font-semibold text-base sm:text-lg text-foreground tracking-tight">AI Estimator</h2>
-              <p className="text-xs text-muted-foreground hidden sm:block">
-                {context.projectType ? `${context.projectType} Project` : 'Powered by real pricing'}
-              </p>
-            </div>
+          <div>
+            <h2 className="font-display font-semibold text-base sm:text-lg text-foreground tracking-tight">AI Estimator</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+              {context.projectType ? `${context.projectType} Project` : 'Powered by real pricing'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Mobile: Quotes button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/estimates')}
-            className="text-muted-foreground hover:text-foreground rounded-lg sm:rounded-xl h-8 sm:h-9 px-2 sm:px-3"
+            className="text-muted-foreground hover:text-foreground rounded-lg h-8 px-2 sm:hidden"
           >
             <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline ml-2">Quotes</span>
           </Button>
+          {/* All screens: New Quote button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={handleStartNew}
             className="text-muted-foreground hover:text-foreground rounded-lg sm:rounded-xl h-8 sm:h-9 px-2 sm:px-3"
           >
-            <RotateCcw className="h-4 w-4" />
-            <span className="hidden sm:inline ml-2">New</span>
+            <RotateCcw className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">New Quote</span>
           </Button>
         </div>
       </div>
