@@ -257,14 +257,21 @@ function mapCategoryToPricing(
   // Cabinets (Kitchen) - Priced per linear foot, NOT per sqft of kitchen floor
   // Typical kitchen: 15-25 LF base + 10-20 LF wall = material + installation
   if (categoryLower.includes('cabinet')) {
-    // Check if this is installation labor or full cabinet package
-    if (taskLower.includes('labor') || taskLower.includes('install')) {
-      // Installation labor only - $50 IC / $85 CP per LF
-      return { ic: 50, cp: 85, unit: 'lf' };
+    // Check if this is installation labor only or full cabinet package
+    if (taskLower.includes('labor') || taskLower.includes('install only')) {
+      // Installation labor only - use config values
+      return { 
+        ic: Number(config.cabinet_install_only_lf_ic) || 50, 
+        cp: Number(config.cabinet_install_only_lf_cp) || 85, 
+        unit: 'lf' 
+      };
     }
-    // Full cabinet package (material + labor) - $250 IC / $400 CP per LF
-    // This is reasonable for mid-grade stock/semi-custom cabinets installed
-    return { ic: 250, cp: 400, unit: 'lf' };
+    // Full cabinet package (material + labor) - use config values
+    return { 
+      ic: Number(config.cabinet_lf_ic) || 250, 
+      cp: Number(config.cabinet_lf_cp) || 400, 
+      unit: 'lf' 
+    };
   }
 
   // Backsplash

@@ -198,6 +198,12 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   closet_reframe_cp: 2200,
   drywall_ic_per_sqft: 9,
   drywall_cp_per_sqft: 15,
+  
+  // Cabinet pricing (per linear foot)
+  cabinet_lf_ic: 250,
+  cabinet_lf_cp: 400,
+  cabinet_install_only_lf_ic: 50,
+  cabinet_install_only_lf_cp: 85,
 };
 
 // Market description default
@@ -427,6 +433,26 @@ export default function Pricing() {
       cpField: 'demo_kitchen_cp',
       icValue: config.demo_kitchen_ic,
       cpValue: config.demo_kitchen_cp,
+    },
+    {
+      key: 'cabinets',
+      name: 'Cabinets (Material + Install)',
+      description: 'Stock/semi-custom cabinets with installation. Typical kitchen: 18-25 linear feet.',
+      unit: 'per LF',
+      icField: 'cabinet_lf_ic',
+      cpField: 'cabinet_lf_cp',
+      icValue: config.cabinet_lf_ic ?? 250,
+      cpValue: config.cabinet_lf_cp ?? 400,
+    },
+    {
+      key: 'cabinet_install_only',
+      name: 'Cabinet Install Only',
+      description: 'Labor only for customer-supplied cabinets.',
+      unit: 'per LF',
+      icField: 'cabinet_install_only_lf_ic',
+      cpField: 'cabinet_install_only_lf_cp',
+      icValue: config.cabinet_install_only_lf_ic ?? 50,
+      cpValue: config.cabinet_install_only_lf_cp ?? 85,
     },
     {
       key: 'backsplash',
