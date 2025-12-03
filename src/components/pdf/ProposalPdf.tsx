@@ -22,12 +22,14 @@ const styles = StyleSheet.create({
   
   // Header with large logo banner
   headerBanner: {
-    backgroundColor: '#1e3a8a',
+    backgroundColor: '#ffffff',
     marginHorizontal: -50,
     paddingVertical: 24,
     paddingHorizontal: 50,
     alignItems: 'center',
     marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
   logo: {
     width: 280,
@@ -42,8 +44,7 @@ const styles = StyleSheet.create({
   },
   headerContactText: {
     fontSize: 9,
-    color: '#ffffff',
-    opacity: 0.9,
+    color: '#1e3a8a',
   },
   quoteTitle: {
     fontSize: 18,
