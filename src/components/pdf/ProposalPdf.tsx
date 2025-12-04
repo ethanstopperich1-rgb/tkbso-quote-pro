@@ -14,27 +14,29 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 10,
-    paddingTop: 0,
+    paddingTop: 100, // Space for fixed header
     paddingBottom: 70,
     paddingHorizontal: 50,
     backgroundColor: '#ffffff',
   },
   
-  // Header with large logo banner
+  // Fixed Header with large logo banner (appears on every page)
   headerBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#ffffff',
-    marginHorizontal: -50,
-    paddingVertical: 24,
+    paddingVertical: 16,
     paddingHorizontal: 50,
     alignItems: 'center',
-    marginBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
   logo: {
-    width: 280,
+    width: 200,
     height: 'auto',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   headerContactRow: {
     flexDirection: 'row',
@@ -459,8 +461,8 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
-        {/* Header Banner with Logo + Contact Info */}
-        <View style={styles.headerBanner} wrap={false}>
+        {/* Fixed Header Banner with Logo + Contact Info (appears on every page) */}
+        <View style={styles.headerBanner} fixed>
           <Image src={tkbsoLogo} style={styles.logo} />
           <View style={styles.headerContactRow}>
             {companyPhone && <Text style={styles.headerContactText}>{companyPhone}</Text>}
