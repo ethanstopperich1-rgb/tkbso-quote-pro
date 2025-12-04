@@ -3,11 +3,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 
 export function DashboardLayout() {
   const { contractor } = useAuth();
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   // Apply dynamic brand color from tenant settings
   useEffect(() => {
@@ -24,13 +25,20 @@ export function DashboardLayout() {
     }
   }, [contractor?.settings?.branding?.primaryColor]);
 
+  // On tablet: start collapsed. On mobile: start closed. On desktop: start open.
+  const getDefaultOpen = () => {
+    if (isMobile) return false;
+    if (isTablet) return false; // collapsed by default on tablet
+    return true;
+  };
+
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
+    <SidebarProvider defaultOpen={getDefaultOpen()}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <main className="flex-1 overflow-auto">
-          {/* Mobile header with menu trigger */}
-          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm md:hidden">
+          {/* Mobile-only header with menu trigger (hidden on tablet and up) */}
+          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm sm:hidden">
             <SidebarTrigger className="h-9 w-9" />
             <span className="font-display font-semibold text-foreground">
               {contractor?.settings?.companyProfile?.companyName || contractor?.name || 'Estimaitor'}
