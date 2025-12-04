@@ -4,10 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import tkbsoLogo from '@/assets/tkbso-logo-full.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -79,93 +79,125 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-display">TKBSO Estimator</CardTitle>
-          <CardDescription>
-            Sign in to your contractor account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating account...' : 'Create Account'}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  By signing up, you'll get a default company profile with TKBSO-style pricing allowances.
-                </p>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
+      {/* Logo */}
+      <div className="mb-8">
+        <img 
+          src={tkbsoLogo} 
+          alt="The Kitchen & Bath Store of Orlando" 
+          className="h-20 w-auto object-contain"
+        />
+      </div>
+
+      {/* Auth Card */}
+      <div className="w-full max-w-md">
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 rounded-xl p-1">
+            <TabsTrigger 
+              value="signin" 
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
+              Sign In
+            </TabsTrigger>
+            <TabsTrigger 
+              value="signup"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
+              Sign Up
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="signin">
+            <form onSubmit={handleSignIn} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="signin-email" className="text-slate-700 font-medium">
+                  Email
+                </Label>
+                <Input
+                  id="signin-email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-sky-500 focus:ring-sky-500 transition-colors"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signin-password" className="text-slate-700 font-medium">
+                  Password
+                </Label>
+                <Input
+                  id="signin-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-sky-500 focus:ring-sky-500 transition-colors"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full h-12 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-medium text-base shadow-sm transition-colors" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="signup">
+            <form onSubmit={handleSignUp} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="signup-email" className="text-slate-700 font-medium">
+                  Email
+                </Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-sky-500 focus:ring-sky-500 transition-colors"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-password" className="text-slate-700 font-medium">
+                  Password
+                </Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-sky-500 focus:ring-sky-500 transition-colors"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full h-12 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-medium text-base shadow-sm transition-colors" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Creating account...' : 'Create Account'}
+              </Button>
+              <p className="text-sm text-slate-500 text-center">
+                By signing up, you'll get a default company profile with TKBSO-style pricing allowances.
+              </p>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
