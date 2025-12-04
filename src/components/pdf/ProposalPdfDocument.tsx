@@ -35,31 +35,35 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     justifyContent: 'space-between',
   },
-  // Header + Client Group (never separate)
-  headerGroup: {
-    marginBottom: 20,
-  },
-  header: {
+  // Page Header with Logo (appears on every page)
+  pageHeader: {
     alignItems: 'center',
     marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
   },
   logo: {
-    width: 150,
-    height: 50,
+    width: 180,
+    height: 60,
     objectFit: 'contain',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   companyName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 700,
     color: '#0f172a',
     textAlign: 'center',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   tagline: {
     fontSize: 8,
     color: '#64748b',
     textAlign: 'center',
+  },
+  // Client Info Block
+  headerGroup: {
+    marginBottom: 15,
   },
   clientBlock: {
     flexDirection: 'row',
@@ -397,14 +401,15 @@ export function ProposalPdfDocument({
     <Document>
       {/* PAGE 1: Executive Summary + Scope */}
       <Page size="LETTER" style={styles.page}>
-        {/* Header Group - Logo + Client Info (never separate) */}
-        <View style={styles.headerGroup} wrap={false}>
-          <View style={styles.header}>
-            {logoUrl && <Image src={logoUrl} style={styles.logo} />}
-            <Text style={styles.companyName}>THE KITCHEN AND BATH STORE OF ORLANDO</Text>
-            <Text style={styles.tagline}>Professional Remodeling Services</Text>
-          </View>
+        {/* Page Header with Logo */}
+        <View style={styles.pageHeader} fixed>
+          {logoUrl && <Image src={logoUrl} style={styles.logo} />}
+          <Text style={styles.companyName}>THE KITCHEN AND BATH STORE OF ORLANDO</Text>
+          <Text style={styles.tagline}>Professional Remodeling Services</Text>
+        </View>
 
+        {/* Client Info Block */}
+        <View style={styles.headerGroup} wrap={false}>
           <View style={styles.clientBlock}>
             <View style={styles.clientInfo}>
               <Text style={styles.clientLabel}>Project For</Text>
@@ -487,13 +492,18 @@ export function ProposalPdfDocument({
       </Page>
 
       {/* PAGE 2: Payment & Signature */}
-      <Page size="LETTER" style={styles.page2}>
-        {/* Top Section: Payment + Notes */}
-        <View>
-          {/* Payment Milestones */}
-          <View style={styles.milestoneSection} wrap={false}>
-            <Text style={styles.sectionTitle}>Payment Schedule</Text>
-            
+      <Page size="LETTER" style={styles.page}>
+        {/* Page Header with Logo */}
+        <View style={styles.pageHeader} fixed>
+          {logoUrl && <Image src={logoUrl} style={styles.logo} />}
+          <Text style={styles.companyName}>THE KITCHEN AND BATH STORE OF ORLANDO</Text>
+          <Text style={styles.tagline}>Professional Remodeling Services</Text>
+        </View>
+
+        {/* Payment Milestones */}
+        <View style={styles.milestoneSection} wrap={false}>
+          <Text style={styles.sectionTitle}>Payment Schedule</Text>
+          
             <View style={styles.milestoneBar}>
               <View style={styles.milestone65}>
                 <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.deposit * 100)}%</Text>
@@ -562,11 +572,9 @@ export function ProposalPdfDocument({
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* Bottom Section: Signature */}
-        <View>
-          <View style={styles.signatureSection} wrap={false}>
+        {/* Signature Section */}
+        <View style={styles.signatureSection} wrap={false}>
             <View style={styles.signatureBox}>
               <Text style={styles.signatureLabel}>Homeowner Approval</Text>
               <View style={styles.signatureLine} />
@@ -577,13 +585,12 @@ export function ProposalPdfDocument({
               <View style={styles.signatureLine} />
               <Text style={styles.dateLabel}>Date: _______________</Text>
             </View>
-          </View>
+        </View>
 
-          {/* Footer */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8, marginTop: 20 }}>
-            <Text style={styles.footerText}>{contractorPhone} | {contractorEmail}</Text>
-            <Text style={styles.pageNumber}>Page 2 of 2</Text>
-          </View>
+        {/* Footer */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8, marginTop: 20 }}>
+          <Text style={styles.footerText}>{contractorPhone} | {contractorEmail}</Text>
+          <Text style={styles.pageNumber}>Page 2 of 2</Text>
         </View>
       </Page>
     </Document>
