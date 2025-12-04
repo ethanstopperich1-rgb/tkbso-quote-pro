@@ -7,7 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/pricing-calculator';
-import { Search, FileText, Plus, Clock, MapPin } from 'lucide-react';
+import { Search, FileText, Plus, Clock, MapPin, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface EstimateRow {
   id: string;
@@ -34,6 +45,8 @@ export default function Estimates() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [deleteTarget, setDeleteTarget] = useState<EstimateRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchEstimates() {
@@ -53,6 +66,25 @@ export default function Estimates() {
     
     fetchEstimates();
   }, [contractor]);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    
+    setDeleting(true);
+    const { error } = await supabase
+      .from('estimates')
+      .delete()
+      .eq('id', deleteTarget.id);
+    
+    if (error) {
+      toast.error('Failed to delete estimate');
+    } else {
+      setEstimates(estimates.filter(e => e.id !== deleteTarget.id));
+      toast.success('Estimate deleted');
+    }
+    setDeleting(false);
+    setDeleteTarget(null);
+  };
 
   const filteredEstimates = estimates.filter((estimate) => {
     const matchesSearch = 
@@ -175,53 +207,86 @@ export default function Estimates() {
       ) : (
         <div className="space-y-2 sm:space-y-3">
           {filteredEstimates.map((estimate) => (
-            <Link key={estimate.id} to={`/estimates/${estimate.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-start sm:items-center gap-3">
-                      <div className="p-2 sm:p-3 rounded-lg bg-secondary flex-shrink-0">
-                        <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold text-sm sm:text-base truncate">
-                            {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
-                          </h3>
-                          <Badge className={`${getStatusColor(estimate.status)} text-xs`}>
-                            {estimate.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          {getProjectSummary(estimate)}
-                        </p>
-                        {(estimate.city || estimate.state) && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                            <MapPin className="h-3 w-3" />
-                            {[estimate.city, estimate.state].filter(Boolean).join(', ')}
-                          </p>
-                        )}
-                      </div>
+            <Card key={estimate.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <Link to={`/estimates/${estimate.id}`} className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 sm:p-3 rounded-lg bg-secondary flex-shrink-0">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
                     </div>
-                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-0 border-t sm:border-t-0 pt-2 sm:pt-0">
-                      <div className="text-left sm:text-right">
-                        <p className="text-base sm:text-lg font-bold">{formatCurrency(estimate.final_cp_total)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatCurrency(estimate.low_estimate_cp)} - {formatCurrency(estimate.high_estimate_cp)}
-                        </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-sm sm:text-base truncate">
+                          {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
+                        </h3>
+                        <Badge className={`${getStatusColor(estimate.status)} text-xs`}>
+                          {estimate.status}
+                        </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        {getProjectSummary(estimate)}
+                      </p>
+                      {(estimate.city || estimate.state) && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="h-3 w-3" />
+                          {[estimate.city, estimate.state].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0">
+                    <Link to={`/estimates/${estimate.id}`} className="text-left sm:text-right">
+                      <p className="text-base sm:text-lg font-bold">{formatCurrency(estimate.final_cp_total)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatCurrency(estimate.low_estimate_cp)} - {formatCurrency(estimate.high_estimate_cp)}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 sm:justify-end">
                         <Clock className="h-3 w-3" />
                         {new Date(estimate.created_at).toLocaleDateString()}
                       </p>
-                    </div>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteTarget(estimate);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Estimate</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteTarget?.job_label || deleteTarget?.client_name || 'this estimate'}"? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
