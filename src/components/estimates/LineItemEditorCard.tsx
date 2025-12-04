@@ -64,6 +64,13 @@ const CATEGORIES = [
   'Paint',
   'Cabinets',
   'Countertop',
+  'Materials - Tile',
+  'Materials - Plumbing',
+  'Materials - Cabinets',
+  'Materials - Countertop',
+  'Materials - Glass',
+  'Materials - Flooring',
+  'Materials - Other',
   'Other'
 ];
 
