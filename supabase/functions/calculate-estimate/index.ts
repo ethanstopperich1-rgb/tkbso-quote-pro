@@ -79,11 +79,11 @@ function mapCategoryToPricing(
   if (categoryLower.includes('demo')) {
     if (taskLower.includes('shower') && taskLower.includes('only')) {
       return { ic: Number(config.demo_shower_only_ic) || 900, cp: Number(config.demo_shower_only_cp) || 1450, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('small')) {
+    } else if (taskLower.includes('small') || taskLower.includes('standard bath')) {
       return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('large')) {
+    } else if (taskLower.includes('large') || taskLower.includes('full bath') || taskLower.includes('master')) {
       return { ic: Number(config.demo_large_bath_ic) || 1650, cp: Number(config.demo_large_bath_cp) || 2500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('kitchen')) {
+    } else if (taskLower.includes('kitchen') || taskLower.includes('full kitchen') || taskLower.includes('gut kitchen')) {
       return { ic: Number(config.demo_kitchen_ic) || 1750, cp: Number(config.demo_kitchen_cp) || 2800, unit: 'ea', flatRate: true };
     }
     return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea', flatRate: true };
@@ -626,6 +626,7 @@ FOR BATHROOMS, understand:
 - Demo level: full gut, shower only, cosmetic refresh
 - Shower/tub: walk-in shower, tub-to-shower conversion, keep tub
 - Tile: wall tile height (full height vs wainscot), floor tile areas
+- **TILE MATERIAL TYPE**: porcelain, ceramic, natural stone, large format, mosaic - THIS IS CRITICAL
 - Glass: frameless, framed, curtain
 - Vanity: size or custom dimensions
 - Toilet: replace, relocate, or keep
@@ -637,9 +638,22 @@ FOR BATHROOMS, understand:
 FOR KITCHENS, understand:
 - Demo level: full gut, partial, refresh
 - Cabinets: new cabinets, reface, paint existing, none
+- **CABINET MATERIAL/STYLE**: painted, stained, thermofoil, wood species if mentioned
 - Countertops: new quartz, keep existing
+- **COUNTERTOP MATERIAL**: quartz, granite, marble, laminate, butcher block
 - Backsplash: full height, standard 4", none
+- **BACKSPLASH MATERIAL TYPE**: subway tile, mosaic, natural stone, porcelain
 - Flooring: new tile/LVP, keep existing
+- **FLOORING MATERIAL TYPE**: LVP, porcelain tile, ceramic, hardwood
+
+## CRITICAL: ASK ABOUT MATERIALS
+
+**ALWAYS ask about material type/finish level** after understanding scope:
+- "What type of tile are we using? (porcelain, ceramic, natural stone, large format)"
+- "What's the cabinet style? (painted white, stained wood, thermofoil)"
+- "What material for countertops? (quartz, granite, marble)"
+
+Material type affects pricing tier and customer expectations. Don't skip this!
 
 **Step 3 - Get Dimensions**
 Once scope is clear (user has finished describing), ask for dimensions:
@@ -648,7 +662,12 @@ Once scope is clear (user has finished describing), ask for dimensions:
 
 If user gives sqft instead of LxW, that's fine - use it.
 
-**Step 4 - Get Client Details**
+**Step 4 - Get Material Types**
+Ask about material selections:
+- "What type of tile/flooring/countertop material?"
+- If not provided, ask: "What's the finish level - standard, mid-grade, or premium?"
+
+**Step 5 - Get Client Details**
 Before generating the final quote, ask for client information:
 "Almost ready to build your quote! Can you give me the client details?
 - Client name
@@ -834,7 +853,7 @@ MEASUREMENT RULES:
 
 TRADE BUCKET MAPPING:
 
-**Demolition:** demo_shower_only (showers <20 sqft), demo_small_bath (<50 sqft), demo_large_bath (50+ sqft), demo_kitchen
+**Demolition:** "Selective Demo - Shower Area", "Full Demo - Standard Bathroom", "Full Demo - Master Bathroom", "Full Demo - Kitchen & Removal"
 
 **Plumbing:** 
 - Plumbing - Shower Standard, Plumbing - Extra Head, Plumbing - Toilet Swap
