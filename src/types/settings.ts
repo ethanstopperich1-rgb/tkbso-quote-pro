@@ -58,6 +58,7 @@ export interface ContractorSettings {
   licenses: License[];
   insurance: Insurance;
   defaults: BusinessDefaults;
+  onboardingCompleted?: boolean;
 }
 
 export const defaultSettings: ContractorSettings = {
