@@ -304,6 +304,36 @@ function mapCategoryToPricing(
     return { ic: Number(config.closet_ic_per_sqft) || 55, cp: Number(config.closet_cp_per_sqft) || 90, unit: 'sqft' };
   }
 
+  // Material line items (separate from labor)
+  if (categoryLower.includes('materials')) {
+    if (categoryLower.includes('tile') || taskLower.includes('tile')) {
+      // Tile material allowance: $7.85/sqft
+      return { ic: 5, cp: Number(config.tile_material_allowance_cp_per_sqft) || 7.85, unit: 'sqft' };
+    }
+    if (categoryLower.includes('cabinet') || taskLower.includes('cabinet')) {
+      // Cabinet material per linear foot
+      return { ic: 200, cp: 315, unit: 'lf' };
+    }
+    if (categoryLower.includes('countertop') || taskLower.includes('countertop') || taskLower.includes('quartz') || taskLower.includes('granite')) {
+      // Countertop slab material per sqft
+      return { ic: 35, cp: Number(config.quartz_slab_level1_allowance_cp) ? 55 : 55, unit: 'sqft' };
+    }
+    if (categoryLower.includes('plumbing') || taskLower.includes('plumbing') || taskLower.includes('fixture')) {
+      // Plumbing fixtures allowance (faucet, valve, trim)
+      return { ic: 850, cp: Number(config.plumbing_fixture_allowance_cp) || 1350, unit: 'ea', flatRate: true };
+    }
+    if (categoryLower.includes('glass') || taskLower.includes('glass')) {
+      // Glass material (panels + hardware)
+      return { ic: 600, cp: 1100, unit: 'ea', flatRate: true };
+    }
+    if (categoryLower.includes('flooring') || taskLower.includes('flooring') || taskLower.includes('lvp')) {
+      // Flooring material per sqft
+      return { ic: Number(config.lvp_ic_per_sqft) || 2.5, cp: Number(config.lvp_cp_per_sqft) || 4.5, unit: 'sqft' };
+    }
+    // Generic material allowance
+    return { ic: 500, cp: 850, unit: 'ea', flatRate: true };
+  }
+
   return null;
 }
 
@@ -886,27 +916,57 @@ TRADE BUCKET MAPPING:
 
 **Paint:** Paint - Patch, Paint - Full Bath
 
-MATERIAL ALLOWANCES (add to allowances array):
-- Kitchen with new cabinets → include "Cabinet Materials" allowance
-- Kitchen with countertops → include "Countertop Slab" allowance  
-- Backsplash → include "Backsplash Tile Material" allowance
-- Bathroom tile → include "Tile Material" allowance
-- New sink → include "Sink" allowance
-- New faucet → include "Faucet" allowance
+## MATERIAL LINE ITEMS (CRITICAL - ALWAYS ADD SEPARATELY FROM LABOR):
 
-INFERENCE:
-- "Full gut" → Demo + all trades
-- "Shower remodel" → Demo + plumbing + tile + waterproofing + cement board + glass
-- "Tile to ceiling" or "full height" → Calculate full wall height (8ft)
-- Always include waterproofing + cement board = total tile sqft
-- "no floor" or "keep floor" → EXCLUDE floor tile from trade_buckets
-- "new cabinets" → Cabinets trade bucket (LF) + Cabinet Materials allowance
+When materials are mentioned, ADD SEPARATE material line items to trade_buckets:
+
+**Materials - Tile:** Add when tile is in scope
+- Category: "Materials - Tile"
+- task_description: "Tile material allowance - [type mentioned: porcelain/ceramic/natural stone]"
+- quantity: total tile sqft (wall + floor)
+- unit: sqft
+
+**Materials - Cabinets:** Add when new cabinets are in scope  
+- Category: "Materials - Cabinets"
+- task_description: "Cabinet material - [style: painted/stained/thermofoil]"
+- quantity: linear feet of cabinets
+- unit: lf
+
+**Materials - Countertop:** Add when countertops are in scope
+- Category: "Materials - Countertop"
+- task_description: "Countertop slab - [material: quartz/granite/marble]"
+- quantity: countertop sqft
+- unit: sqft
+
+**Materials - Plumbing:** Add when plumbing fixtures needed
+- Category: "Materials - Plumbing"  
+- task_description: "Plumbing fixtures - faucet, valve, trim kit"
+- quantity: 1
+- unit: ea
+
+**Materials - Glass:** Add when shower glass is in scope
+- Category: "Materials - Glass"
+- task_description: "Shower glass panels and hardware"
+- quantity: 1
+- unit: ea
+
+**Materials - Flooring:** Add when LVP/flooring mentioned
+- Category: "Materials - Flooring"
+- task_description: "Flooring material - [type: LVP/tile/hardwood]"
+- quantity: floor sqft
+- unit: sqft
+
+EXAMPLE: For "kitchen remodel with new quartz countertops and painted cabinets":
+- Add: Cabinets - Kitchen (labor bucket)
+- Add: Materials - Cabinets (material bucket)
+- Add: Quartz - Countertop (labor bucket)
+- Add: Materials - Countertop (material bucket)
 
 LABOR ONLY PROJECTS:
 - If "labor_only" is true in the context or conversation mentions "labor only", "install only", "customer supplies materials"
 - Set project_header.labor_only = true
 - Still include all trade_buckets (labor will be calculated at install-only rates)
-- DO NOT include material allowances in the allowances array`;
+- DO NOT include Materials line items in trade_buckets for labor-only projects`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

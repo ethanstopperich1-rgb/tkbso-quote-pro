@@ -21,6 +21,7 @@ Font.register({
 const styles = StyleSheet.create({
   page: {
     padding: 40,
+    paddingBottom: 60,
     fontFamily: 'Inter',
     fontSize: 10,
     color: '#1e293b',
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 25,
+    bottom: 20,
     left: 40,
     right: 40,
     flexDirection: 'row',
@@ -322,6 +323,10 @@ const styles = StyleSheet.create({
   pageNumber: {
     fontSize: 7,
     color: '#64748b',
+  },
+  // Scope grouping to keep related items together
+  scopeSection: {
+    marginBottom: 15,
   },
 });
 
