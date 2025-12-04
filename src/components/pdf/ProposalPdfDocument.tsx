@@ -27,6 +27,14 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     justifyContent: 'flex-start',
   },
+  page2: {
+    padding: 40,
+    paddingBottom: 60,
+    fontFamily: 'Inter',
+    fontSize: 10,
+    color: '#1e293b',
+    justifyContent: 'space-between',
+  },
   // Header + Client Group (never separate)
   headerGroup: {
     marginBottom: 20,
@@ -479,98 +487,103 @@ export function ProposalPdfDocument({
       </Page>
 
       {/* PAGE 2: Payment & Signature */}
-      <Page size="LETTER" style={styles.page}>
-        {/* Payment Milestones - keep together */}
-        <View style={styles.milestoneSection} wrap={false}>
-          <Text style={styles.sectionTitle}>Payment Schedule</Text>
-          
-          <View style={styles.milestoneBar}>
-            <View style={styles.milestone65}>
-              <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.deposit * 100)}%</Text>
+      <Page size="LETTER" style={styles.page2}>
+        {/* Top Section: Payment + Notes */}
+        <View>
+          {/* Payment Milestones */}
+          <View style={styles.milestoneSection} wrap={false}>
+            <Text style={styles.sectionTitle}>Payment Schedule</Text>
+            
+            <View style={styles.milestoneBar}>
+              <View style={styles.milestone65}>
+                <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.deposit * 100)}%</Text>
+              </View>
+              <View style={styles.milestone25}>
+                <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.progress * 100)}%</Text>
+              </View>
+              <View style={styles.milestone10}>
+                <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.final * 100)}%</Text>
+              </View>
             </View>
-            <View style={styles.milestone25}>
-              <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.progress * 100)}%</Text>
-            </View>
-            <View style={styles.milestone10}>
-              <Text style={styles.milestonePercent}>{Math.round(paymentMilestones.final * 100)}%</Text>
+
+            <View style={styles.milestoneDetails}>
+              <View style={styles.milestoneRow}>
+                <Text style={styles.milestoneAmount}>
+                  ${depositAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </Text>
+                <Text style={styles.milestoneLabel}>
+                  Deposit — Due upon homeowner approval of project
+                </Text>
+              </View>
+              <View style={styles.milestoneRow}>
+                <Text style={styles.milestoneAmount}>
+                  ${progressAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </Text>
+                <Text style={styles.milestoneLabel}>
+                  Progress — Upon completion of tile, rough plumbing & electrical
+                </Text>
+              </View>
+              <View style={styles.milestoneRow}>
+                <Text style={styles.milestoneAmount}>
+                  ${finalAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                </Text>
+                <Text style={styles.milestoneLabel}>
+                  Final — Upon overall completion and walkthrough
+                </Text>
+              </View>
             </View>
           </View>
 
-          <View style={styles.milestoneDetails}>
-            <View style={styles.milestoneRow}>
-              <Text style={styles.milestoneAmount}>
-                ${depositAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
-              </Text>
-              <Text style={styles.milestoneLabel}>
-                Deposit — Due upon homeowner approval of project
-              </Text>
-            </View>
-            <View style={styles.milestoneRow}>
-              <Text style={styles.milestoneAmount}>
-                ${progressAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
-              </Text>
-              <Text style={styles.milestoneLabel}>
-                Progress — Upon completion of tile, rough plumbing & electrical
+          {/* Project Notes */}
+          <View style={styles.notesSection} wrap={false}>
+            <Text style={styles.sectionTitle}>Project Notes</Text>
+            
+            <View style={styles.noteBox}>
+              <Text style={styles.noteTitle}>Note I: Work Site Precautions</Text>
+              <Text style={styles.noteText}>
+                TKBSO will take reasonable precautions to minimize dust and disruption, including 
+                installing floor protection, sealing vents, and maintaining a clean workspace.
               </Text>
             </View>
-            <View style={styles.milestoneRow}>
-              <Text style={styles.milestoneAmount}>
-                ${finalAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+
+            <View style={styles.noteBox}>
+              <Text style={styles.noteTitle}>Note II: Fixture Allowances</Text>
+              <Text style={styles.noteText}>
+                All fixtures to be supplied by TKBSO under standard allowance unless specific 
+                models are chosen by the homeowner prior to ordering.
               </Text>
-              <Text style={styles.milestoneLabel}>
-                Final — Upon overall completion and walkthrough
+            </View>
+
+            <View style={styles.noteBox}>
+              <Text style={styles.noteTitle}>Note III: Project Timeline</Text>
+              <Text style={styles.noteText}>
+                Estimated timeline for completion is approximately {estimatedDays} days from project 
+                start, pending material lead times.
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Project Notes - keep together */}
-        <View style={styles.notesSection} wrap={false}>
-          <Text style={styles.sectionTitle}>Project Notes</Text>
-          
-          <View style={styles.noteBox}>
-            <Text style={styles.noteTitle}>Note I: Work Site Precautions</Text>
-            <Text style={styles.noteText}>
-              TKBSO will take reasonable precautions to minimize dust and disruption, including 
-              installing floor protection, sealing vents, and maintaining a clean workspace.
-            </Text>
+        {/* Bottom Section: Signature */}
+        <View>
+          <View style={styles.signatureSection} wrap={false}>
+            <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>Homeowner Approval</Text>
+              <View style={styles.signatureLine} />
+              <Text style={styles.dateLabel}>Date: _______________</Text>
+            </View>
+            <View style={styles.signatureBox}>
+              <Text style={styles.signatureLabel}>TKBSO Representative</Text>
+              <View style={styles.signatureLine} />
+              <Text style={styles.dateLabel}>Date: _______________</Text>
+            </View>
           </View>
 
-          <View style={styles.noteBox}>
-            <Text style={styles.noteTitle}>Note II: Fixture Allowances</Text>
-            <Text style={styles.noteText}>
-              All fixtures to be supplied by TKBSO under standard allowance unless specific 
-              models are chosen by the homeowner prior to ordering.
-            </Text>
+          {/* Footer */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8, marginTop: 20 }}>
+            <Text style={styles.footerText}>{contractorPhone} | {contractorEmail}</Text>
+            <Text style={styles.pageNumber}>Page 2 of 2</Text>
           </View>
-
-          <View style={styles.noteBox}>
-            <Text style={styles.noteTitle}>Note III: Project Timeline</Text>
-            <Text style={styles.noteText}>
-              Estimated timeline for completion is approximately {estimatedDays} days from project 
-              start, pending material lead times.
-            </Text>
-          </View>
-        </View>
-
-        {/* Signature Section - keep together */}
-        <View style={styles.signatureSection} wrap={false}>
-          <View style={styles.signatureBox}>
-            <Text style={styles.signatureLabel}>Homeowner Approval</Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.dateLabel}>Date: _______________</Text>
-          </View>
-          <View style={styles.signatureBox}>
-            <Text style={styles.signatureLabel}>TKBSO Representative</Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.dateLabel}>Date: _______________</Text>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{contractorPhone} | {contractorEmail}</Text>
-          <Text style={styles.pageNumber}>Page 2 of 2</Text>
         </View>
       </Page>
     </Document>
