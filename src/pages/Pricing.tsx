@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PricingConfig } from '@/types/database';
-import { Save, RefreshCw, RotateCcw } from 'lucide-react';
-import { Bath, ChefHat, Package, Wrench, HardHat } from 'lucide-react';
+import { Save, RefreshCw, RotateCcw, ChevronDown } from 'lucide-react';
+import { Bath, ChefHat, Package, Wrench, HardHat, Palette } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +17,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { GlobalSettingsCard } from '@/components/pricing/GlobalSettingsCard';
 import { PerSqftReferenceCard } from '@/components/pricing/PerSqftReferenceCard';
 import { TradeBucketsCard, TradeBucket } from '@/components/pricing/TradeBucketsCard';
 import { AllowancesCard } from '@/components/pricing/AllowancesCard';
+import { cn } from '@/lib/utils';
 
 
 // TKBSO Default Values - Updated Jan 2025
@@ -209,13 +215,47 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
 // Market description default
 const DEFAULT_MARKET_DESCRIPTION = "Orlando metro area, mid-high market, licensed & insured, turnkey kitchen & bath remodels.";
 
+// Accordion Section Wrapper Component
+function AccordionSection({ 
+  title, 
+  icon, 
+  defaultOpen = false, 
+  children 
+}: { 
+  title: string; 
+  icon: React.ReactNode; 
+  defaultOpen?: boolean; 
+  children: React.ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <button className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] hover:border-slate-300 transition-all group">
+          <div className="flex items-center gap-3">
+            <span className="text-cyan-500">{icon}</span>
+            <span className="text-lg font-bold text-[#0B1C3E]">{title}</span>
+          </div>
+          <ChevronDown className={cn(
+            "h-5 w-5 text-slate-400 transition-transform duration-200",
+            isOpen && "rotate-180"
+          )} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export default function Pricing() {
   const { contractor } = useAuth();
   const [config, setConfig] = useState<PricingConfig | null>(null);
   const [marketDescription, setMarketDescription] = useState(DEFAULT_MARKET_DESCRIPTION);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>('global');
 
   useEffect(() => {
     async function fetchConfig() {
@@ -275,8 +315,8 @@ export default function Pricing() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="p-8 flex items-center justify-center min-h-[50vh]">
+        <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
       </div>
     );
   }
@@ -284,7 +324,7 @@ export default function Pricing() {
   if (!config) {
     return (
       <div className="p-8">
-        <p className="text-muted-foreground">No pricing configuration found.</p>
+        <p className="text-slate-500">No pricing configuration found.</p>
       </div>
     );
   }
@@ -480,7 +520,7 @@ export default function Pricing() {
       name: 'Plumbing – Kitchen',
       description: 'Sink hookup, disposal, dishwasher connection.',
       unit: 'per kitchen',
-      icField: 'plumbing_toilet_ic', // reusing field
+      icField: 'plumbing_toilet_ic',
       cpField: 'plumbing_toilet_cp',
       icValue: 350,
       cpValue: 690,
@@ -526,7 +566,7 @@ export default function Pricing() {
       unit: 'per closet',
       icField: 'closet_ic_per_sqft',
       cpField: 'closet_cp_per_sqft',
-      icValue: config.closet_ic_per_sqft * 40, // Estimate for typical closet
+      icValue: config.closet_ic_per_sqft * 40,
       cpValue: config.closet_cp_per_sqft * 40,
     },
     {
@@ -772,48 +812,52 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto pb-24">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-display">Pricing Configuration</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Configure trade buckets, allowances, and reference rates
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                <RotateCcw className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Reset</span>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Sticky Header with backdrop blur */}
+      <div className="sticky top-0 z-50 bg-[#F8FAFC]/80 backdrop-blur-lg border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#0B1C3E] tracking-tight">Pricing Configuration</h1>
+              <p className="text-sm text-slate-500 mt-1">
+                Configure trade buckets, allowances, and reference rates
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none border-slate-200 hover:bg-slate-100">
+                    <RotateCcw className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="mx-4 sm:mx-auto max-w-md">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset to TKBSO Defaults?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will reset all pricing values to the standard TKBSO rates. You'll need to save to persist.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetToDefaults} className="w-full sm:w-auto">
+                      Reset
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button onClick={handleSave} disabled={saving} size="sm" className="flex-1 sm:flex-none bg-cyan-500 hover:bg-cyan-600 text-white">
+                <Save className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="mx-4 sm:mx-auto max-w-md">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset to TKBSO Defaults?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will reset all pricing values to the standard TKBSO rates. You'll need to save to persist.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetToDefaults} className="w-full sm:w-auto">
-                  Reset
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <Button onClick={handleSave} disabled={saving} size="sm" className="flex-1 sm:flex-none">
-            <Save className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
-          </Button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="space-y-4 sm:space-y-6">
-        {/* 1. Global Settings */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-4">
+        {/* 1. Global Settings - Always visible */}
         <GlobalSettingsCard
           targetMargin={config.target_margin}
           managementFeePercent={config.management_fee_percent ?? 0.15}
@@ -823,7 +867,7 @@ export default function Pricing() {
           onMarketDescriptionChange={setMarketDescription}
         />
 
-        {/* 2. Per-Sqft Reference Rates */}
+        {/* 2. Per-Sqft Reference Rates - Always visible */}
         <PerSqftReferenceCard
           kitchenIcPerSqft={config.kitchen_ic_per_sqft}
           kitchenCpPerSqft={config.kitchen_cp_per_sqft}
@@ -835,64 +879,81 @@ export default function Pricing() {
           onChange={handleChange}
         />
 
-        {/* 3. Bathroom Trade Buckets */}
-        <TradeBucketsCard
-          title="Bathroom Trade Buckets"
-          description="PRIMARY pricing engine for bathroom estimates."
-          icon={<Bath className="h-5 w-5 text-primary" />}
-          buckets={bathroomBuckets}
-          onChange={handleChange}
-          targetMargin={config.target_margin}
-        />
+        {/* 3. Bathroom Trade Buckets - Open by default */}
+        <AccordionSection 
+          title="Bathroom Trade Buckets" 
+          icon={<Bath className="h-5 w-5" />}
+          defaultOpen={true}
+        >
+          <TradeBucketsCard
+            title="Bathroom Trade Buckets"
+            description="PRIMARY pricing engine for bathroom estimates."
+            icon={<Bath className="h-5 w-5" />}
+            buckets={bathroomBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+          />
+        </AccordionSection>
 
-        {/* 4. Kitchen & Closet Trade Buckets */}
-        <TradeBucketsCard
-          title="Kitchen Trade Buckets"
-          description="Trade buckets for kitchen remodel estimates."
-          icon={<ChefHat className="h-5 w-5 text-primary" />}
-          buckets={kitchenBuckets}
-          onChange={handleChange}
-          targetMargin={config.target_margin}
-        />
+        {/* 4. Kitchen Trade Buckets - Collapsed by default */}
+        <AccordionSection 
+          title="Kitchen Trade Buckets" 
+          icon={<ChefHat className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Kitchen Trade Buckets"
+            description="Trade buckets for kitchen remodel estimates."
+            icon={<ChefHat className="h-5 w-5" />}
+            buckets={kitchenBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+          />
+        </AccordionSection>
 
-        <TradeBucketsCard
-          title="Closet Trade Buckets"
-          description="Trade buckets for closet buildout and expansion."
-          icon={<Package className="h-5 w-5 text-primary" />}
-          buckets={closetBuckets}
-          onChange={handleChange}
-          targetMargin={config.target_margin}
-        />
+        {/* 5. Closet Trade Buckets - Collapsed by default */}
+        <AccordionSection 
+          title="Closet Trade Buckets" 
+          icon={<Package className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Closet Trade Buckets"
+            description="Trade buckets for closet buildout and expansion."
+            icon={<Package className="h-5 w-5" />}
+            buckets={closetBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+          />
+        </AccordionSection>
 
-        {/* 5. Structural / Complex Work */}
-        <TradeBucketsCard
-          title="Structural / Complex Work"
-          description="Major layout changes and relocations."
-          icon={<HardHat className="h-5 w-5 text-primary" />}
-          buckets={structuralBuckets}
-          onChange={handleChange}
-          targetMargin={config.target_margin}
-        />
+        {/* 6. Structural / Complex Work - Collapsed by default */}
+        <AccordionSection 
+          title="Structural / Complex Work" 
+          icon={<HardHat className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Structural / Complex Work"
+            description="Major layout changes and relocations."
+            icon={<HardHat className="h-5 w-5" />}
+            buckets={structuralBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+          />
+        </AccordionSection>
 
-        {/* 6. Allowances */}
-        <AllowancesCard
-          allowances={allowances}
-          onChange={handleChange}
-        />
-      </div>
-
-      {/* Sticky Save Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-3 sm:p-4 z-50">
-        <div className="max-w-6xl mx-auto w-full flex justify-end gap-2">
-          <Button variant="outline" onClick={handleResetToDefaults} size="sm">
-            <RotateCcw className="h-4 w-4 mr-1 sm:mr-2" />
-            <span className="text-xs sm:text-sm">Reset</span>
-          </Button>
-          <Button onClick={handleSave} disabled={saving} size="sm">
-            <Save className="h-4 w-4 mr-1 sm:mr-2" />
-            <span className="text-xs sm:text-sm">{saving ? 'Saving...' : 'Save'}</span>
-          </Button>
-        </div>
+        {/* 7. Allowances - Collapsed by default */}
+        <AccordionSection 
+          title="Allowances (Material Only)" 
+          icon={<Palette className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <AllowancesCard
+            allowances={allowances}
+            onChange={handleChange}
+          />
+        </AccordionSection>
       </div>
     </div>
   );
