@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Upload, Building2, User, Phone, Mail, MapPin } from 'lucide-react';
-import tkbsoLogo from '@/assets/tkbso-logo-full.png';
+import { EstimAIteLogo } from '@/components/EstimAIteLogo';
 import { defaultSettings } from '@/types/settings';
 
 // Extract dominant color from an image
@@ -239,11 +239,7 @@ export default function Onboarding() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-8">
       {/* Logo */}
       <div className="mb-6">
-        <img 
-          src={tkbsoLogo} 
-          alt="The Kitchen & Bath Store of Orlando" 
-          className="h-16 w-auto object-contain"
-        />
+        <EstimAIteLogo size="lg" />
       </div>
 
       {/* Welcome Header */}

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import tkbsoLogo from '@/assets/tkbso-logo-full.png';
+import { EstimAIteLogo } from '@/components/EstimAIteLogo';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -89,11 +89,7 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
       {/* Logo */}
       <div className="mb-8">
-        <img 
-          src={tkbsoLogo} 
-          alt="The Kitchen & Bath Store of Orlando" 
-          className="h-20 w-auto object-contain"
-        />
+        <EstimAIteLogo size="lg" />
       </div>
 
       {/* Auth Card */}
@@ -192,7 +188,7 @@ export default function Auth() {
                 {isSubmitting ? 'Creating account...' : 'Create Account'}
               </Button>
               <p className="text-sm text-slate-500 text-center">
-                By signing up, you'll get a default company profile with TKBSO-style pricing allowances.
+                By signing up, you'll get a default company profile with industry-standard pricing allowances.
               </p>
             </form>
           </TabsContent>
