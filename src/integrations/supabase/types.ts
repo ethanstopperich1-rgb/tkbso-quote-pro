@@ -478,6 +478,10 @@ export type Database = {
         Row: {
           alcove_builtin_cp: number | null
           alcove_builtin_ic: number | null
+          appliance_install_pro_cp: number | null
+          appliance_install_pro_ic: number | null
+          appliance_install_standard_cp: number | null
+          appliance_install_standard_ic: number | null
           barrier_cp_per_sqft: number | null
           barrier_ic_per_sqft: number | null
           bath_cp_per_sqft: number | null
@@ -520,6 +524,8 @@ export type Database = {
           dumpster_bath_ic: number | null
           dumpster_kitchen_cp: number | null
           dumpster_kitchen_ic: number | null
+          dust_barriers_cp: number | null
+          dust_barriers_ic: number | null
           electrical_dishwasher_disposal_cp: number | null
           electrical_hood_relocation_cp: number | null
           electrical_kitchen_package_cp: number | null
@@ -540,6 +546,8 @@ export type Database = {
           floor_leveling_ls_ic: number | null
           floor_leveling_small_cp: number | null
           floor_leveling_small_ic: number | null
+          floor_protection_cp: number | null
+          floor_protection_ic: number | null
           frameless_glass_cp_per_sqft: number | null
           frameless_glass_ic_per_sqft: number | null
           framing_margin: number | null
@@ -557,8 +565,11 @@ export type Database = {
           glass_panel_only_ic: number | null
           glass_shower_standard_cp: number | null
           glass_shower_standard_ic: number | null
+          granite_slab_allowance_cp: number | null
           hardware_allowance_per_pull_cp: number | null
           high_range_multiplier: number | null
+          hvac_vent_relocate_cp: number | null
+          hvac_vent_relocate_ic: number | null
           id: string
           kitchen_cp_per_sqft: number | null
           kitchen_faucet_allowance_cp: number | null
@@ -584,6 +595,8 @@ export type Database = {
           payment_split_deposit: number | null
           payment_split_final: number | null
           payment_split_progress: number | null
+          permit_admin_fee_cp: number | null
+          permit_admin_fee_ic: number | null
           plumbing_extra_head_cp: number | null
           plumbing_extra_head_ic: number | null
           plumbing_fixture_allowance_cp: number | null
@@ -601,12 +614,17 @@ export type Database = {
           plumbing_tub_freestanding_ic: number | null
           plumbing_tub_to_shower_cp: number | null
           plumbing_tub_to_shower_ic: number | null
+          post_construction_clean_cp: number | null
+          post_construction_clean_ic: number | null
           quartz_countertop_margin: number | null
           quartz_cp_per_sqft: number | null
           quartz_faucet_drill_cp: number | null
           quartz_ic_per_sqft: number | null
           quartz_sink_cutout_cp: number | null
           quartz_slab_level1_allowance_cp: number | null
+          quartzite_slab_allowance_cp: number | null
+          range_hood_ducting_cp: number | null
+          range_hood_ducting_ic: number | null
           recessed_can_cp_each: number | null
           recessed_can_ic_each: number | null
           regular_tub_allowance_cp: number | null
@@ -657,6 +675,10 @@ export type Database = {
         Insert: {
           alcove_builtin_cp?: number | null
           alcove_builtin_ic?: number | null
+          appliance_install_pro_cp?: number | null
+          appliance_install_pro_ic?: number | null
+          appliance_install_standard_cp?: number | null
+          appliance_install_standard_ic?: number | null
           barrier_cp_per_sqft?: number | null
           barrier_ic_per_sqft?: number | null
           bath_cp_per_sqft?: number | null
@@ -699,6 +721,8 @@ export type Database = {
           dumpster_bath_ic?: number | null
           dumpster_kitchen_cp?: number | null
           dumpster_kitchen_ic?: number | null
+          dust_barriers_cp?: number | null
+          dust_barriers_ic?: number | null
           electrical_dishwasher_disposal_cp?: number | null
           electrical_hood_relocation_cp?: number | null
           electrical_kitchen_package_cp?: number | null
@@ -719,6 +743,8 @@ export type Database = {
           floor_leveling_ls_ic?: number | null
           floor_leveling_small_cp?: number | null
           floor_leveling_small_ic?: number | null
+          floor_protection_cp?: number | null
+          floor_protection_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
           framing_margin?: number | null
@@ -736,8 +762,11 @@ export type Database = {
           glass_panel_only_ic?: number | null
           glass_shower_standard_cp?: number | null
           glass_shower_standard_ic?: number | null
+          granite_slab_allowance_cp?: number | null
           hardware_allowance_per_pull_cp?: number | null
           high_range_multiplier?: number | null
+          hvac_vent_relocate_cp?: number | null
+          hvac_vent_relocate_ic?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
           kitchen_faucet_allowance_cp?: number | null
@@ -763,6 +792,8 @@ export type Database = {
           payment_split_deposit?: number | null
           payment_split_final?: number | null
           payment_split_progress?: number | null
+          permit_admin_fee_cp?: number | null
+          permit_admin_fee_ic?: number | null
           plumbing_extra_head_cp?: number | null
           plumbing_extra_head_ic?: number | null
           plumbing_fixture_allowance_cp?: number | null
@@ -780,12 +811,17 @@ export type Database = {
           plumbing_tub_freestanding_ic?: number | null
           plumbing_tub_to_shower_cp?: number | null
           plumbing_tub_to_shower_ic?: number | null
+          post_construction_clean_cp?: number | null
+          post_construction_clean_ic?: number | null
           quartz_countertop_margin?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
           quartz_sink_cutout_cp?: number | null
           quartz_slab_level1_allowance_cp?: number | null
+          quartzite_slab_allowance_cp?: number | null
+          range_hood_ducting_cp?: number | null
+          range_hood_ducting_ic?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
           regular_tub_allowance_cp?: number | null
@@ -836,6 +872,10 @@ export type Database = {
         Update: {
           alcove_builtin_cp?: number | null
           alcove_builtin_ic?: number | null
+          appliance_install_pro_cp?: number | null
+          appliance_install_pro_ic?: number | null
+          appliance_install_standard_cp?: number | null
+          appliance_install_standard_ic?: number | null
           barrier_cp_per_sqft?: number | null
           barrier_ic_per_sqft?: number | null
           bath_cp_per_sqft?: number | null
@@ -878,6 +918,8 @@ export type Database = {
           dumpster_bath_ic?: number | null
           dumpster_kitchen_cp?: number | null
           dumpster_kitchen_ic?: number | null
+          dust_barriers_cp?: number | null
+          dust_barriers_ic?: number | null
           electrical_dishwasher_disposal_cp?: number | null
           electrical_hood_relocation_cp?: number | null
           electrical_kitchen_package_cp?: number | null
@@ -898,6 +940,8 @@ export type Database = {
           floor_leveling_ls_ic?: number | null
           floor_leveling_small_cp?: number | null
           floor_leveling_small_ic?: number | null
+          floor_protection_cp?: number | null
+          floor_protection_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
           framing_margin?: number | null
@@ -915,8 +959,11 @@ export type Database = {
           glass_panel_only_ic?: number | null
           glass_shower_standard_cp?: number | null
           glass_shower_standard_ic?: number | null
+          granite_slab_allowance_cp?: number | null
           hardware_allowance_per_pull_cp?: number | null
           high_range_multiplier?: number | null
+          hvac_vent_relocate_cp?: number | null
+          hvac_vent_relocate_ic?: number | null
           id?: string
           kitchen_cp_per_sqft?: number | null
           kitchen_faucet_allowance_cp?: number | null
@@ -942,6 +989,8 @@ export type Database = {
           payment_split_deposit?: number | null
           payment_split_final?: number | null
           payment_split_progress?: number | null
+          permit_admin_fee_cp?: number | null
+          permit_admin_fee_ic?: number | null
           plumbing_extra_head_cp?: number | null
           plumbing_extra_head_ic?: number | null
           plumbing_fixture_allowance_cp?: number | null
@@ -959,12 +1008,17 @@ export type Database = {
           plumbing_tub_freestanding_ic?: number | null
           plumbing_tub_to_shower_cp?: number | null
           plumbing_tub_to_shower_ic?: number | null
+          post_construction_clean_cp?: number | null
+          post_construction_clean_ic?: number | null
           quartz_countertop_margin?: number | null
           quartz_cp_per_sqft?: number | null
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
           quartz_sink_cutout_cp?: number | null
           quartz_slab_level1_allowance_cp?: number | null
+          quartzite_slab_allowance_cp?: number | null
+          range_hood_ducting_cp?: number | null
+          range_hood_ducting_ic?: number | null
           recessed_can_cp_each?: number | null
           recessed_can_ic_each?: number | null
           regular_tub_allowance_cp?: number | null
