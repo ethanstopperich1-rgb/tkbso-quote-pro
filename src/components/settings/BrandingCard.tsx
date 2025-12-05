@@ -3,11 +3,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Palette, Upload, X, RefreshCw, Check } from 'lucide-react';
+import { Palette, Upload, X, RefreshCw, Check, FileDown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Branding } from '@/types/settings';
 import { cn } from '@/lib/utils';
+import { pdf } from '@react-pdf/renderer';
+import { ProposalPdfDocument } from '@/components/pdf/ProposalPdfDocument';
 
 interface Props {
   data: Branding;
@@ -27,10 +29,65 @@ const PRO_COLORS = [
 
 export function BrandingCard({ data, onChange, contractorId, initials, companyName }: Props) {
   const [uploading, setUploading] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [customColorActive, setCustomColorActive] = useState(
     !PRO_COLORS.some(c => c.value === data.primaryColor)
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const generatePreviewPdf = async () => {
+    setGeneratingPdf(true);
+    try {
+      const date = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      const sampleProps = {
+        clientName: 'John & Jane Doe',
+        address: '123 Sample Street',
+        city: 'Orlando',
+        state: 'FL',
+        zip: '32819',
+        date,
+        projectType: 'Bathroom',
+        summaryBullets: [
+          'Full Bathroom Gut Renovation',
+          'Custom tile installation throughout wet areas',
+          'Frameless glass shower enclosure',
+          '48-inch vanity with quartz countertop',
+          'Complete plumbing rough-in and fixtures',
+        ],
+        totalPrice: 24500,
+        scopeItems: [
+          { category: 'Demo', task: 'Remove existing tile, fixtures, and vanity', included: true },
+          { category: 'Plumbing', task: 'Rough-in for shower, toilet, and vanity', included: true },
+          { category: 'Tile', task: 'Wall tile - 128 sqft, Floor tile - 40 sqft', included: true },
+          { category: 'Glass', task: 'Frameless glass shower enclosure', included: true },
+          { category: 'Vanity', task: '48" vanity with quartz top and undermount sink', included: true },
+          { category: 'Paint', task: 'Full bathroom paint and finishing', included: true },
+        ],
+        paymentMilestones: { deposit: 0.65, progress: 0.25, final: 0.10 },
+        estimatedDays: 14,
+        contractorName: companyName || 'Your Company Name',
+        contractorPhone: '(407) 555-1234',
+        contractorEmail: 'info@yourcompany.com',
+        logoUrl: data.logoUrl || undefined,
+      };
+
+      const blob = await pdf(<ProposalPdfDocument {...sampleProps} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success('Preview PDF generated!');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate preview PDF');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   const update = (field: keyof Branding, value: string) => {
     onChange({ ...data, [field]: value });
@@ -325,6 +382,21 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
               </p>
             </div>
           </div>
+
+          {/* Preview PDF Button */}
+          <Button
+            onClick={generatePreviewPdf}
+            disabled={generatingPdf}
+            className="w-full mt-4"
+            style={{ backgroundColor: data.primaryColor }}
+          >
+            {generatingPdf ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4 mr-2" />
+            )}
+            {generatingPdf ? 'Generating...' : 'Preview Sample PDF'}
+          </Button>
         </div>
       </div>
     </div>
