@@ -46,10 +46,11 @@ export function AppSidebar() {
               className="w-10 h-10 rounded-xl object-contain bg-white/10 flex-shrink-0 border border-white/10"
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0 border border-accent/30">
-              <span className="text-sm font-bold text-accent">
-                {companyName.slice(0, 2).toUpperCase()}
+            <div className="w-10 h-10 rounded-xl flex-shrink-0 relative overflow-hidden" style={{ backgroundColor: '#0B1C3E' }}>
+              <span className="absolute inset-0 flex items-center justify-center text-white font-black text-lg">
+                {companyName.slice(0, 1).toUpperCase()}
               </span>
+              <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ backgroundColor: '#00E5FF' }} />
             </div>
           )}
           {!isCollapsed && (

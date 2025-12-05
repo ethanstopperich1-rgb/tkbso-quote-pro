@@ -331,9 +331,10 @@ export function EstimatorChatPanel() {
           >
             <Menu className="h-4 w-4 text-muted-foreground" />
           </Button>
-          {/* Desktop/Tablet: Sparkles icon */}
-          <div className="hidden sm:flex w-10 h-10 rounded-xl bg-primary/20 items-center justify-center border border-primary/30">
-            <Sparkles className="h-5 w-5 text-primary" />
+          {/* Desktop/Tablet: EstimAIte icon */}
+          <div className="hidden sm:flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 relative overflow-hidden" style={{ backgroundColor: '#0B1C3E' }}>
+            <Sparkles className="h-5 w-5 text-white" />
+            <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ backgroundColor: '#00E5FF' }} />
           </div>
           <div>
             <h2 className="font-display font-semibold text-base sm:text-lg text-foreground tracking-tight">AI Estimator</h2>
