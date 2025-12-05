@@ -203,6 +203,17 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Footer Branding */}
+      <div className="mt-8 pt-6 border-t border-border text-center">
+        <p className="text-sm text-muted-foreground">
+          Powered by{' '}
+          <span className="text-foreground/80 font-semibold">Estim</span>
+          <span className="text-cyan-500 font-semibold">AI</span>
+          <span className="text-foreground/80 font-semibold">te</span>
+          <span className="text-muted-foreground/60 text-xs ml-0.5">™</span>
+        </p>
+      </div>
     </div>
   );
 }
