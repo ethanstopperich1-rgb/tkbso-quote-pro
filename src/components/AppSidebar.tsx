@@ -57,7 +57,11 @@ export function AppSidebar() {
               <span className="font-display font-semibold text-sm text-sidebar-foreground truncate tracking-tight">
                 {companyName}
               </span>
-              <span className="text-xs text-sidebar-foreground/50">EstimAIte</span>
+              <span className="text-xs">
+                <span className="text-sidebar-foreground/70 font-semibold">Estim</span>
+                <span className="text-cyan-400 font-semibold">AI</span>
+                <span className="text-sidebar-foreground/70 font-semibold">te</span>
+              </span>
             </div>
           )}
         </div>
