@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, contractor, loading } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -22,19 +22,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Check if onboarding is completed
-  const settings = contractor?.settings;
-  const onboardingCompleted = settings?.onboardingCompleted === true;
-  
-  // If on the onboarding page, allow access
-  if (location.pathname === '/onboarding') {
-    return <>{children}</>;
-  }
-  
-  // If onboarding not completed and not on onboarding page, redirect to onboarding
-  if (contractor && !onboardingCompleted) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
+  // Onboarding is now only accessed via direct navigation after signup
+  // Existing users who sign in will skip onboarding entirely
   return <>{children}</>;
 }

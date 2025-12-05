@@ -72,8 +72,9 @@ export default function Auth() {
         toast.error(error.message);
       }
     } else {
-      toast.success('Account created! You can now sign in.');
-      navigate('/');
+      toast.success('Account created! Let\'s set up your profile.');
+      // New signups go to onboarding
+      navigate('/onboarding');
     }
   };
 
