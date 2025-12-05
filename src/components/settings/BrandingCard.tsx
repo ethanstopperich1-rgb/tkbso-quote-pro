@@ -97,7 +97,14 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
     const file = e.target.files?.[0];
     if (!file || !contractorId) return;
 
-    if (!['image/png', 'image/jpeg', 'image/svg+xml'].includes(file.type)) {
+    // Accept common image MIME types and also check file extension as fallback
+    const validMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/x-png'];
+    const validExtensions = ['.png', '.jpg', '.jpeg', '.svg'];
+    const fileExtension = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
+    
+    const isValidType = validMimeTypes.includes(file.type) || validExtensions.includes(fileExtension);
+    
+    if (!isValidType) {
       toast.error('Please upload a PNG, JPG, or SVG file');
       return;
     }
