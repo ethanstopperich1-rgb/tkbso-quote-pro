@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PricingConfig } from '@/types/database';
-import { Save, RefreshCw, RotateCcw, ChevronDown } from 'lucide-react';
+import { Save, RefreshCw, RotateCcw, ChevronDown, Truck, Settings2, Thermometer } from 'lucide-react';
 import { Bath, ChefHat, Package, Wrench, HardHat, Palette } from 'lucide-react';
 import {
   AlertDialog,
@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 
 
 // TKBSO Default Values - Updated Jan 2025
-const TKBSO_DEFAULTS: Partial<PricingConfig> = {
+const TKBSO_DEFAULTS: Partial<PricingConfig> & Record<string, any> = {
   // Target margin
   target_margin: 0.38,
   
@@ -210,6 +210,30 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> = {
   cabinet_lf_cp: 400,
   cabinet_install_only_lf_ic: 50,
   cabinet_install_only_lf_cp: 85,
+  
+  // Site Prep & General Conditions
+  floor_protection_ic: 150,
+  floor_protection_cp: 250,
+  dust_barriers_ic: 100,
+  dust_barriers_cp: 200,
+  post_construction_clean_ic: 350,
+  post_construction_clean_cp: 500,
+  permit_admin_fee_ic: 300,
+  permit_admin_fee_cp: 600,
+  
+  // Mechanicals & Appliances
+  hvac_vent_relocate_ic: 250,
+  hvac_vent_relocate_cp: 450,
+  range_hood_ducting_ic: 450,
+  range_hood_ducting_cp: 850,
+  appliance_install_standard_ic: 350,
+  appliance_install_standard_cp: 650,
+  appliance_install_pro_ic: 800,
+  appliance_install_pro_cp: 1400,
+  
+  // Granite & Quartzite
+  granite_slab_allowance_cp: 1200,
+  quartzite_slab_allowance_cp: 1800,
 };
 
 // Market description default
@@ -695,6 +719,94 @@ export default function Pricing() {
     },
   ];
 
+  // Build site prep & general conditions trade buckets
+  const sitePrepBuckets: TradeBucket[] = [
+    {
+      key: 'floor_protection',
+      name: 'Floor Protection (Ram Board)',
+      description: 'Protective floor covering to prevent damage during construction.',
+      unit: 'per room',
+      icField: 'floor_protection_ic',
+      cpField: 'floor_protection_cp',
+      icValue: (config as any).floor_protection_ic ?? 150,
+      cpValue: (config as any).floor_protection_cp ?? 250,
+    },
+    {
+      key: 'dust_barriers',
+      name: 'Dust Barriers / Zip Wall',
+      description: 'Dust containment barriers to protect adjacent spaces.',
+      unit: 'each',
+      icField: 'dust_barriers_ic',
+      cpField: 'dust_barriers_cp',
+      icValue: (config as any).dust_barriers_ic ?? 100,
+      cpValue: (config as any).dust_barriers_cp ?? 200,
+    },
+    {
+      key: 'post_construction_clean',
+      name: 'Post-Construction Deep Clean',
+      description: 'Professional deep cleaning after construction completion.',
+      unit: 'per job',
+      icField: 'post_construction_clean_ic',
+      cpField: 'post_construction_clean_cp',
+      icValue: (config as any).post_construction_clean_ic ?? 350,
+      cpValue: (config as any).post_construction_clean_cp ?? 500,
+    },
+    {
+      key: 'permit_admin_fee',
+      name: 'Permit Runner & Admin Fee',
+      description: 'Permit acquisition, inspections coordination, and administrative fees.',
+      unit: 'per job',
+      icField: 'permit_admin_fee_ic',
+      cpField: 'permit_admin_fee_cp',
+      icValue: (config as any).permit_admin_fee_ic ?? 300,
+      cpValue: (config as any).permit_admin_fee_cp ?? 600,
+    },
+  ];
+
+  // Build mechanicals & appliances trade buckets
+  const mechanicalsBuckets: TradeBucket[] = [
+    {
+      key: 'hvac_vent_relocate',
+      name: 'Relocate HVAC Vent/Register',
+      description: 'Move existing HVAC vent or register to new location.',
+      unit: 'each',
+      icField: 'hvac_vent_relocate_ic',
+      cpField: 'hvac_vent_relocate_cp',
+      icValue: (config as any).hvac_vent_relocate_ic ?? 250,
+      cpValue: (config as any).hvac_vent_relocate_cp ?? 450,
+    },
+    {
+      key: 'range_hood_ducting',
+      name: 'Range Hood Ducting (New Run)',
+      description: 'New ductwork run for range hood exhaust.',
+      unit: 'each',
+      icField: 'range_hood_ducting_ic',
+      cpField: 'range_hood_ducting_cp',
+      icValue: (config as any).range_hood_ducting_ic ?? 450,
+      cpValue: (config as any).range_hood_ducting_cp ?? 850,
+    },
+    {
+      key: 'appliance_install_standard',
+      name: 'Appliance Install (Standard Pkg)',
+      description: 'Standard appliance installation package for typical kitchen appliances.',
+      unit: 'per kitchen',
+      icField: 'appliance_install_standard_ic',
+      cpField: 'appliance_install_standard_cp',
+      icValue: (config as any).appliance_install_standard_ic ?? 350,
+      cpValue: (config as any).appliance_install_standard_cp ?? 650,
+    },
+    {
+      key: 'appliance_install_pro',
+      name: 'Appliance Install (Pro/Built-in)',
+      description: 'Professional or built-in appliance installation requiring custom work.',
+      unit: 'per kitchen',
+      icField: 'appliance_install_pro_ic',
+      cpField: 'appliance_install_pro_cp',
+      icValue: (config as any).appliance_install_pro_ic ?? 800,
+      cpValue: (config as any).appliance_install_pro_cp ?? 1400,
+    },
+  ];
+
   // Build allowances
   const allowances = [
     {
@@ -712,6 +824,22 @@ export default function Pricing() {
       value: config.quartz_slab_level1_allowance_cp,
       unit: 'per slab',
       description: 'Level 1 quartz slab material allowance.',
+    },
+    {
+      key: 'granite_slab',
+      label: 'Granite Slab',
+      field: 'granite_slab_allowance_cp',
+      value: (config as any).granite_slab_allowance_cp ?? 1200,
+      unit: 'per slab',
+      description: 'Granite slab material allowance.',
+    },
+    {
+      key: 'quartzite_slab',
+      label: 'Quartzite Slab',
+      field: 'quartzite_slab_allowance_cp',
+      value: (config as any).quartzite_slab_allowance_cp ?? 1800,
+      unit: 'per slab',
+      description: 'Quartzite slab material allowance (premium natural stone).',
     },
     {
       key: 'plumbing_fixture',
@@ -943,7 +1071,39 @@ export default function Pricing() {
           />
         </AccordionSection>
 
-        {/* 7. Allowances - Collapsed by default */}
+        {/* 7. Site Prep & General Conditions - Collapsed by default */}
+        <AccordionSection 
+          title="Site Prep & General Conditions" 
+          icon={<Truck className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Site Prep & General Conditions"
+            description="Protection, cleaning, permits, and job site setup."
+            icon={<Truck className="h-5 w-5" />}
+            buckets={sitePrepBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+          />
+        </AccordionSection>
+
+        {/* 8. Mechanicals & Appliances - Collapsed by default */}
+        <AccordionSection 
+          title="Mechanicals & Appliances" 
+          icon={<Thermometer className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Mechanicals & Appliances"
+            description="HVAC, range hood ducting, and appliance installation."
+            icon={<Thermometer className="h-5 w-5" />}
+            buckets={mechanicalsBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+          />
+        </AccordionSection>
+
+        {/* 9. Allowances - Collapsed by default */}
         <AccordionSection 
           title="Allowances (Material Only)" 
           icon={<Palette className="h-5 w-5" />}
