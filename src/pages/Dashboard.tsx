@@ -64,10 +64,10 @@ export default function Dashboard() {
   }, [contractor]);
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
+    <div className="p-4 sm:p-6 md:p-8 bg-slate-50 min-h-full">
       {/* Welcome Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground font-display">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 font-display tracking-tight">
           Welcome back{profile?.name ? `, ${profile.name}` : ''}!
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1">
@@ -78,13 +78,13 @@ export default function Dashboard() {
       {/* Action Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
         <Link to="/estimator">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer border border-border h-full">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer bg-white border border-slate-200 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] rounded-2xl h-full">
             <CardContent className="flex items-center gap-3 sm:gap-4 p-4 sm:p-6">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
                 <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-semibold text-foreground text-sm sm:text-base">Open Chat Estimator</h3>
+                <h3 className="font-semibold text-slate-900 text-sm sm:text-base tracking-tight">Open Chat Estimator</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">Start a new estimate conversation</p>
               </div>
             </CardContent>
@@ -92,13 +92,13 @@ export default function Dashboard() {
         </Link>
 
         <Link to="/pricing">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer border border-border h-full">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer bg-white border border-slate-200 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] rounded-2xl h-full">
             <CardContent className="flex items-center gap-3 sm:gap-4 p-4 sm:p-6">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500 flex items-center justify-center flex-shrink-0">
                 <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-semibold text-foreground text-sm sm:text-base">Edit Pricing Allowances</h3>
+                <h3 className="font-semibold text-slate-900 text-sm sm:text-base tracking-tight">Edit Pricing Allowances</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">Configure your cost and price rates</p>
               </div>
             </CardContent>
@@ -108,46 +108,46 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-        <Card className="border border-border">
+        <Card className="bg-white border border-slate-200 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] rounded-2xl">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Estimates This Month</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">{stats.estimatesThisMonth}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1 tracking-tight">{stats.estimatesThisMonth}</p>
               </div>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-100 flex items-center justify-center flex-shrink-0">
                 <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-sky-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-border">
+        <Card className="bg-white border border-slate-200 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] rounded-2xl">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Average Estimate Value</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1 tracking-tight">
                   {formatCurrency(stats.averageValue)}
                 </p>
               </div>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-border">
+        <Card className="bg-white border border-slate-200 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] rounded-2xl">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1 tracking-tight">
                   {formatCurrency(stats.totalValue)}
                 </p>
               </div>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
                 <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
               </div>
             </div>
@@ -156,10 +156,10 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Estimates */}
-      <Card className="border border-border">
+      <Card className="bg-white border border-slate-200 shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.05)] rounded-2xl">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 px-4 sm:px-6">
           <div>
-            <CardTitle className="text-lg sm:text-xl font-bold font-display">Recent Estimates</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-bold font-display text-slate-900 tracking-tight">Recent Estimates</CardTitle>
             <p className="text-xs sm:text-sm text-muted-foreground">Your latest estimates</p>
           </div>
           <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
