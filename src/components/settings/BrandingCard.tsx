@@ -1,22 +1,35 @@
 import { useState, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Palette, Upload, X, RefreshCw } from 'lucide-react';
+import { Palette, Upload, X, RefreshCw, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Branding } from '@/types/settings';
+import { cn } from '@/lib/utils';
 
 interface Props {
   data: Branding;
   onChange: (data: Branding) => void;
   contractorId?: string;
+  initials: string;
+  companyName: string;
 }
 
-export function BrandingCard({ data, onChange, contractorId }: Props) {
+const PRO_COLORS = [
+  { name: 'Navy', value: '#0B1C3E' },
+  { name: 'Blue', value: '#2563EB' },
+  { name: 'Green', value: '#059669' },
+  { name: 'Black', value: '#18181B' },
+  { name: 'Red', value: '#DC2626' },
+];
+
+export function BrandingCard({ data, onChange, contractorId, initials, companyName }: Props) {
   const [uploading, setUploading] = useState(false);
+  const [customColorActive, setCustomColorActive] = useState(
+    !PRO_COLORS.some(c => c.value === data.primaryColor)
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const update = (field: keyof Branding, value: string) => {
@@ -67,146 +80,253 @@ export function BrandingCard({ data, onChange, contractorId }: Props) {
     update('logoUrl', '');
   };
 
+  const selectColor = (color: string, isPreset: boolean) => {
+    update('primaryColor', color);
+    setCustomColorActive(!isPreset);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Palette className="h-5 w-5 text-primary" />
-          <CardTitle>Branding</CardTitle>
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {/* Main Branding Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+        {/* Header */}
+        <div className="p-5 border-b border-slate-100">
+          <div className="flex items-center gap-2.5 mb-1">
+            <Palette className="h-5 w-5 text-cyan-500" />
+            <h3 className="text-lg font-bold text-[#0B1C3E]">Branding</h3>
+          </div>
+          <p className="text-sm text-slate-500">Customize how your quotes and proposals look</p>
         </div>
-        <CardDescription>
-          Customize how your quotes and proposals look
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Logo Upload */}
-        <div className="space-y-3">
-          <Label>Company Logo</Label>
-          <div className="flex items-start gap-4">
-            {data.logoUrl ? (
-              <div className="relative">
-                <img
-                  src={data.logoUrl}
-                  alt="Company logo"
-                  className="h-20 w-auto max-w-[200px] object-contain border rounded-lg p-2 bg-white"
+        
+        {/* Content */}
+        <div className="p-5 space-y-6">
+          {/* Circular Logo Upload */}
+          <div className="space-y-3">
+            <Label className="text-slate-700 text-sm">Company Logo</Label>
+            <div className="flex items-center gap-4">
+              {/* Circular Dropzone */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  'relative w-24 h-24 rounded-full cursor-pointer transition-all overflow-hidden',
+                  'border-2 border-dashed border-slate-300 hover:border-cyan-400 hover:bg-cyan-50/50',
+                  data.logoUrl && 'border-solid border-slate-200'
+                )}
+              >
+                {data.logoUrl ? (
+                  <>
+                    <img
+                      src={data.logoUrl}
+                      alt="Company logo"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeLogo();
+                      }}
+                      className="absolute top-0 right-0 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center hover:bg-rose-600 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                    <span className="text-2xl font-bold text-slate-500">{initials}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.svg"
+                  onChange={handleLogoUpload}
+                  className="hidden"
                 />
                 <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6"
-                  onClick={removeLogo}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="border-slate-200"
                 >
-                  <X className="h-3 w-3" />
+                  {uploading ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {data.logoUrl ? 'Change Logo' : 'Upload Logo'}
                 </Button>
+                <p className="text-xs text-slate-400 mt-2">PNG, JPG, or SVG. Max 5MB.</p>
               </div>
-            ) : (
-              <div className="h-20 w-40 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/30">
-                <span className="text-xs text-muted-foreground">No logo</span>
+            </div>
+          </div>
+
+          {/* Color Swatches */}
+          <div className="space-y-3">
+            <Label className="text-slate-700 text-sm">Brand Primary Color</Label>
+            <div className="flex flex-wrap gap-3">
+              {PRO_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => selectColor(color.value, true)}
+                  className={cn(
+                    'group relative w-10 h-10 rounded-full transition-all',
+                    'ring-2 ring-offset-2',
+                    data.primaryColor === color.value && !customColorActive
+                      ? 'ring-cyan-500'
+                      : 'ring-transparent hover:ring-slate-300'
+                  )}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                >
+                  {data.primaryColor === color.value && !customColorActive && (
+                    <Check className="absolute inset-0 m-auto h-5 w-5 text-white" />
+                  )}
+                </button>
+              ))}
+              
+              {/* Custom Color */}
+              <div className="relative">
+                <input
+                  type="color"
+                  value={customColorActive ? data.primaryColor : '#888888'}
+                  onChange={(e) => selectColor(e.target.value, false)}
+                  className="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer"
+                />
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center transition-all',
+                    'ring-2 ring-offset-2',
+                    customColorActive
+                      ? 'ring-cyan-500'
+                      : 'ring-transparent hover:ring-slate-300',
+                    'bg-gradient-to-br from-rose-400 via-purple-400 to-cyan-400'
+                  )}
+                >
+                  {customColorActive && (
+                    <div
+                      className="w-6 h-6 rounded-full border-2 border-white"
+                      style={{ backgroundColor: data.primaryColor }}
+                    />
+                  )}
+                </div>
               </div>
-            )}
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".png,.jpg,.jpeg,.svg"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
+            </div>
+            <p className="text-xs text-slate-400">
+              Selected: <span className="font-mono">{data.primaryColor}</span>
+            </p>
+          </div>
+
+          {/* Quote Header */}
+          <div className="space-y-2">
+            <Label htmlFor="headerTitle" className="text-slate-700 text-sm">Quote Header Title</Label>
+            <Input
+              id="headerTitle"
+              value={data.headerTitle}
+              onChange={(e) => update('headerTitle', e.target.value)}
+              placeholder="THE KITCHEN AND BATH STORE OF ORLANDO"
+              className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+            />
+          </div>
+
+          {/* Signature */}
+          <div className="space-y-2">
+            <Label htmlFor="signatureText" className="text-slate-700 text-sm">Signature Text</Label>
+            <Input
+              id="signatureText"
+              value={data.signatureText}
+              onChange={(e) => update('signatureText', e.target.value)}
+              placeholder="John Smith, Owner"
+              className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+            />
+          </div>
+
+          {/* Footer Disclaimer */}
+          <div className="space-y-2">
+            <Label htmlFor="pdfFooterDisclaimer" className="text-slate-700 text-sm">PDF Footer Disclaimer</Label>
+            <Textarea
+              id="pdfFooterDisclaimer"
+              value={data.pdfFooterDisclaimer}
+              onChange={(e) => update('pdfFooterDisclaimer', e.target.value)}
+              placeholder="Prices valid for 30 days. Subject to site inspection..."
+              rows={3}
+              className="border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all resize-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Live Preview Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="p-5 border-b border-slate-100">
+          <h3 className="text-lg font-bold text-[#0B1C3E]">Live Preview</h3>
+          <p className="text-sm text-slate-500">How your PDF header will look</p>
+        </div>
+        
+        <div className="p-5">
+          {/* Mini PDF Preview */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner">
+            {/* PDF Header Mockup */}
+            <div 
+              className="p-6 text-center"
+              style={{ backgroundColor: data.primaryColor + '10' }}
+            >
+              {/* Logo */}
+              {data.logoUrl ? (
+                <img 
+                  src={data.logoUrl} 
+                  alt="Logo" 
+                  className="h-16 w-auto mx-auto mb-3 object-contain"
+                />
+              ) : (
+                <div 
+                  className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center text-white text-xl font-bold"
+                  style={{ backgroundColor: data.primaryColor }}
+                >
+                  {initials}
+                </div>
+              )}
+              
+              {/* Company Name */}
+              <h2 
+                className="text-lg font-bold tracking-wide"
+                style={{ color: data.primaryColor }}
               >
-                {uploading ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                {data.logoUrl ? 'Change Logo' : 'Upload Logo'}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-1">PNG, JPG, or SVG. Max 5MB.</p>
+                {data.headerTitle || companyName || 'YOUR COMPANY NAME'}
+              </h2>
+            </div>
+            
+            {/* Fake Content */}
+            <div className="p-4 space-y-3">
+              <div className="text-center mb-4">
+                <p className="text-sm font-medium text-slate-700">Remodel Quote for</p>
+                <p className="text-lg font-bold text-slate-900">John & Jane Doe</p>
+              </div>
+              
+              <div className="h-2 bg-slate-100 rounded w-full" />
+              <div className="h-2 bg-slate-100 rounded w-4/5" />
+              <div className="h-2 bg-slate-100 rounded w-3/5" />
+              
+              <div className="pt-4 mt-4 border-t border-slate-100">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Total Investment</span>
+                  <span className="font-bold" style={{ color: data.primaryColor }}>$24,500</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="bg-slate-50 px-4 py-3 text-center">
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                {data.pdfFooterDisclaimer || 'Your legal disclaimer will appear here...'}
+              </p>
             </div>
           </div>
         </div>
-
-        {/* Colors */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="primaryColor">Brand Primary Color</Label>
-            <div className="flex gap-2">
-              <Input
-                type="color"
-                value={data.primaryColor}
-                onChange={(e) => update('primaryColor', e.target.value)}
-                className="w-14 h-10 p-1 cursor-pointer"
-              />
-              <Input
-                id="primaryColor"
-                value={data.primaryColor}
-                onChange={(e) => update('primaryColor', e.target.value)}
-                placeholder="#1e3a8a"
-                className="flex-1"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="accentColor">Accent Color</Label>
-            <div className="flex gap-2">
-              <Input
-                type="color"
-                value={data.accentColor}
-                onChange={(e) => update('accentColor', e.target.value)}
-                className="w-14 h-10 p-1 cursor-pointer"
-              />
-              <Input
-                id="accentColor"
-                value={data.accentColor}
-                onChange={(e) => update('accentColor', e.target.value)}
-                placeholder="#3b82f6"
-                className="flex-1"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Quote Header */}
-        <div className="space-y-2">
-          <Label htmlFor="headerTitle">Quote Header Title</Label>
-          <Input
-            id="headerTitle"
-            value={data.headerTitle}
-            onChange={(e) => update('headerTitle', e.target.value)}
-            placeholder="THE KITCHEN AND BATH STORE OF ORLANDO"
-          />
-          <p className="text-xs text-muted-foreground">
-            This title appears at the top of your proposal PDFs
-          </p>
-        </div>
-
-        {/* Signature */}
-        <div className="space-y-2">
-          <Label htmlFor="signatureText">Signature Text for Proposals</Label>
-          <Input
-            id="signatureText"
-            value={data.signatureText}
-            onChange={(e) => update('signatureText', e.target.value)}
-            placeholder="John Smith, Owner"
-          />
-        </div>
-
-        {/* Footer Disclaimer */}
-        <div className="space-y-2">
-          <Label htmlFor="pdfFooterDisclaimer">PDF Footer Disclaimer</Label>
-          <Textarea
-            id="pdfFooterDisclaimer"
-            value={data.pdfFooterDisclaimer}
-            onChange={(e) => update('pdfFooterDisclaimer', e.target.value)}
-            placeholder="Prices valid for 30 days. Subject to site inspection..."
-            rows={3}
-          />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

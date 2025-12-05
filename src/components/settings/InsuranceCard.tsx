@@ -1,10 +1,9 @@
 import { useState, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, Upload, FileText, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Shield, Upload, FileText, RefreshCw, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Insurance } from '@/types/settings';
@@ -83,26 +82,25 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
   const wcStatus = data.wcExpiration ? getExpirationStatus(data.wcExpiration) : null;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          <CardTitle>Insurance</CardTitle>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+      {/* Header */}
+      <div className="p-5 border-b border-slate-100">
+        <div className="flex items-center gap-2.5 mb-1">
+          <Shield className="h-5 w-5 text-cyan-500" />
+          <h3 className="text-lg font-bold text-[#0B1C3E]">Insurance</h3>
         </div>
-        <CardDescription>
-          Insurance details that may be included on proposals or shared with clients
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-8">
+        <p className="text-sm text-slate-500">Insurance details for proposals and client verification</p>
+      </div>
+      
+      {/* Content */}
+      <div className="p-5 space-y-6">
         {/* Warning Banner */}
         {(glStatus.warning || wcStatus?.warning) && (
-          <div className="flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+          <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-xl">
+            <AlertTriangle className="h-5 w-5 text-rose-500 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium text-destructive">Insurance Attention Required</p>
-              <p className="text-sm text-muted-foreground">
-                One or more policies are expired or expiring soon
-              </p>
+              <p className="text-sm font-medium text-rose-700">Insurance Attention Required</p>
+              <p className="text-sm text-rose-600">One or more policies are expired or expiring soon</p>
             </div>
           </div>
         )}
@@ -110,41 +108,45 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
         {/* General Liability */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium">General Liability (GL)</h4>
+            <h4 className="text-sm font-semibold text-[#0B1C3E]">General Liability (GL)</h4>
             {data.glExpiration && <Badge variant={glStatus.variant}>{glStatus.label}</Badge>}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Insurance Provider</Label>
+              <Label className="text-slate-700 text-sm">Insurance Provider</Label>
               <Input
                 value={data.glProvider}
                 onChange={(e) => update('glProvider', e.target.value)}
                 placeholder="State Farm, Progressive, etc."
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label>Policy Number</Label>
+              <Label className="text-slate-700 text-sm">Policy Number</Label>
               <Input
                 value={data.glNumber}
                 onChange={(e) => update('glNumber', e.target.value)}
                 placeholder="POL-123456"
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label>Coverage Amount</Label>
+              <Label className="text-slate-700 text-sm">Coverage Amount</Label>
               <Input
                 value={data.glCoverage}
                 onChange={(e) => update('glCoverage', e.target.value)}
                 placeholder="$1,000,000"
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label>Expiration Date</Label>
+              <Label className="text-slate-700 text-sm">Expiration Date</Label>
               <Input
                 type="date"
                 value={data.glExpiration}
                 onChange={(e) => update('glExpiration', e.target.value)}
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -162,6 +164,7 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
               size="sm"
               onClick={() => glFileRef.current?.click()}
               disabled={uploadingGl}
+              className="border-slate-200"
             >
               {uploadingGl ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -175,7 +178,7 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
                 href={data.glFileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-primary hover:underline"
+                className="flex items-center gap-1 text-sm text-cyan-600 hover:text-cyan-700 hover:underline"
               >
                 <FileText className="h-4 w-4" />
                 View Certificate
@@ -185,48 +188,52 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
         </div>
 
         {/* Divider */}
-        <div className="border-t" />
+        <div className="border-t border-slate-100" />
 
         {/* Workers Comp */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium">Workers Compensation (Optional)</h4>
+            <h4 className="text-sm font-semibold text-[#0B1C3E]">Workers Compensation (Optional)</h4>
             {data.wcExpiration && wcStatus && (
               <Badge variant={wcStatus.variant}>{wcStatus.label}</Badge>
             )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>WC Provider</Label>
+              <Label className="text-slate-700 text-sm">WC Provider</Label>
               <Input
                 value={data.wcProvider || ''}
                 onChange={(e) => update('wcProvider', e.target.value)}
                 placeholder="Insurance provider"
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label>WC Policy Number</Label>
+              <Label className="text-slate-700 text-sm">WC Policy Number</Label>
               <Input
                 value={data.wcNumber || ''}
                 onChange={(e) => update('wcNumber', e.target.value)}
                 placeholder="WC-123456"
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label>WC Coverage Amount</Label>
+              <Label className="text-slate-700 text-sm">WC Coverage Amount</Label>
               <Input
                 value={data.wcCoverage || ''}
                 onChange={(e) => update('wcCoverage', e.target.value)}
                 placeholder="$500,000"
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
             <div className="space-y-2">
-              <Label>WC Expiration Date</Label>
+              <Label className="text-slate-700 text-sm">WC Expiration Date</Label>
               <Input
                 type="date"
                 value={data.wcExpiration || ''}
                 onChange={(e) => update('wcExpiration', e.target.value)}
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -244,6 +251,7 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
               size="sm"
               onClick={() => wcFileRef.current?.click()}
               disabled={uploadingWc}
+              className="border-slate-200"
             >
               {uploadingWc ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -257,7 +265,7 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
                 href={data.wcFileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-primary hover:underline"
+                className="flex items-center gap-1 text-sm text-cyan-600 hover:text-cyan-700 hover:underline"
               >
                 <FileText className="h-4 w-4" />
                 View Certificate
@@ -265,7 +273,7 @@ export function InsuranceCard({ data, onChange, contractorId }: Props) {
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
