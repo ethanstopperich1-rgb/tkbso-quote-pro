@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-proposal-email]
 verify_jwt = false
+
+[functions.analyze-photo]
+verify_jwt = false

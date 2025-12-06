@@ -5,10 +5,12 @@ import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, Menu, LayoutDashboard, FileText, Settings, X } from 'lucide-react';
+import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, Menu, LayoutDashboard, FileText, Settings, X, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { PhotoAnalysisCard } from './PhotoAnalysisCard';
+import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 
 interface PricingLineItem {
   category: string;
@@ -89,6 +91,8 @@ const WELCOME_MESSAGE: Message = {
   role: 'assistant',
   content: `Hey! What project are we estimating today?
 
+📷 **Upload a photo** for instant AI detection, or just tell me:
+
 **Kitchen** or **Bathroom**?`,
   timestamp: new Date(),
 };
@@ -103,6 +107,8 @@ export function EstimatorChatPanel() {
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
   const [showLineItems, setShowLineItems] = useState(false);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+  const [photoAnalysis, setPhotoAnalysis] = useState<{ analysis: PhotoAnalysis; imagePreview: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const scrollToBottom = () => {
@@ -111,7 +117,7 @@ export function EstimatorChatPanel() {
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages, estimate]);
+  }, [messages, estimate, photoAnalysis]);
 
   const addAssistantMessage = (content: string) => {
     const message: Message = {
@@ -220,12 +226,19 @@ export function EstimatorChatPanel() {
     setIsLoading(true);
 
     try {
+      // Include photo analysis context if available
+      const photoContext = getPhotoContextForEstimator();
+      const messageWithContext = photoContext 
+        ? `${content}\n\n[Photo Analysis Context]\n${photoContext}`
+        : content;
+
       const { data, error } = await supabase.functions.invoke('calculate-estimate', {
         body: { 
-          message: content,
+          message: messageWithContext,
           context,
           contractor_id: contractor.id,
           conversation_history: updatedHistory,
+          photo_analysis: photoAnalysis?.analysis || null,
         }
       });
 
@@ -296,6 +309,124 @@ export function EstimatorChatPanel() {
     setEstimate(null);
     setSavedEstimateId(null);
     setShowLineItems(false);
+    setPhotoAnalysis(null);
+  };
+
+  // Handle photo upload for AI vision analysis
+  const handlePhotoUpload = async (file: File) => {
+    if (!contractor?.id) {
+      toast.error('Please log in to use photo analysis');
+      return;
+    }
+
+    setIsAnalyzingPhoto(true);
+
+    try {
+      // Convert to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+
+      const base64Data = await base64Promise;
+      const imagePreview = `data:${file.type};base64,${base64Data}`;
+
+      // Add a "scanning" message
+      const scanningMessage: Message = {
+        id: 'scanning-' + Date.now(),
+        role: 'assistant',
+        content: '📷 **Scanning photo...** Analyzing visible trade items with AI vision.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, scanningMessage]);
+
+      // Call the analyze-photo edge function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-photo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          image_base64: base64Data,
+          mime_type: file.type,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment.');
+        }
+        if (response.status === 402) {
+          throw new Error('AI quota exceeded. Please try again later.');
+        }
+        throw new Error(errorData.error || 'Failed to analyze photo');
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Analysis failed');
+      }
+
+      // Remove the scanning message and add results
+      setMessages(prev => prev.filter(m => !m.id.startsWith('scanning-')));
+      
+      // Store the analysis for display
+      setPhotoAnalysis({ analysis: data.analysis, imagePreview });
+
+      // Update context with detected project type
+      if (data.analysis.project_type && data.analysis.project_type !== 'Unknown') {
+        setContext(prev => ({
+          ...prev,
+          projectType: data.analysis.project_type,
+        }));
+      }
+
+      // Add confirmation message
+      const confirmMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `✨ **Photo analyzed!** I detected ${data.analysis.detected_items.length} trade items for a ${data.analysis.project_type} project.
+
+Review the items above, then tell me what's accurate or needs adjustment. You can also provide dimensions (e.g., "5x8 bathroom, 3x4 shower").`,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, confirmMessage]);
+      setConversationHistory(prev => [...prev, { role: 'assistant', content: confirmMessage.content }]);
+
+      toast.success('Photo analyzed successfully!');
+
+    } catch (error) {
+      console.error('Photo analysis error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to analyze photo');
+      
+      // Remove scanning message on error
+      setMessages(prev => prev.filter(m => !m.id.startsWith('scanning-')));
+      
+      addAssistantMessage("I couldn't analyze that photo. Please try a clearer image, or just describe the project.");
+    } finally {
+      setIsAnalyzingPhoto(false);
+    }
+  };
+
+  // Convert photo analysis to text context for the estimator
+  const getPhotoContextForEstimator = (): string => {
+    if (!photoAnalysis) return '';
+    
+    const { analysis } = photoAnalysis;
+    const items = analysis.detected_items.map(item => 
+      `${item.category}: ${item.item} (${item.quantity} ${item.unit})`
+    ).join('\n');
+    
+    return `AI Vision detected items:\n${items}\n\nObservations: ${analysis.observations || 'None'}`;
   };
 
   const handleViewEstimate = () => {
@@ -378,6 +509,27 @@ export function EstimatorChatPanel() {
             isNew={index === messages.length - 1 && message.role === 'assistant'}
           />
         ))}
+
+        {/* Scanning animation */}
+        {isAnalyzingPhoto && (
+          <div className="flex items-center gap-3 text-cyan-600 animate-fade-in">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
+              <Camera className="h-4 w-4 animate-pulse" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">Scanning photo...</span>
+              <span className="text-xs text-muted-foreground">Detecting trade items with AI vision</span>
+            </div>
+          </div>
+        )}
+
+        {/* Photo Analysis Card */}
+        {photoAnalysis && !estimate && (
+          <PhotoAnalysisCard 
+            analysis={photoAnalysis.analysis} 
+            imagePreview={photoAnalysis.imagePreview}
+          />
+        )}
         
         {isLoading && (
           <div className="flex items-center gap-3 text-muted-foreground animate-fade-in">
@@ -519,11 +671,16 @@ export function EstimatorChatPanel() {
       <div className="relative p-2 sm:p-4 border-t border-border">
         <ChatInput 
           onSend={handleSendMessage} 
-          disabled={isLoading}
+          onPhotoUpload={handlePhotoUpload}
+          disabled={isLoading || isAnalyzingPhoto}
+          showPhotoUpload={true}
+          isAnalyzingPhoto={isAnalyzingPhoto}
           placeholder={
-            !context.projectType 
-              ? "Kitchen or bathroom?" 
-              : `Describe the ${context.projectType.toLowerCase()} scope...`
+            photoAnalysis && !estimate
+              ? "Confirm items or add dimensions (e.g., '5x8 bathroom')..."
+              : !context.projectType 
+                ? "Describe project or upload a photo..." 
+                : `Describe the ${context.projectType.toLowerCase()} scope...`
           }
         />
       </div>
