@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PricingConfig } from '@/types/database';
 import { Save, RefreshCw, RotateCcw, ChevronDown, Truck, Settings2, Thermometer } from 'lucide-react';
-import { Bath, ChefHat, Package, Wrench, HardHat, Palette } from 'lucide-react';
+import { Bath, ChefHat, Wrench, HardHat, Palette } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -509,7 +509,7 @@ export default function Pricing() {
       key: 'waterproofing',
       name: 'Waterproofing',
       description: 'Membrane, corners, seam banding, pan integration, bonding flange.',
-      unit: 'per sqft',
+      unit: 'lump sum',
       icField: 'waterproofing_ic_per_sqft',
       cpField: 'waterproofing_cp_per_sqft',
       icValue: config.waterproofing_ic_per_sqft,
@@ -592,8 +592,8 @@ export default function Pricing() {
     {
       key: 'cabinets',
       name: 'Cabinets (Material + Install)',
-      description: 'Stock/semi-custom cabinets with installation. Typical kitchen: 18-25 linear feet.',
-      unit: 'per LF',
+      description: 'Stock/semi-custom cabinets with installation. Price per cabinet box.',
+      unit: 'per box',
       icField: 'cabinet_lf_ic',
       cpField: 'cabinet_lf_cp',
       icValue: config.cabinet_lf_ic ?? 250,
@@ -603,7 +603,7 @@ export default function Pricing() {
       key: 'cabinet_install_only',
       name: 'Cabinet Install Only',
       description: 'Labor only for customer-supplied cabinets.',
-      unit: 'per LF',
+      unit: 'per box',
       icField: 'cabinet_install_only_lf_ic',
       cpField: 'cabinet_install_only_lf_cp',
       icValue: config.cabinet_install_only_lf_ic ?? 50,
@@ -658,40 +658,6 @@ export default function Pricing() {
       cpField: 'lvp_cp_per_sqft',
       icValue: config.lvp_ic_per_sqft ?? 2.5,
       cpValue: config.lvp_cp_per_sqft ?? 4.5,
-    },
-  ];
-
-  // Build closet trade buckets
-  const closetBuckets: TradeBucket[] = [
-    {
-      key: 'framing_closet',
-      name: 'Framing & Drywall',
-      description: 'Closet framing, drywall, and finishing.',
-      unit: 'per closet',
-      icField: 'framing_pony_wall_ic',
-      cpField: 'framing_pony_wall_cp',
-      icValue: config.framing_pony_wall_ic || 450,
-      cpValue: config.framing_pony_wall_cp || 850,
-    },
-    {
-      key: 'shelving',
-      name: 'Finish Carpentry & Shelving',
-      description: 'Custom shelving, rods, and trim work.',
-      unit: 'per closet',
-      icField: 'closet_ic_per_sqft',
-      cpField: 'closet_cp_per_sqft',
-      icValue: config.closet_ic_per_sqft * 40,
-      cpValue: config.closet_cp_per_sqft * 40,
-    },
-    {
-      key: 'paint_closet',
-      name: 'Paint & Trim',
-      description: 'Interior paint and trim finishing.',
-      unit: 'per closet',
-      icField: 'paint_patch_bath_ic',
-      cpField: 'paint_patch_bath_cp',
-      icValue: 300,
-      cpValue: 500,
     },
   ];
 
@@ -833,8 +799,8 @@ export default function Pricing() {
     },
     {
       key: 'post_construction_clean',
-      name: 'Post-Construction Deep Clean',
-      description: 'Professional deep cleaning after construction completion.',
+      name: 'Post-Construction Clean',
+      description: 'Professional cleaning after construction completion.',
       unit: 'per job',
       icField: 'post_construction_clean_ic',
       cpField: 'post_construction_clean_cp',
@@ -864,6 +830,16 @@ export default function Pricing() {
       cpField: 'hvac_vent_relocate_cp',
       icValue: (config as any).hvac_vent_relocate_ic ?? 250,
       cpValue: (config as any).hvac_vent_relocate_cp ?? 450,
+    },
+    {
+      key: 'exhaust_fan',
+      name: 'Exhaust Fan Install',
+      description: 'Bathroom or kitchen exhaust fan installation including venting.',
+      unit: 'each',
+      icField: 'electrical_vanity_light_ic',
+      cpField: 'electrical_vanity_light_cp',
+      icValue: config.electrical_vanity_light_ic ?? 200,
+      cpValue: config.electrical_vanity_light_cp ?? 350,
     },
     {
       key: 'range_hood_ducting',
@@ -901,11 +877,19 @@ export default function Pricing() {
   const allowances = [
     {
       key: 'tile_material',
-      label: 'Tile Material',
+      label: 'Wall Tile Material',
       field: 'tile_material_allowance_cp_per_sqft',
       value: config.tile_material_allowance_cp_per_sqft,
       unit: 'per sqft',
-      description: 'Includes tile material, thin-set, grout, and sealer for bathroom areas.',
+      description: 'Includes wall tile material, thin-set, grout, and sealer.',
+    },
+    {
+      key: 'floor_tile_material',
+      label: 'Floor Tile Material',
+      field: 'tile_floor_ic_per_sqft',
+      value: config.tile_floor_ic_per_sqft ?? 4.5,
+      unit: 'per sqft',
+      description: 'Floor tile material cost per square foot.',
     },
     {
       key: 'quartz_slab',
@@ -1128,23 +1112,6 @@ export default function Pricing() {
             description="Trade buckets for kitchen remodel estimates."
             icon={<ChefHat className="h-5 w-5" />}
             buckets={kitchenBuckets}
-            onChange={handleChange}
-            targetMargin={config.target_margin}
-            pricingMode={pricingMode}
-          />
-        </AccordionSection>
-
-        {/* 5. Closet Trade Buckets - Collapsed by default */}
-        <AccordionSection 
-          title="Closet Trade Buckets" 
-          icon={<Package className="h-5 w-5" />}
-          defaultOpen={false}
-        >
-          <TradeBucketsCard
-            title="Closet Trade Buckets"
-            description="Trade buckets for closet buildout and expansion."
-            icon={<Package className="h-5 w-5" />}
-            buckets={closetBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
             pricingMode={pricingMode}
