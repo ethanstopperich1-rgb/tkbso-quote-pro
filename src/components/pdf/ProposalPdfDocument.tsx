@@ -371,6 +371,8 @@ export interface ProposalPdfProps {
   contractorPhone?: string;
   contractorEmail?: string;
   logoUrl?: string;
+  headerTitle?: string;
+  footerDisclaimer?: string;
 }
 
 export function ProposalPdfDocument({
@@ -386,10 +388,12 @@ export function ProposalPdfDocument({
   scopeItems,
   paymentMilestones,
   estimatedDays = 14,
-  contractorName = 'The Kitchen and Bath Store of Orlando',
+  contractorName = 'Your Company Name',
   contractorPhone = '(407) 555-1234',
-  contractorEmail = 'info@tkbso.com',
+  contractorEmail = 'info@yourcompany.com',
   logoUrl,
+  headerTitle,
+  footerDisclaimer,
 }: ProposalPdfProps) {
   const fullAddress = [address, city, state, zip].filter(Boolean).join(', ');
   
@@ -404,7 +408,7 @@ export function ProposalPdfDocument({
         {/* Page Header with Logo */}
         <View style={styles.pageHeader} fixed>
           {logoUrl && <Image src={logoUrl} style={styles.logo} />}
-          <Text style={styles.companyName}>THE KITCHEN AND BATH STORE OF ORLANDO</Text>
+          <Text style={styles.companyName}>{headerTitle || contractorName}</Text>
           <Text style={styles.tagline}>Professional Remodeling Services</Text>
         </View>
 
@@ -496,7 +500,7 @@ export function ProposalPdfDocument({
         {/* Page Header with Logo */}
         <View style={styles.pageHeader} fixed>
           {logoUrl && <Image src={logoUrl} style={styles.logo} />}
-          <Text style={styles.companyName}>THE KITCHEN AND BATH STORE OF ORLANDO</Text>
+          <Text style={styles.companyName}>{headerTitle || contractorName}</Text>
           <Text style={styles.tagline}>Professional Remodeling Services</Text>
         </View>
 
@@ -551,7 +555,7 @@ export function ProposalPdfDocument({
             <View style={styles.noteBox}>
               <Text style={styles.noteTitle}>Note I: Work Site Precautions</Text>
               <Text style={styles.noteText}>
-                TKBSO will take reasonable precautions to minimize dust and disruption, including 
+                {contractorName} will take reasonable precautions to minimize dust and disruption, including 
                 installing floor protection, sealing vents, and maintaining a clean workspace.
               </Text>
             </View>
@@ -559,7 +563,7 @@ export function ProposalPdfDocument({
             <View style={styles.noteBox}>
               <Text style={styles.noteTitle}>Note II: Fixture Allowances</Text>
               <Text style={styles.noteText}>
-                All fixtures to be supplied by TKBSO under standard allowance unless specific 
+                All fixtures to be supplied by {contractorName} under standard allowance unless specific 
                 models are chosen by the homeowner prior to ordering.
               </Text>
             </View>
@@ -581,7 +585,7 @@ export function ProposalPdfDocument({
               <Text style={styles.dateLabel}>Date: _______________</Text>
             </View>
             <View style={styles.signatureBox}>
-              <Text style={styles.signatureLabel}>TKBSO Representative</Text>
+              <Text style={styles.signatureLabel}>{contractorName} Representative</Text>
               <View style={styles.signatureLine} />
               <Text style={styles.dateLabel}>Date: _______________</Text>
             </View>

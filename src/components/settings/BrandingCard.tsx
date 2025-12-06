@@ -74,6 +74,8 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
         contractorPhone: '(407) 555-1234',
         contractorEmail: 'info@yourcompany.com',
         logoUrl: data.logoUrl || undefined,
+        headerTitle: data.headerTitle || companyName || 'Your Company Name',
+        footerDisclaimer: data.pdfFooterDisclaimer || undefined,
       };
 
       const blob = await pdf(<ProposalPdfDocument {...sampleProps} />).toBlob();
