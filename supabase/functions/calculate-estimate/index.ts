@@ -957,20 +957,22 @@ NOTE: Vanity bundles include vanity cabinet, top, and installation. Do NOT add s
 - Quartz - Countertop - qty: countertop sqft, unit: sqft
 NOTE: Countertop pricing is ALL-IN (slab material + fabrication + installation). Do NOT add separate "Materials - Countertop".
 
-**Backsplash:** Backsplash - Tile (sqft)
+**Backsplash:** Backsplash - Tile (sqft) - NOTE: Material included in "Materials - Tile" total
 
-**Framing:** Framing - Standard, Framing - Niche (ea)
+**Framing (LABOR BUNDLE - materials included):** Framing - Standard, Framing - Niche (ea)
 
-**Paint:** Paint - Patch, Paint - Full Bath
+**Paint (LABOR BUNDLE - materials included):** Paint - Patch, Paint - Full Bath
+
+**Electrical (LABOR BUNDLE - fixtures included):** Recessed Can, Vanity Light, Pendant Light, Under Cabinet Lighting, Kitchen Package
 
 ## MATERIAL LINE ITEMS - ONLY FOR ITEMS NOT IN BUNDLES:
 
 Add SEPARATE material line items ONLY for these categories where labor and materials are priced separately:
 
-**Materials - Tile:** Add when tile is in scope
+**Materials - Tile:** Add when tile is in scope (wall tile, floor tile, shower tile, OR backsplash)
 - Category: "Materials - Tile"
 - task_description: "Tile material allowance - [type mentioned: porcelain/ceramic/natural stone]"
-- quantity: total tile sqft (wall + floor)
+- quantity: total tile sqft (wall + floor + backsplash combined)
 - unit: sqft
 
 **Materials - Cabinets:** Add when new KITCHEN cabinets are in scope  
@@ -997,6 +999,9 @@ Add SEPARATE material line items ONLY for these categories where labor and mater
 - Glass (Glass - Shower Standard, Panel Only, 90 Return include materials)
 - Vanities (Vanity bundles include cabinet + top)
 - Plumbing packages (labor bundles, fixtures are separate allowance)
+- Framing (lumber/hardware included in labor rate)
+- Paint (paint/primer included in labor rate)
+- Electrical (fixtures included in labor rate)
 
 EXAMPLE: For "bathroom with new shower glass and 48 vanity":
 - Add: Glass - Shower Standard (1 ea) ← NO separate Materials - Glass!
