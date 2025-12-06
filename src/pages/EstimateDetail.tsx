@@ -18,6 +18,7 @@ import { ConversationHistoryCard } from '@/components/estimates/ConversationHist
 import { PricingEditCard } from '@/components/estimates/PricingEditCard';
 import { LineItemEditorCard } from '@/components/estimates/LineItemEditorCard';
 import { ProjectPhotosCard } from '@/components/estimates/ProjectPhotosCard';
+import { SendProposalDialog } from '@/components/estimates/SendProposalDialog';
 import { 
   ArrowLeft, 
   Download, 
@@ -180,6 +181,7 @@ export default function EstimateDetail() {
   const [downloading, setDownloading] = useState(false);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState<'low' | 'recommended' | 'high'>('recommended');
   const [clientMode, setClientMode] = useState(false);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -279,8 +281,16 @@ export default function EstimateDetail() {
 
   const getNextStageAction = () => {
     const currentIndex = getCurrentStageIndex();
-    if (currentIndex === 0) return { label: 'Move to Sent', action: handleMoveToSent };
+    if (currentIndex === 0) return { label: 'Send Proposal', action: () => setSendDialogOpen(true) };
     return null;
+  };
+
+  const getSelectedPrice = () => {
+    return selectedPriceLevel === 'low'
+      ? estimate?.low_estimate_cp || 0
+      : selectedPriceLevel === 'high'
+        ? estimate?.high_estimate_cp || 0
+        : estimate?.final_cp_total || 0;
   };
 
   if (loading) {
@@ -372,7 +382,7 @@ export default function EstimateDetail() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-slate-700">Deal Stage</h3>
           {nextAction && (
-            <Button size="sm" variant="outline" onClick={nextAction.action} className="gap-1.5">
+            <Button size="sm" onClick={nextAction.action} className="gap-1.5 bg-sky-500 hover:bg-sky-600">
               <Send className="h-3.5 w-3.5" />
               {nextAction.label}
             </Button>
@@ -583,6 +593,21 @@ export default function EstimateDetail() {
           </Card>
         </div>
       </div>
+
+      {/* Send Proposal Dialog */}
+      {contractor && (
+        <SendProposalDialog
+          open={sendDialogOpen}
+          onOpenChange={setSendDialogOpen}
+          estimate={estimate}
+          contractor={contractor}
+          pricingConfig={pricingConfig}
+          selectedPrice={getSelectedPrice()}
+          onSent={() => {
+            setEstimate({ ...estimate, status: 'sent' });
+          }}
+        />
+      )}
     </div>
   );
 }
