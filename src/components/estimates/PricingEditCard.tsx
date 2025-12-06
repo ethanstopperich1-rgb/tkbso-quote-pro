@@ -213,13 +213,15 @@ export function PricingEditCard({ estimate, onUpdate }: PricingEditCardProps) {
 
   if (!isEditing) {
     return (
-      <Card className="border-amber-200 bg-amber-50/30">
+      <Card className="border-amber-300 bg-amber-50/50">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg text-amber-800">Internal Breakdown</CardTitle>
-            <p className="text-xs text-amber-600">This section is NOT shown on the client PDF</p>
+            <CardTitle className="text-lg text-amber-900">Profitability Analysis</CardTitle>
+            <p className="text-xs text-amber-700 flex items-center gap-1 mt-0.5">
+              ⚠️ Contains sensitive data - NOT shown on client PDF
+            </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="border-amber-300 hover:bg-amber-100">
             <Edit2 className="h-4 w-4 mr-1" />
             Edit Pricing
           </Button>

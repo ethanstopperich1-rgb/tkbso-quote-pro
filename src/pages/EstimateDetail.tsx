@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
@@ -18,23 +20,37 @@ import { LineItemEditorCard } from '@/components/estimates/LineItemEditorCard';
 import { 
   ArrowLeft, 
   Download, 
-  FileText, 
-  MapPin, 
   User, 
   Phone, 
   Mail, 
   Calendar,
   DollarSign,
   RefreshCw,
-  Copy,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  Clock,
+  Edit2,
+  FileText,
+  Send,
+  ImagePlus,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Deal stages for the progress bar
+const DEAL_STAGES = [
+  { id: 'draft', label: 'Draft' },
+  { id: 'sent', label: 'Sent' },
+  { id: 'viewed', label: 'Viewed' },
+  { id: 'signed', label: 'Signed' },
+  { id: 'deposit_paid', label: 'Deposit Paid' },
+];
 
 // Generate scope text from estimate data
 function generateScopeTextFromEstimate(estimate: Estimate): string {
   const lines: string[] = [];
   const isShowerOnly = estimate.bath_scope_level === 'shower_only';
   
-  // Demo
   if (estimate.include_demo !== false) {
     lines.push('DEMO:');
     if (estimate.has_bathrooms) {
@@ -51,7 +67,6 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
     lines.push('');
   }
   
-  // Framing (bathroom only)
   if (estimate.has_bathrooms) {
     lines.push('FRAMING:');
     lines.push('• Install blocking for shower fixtures and accessories');
@@ -59,7 +74,6 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
     lines.push('');
   }
   
-  // Plumbing
   if (estimate.include_plumbing !== false) {
     lines.push('PLUMBING:');
     if (estimate.has_bathrooms) {
@@ -82,7 +96,6 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
     lines.push('');
   }
   
-  // Electrical
   if (estimate.include_electrical) {
     lines.push('ELECTRICAL:');
     if (estimate.has_bathrooms) {
@@ -102,7 +115,6 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
     lines.push('');
   }
   
-  // Tile Work
   if (estimate.has_bathrooms) {
     lines.push('TILE WORK:');
     lines.push('• Install waterproofing system (Schluter or equivalent)');
@@ -125,7 +137,6 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
     lines.push('');
   }
   
-  // Vanity (full bathroom only)
   if (estimate.has_bathrooms && !isShowerOnly && estimate.bath_uses_tkbso_vanities) {
     lines.push('VANITY:');
     if (estimate.vanity_size && estimate.vanity_size !== 'none') {
@@ -138,7 +149,6 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
     lines.push('');
   }
   
-  // Glass
   if (estimate.include_glass || estimate.bath_uses_frameless_glass || (estimate.glass_type && estimate.glass_type !== 'none')) {
     lines.push('SHOWER GLASS:');
     if (estimate.glass_type === 'panel_only') {
@@ -154,7 +164,6 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
     lines.push('');
   }
   
-  // Paint
   if (estimate.include_paint) {
     lines.push('PAINTING:');
     lines.push('• Patch and repair drywall as needed');
@@ -173,8 +182,8 @@ export default function EstimateDetail() {
   const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState<'low' | 'recommended' | 'high'>('recommended');
+  const [clientMode, setClientMode] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -193,27 +202,22 @@ export default function EstimateDetail() {
     fetchData();
   }, [id, contractor]);
 
-  const handleRegenerateScope = async () => {
+  const handleMoveToSent = async () => {
     if (!estimate || !id) return;
     
-    setRegenerating(true);
     try {
-      const newScopeText = generateScopeTextFromEstimate(estimate);
-      
       const { error } = await supabase
         .from('estimates')
-        .update({ client_estimate_text: newScopeText })
+        .update({ status: 'sent' })
         .eq('id', id);
       
       if (error) throw error;
       
-      setEstimate({ ...estimate, client_estimate_text: newScopeText });
-      toast.success('Scope text regenerated!');
+      setEstimate({ ...estimate, status: 'sent' });
+      toast.success('Estimate moved to Sent!');
     } catch (error) {
-      console.error('Error regenerating scope:', error);
-      toast.error('Failed to regenerate scope text');
-    } finally {
-      setRegenerating(false);
+      console.error('Error updating status:', error);
+      toast.error('Failed to update status');
     }
   };
 
@@ -227,7 +231,6 @@ export default function EstimateDetail() {
     
     setDownloading(true);
     try {
-      // Create estimate with selected price level
       const selectedPrice = selectedPriceLevel === 'low' 
         ? estimate.low_estimate_cp 
         : selectedPriceLevel === 'high' 
@@ -253,8 +256,8 @@ export default function EstimateDetail() {
       const clientName = estimate.client_name?.replace(/[^a-zA-Z0-9]/g, '_') || '';
       const jobLabel = estimate.job_label?.replace(/[^a-zA-Z0-9]/g, '_') || '';
       const filename = clientName || jobLabel
-        ? `TKBSO_Proposal_${clientName}${jobLabel ? '_' + jobLabel : ''}.pdf`
-        : `TKBSO_Proposal_${estimate.id}.pdf`;
+        ? `Proposal_${clientName}${jobLabel ? '_' + jobLabel : ''}.pdf`
+        : `Proposal_${estimate.id}.pdf`;
       
       link.href = url;
       link.download = filename;
@@ -272,26 +275,21 @@ export default function EstimateDetail() {
     }
   };
 
-  const handleCopyText = () => {
-    if (estimate?.client_estimate_text) {
-      navigator.clipboard.writeText(estimate.client_estimate_text);
-      toast.success('Scope text copied to clipboard!');
-    }
+  const getCurrentStageIndex = () => {
+    const status = estimate?.status || 'draft';
+    const index = DEAL_STAGES.findIndex(s => s.id === status);
+    return index >= 0 ? index : 0;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-secondary text-secondary-foreground';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'won': return 'bg-emerald-100 text-emerald-800';
-      case 'lost': return 'bg-red-100 text-red-800';
-      default: return 'bg-secondary text-secondary-foreground';
-    }
+  const getNextStageAction = () => {
+    const currentIndex = getCurrentStageIndex();
+    if (currentIndex === 0) return { label: 'Move to Sent', action: handleMoveToSent };
+    return null;
   };
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-8 flex items-center justify-center">
+      <div className="p-4 sm:p-8 flex items-center justify-center min-h-[50vh]">
         <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -311,17 +309,21 @@ export default function EstimateDetail() {
     );
   }
 
-  const fullAddress = [
-    estimate.property_address,
-    estimate.city,
-    estimate.state,
-    estimate.zip,
-  ].filter(Boolean).join(', ');
+  const currentStageIndex = getCurrentStageIndex();
+  const nextAction = getNextStageAction();
+
+  // Activity log entries
+  const activityLog = [
+    { date: new Date(estimate.created_at), action: 'Created', icon: FileText },
+    ...(estimate.updated_at !== estimate.created_at 
+      ? [{ date: new Date(estimate.updated_at), action: 'Edited Pricing', icon: Edit2 }] 
+      : []),
+  ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
         <div className="flex items-start gap-3 sm:gap-4">
           <Link to="/estimates">
             <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
@@ -329,121 +331,244 @@ export default function EstimateDetail() {
             </Button>
           </Link>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold font-display truncate">
-                {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
-              </h1>
-              <Badge className={getStatusColor(estimate.status)}>
-                {estimate.status}
-              </Badge>
-            </div>
+            <h1 className="text-xl sm:text-2xl font-bold font-display truncate">
+              {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
+            </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Created {new Date(estimate.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
         
-        <Button 
-          onClick={handleDownloadPdf} 
-          disabled={downloading || !estimate.final_cp_total}
-          className="gap-2 w-full sm:w-auto"
-          size="sm"
-        >
-          {downloading ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}
-          Download PDF
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Client Mode Toggle */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50">
+            <Label htmlFor="client-mode" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+              {clientMode ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+              Client Mode
+            </Label>
+            <Switch
+              id="client-mode"
+              checked={clientMode}
+              onCheckedChange={setClientMode}
+              className="scale-75"
+            />
+          </div>
+          
+          <Button 
+            onClick={handleDownloadPdf} 
+            disabled={downloading || !estimate.final_cp_total}
+            className="gap-2"
+            size="sm"
+          >
+            {downloading ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Download PDF
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        {/* Left Column - Details */}
-        <div className="md:col-span-2 space-y-4 sm:space-y-6">
-          {/* Price Summary Card */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                Investment Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      {/* Deal Stage Progress Bar */}
+      <div className="mb-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-slate-700">Deal Stage</h3>
+          {nextAction && (
+            <Button size="sm" variant="outline" onClick={nextAction.action} className="gap-1.5">
+              <Send className="h-3.5 w-3.5" />
+              {nextAction.label}
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center">
+          {DEAL_STAGES.map((stage, index) => (
+            <div key={stage.id} className="flex items-center flex-1">
+              <div 
+                className={cn(
+                  "flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  index <= currentStageIndex 
+                    ? "bg-sky-500 text-white" 
+                    : "bg-slate-100 text-slate-400"
+                )}
+              >
+                {stage.label}
+              </div>
+              {index < DEAL_STAGES.length - 1 && (
+                <ChevronRight className={cn(
+                  "h-4 w-4 mx-1 flex-shrink-0",
+                  index < currentStageIndex ? "text-sky-500" : "text-slate-200"
+                )} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main 3-Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Left Column (2/3 width) */}
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {/* Investment Summary - Premium Dark Card */}
+          <Card className="overflow-hidden border-0 shadow-xl">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white">
+              <div className="flex items-center gap-2 mb-4">
+                <DollarSign className="h-5 w-5 text-sky-400" />
+                <h3 className="text-lg font-semibold">Investment Summary</h3>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={() => setSelectedPriceLevel('low')}
-                  className={`p-2 sm:p-3 rounded-lg text-center transition-all ${
+                  className={cn(
+                    "p-3 rounded-xl text-center transition-all",
                     selectedPriceLevel === 'low'
-                      ? 'bg-primary/10 ring-2 ring-primary'
-                      : 'hover:bg-muted/50'
-                  }`}
+                      ? "bg-white/15 ring-2 ring-sky-400"
+                      : "bg-white/5 hover:bg-white/10"
+                  )}
                 >
-                  <p className="text-xs sm:text-sm text-muted-foreground">Low</p>
-                  <p className={`text-base sm:text-xl font-semibold ${selectedPriceLevel === 'low' ? 'text-primary' : ''}`}>
+                  <p className="text-xs text-slate-400 mb-1">Low</p>
+                  <p className={cn(
+                    "text-lg sm:text-xl font-semibold",
+                    selectedPriceLevel === 'low' ? 'text-sky-400' : 'text-white/80'
+                  )}>
                     {formatCurrency(estimate.low_estimate_cp)}
                   </p>
                 </button>
+                
                 <button
                   onClick={() => setSelectedPriceLevel('recommended')}
-                  className={`p-2 sm:p-3 rounded-lg text-center transition-all ${
+                  className={cn(
+                    "p-3 rounded-xl text-center transition-all relative",
                     selectedPriceLevel === 'recommended'
-                      ? 'bg-primary/10 ring-2 ring-primary'
-                      : 'hover:bg-muted/50'
-                  }`}
+                      ? "bg-white/15 ring-2 ring-sky-400"
+                      : "bg-white/5 hover:bg-white/10"
+                  )}
                 >
-                  <p className={`text-xs sm:text-sm font-medium ${selectedPriceLevel === 'recommended' ? 'text-primary' : 'text-muted-foreground'}`}>
-                    Rec
-                  </p>
-                  <p className={`text-lg sm:text-2xl font-bold ${selectedPriceLevel === 'recommended' ? 'text-primary' : ''}`}>
+                  <p className={cn(
+                    "text-xs mb-1",
+                    selectedPriceLevel === 'recommended' ? 'text-sky-400' : 'text-slate-400'
+                  )}>Recommended</p>
+                  <p className={cn(
+                    "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight",
+                    selectedPriceLevel === 'recommended' ? 'text-white' : 'text-white/80'
+                  )}>
                     {formatCurrency(estimate.final_cp_total)}
                   </p>
                 </button>
+                
                 <button
                   onClick={() => setSelectedPriceLevel('high')}
-                  className={`p-2 sm:p-3 rounded-lg text-center transition-all ${
+                  className={cn(
+                    "p-3 rounded-xl text-center transition-all",
                     selectedPriceLevel === 'high'
-                      ? 'bg-primary/10 ring-2 ring-primary'
-                      : 'hover:bg-muted/50'
-                  }`}
+                      ? "bg-white/15 ring-2 ring-sky-400"
+                      : "bg-white/5 hover:bg-white/10"
+                  )}
                 >
-                  <p className="text-xs sm:text-sm text-muted-foreground">High</p>
-                  <p className={`text-base sm:text-xl font-semibold ${selectedPriceLevel === 'high' ? 'text-primary' : ''}`}>
+                  <p className="text-xs text-slate-400 mb-1">High</p>
+                  <p className={cn(
+                    "text-lg sm:text-xl font-semibold",
+                    selectedPriceLevel === 'high' ? 'text-sky-400' : 'text-white/80'
+                  )}>
                     {formatCurrency(estimate.high_estimate_cp)}
                   </p>
                 </button>
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground text-center mt-2 sm:mt-3">
+              
+              <p className="text-[10px] text-slate-500 text-center mt-3">
                 Tap to select price for PDF
               </p>
+            </div>
+          </Card>
+
+          {/* Project Photos Placeholder Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                Project Photos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="aspect-square rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:border-sky-300 hover:bg-sky-50/50 transition-colors cursor-pointer"
+                  >
+                    <ImagePlus className="h-6 w-6 mb-1" />
+                    <span className="text-xs">Before {i}</span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Internal Breakdown with Edit Pricing */}
-          <PricingEditCard 
-            estimate={estimate} 
-            onUpdate={(updates) => setEstimate(prev => prev ? { ...prev, ...updates } : prev)} 
-          />
+          {/* Profitability Analysis (only show when NOT in client mode) */}
+          {!clientMode && (
+            <PricingEditCard 
+              estimate={estimate} 
+              onUpdate={(updates) => setEstimate(prev => prev ? { ...prev, ...updates } : prev)} 
+            />
+          )}
 
-          {/* Line Item Editor */}
+          {/* Line Item Editor - Expanded by default, grouped by trade */}
           <LineItemEditorCard 
             estimate={estimate} 
             onUpdate={(updates) => setEstimate({ ...estimate, ...updates })} 
+            defaultExpanded={true}
+            hideInternalCost={clientMode}
           />
 
           {/* Conversation History */}
-          <ConversationHistoryCard 
-            conversationHistory={(estimate.internal_json_payload as any)?.conversation_history}
-          />
+          {!clientMode && (
+            <ConversationHistoryCard 
+              conversationHistory={(estimate.internal_json_payload as any)?.conversation_history}
+            />
+          )}
         </div>
 
-        {/* Right Column - Client & Project Info */}
+        {/* Right Column (1/3 width) */}
         <div className="space-y-4 sm:space-y-6">
           {/* Client Info - Editable */}
           <ClientInfoEditCard 
             estimate={estimate} 
             onUpdate={(updated) => setEstimate({ ...estimate, ...updated })} 
           />
+
+          {/* Activity Log Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Activity Log
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activityLog.map((entry, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <entry.icon className="h-3.5 w-3.5 text-slate-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-700">{entry.action}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {entry.date.toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Project Summary */}
           <Card>
@@ -477,22 +602,6 @@ export default function EstimateDetail() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Permit Required</span>
                 <span>{estimate.permit_required ? 'Yes' : 'No'}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Dates */}
-          <Card>
-            <CardContent className="pt-4 sm:pt-6 space-y-2 text-xs sm:text-sm">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-muted-foreground">Created:</span>
-                <span>{new Date(estimate.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                <span className="text-muted-foreground">Updated:</span>
-                <span>{new Date(estimate.updated_at).toLocaleDateString()}</span>
               </div>
             </CardContent>
           </Card>

@@ -50,6 +50,8 @@ interface LineItem {
 interface LineItemEditorCardProps {
   estimate: Estimate;
   onUpdate: (updates: Partial<Estimate>) => void;
+  defaultExpanded?: boolean;
+  hideInternalCost?: boolean;
 }
 
 const CATEGORIES = [
@@ -76,8 +78,8 @@ const CATEGORIES = [
 
 const UNITS = ['ea', 'sqft', 'lf', 'hr', 'ls'];
 
-export function LineItemEditorCard({ estimate, onUpdate }: LineItemEditorCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false, hideInternalCost = false }: LineItemEditorCardProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<LineItem>>({});
@@ -281,19 +283,23 @@ export function LineItemEditorCard({ estimate, onUpdate }: LineItemEditorCardPro
       {isExpanded && (
         <CardContent className="space-y-4">
           {/* Summary */}
-          <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg text-sm">
-            <div>
-              <p className="text-muted-foreground">Internal Cost</p>
-              <p className="font-semibold">{formatCurrency(totalIc)}</p>
-            </div>
+          <div className={cn("grid gap-4 p-4 bg-muted/50 rounded-lg text-sm", hideInternalCost ? "grid-cols-1" : "grid-cols-3")}>
+            {!hideInternalCost && (
+              <div>
+                <p className="text-muted-foreground">Internal Cost</p>
+                <p className="font-semibold">{formatCurrency(totalIc)}</p>
+              </div>
+            )}
             <div>
               <p className="text-muted-foreground">Client Price</p>
               <p className="font-semibold text-primary">{formatCurrency(totalCp)}</p>
             </div>
-            <div>
-              <p className="text-muted-foreground">Margin</p>
-              <p className="font-semibold text-emerald-600">{overallMargin.toFixed(1)}%</p>
-            </div>
+            {!hideInternalCost && (
+              <div>
+                <p className="text-muted-foreground">Margin</p>
+                <p className="font-semibold text-emerald-600">{overallMargin.toFixed(1)}%</p>
+              </div>
+            )}
           </div>
 
           {/* Add Item Button */}
@@ -396,9 +402,9 @@ export function LineItemEditorCard({ estimate, onUpdate }: LineItemEditorCardPro
                   <TableRow>
                     <TableHead className="w-[40%]">Description</TableHead>
                     <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">IC</TableHead>
+                    {!hideInternalCost && <TableHead className="text-right">IC</TableHead>}
                     <TableHead className="text-right">CP</TableHead>
-                    <TableHead className="w-[80px]"></TableHead>
+                    {!hideInternalCost && <TableHead className="w-[80px]"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -457,32 +463,36 @@ export function LineItemEditorCard({ estimate, onUpdate }: LineItemEditorCardPro
                             <span className="text-muted-foreground text-xs ml-2">({item.unit})</span>
                           </TableCell>
                           <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right text-muted-foreground">
-                            {formatCurrency(item.ic_total)}
-                          </TableCell>
+                          {!hideInternalCost && (
+                            <TableCell className="text-right text-muted-foreground">
+                              {formatCurrency(item.ic_total)}
+                            </TableCell>
+                          )}
                           <TableCell className="text-right font-medium">
                             {formatCurrency(item.cp_total)}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-7 w-7"
-                                onClick={() => handleEditItem(item.originalIndex)}
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteItem(item.originalIndex)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          {!hideInternalCost && (
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-7 w-7"
+                                  onClick={() => handleEditItem(item.originalIndex)}
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteItem(item.originalIndex)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </>
                       )}
                     </TableRow>
