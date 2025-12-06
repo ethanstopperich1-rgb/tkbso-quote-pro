@@ -23,7 +23,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !loading) {
-      navigate('/');
+      navigate('/dashboard');
     }
   }, [user, loading, navigate]);
 
@@ -48,7 +48,7 @@ export default function Auth() {
       }
     } else {
       toast.success('Signed in successfully!');
-      navigate('/');
+      navigate('/dashboard');
     }
   };
 
