@@ -844,20 +844,14 @@ serve(async (req) => {
       throw new Error("Failed to fetch pricing configuration");
     }
 
-    // Also fetch contractor settings for pricing mode
-    const { data: contractor, error: contractorError } = await supabase
-      .from('contractors')
-      .select('settings')
-      .eq('id', contractor_id)
-      .single();
-    
-    // Extract pricing mode from contractor settings
-    const contractorSettings = contractor?.settings as Record<string, any> | null;
+    // Use target_margin from pricing_configs (set on Pricing page)
+    // Always use margin multiplier mode with the configured target_margin
+    const targetMarginDecimal = Number(pricingConfig.target_margin) || 0.38;
     const pricingModeSettings: PricingModeOptions = {
-      useMarginMultiplier: contractorSettings?.defaults?.pricingMode === 'margin_multiplier',
-      targetMarginPct: contractorSettings?.defaults?.targetMarginPct ?? 38,
+      useMarginMultiplier: true,
+      targetMarginPct: targetMarginDecimal * 100, // Convert decimal to percentage
     };
-    console.log("Pricing mode:", pricingModeSettings);
+    console.log("Using target margin from pricing_configs:", targetMarginDecimal * 100, "%");
 
     // Build conversation messages
     const conversationMessages = [];

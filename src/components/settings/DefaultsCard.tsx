@@ -3,9 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Settings2, AlertCircle, DollarSign, Percent } from 'lucide-react';
-import { BusinessDefaults, PricingMode } from '@/types/settings';
+import { Settings2, AlertCircle } from 'lucide-react';
+import { BusinessDefaults } from '@/types/settings';
 
 interface Props {
   data: BusinessDefaults;
@@ -28,69 +27,10 @@ export function DefaultsCard({ data, onChange }: Props) {
           <CardTitle>General Defaults</CardTitle>
         </div>
         <CardDescription>
-          Default business policies and payment terms for new estimates
+          Default business policies and payment terms for new estimates. Pricing margin is configured on the Pricing page.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Pricing Mode */}
-        <div className="space-y-4 pb-4 border-b">
-          <Label className="text-base font-medium">Pricing Calculation Mode</Label>
-          <RadioGroup
-            value={data.pricingMode || 'margin_multiplier'}
-            onValueChange={(value) => update('pricingMode', value as PricingMode)}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-              <RadioGroupItem value="margin_multiplier" id="margin_multiplier" className="mt-1" />
-              <div className="flex-1">
-                <label htmlFor="margin_multiplier" className="flex items-center gap-2 font-medium cursor-pointer">
-                  <Percent className="h-4 w-4 text-primary" />
-                  Margin Multiplier
-                </label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Set one target margin %. All prices auto-calculate as CP = IC ÷ (1 - margin)
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-              <RadioGroupItem value="sell_price" id="sell_price" className="mt-1" />
-              <div className="flex-1">
-                <label htmlFor="sell_price" className="flex items-center gap-2 font-medium cursor-pointer">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  Fixed Sell Prices
-                </label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Use specific CP values from your pricing config for each line item
-                </p>
-              </div>
-            </div>
-          </RadioGroup>
-
-          {/* Target Margin Input - only show when margin mode selected */}
-          {(data.pricingMode === 'margin_multiplier' || !data.pricingMode) && (
-            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex-1">
-                <Label htmlFor="targetMarginPct" className="font-medium">Target Margin</Label>
-                <p className="text-xs text-muted-foreground">
-                  All line items will use this margin to calculate client price
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="targetMarginPct"
-                  type="number"
-                  min={1}
-                  max={80}
-                  value={data.targetMarginPct || 38}
-                  onChange={(e) => update('targetMarginPct', Number(e.target.value))}
-                  className="w-20"
-                />
-                <span className="text-muted-foreground font-medium">%</span>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Payment Split */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
