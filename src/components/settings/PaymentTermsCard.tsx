@@ -47,7 +47,14 @@ export function PaymentTermsCard({ data, onChange }: Props) {
                 onChange={(e) => update('depositPct', parseInt(e.target.value) || 0)}
                 className="h-10 border-0 bg-slate-100 rounded-lg text-center focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
-              <p className="text-[10px] text-slate-400 text-center">Due at signing</p>
+              <Input
+                type="text"
+                value={data.depositLabel || 'Due at signing'}
+                onChange={(e) => update('depositLabel', e.target.value)}
+                placeholder="Due at signing"
+                maxLength={50}
+                className="h-7 text-[10px] text-slate-500 border-0 bg-transparent text-center focus:ring-1 focus:ring-cyan-400 focus:bg-slate-50 transition-all px-1"
+              />
             </div>
             
             <div className="space-y-2">
@@ -63,7 +70,14 @@ export function PaymentTermsCard({ data, onChange }: Props) {
                 onChange={(e) => update('progressPct', parseInt(e.target.value) || 0)}
                 className="h-10 border-0 bg-slate-100 rounded-lg text-center focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
-              <p className="text-[10px] text-slate-400 text-center">Due at job start</p>
+              <Input
+                type="text"
+                value={data.progressLabel || 'Due at job start'}
+                onChange={(e) => update('progressLabel', e.target.value)}
+                placeholder="Due at job start"
+                maxLength={50}
+                className="h-7 text-[10px] text-slate-500 border-0 bg-transparent text-center focus:ring-1 focus:ring-cyan-400 focus:bg-slate-50 transition-all px-1"
+              />
             </div>
             
             <div className="space-y-2">
@@ -79,7 +93,14 @@ export function PaymentTermsCard({ data, onChange }: Props) {
                 onChange={(e) => update('finalPct', parseInt(e.target.value) || 0)}
                 className="h-10 border-0 bg-slate-100 rounded-lg text-center focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
-              <p className="text-[10px] text-slate-400 text-center">Due at completion</p>
+              <Input
+                type="text"
+                value={data.finalLabel || 'Due at completion'}
+                onChange={(e) => update('finalLabel', e.target.value)}
+                placeholder="Due at completion"
+                maxLength={50}
+                className="h-7 text-[10px] text-slate-500 border-0 bg-transparent text-center focus:ring-1 focus:ring-cyan-400 focus:bg-slate-50 transition-all px-1"
+              />
             </div>
           </div>
           
