@@ -1,8 +1,9 @@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { HelpCircle, AlertTriangle } from 'lucide-react';
+import { HelpCircle, AlertTriangle, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PricingMode } from './GlobalSettingsCard';
 
 export interface TradeBucket {
   key: string;
@@ -22,11 +23,17 @@ interface TradeBucketsCardProps {
   buckets: TradeBucket[];
   onChange: (field: string, value: number) => void;
   targetMargin: number;
+  pricingMode: PricingMode;
 }
 
 function calculateMargin(ic: number, cp: number): number {
   if (cp === 0) return 0;
   return (cp - ic) / cp;
+}
+
+function calculateCpFromMargin(ic: number, margin: number): number {
+  if (margin >= 1) return ic * 10; // Cap at 90% margin
+  return ic / (1 - margin);
 }
 
 function MarginIndicator({ margin }: { margin: number }) {
@@ -54,7 +61,20 @@ export function TradeBucketsCard({
   buckets,
   onChange,
   targetMargin,
+  pricingMode,
 }: TradeBucketsCardProps) {
+  const isMarginMode = pricingMode === 'margin_mode';
+
+  const handleIcChange = (bucket: TradeBucket, newIc: number) => {
+    onChange(bucket.icField, newIc);
+    
+    // In margin mode, auto-calculate CP when IC changes
+    if (isMarginMode) {
+      const newCp = calculateCpFromMargin(newIc, targetMargin);
+      onChange(bucket.cpField, Math.round(newCp * 100) / 100);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
       {/* Header */}
@@ -62,6 +82,11 @@ export function TradeBucketsCard({
         <div className="flex items-center gap-2.5 mb-1">
           <span className="text-cyan-500">{icon}</span>
           <h3 className="text-lg font-bold text-[#0B1C3E]">{title}</h3>
+          {isMarginMode && (
+            <Badge variant="outline" className="ml-2 text-[10px] border-cyan-300 text-cyan-700 bg-cyan-50">
+              Auto-CP
+            </Badge>
+          )}
         </div>
         <p className="text-sm text-slate-500">{description}</p>
       </div>
@@ -82,7 +107,10 @@ export function TradeBucketsCard({
                   Cost ($)
                 </th>
                 <th className="text-right py-3 px-2 text-[10px] uppercase tracking-wider font-semibold text-slate-500">
-                  Sell Price ($)
+                  <div className="flex items-center justify-end gap-1">
+                    Sell Price ($)
+                    {isMarginMode && <Lock className="h-3 w-3 text-slate-400" />}
+                  </div>
                 </th>
                 <th className="text-right py-3 px-2 text-[10px] uppercase tracking-wider font-semibold text-slate-500">
                   Margin
@@ -121,7 +149,7 @@ export function TradeBucketsCard({
                       <Input
                         type="number"
                         value={bucket.icValue}
-                        onChange={(e) => onChange(bucket.icField, parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleIcChange(bucket, parseFloat(e.target.value) || 0)}
                         className="w-24 text-right h-9 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:ring-offset-0 focus:bg-white transition-all"
                         step="0.5"
                       />
@@ -131,9 +159,13 @@ export function TradeBucketsCard({
                         type="number"
                         value={bucket.cpValue}
                         onChange={(e) => onChange(bucket.cpField, parseFloat(e.target.value) || 0)}
+                        disabled={isMarginMode}
                         className={cn(
-                          'w-24 text-right h-9 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:ring-offset-0 focus:bg-white transition-all',
-                          hasWarning && 'ring-2 ring-rose-300 bg-rose-50'
+                          'w-24 text-right h-9 border-0 rounded-lg transition-all',
+                          isMarginMode 
+                            ? 'bg-slate-50 text-slate-500 cursor-not-allowed' 
+                            : 'bg-slate-100 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-0 focus:bg-white',
+                          hasWarning && !isMarginMode && 'ring-2 ring-rose-300 bg-rose-50'
                         )}
                         step="0.5"
                       />
