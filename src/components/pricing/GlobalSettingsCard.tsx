@@ -32,7 +32,7 @@ export function GlobalSettingsCard({
           <h3 className="text-lg font-bold text-[#0B1C3E]">Global Pricing Defaults</h3>
         </div>
         <p className="text-sm text-slate-500">
-          High-level settings used for UI hints and sanity checks. These do not drive math directly.
+          Target margin drives all estimate calculations. CP = IC ÷ (1 - margin)
         </p>
       </div>
       
@@ -61,7 +61,7 @@ export function GlobalSettingsCard({
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              High-level target blended margin for full projects.
+              All line items use this margin: CP = IC ÷ (1 - margin%)
             </p>
           </div>
           
