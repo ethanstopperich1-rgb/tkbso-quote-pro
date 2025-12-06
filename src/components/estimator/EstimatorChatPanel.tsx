@@ -9,7 +9,7 @@ import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, Chevro
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { PhotoAnalysisCard } from './PhotoAnalysisCard';
+import { MultiPhotoAnalysisCard, PhotoAnalysisEntry, mergePhotoAnalyses } from './MultiPhotoAnalysisCard';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 
 interface PricingLineItem {
@@ -108,7 +108,8 @@ export function EstimatorChatPanel() {
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
   const [showLineItems, setShowLineItems] = useState(false);
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
-  const [photoAnalysis, setPhotoAnalysis] = useState<{ analysis: PhotoAnalysis; imagePreview: string } | null>(null);
+  const [photoEntries, setPhotoEntries] = useState<PhotoAnalysisEntry[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const scrollToBottom = () => {
@@ -117,7 +118,7 @@ export function EstimatorChatPanel() {
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages, estimate, photoAnalysis]);
+  }, [messages, estimate, photoEntries]);
 
   const addAssistantMessage = (content: string) => {
     const message: Message = {
@@ -238,7 +239,7 @@ export function EstimatorChatPanel() {
           context,
           contractor_id: contractor.id,
           conversation_history: updatedHistory,
-          photo_analysis: photoAnalysis?.analysis || null,
+          photo_analysis: photoEntries.length > 0 ? mergePhotoAnalyses(photoEntries) : null,
         }
       });
 
@@ -309,7 +310,7 @@ export function EstimatorChatPanel() {
     setEstimate(null);
     setSavedEstimateId(null);
     setShowLineItems(false);
-    setPhotoAnalysis(null);
+    setPhotoEntries([]);
   };
 
   // Handle photo upload for AI vision analysis
@@ -379,8 +380,13 @@ export function EstimatorChatPanel() {
       // Remove the scanning message and add results
       setMessages(prev => prev.filter(m => !m.id.startsWith('scanning-')));
       
-      // Store the analysis for display
-      setPhotoAnalysis({ analysis: data.analysis, imagePreview });
+      // Add to photo entries (supports multiple photos)
+      const newEntry: PhotoAnalysisEntry = {
+        id: Date.now().toString(),
+        analysis: data.analysis,
+        imagePreview,
+      };
+      setPhotoEntries(prev => [...prev, newEntry]);
 
       // Update context with detected project type
       if (data.analysis.project_type && data.analysis.project_type !== 'Unknown') {
@@ -391,18 +397,23 @@ export function EstimatorChatPanel() {
       }
 
       // Add confirmation message
+      const photoCount = photoEntries.length + 1;
       const confirmMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `✨ **Photo analyzed!** I detected ${data.analysis.detected_items.length} trade items for a ${data.analysis.project_type} project.
+        content: photoCount === 1 
+          ? `✨ **Photo analyzed!** I detected ${data.analysis.detected_items.length} trade items for a ${data.analysis.project_type} project.
 
-Review the items above, then tell me what's accurate or needs adjustment. You can also provide dimensions (e.g., "5x8 bathroom, 3x4 shower").`,
+📷 Upload more photos to capture different areas, or confirm the items and add dimensions.`
+          : `✨ **Photo ${photoCount} added!** Found ${data.analysis.detected_items.length} more items. Total: ${photoEntries.reduce((sum, e) => sum + e.analysis.detected_items.length, 0) + data.analysis.detected_items.length} items detected.
+
+Add more photos or provide dimensions to generate your quote.`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, confirmMessage]);
       setConversationHistory(prev => [...prev, { role: 'assistant', content: confirmMessage.content }]);
 
-      toast.success('Photo analyzed successfully!');
+      toast.success(`Photo ${photoCount} analyzed!`);
 
     } catch (error) {
       console.error('Photo analysis error:', error);
@@ -419,14 +430,25 @@ Review the items above, then tell me what's accurate or needs adjustment. You ca
 
   // Convert photo analysis to text context for the estimator
   const getPhotoContextForEstimator = (): string => {
-    if (!photoAnalysis) return '';
+    if (photoEntries.length === 0) return '';
     
-    const { analysis } = photoAnalysis;
-    const items = analysis.detected_items.map(item => 
+    const mergedAnalysis = mergePhotoAnalyses(photoEntries);
+    const items = mergedAnalysis.detected_items.map(item => 
       `${item.category}: ${item.item} (${item.quantity} ${item.unit})`
     ).join('\n');
     
-    return `AI Vision detected items:\n${items}\n\nObservations: ${analysis.observations || 'None'}`;
+    return `AI Vision detected items (from ${photoEntries.length} photo${photoEntries.length > 1 ? 's' : ''}):\n${items}\n\nObservations: ${mergedAnalysis.observations || 'None'}`;
+  };
+
+  // Handle removing a photo from entries
+  const handleRemovePhoto = (id: string) => {
+    setPhotoEntries(prev => prev.filter(e => e.id !== id));
+    toast.success('Photo removed');
+  };
+
+  // Trigger file input for adding more photos
+  const handleAddMorePhotos = () => {
+    fileInputRef.current?.click();
   };
 
   const handleViewEstimate = () => {
@@ -445,6 +467,19 @@ Review the items above, then tell me what's accurate or needs adjustment. You ca
 
   return (
     <div className="flex flex-col h-full glass-card-active relative overflow-hidden rounded-xl sm:rounded-2xl">
+      {/* Hidden file input for adding more photos */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handlePhotoUpload(file);
+          e.target.value = '';
+        }}
+        className="hidden"
+      />
       {/* Subtle glow effect - hidden on mobile for performance */}
       <div className="absolute inset-0 pointer-events-none hidden sm:block">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -523,11 +558,13 @@ Review the items above, then tell me what's accurate or needs adjustment. You ca
           </div>
         )}
 
-        {/* Photo Analysis Card */}
-        {photoAnalysis && !estimate && (
-          <PhotoAnalysisCard 
-            analysis={photoAnalysis.analysis} 
-            imagePreview={photoAnalysis.imagePreview}
+        {/* Photo Analysis Card - Multi-photo support */}
+        {photoEntries.length > 0 && !estimate && (
+          <MultiPhotoAnalysisCard 
+            entries={photoEntries}
+            onRemovePhoto={handleRemovePhoto}
+            onAddMore={handleAddMorePhotos}
+            isAnalyzing={isAnalyzingPhoto}
           />
         )}
         
@@ -676,7 +713,7 @@ Review the items above, then tell me what's accurate or needs adjustment. You ca
           showPhotoUpload={true}
           isAnalyzingPhoto={isAnalyzingPhoto}
           placeholder={
-            photoAnalysis && !estimate
+            photoEntries.length > 0 && !estimate
               ? "Confirm items or add dimensions (e.g., '5x8 bathroom')..."
               : !context.projectType 
                 ? "Describe project or upload a photo..." 
