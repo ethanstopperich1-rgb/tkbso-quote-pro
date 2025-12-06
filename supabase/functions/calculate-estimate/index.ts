@@ -732,11 +732,21 @@ Before generating the final quote, ask for client information:
 - Email
 - Property address (street, city, state, zip)"
 
-This can be provided all at once or the contractor can skip with "skip" or "none".
+**CRITICAL: SKIP/DEFER DETECTION FOR CLIENT DETAILS**
+If the user says ANY of these, treat it as "skip client details for now" and GENERATE THE QUOTE:
+- "skip", "none", "later", "I'll add it later", "I can add later", "add later"
+- "just generate", "generate the quote", "build the quote", "let's see the quote"
+- "I don't have that yet", "not yet", "I'll get that", "get it later"
+- "the stuff later", "info later", "details later"
+
+When you detect a skip/defer phrase for client details:
+1. Set client_details_skipped: true
+2. Set has_enough_info: true (if you have scope + dimensions)
+3. Generate the quote immediately
 
 **If user provides scope info instead of client details:**
 - FIRST acknowledge and add the scope item
-- THEN ask for client details again
+- THEN ask if they want to add more or generate the quote
 
 ## NATURAL LANGUAGE PARSING
 
@@ -758,20 +768,22 @@ Contractors speak in shorthand. Parse these correctly:
 ## DECISION RULES
 
 **Generate estimate when you have:**
-- Project type + demo level + main scope items + room size + client details (or skipped)
+- Project type + scope items + room size/dimensions
+- AND (client details provided OR client_details_skipped = true)
 
 **Ask follow-up when missing:**
 - Critical dimensions (room size, shower size) - but only ONCE
-- Client details (unless skipped)
+- Client details - but accept skip/later phrases
 
 ## RESPONSE STYLE
 
 Keep questions SHORT and SPECIFIC. One question at a time.
 If user is still describing the project, acknowledge what you've captured and wait for more.
 Good: "Got it - I'll note the soffit removal and entrance relocation. Keep going!"
-Good: "Added flooring to the scope! Now, what are the client details?"
+Good: "Added flooring to the scope! Ready to generate the quote?"
 Bad: "I still need the room dimensions..." (when user said they'll provide them later)
-Bad: Ignoring new scope info and repeating the same question`;
+Bad: Ignoring new scope info and repeating the same question
+Bad: Asking generic "Could you provide more details?" when user wants to proceed`;
 
 
 serve(async (req) => {
