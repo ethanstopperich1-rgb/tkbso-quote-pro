@@ -17,13 +17,10 @@ import { ClientInfoEditCard } from '@/components/estimates/ClientInfoEditCard';
 import { ConversationHistoryCard } from '@/components/estimates/ConversationHistoryCard';
 import { PricingEditCard } from '@/components/estimates/PricingEditCard';
 import { LineItemEditorCard } from '@/components/estimates/LineItemEditorCard';
+import { ProjectPhotosCard } from '@/components/estimates/ProjectPhotosCard';
 import { 
   ArrowLeft, 
   Download, 
-  User, 
-  Phone, 
-  Mail, 
-  Calendar,
   DollarSign,
   RefreshCw,
   Eye,
@@ -33,7 +30,6 @@ import {
   Edit2,
   FileText,
   Send,
-  ImagePlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -483,28 +479,8 @@ export default function EstimateDetail() {
             </div>
           </Card>
 
-          {/* Project Photos Placeholder Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                Project Photos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:border-sky-300 hover:bg-sky-50/50 transition-colors cursor-pointer"
-                  >
-                    <ImagePlus className="h-6 w-6 mb-1" />
-                    <span className="text-xs">Before {i}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Project Photos Card */}
+          <ProjectPhotosCard estimateId={estimate.id} />
 
           {/* Profitability Analysis (only show when NOT in client mode) */}
           {!clientMode && (
