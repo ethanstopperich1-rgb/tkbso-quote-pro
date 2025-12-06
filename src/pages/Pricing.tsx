@@ -278,6 +278,7 @@ export default function Pricing() {
   const { contractor } = useAuth();
   const [config, setConfig] = useState<PricingConfig | null>(null);
   const [marketDescription, setMarketDescription] = useState(DEFAULT_MARKET_DESCRIPTION);
+  const [pricingMode, setPricingMode] = useState<'margin_mode' | 'manual_mode'>('margin_mode');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -317,6 +318,95 @@ export default function Pricing() {
       ...TKBSO_DEFAULTS,
     });
     toast.success('Reset to TKBSO defaults. Remember to save!');
+  };
+
+  // Apply target margin to all CP values
+  const handleApplyMarginToAll = () => {
+    if (!config) return;
+    const margin = config.target_margin || 0.38;
+    
+    // Get all IC fields and calculate their corresponding CP values
+    const updatedConfig = { ...config };
+    
+    // List of IC/CP field pairs
+    const icCpPairs = [
+      ['demo_shower_only_ic', 'demo_shower_only_cp'],
+      ['demo_small_bath_ic', 'demo_small_bath_cp'],
+      ['demo_large_bath_ic', 'demo_large_bath_cp'],
+      ['demo_kitchen_ic', 'demo_kitchen_cp'],
+      ['tile_wall_ic_per_sqft', 'tile_wall_cp_per_sqft'],
+      ['tile_floor_ic_per_sqft', 'tile_floor_cp_per_sqft'],
+      ['tile_shower_floor_ic_per_sqft', 'tile_shower_floor_cp_per_sqft'],
+      ['cement_board_ic_per_sqft', 'cement_board_cp_per_sqft'],
+      ['waterproofing_ic_per_sqft', 'waterproofing_cp_per_sqft'],
+      ['plumbing_shower_standard_ic', 'plumbing_shower_standard_cp'],
+      ['plumbing_extra_head_ic', 'plumbing_extra_head_cp'],
+      ['plumbing_tub_to_shower_ic', 'plumbing_tub_to_shower_cp'],
+      ['plumbing_tub_freestanding_ic', 'plumbing_tub_freestanding_cp'],
+      ['plumbing_toilet_ic', 'plumbing_toilet_cp'],
+      ['plumbing_smart_valve_ic', 'plumbing_smart_valve_cp'],
+      ['plumbing_linear_drain_ic', 'plumbing_linear_drain_cp'],
+      ['electrical_vanity_light_ic', 'electrical_vanity_light_cp'],
+      ['electrical_small_package_ic', 'electrical_small_package_cp'],
+      ['electrical_kitchen_package_ic', 'electrical_kitchen_package_cp'],
+      ['recessed_can_ic_each', 'recessed_can_cp_each'],
+      ['paint_patch_bath_ic', 'paint_patch_bath_cp'],
+      ['paint_full_bath_ic', 'paint_full_bath_cp'],
+      ['glass_shower_standard_ic', 'glass_shower_standard_cp'],
+      ['glass_panel_only_ic', 'glass_panel_only_cp'],
+      ['glass_90_return_ic', 'glass_90_return_cp'],
+      ['vanity_30_bundle_ic', 'vanity_30_bundle_cp'],
+      ['vanity_36_bundle_ic', 'vanity_36_bundle_cp'],
+      ['vanity_48_bundle_ic', 'vanity_48_bundle_cp'],
+      ['vanity_54_bundle_ic', 'vanity_54_bundle_cp'],
+      ['vanity_60_bundle_ic', 'vanity_60_bundle_cp'],
+      ['vanity_72_bundle_ic', 'vanity_72_bundle_cp'],
+      ['vanity_84_bundle_ic', 'vanity_84_bundle_cp'],
+      ['quartz_ic_per_sqft', 'quartz_cp_per_sqft'],
+      ['framing_standard_ic', 'framing_standard_cp'],
+      ['framing_pony_wall_ic', 'framing_pony_wall_cp'],
+      ['niche_ic_each', 'niche_cp_each'],
+      ['floor_leveling_small_ic', 'floor_leveling_small_cp'],
+      ['floor_leveling_bath_ic', 'floor_leveling_bath_cp'],
+      ['floor_leveling_kitchen_ic', 'floor_leveling_kitchen_cp'],
+      ['floor_leveling_ls_ic', 'floor_leveling_ls_cp'],
+      ['lvp_ic_per_sqft', 'lvp_cp_per_sqft'],
+      ['barrier_ic_per_sqft', 'barrier_cp_per_sqft'],
+      ['cabinet_lf_ic', 'cabinet_lf_cp'],
+      ['cabinet_install_only_lf_ic', 'cabinet_install_only_lf_cp'],
+      ['dumpster_bath_ic', 'dumpster_bath_cp'],
+      ['dumpster_kitchen_ic', 'dumpster_kitchen_cp'],
+      ['wall_removal_ic', 'wall_removal_cp'],
+      ['door_relocation_ic', 'door_relocation_cp'],
+      ['door_closure_ic', 'door_closure_cp'],
+      ['entrance_enlargement_ic', 'entrance_enlargement_cp'],
+      ['soffit_removal_ic', 'soffit_removal_cp'],
+      ['shower_enlargement_ic', 'shower_enlargement_cp'],
+      ['tub_relocation_ic', 'tub_relocation_cp'],
+      ['toilet_relocation_ic', 'toilet_relocation_cp'],
+      ['alcove_builtin_ic', 'alcove_builtin_cp'],
+      ['closet_reframe_ic', 'closet_reframe_cp'],
+      ['drywall_ic_per_sqft', 'drywall_cp_per_sqft'],
+      ['floor_protection_ic', 'floor_protection_cp'],
+      ['dust_barriers_ic', 'dust_barriers_cp'],
+      ['post_construction_clean_ic', 'post_construction_clean_cp'],
+      ['permit_admin_fee_ic', 'permit_admin_fee_cp'],
+      ['hvac_vent_relocate_ic', 'hvac_vent_relocate_cp'],
+      ['range_hood_ducting_ic', 'range_hood_ducting_cp'],
+      ['appliance_install_standard_ic', 'appliance_install_standard_cp'],
+      ['appliance_install_pro_ic', 'appliance_install_pro_cp'],
+    ];
+    
+    for (const [icField, cpField] of icCpPairs) {
+      const icValue = (updatedConfig as any)[icField];
+      if (icValue != null && icValue > 0) {
+        const cpValue = icValue / (1 - margin);
+        (updatedConfig as any)[cpField] = Math.round(cpValue * 100) / 100;
+      }
+    }
+    
+    setConfig(updatedConfig);
+    toast.success(`Applied ${Math.round(margin * 100)}% margin to all trade buckets. Remember to save!`);
   };
 
   const handleSave = async () => {
@@ -990,9 +1080,12 @@ export default function Pricing() {
           targetMargin={config.target_margin}
           managementFeePercent={config.management_fee_percent ?? 0.15}
           marketDescription={marketDescription}
+          pricingMode={pricingMode}
           onTargetMarginChange={(value) => handleChange('target_margin', value)}
           onManagementFeeChange={(value) => handleChange('management_fee_percent', value)}
           onMarketDescriptionChange={setMarketDescription}
+          onPricingModeChange={setPricingMode}
+          onApplyMarginToAll={handleApplyMarginToAll}
         />
 
         {/* 2. Per-Sqft Reference Rates - Always visible */}
@@ -1020,6 +1113,7 @@ export default function Pricing() {
             buckets={bathroomBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
+            pricingMode={pricingMode}
           />
         </AccordionSection>
 
@@ -1036,6 +1130,7 @@ export default function Pricing() {
             buckets={kitchenBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
+            pricingMode={pricingMode}
           />
         </AccordionSection>
 
@@ -1052,6 +1147,7 @@ export default function Pricing() {
             buckets={closetBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
+            pricingMode={pricingMode}
           />
         </AccordionSection>
 
@@ -1068,6 +1164,7 @@ export default function Pricing() {
             buckets={structuralBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
+            pricingMode={pricingMode}
           />
         </AccordionSection>
 
@@ -1084,6 +1181,7 @@ export default function Pricing() {
             buckets={sitePrepBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
+            pricingMode={pricingMode}
           />
         </AccordionSection>
 
@@ -1100,6 +1198,7 @@ export default function Pricing() {
             buckets={mechanicalsBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
+            pricingMode={pricingMode}
           />
         </AccordionSection>
 
