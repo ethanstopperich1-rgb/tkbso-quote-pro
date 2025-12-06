@@ -43,8 +43,11 @@ export interface Insurance {
 
 export interface BusinessDefaults {
   depositPct: number;
+  depositLabel: string;
   progressPct: number;
+  progressLabel: string;
   finalPct: number;
+  finalLabel: string;
   minJobCp: number;
   estimateExpirationDays: number;
   termsText: string;
@@ -96,8 +99,11 @@ export const defaultSettings: ContractorSettings = {
   },
   defaults: {
     depositPct: 65,
+    depositLabel: 'Due at signing',
     progressPct: 25,
+    progressLabel: 'Due at job start',
     finalPct: 10,
+    finalLabel: 'Due at completion',
     minJobCp: 15000,
     estimateExpirationDays: 30,
     termsText: '',
