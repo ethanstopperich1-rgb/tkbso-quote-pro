@@ -503,6 +503,10 @@ const analysisJsonSchema = {
       enum: ["ask_question", "generate_estimate"],
       description: "Whether to ask a follow-up question or generate the estimate"
     },
+    user_added_scope: {
+      type: "boolean",
+      description: "TRUE if the user's latest message added new scope information (like dimensions, materials, trade items). Set true when user mentions sqft, dimensions, materials, or trade work."
+    },
     project_type: { 
       type: ["string", "null"], 
       enum: ["Kitchen", "Bathroom", "Combination", null],
@@ -510,7 +514,7 @@ const analysisJsonSchema = {
     },
     has_enough_info: { 
       type: "boolean",
-      description: "True if we have enough details to generate a quote"
+      description: "True if we have enough details to generate a quote (project type + scope + dimensions + client details or skipped)"
     },
     missing_info: {
       type: "array",
@@ -519,7 +523,7 @@ const analysisJsonSchema = {
     },
     follow_up_question: {
       type: ["string", "null"],
-      description: "The question to ask if action is ask_question"
+      description: "The question to ask if action is ask_question. CRITICAL: If user_added_scope is true, this MUST acknowledge the new info first (e.g. 'Got it - added 95 sqft wall tile! What else?')"
     },
     parsed_scope: {
       type: "object",
@@ -588,20 +592,43 @@ const conversationalSystemPrompt = `You are a construction estimator assistant h
 6. GENERATE quote only when you have enough info
 7. ALLOW UPDATES after quote is generated
 
-## CRITICAL: ALWAYS PROCESS NEW SCOPE INFO
+## CRITICAL RULE #1: NEVER REPEAT THE SAME QUESTION
+
+**If you just asked a question and the user responded with ANYTHING other than a direct answer:**
+- They may be providing MORE scope info - ACKNOWLEDGE IT
+- They may be saying "not yet" or "hold on" - WAIT AND LISTEN
+- They may be correcting something - UPDATE YOUR UNDERSTANDING
+- NEVER repeat the exact same question back-to-back
+
+**EXAMPLES OF WHAT NOT TO DO:**
+- You: "Can I get the client details now?"
+- User: "marble on the shower floor too"
+- WRONG: "Can I get the client details now?" ← NEVER DO THIS
+- CORRECT: "Got it - adding marble on shower floor! Anything else to add, or ready for client details?"
+
+**If the user says "not yet", "hold on", "wait", or provides more scope:**
+- STOP asking for client details
+- ACKNOWLEDGE what they said
+- ASK: "What else should I add to the scope?"
+
+## CRITICAL RULE #2: ALWAYS PROCESS NEW SCOPE INFO
 
 **If the user provides additional scope information at ANY point in the conversation (even when you asked for client details), you MUST:**
-1. ACKNOWLEDGE and ADD the new scope item to the project
+1. ACKNOWLEDGE and ADD the new scope item to the project by name
 2. Update your understanding of the project with the new info
-3. Then continue with what you were asking for
+3. ASK if there's anything else before moving forward
 
-Example:
-- You asked: "Can you give me the client details?"
-- User responds: "new flooring as well"
-- CORRECT: "Got it - I'm adding new flooring to the scope! Now, can you give me the client details?"
-- WRONG: Ignoring the flooring and asking for client details again
+**Example responses when user adds scope:**
+- User: "also cement boards as well"
+  → "Added cement board installation to the scope. What else?"
+  
+- User: "marble on the shower floor too. 15 sqft on the shower floor"
+  → "Got it - 15 sqft marble shower floor. Anything else to add?"
+  
+- User: "95 sqft on the three shower walls"
+  → "Perfect - 95 sqft of wall tile noted. Ready for client details, or more to add?"
 
-**ALWAYS incorporate new information, never ignore it.**
+**ALWAYS incorporate new information, ALWAYS acknowledge it by name, NEVER ignore it.**
 
 ## CRITICAL: SUPPORT POST-QUOTE UPDATES
 
