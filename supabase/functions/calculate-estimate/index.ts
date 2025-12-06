@@ -953,7 +953,9 @@ NOTE: Vanity bundles include vanity cabinet, top, and installation. Do NOT add s
 - Cabinets - Kitchen (LF) - estimate linear feet based on kitchen size
 - Example: 12x14 kitchen (168 sqft) ≈ 22-25 LF of cabinets
 
-**Countertops:** Quartz - Countertop (sqft)
+**Quartz/Countertop (LUMP SUM BUNDLE - INCLUDES MATERIALS + INSTALLATION):**
+- Quartz - Countertop - qty: countertop sqft, unit: sqft
+NOTE: Countertop pricing is ALL-IN (slab material + fabrication + installation). Do NOT add separate "Materials - Countertop".
 
 **Backsplash:** Backsplash - Tile (sqft)
 
@@ -977,11 +979,6 @@ Add SEPARATE material line items ONLY for these categories where labor and mater
 - quantity: linear feet of cabinets
 - unit: lf
 
-**Materials - Countertop:** Add when countertops are in scope
-- Category: "Materials - Countertop"
-- task_description: "Countertop slab - [material: quartz/granite/marble]"
-- quantity: countertop sqft
-- unit: sqft
 
 **Materials - Plumbing:** Add when plumbing fixtures needed
 - Category: "Materials - Plumbing"  
@@ -996,6 +993,7 @@ Add SEPARATE material line items ONLY for these categories where labor and mater
 - unit: sqft
 
 ## DO NOT ADD MATERIAL LINES FOR THESE (already bundled):
+- Countertops (Quartz - Countertop is all-in: slab + fab + install)
 - Glass (Glass - Shower Standard, Panel Only, 90 Return include materials)
 - Vanities (Vanity bundles include cabinet + top)
 - Plumbing packages (labor bundles, fixtures are separate allowance)
