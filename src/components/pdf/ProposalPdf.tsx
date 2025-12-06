@@ -498,13 +498,10 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           )}
         </View>
 
-        {/* Trade Breakdown */}
+        {/* Trade Breakdown - NO per-trade pricing, just scope items */}
         {tradeGroups.map((group, idx) => (
           <View key={idx} style={styles.tradeSection} wrap={false}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#1e3a8a', paddingBottom: 2, marginBottom: 4 }}>
-              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>{group.trade}</Text>
-              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a' }}>{formatCurrency(group.total)}</Text>
-            </View>
+            <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a', borderBottomWidth: 1, borderBottomColor: '#1e3a8a', paddingBottom: 2, marginBottom: 4 }}>{group.trade}</Text>
             {group.items.map((item, itemIdx) => (
               <Text key={itemIdx} style={{ fontSize: 9, color: '#475569', paddingLeft: 4, lineHeight: 1.4, marginBottom: 2 }}>
                 • {item.description}{item.quantity && item.unit ? ` (${item.quantity} ${item.unit})` : ''}
