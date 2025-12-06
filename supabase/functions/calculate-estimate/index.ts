@@ -939,9 +939,15 @@ TRADE BUCKET MAPPING:
 - Electrical - Under Cabinet Lighting (ea) - LED strips/pucks
 - Electrical - Kitchen Package (ea) - for comprehensive kitchen electrical
 
-**Glass:** Glass - Shower Standard, Glass - Panel Only, Glass - 90 Return
+**Glass (BUNDLES - ALREADY INCLUDES MATERIALS, DO NOT ADD SEPARATE MATERIAL LINE):**
+- Glass - Shower Standard (door + panel) - qty: 1, unit: ea
+- Glass - Panel Only (fixed panel only) - qty: 1, unit: ea  
+- Glass - 90 Return (corner enclosure) - qty: 1, unit: ea
+NOTE: Glass bundles already include materials. Do NOT add "Materials - Glass" separately.
 
-**Vanity:** Vanity - 30in through Vanity - 84in
+**Vanity (BUNDLES - ALREADY INCLUDES MATERIALS):**
+- Vanity - 30in through Vanity - 84in - qty: 1, unit: ea
+NOTE: Vanity bundles include vanity cabinet, top, and installation. Do NOT add separate material lines.
 
 **Cabinets (CRITICAL - USE LINEAR FEET, NOT SQFT):**
 - Cabinets - Kitchen (LF) - estimate linear feet based on kitchen size
@@ -955,9 +961,9 @@ TRADE BUCKET MAPPING:
 
 **Paint:** Paint - Patch, Paint - Full Bath
 
-## MATERIAL LINE ITEMS (CRITICAL - ALWAYS ADD SEPARATELY FROM LABOR):
+## MATERIAL LINE ITEMS - ONLY FOR ITEMS NOT IN BUNDLES:
 
-When materials are mentioned, ADD SEPARATE material line items to trade_buckets:
+Add SEPARATE material line items ONLY for these categories where labor and materials are priced separately:
 
 **Materials - Tile:** Add when tile is in scope
 - Category: "Materials - Tile"
@@ -965,7 +971,7 @@ When materials are mentioned, ADD SEPARATE material line items to trade_buckets:
 - quantity: total tile sqft (wall + floor)
 - unit: sqft
 
-**Materials - Cabinets:** Add when new cabinets are in scope  
+**Materials - Cabinets:** Add when new KITCHEN cabinets are in scope  
 - Category: "Materials - Cabinets"
 - task_description: "Cabinet material - [style: painted/stained/thermofoil]"
 - quantity: linear feet of cabinets
@@ -983,23 +989,20 @@ When materials are mentioned, ADD SEPARATE material line items to trade_buckets:
 - quantity: 1
 - unit: ea
 
-**Materials - Glass:** Add when shower glass is in scope
-- Category: "Materials - Glass"
-- task_description: "Shower glass panels and hardware"
-- quantity: 1
-- unit: ea
-
 **Materials - Flooring:** Add when LVP/flooring mentioned
 - Category: "Materials - Flooring"
 - task_description: "Flooring material - [type: LVP/tile/hardwood]"
 - quantity: floor sqft
 - unit: sqft
 
-EXAMPLE: For "kitchen remodel with new quartz countertops and painted cabinets":
-- Add: Cabinets - Kitchen (labor bucket)
-- Add: Materials - Cabinets (material bucket)
-- Add: Quartz - Countertop (labor bucket)
-- Add: Materials - Countertop (material bucket)
+## DO NOT ADD MATERIAL LINES FOR THESE (already bundled):
+- Glass (Glass - Shower Standard, Panel Only, 90 Return include materials)
+- Vanities (Vanity bundles include cabinet + top)
+- Plumbing packages (labor bundles, fixtures are separate allowance)
+
+EXAMPLE: For "bathroom with new shower glass and 48 vanity":
+- Add: Glass - Shower Standard (1 ea) ← NO separate Materials - Glass!
+- Add: Vanity - 48in (1 ea) ← NO separate vanity materials!
 
 LABOR ONLY PROJECTS:
 - If "labor_only" is true in the context or conversation mentions "labor only", "install only", "customer supplies materials"
