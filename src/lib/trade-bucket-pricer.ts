@@ -190,23 +190,41 @@ function mapCategoryToPricingField(
   return null;
 }
 
+export interface PricingOptions {
+  useMarginMultiplier?: boolean;
+  targetMarginPct?: number; // e.g., 38 for 38%
+}
+
 export function calculateProjectPricing(
   tradeBuckets: TradeBucket[],
-  config: PricingConfig
+  config: PricingConfig,
+  options?: PricingOptions
 ): ProjectPricing {
   const lineItems: PricingResult[] = [];
   const warnings: string[] = [];
+  
+  const useMarginMode = options?.useMarginMultiplier ?? false;
+  const targetMargin = (options?.targetMarginPct ?? 38) / 100; // Convert to decimal
 
   for (const bucket of tradeBuckets) {
     const mapping = mapCategoryToPricingField(bucket.category, bucket.task_description, config);
 
-    if (!mapping || mapping.ic === null || mapping.cp === null) {
+    if (!mapping || mapping.ic === null) {
       warnings.push(`No pricing found for: ${bucket.category} - ${bucket.task_description}`);
       continue;
     }
 
     const icPerUnit = mapping.ic;
-    const cpPerUnit = mapping.cp;
+    let cpPerUnit: number;
+    
+    if (useMarginMode) {
+      // Calculate CP from IC using margin formula: CP = IC / (1 - margin)
+      cpPerUnit = icPerUnit / (1 - targetMargin);
+    } else {
+      // Use the configured CP value
+      cpPerUnit = mapping.cp ?? (icPerUnit / (1 - 0.38)); // Fallback to 38% if no CP
+    }
+    
     const icTotal = icPerUnit * bucket.quantity;
     const cpTotal = cpPerUnit * bucket.quantity;
     const marginPercent = cpTotal > 0 ? ((cpTotal - icTotal) / cpTotal) * 100 : 0;

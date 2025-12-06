@@ -41,7 +41,11 @@ export interface Insurance {
   wcFileUrl?: string;
 }
 
+export type PricingMode = 'sell_price' | 'margin_multiplier';
+
 export interface BusinessDefaults {
+  pricingMode: PricingMode;
+  targetMarginPct: number; // Used when pricingMode is 'margin_multiplier'
   depositPct: number;
   progressPct: number;
   finalPct: number;
@@ -95,6 +99,8 @@ export const defaultSettings: ContractorSettings = {
     wcFileUrl: '',
   },
   defaults: {
+    pricingMode: 'margin_multiplier',
+    targetMarginPct: 38,
     depositPct: 65,
     progressPct: 25,
     finalPct: 10,

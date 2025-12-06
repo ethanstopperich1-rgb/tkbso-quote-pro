@@ -337,12 +337,29 @@ function mapCategoryToPricing(
   return null;
 }
 
-function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: PricingConfig, laborOnly: boolean = false) {
+interface PricingModeOptions {
+  useMarginMultiplier?: boolean;
+  targetMarginPct?: number;
+}
+
+function calculatePricing(
+  tradeBuckets: EstimateData['trade_buckets'], 
+  config: PricingConfig, 
+  laborOnly: boolean = false,
+  pricingMode?: PricingModeOptions
+) {
   const lineItems: PricingResult[] = [];
   const warnings: string[] = [];
+  
+  const useMarginMode = pricingMode?.useMarginMultiplier ?? false;
+  const targetMargin = (pricingMode?.targetMarginPct ?? 38) / 100; // Convert to decimal
 
   if (laborOnly) {
     warnings.push("LABOR ONLY: Customer supplies materials - material allowances excluded");
+  }
+  
+  if (useMarginMode) {
+    warnings.push(`Using ${(targetMargin * 100).toFixed(0)}% target margin for all line items`);
   }
 
   for (const bucket of tradeBuckets) {
@@ -356,8 +373,19 @@ function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: P
     // For flat rate items, force quantity to 1 (these are packages, not per-unit)
     const effectiveQuantity = mapping.flatRate ? 1 : bucket.quantity;
     
-    const icTotal = mapping.ic * effectiveQuantity;
-    const cpTotal = mapping.cp * effectiveQuantity;
+    const icPerUnit = mapping.ic;
+    let cpPerUnit: number;
+    
+    if (useMarginMode) {
+      // Calculate CP from IC using margin formula: CP = IC / (1 - margin)
+      cpPerUnit = icPerUnit / (1 - targetMargin);
+    } else {
+      // Use the configured CP value
+      cpPerUnit = mapping.cp;
+    }
+    
+    const icTotal = icPerUnit * effectiveQuantity;
+    const cpTotal = cpPerUnit * effectiveQuantity;
     const marginPercent = cpTotal > 0 ? ((cpTotal - icTotal) / cpTotal) * 100 : 0;
 
     lineItems.push({
@@ -365,8 +393,8 @@ function calculatePricing(tradeBuckets: EstimateData['trade_buckets'], config: P
       task_description: bucket.task_description,
       quantity: effectiveQuantity,
       unit: bucket.unit || mapping.unit,
-      ic_per_unit: mapping.ic,
-      cp_per_unit: mapping.cp,
+      ic_per_unit: icPerUnit,
+      cp_per_unit: cpPerUnit,
       ic_total: icTotal,
       cp_total: cpTotal,
       margin_percent: marginPercent,
@@ -816,6 +844,21 @@ serve(async (req) => {
       throw new Error("Failed to fetch pricing configuration");
     }
 
+    // Also fetch contractor settings for pricing mode
+    const { data: contractor, error: contractorError } = await supabase
+      .from('contractors')
+      .select('settings')
+      .eq('id', contractor_id)
+      .single();
+    
+    // Extract pricing mode from contractor settings
+    const contractorSettings = contractor?.settings as Record<string, any> | null;
+    const pricingModeSettings: PricingModeOptions = {
+      useMarginMultiplier: contractorSettings?.defaults?.pricingMode === 'margin_multiplier',
+      targetMarginPct: contractorSettings?.defaults?.targetMarginPct ?? 38,
+    };
+    console.log("Pricing mode:", pricingModeSettings);
+
     // Build conversation messages
     const conversationMessages = [];
     if (conversation_history && Array.isArray(conversation_history)) {
@@ -1076,8 +1119,8 @@ LABOR ONLY PROJECTS:
 
     // Step 4: Calculate pricing
     const laborOnly = validated.data.project_header.labor_only || false;
-    console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets", laborOnly ? "(LABOR ONLY)" : "");
-    const basePricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly);
+    console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets", laborOnly ? "(LABOR ONLY)" : "", "with margin mode:", pricingModeSettings);
+    const basePricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly, pricingModeSettings);
 
     // Management fee is optional - include config for frontend toggle
     const managementFeePercent = Number(pricingConfig.management_fee_percent) || 0.15;
