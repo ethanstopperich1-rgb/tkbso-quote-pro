@@ -2,22 +2,270 @@ import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
   Play, 
-  FileSpreadsheet, 
-  Camera, 
-  FileSignature, 
   MessageSquare, 
   Settings, 
   Zap,
   Check,
   Star,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EstimAIteLogo } from '@/components/EstimAIteLogo';
+import { useState, useEffect } from 'react';
 
 // Brand Colors
 const NAVY = '#0B1C3E';
 const ELECTRIC = '#00E5FF';
+
+// Typewriter component for chat animation
+function TypewriterText({ 
+  text, 
+  delay = 0, 
+  speed = 50, 
+  onComplete 
+}: { 
+  text: string; 
+  delay?: number; 
+  speed?: number; 
+  onComplete?: () => void;
+}) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const startTimer = setTimeout(() => setStarted(true), delay);
+    return () => clearTimeout(startTimer);
+  }, [delay]);
+
+  useEffect(() => {
+    if (!started) return;
+    
+    if (displayedText.length < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayedText(text.slice(0, displayedText.length + 1));
+      }, speed);
+      return () => clearTimeout(timer);
+    } else if (onComplete) {
+      onComplete();
+    }
+  }, [displayedText, text, speed, started, onComplete]);
+
+  return <span>{displayedText}<span className="animate-pulse">|</span></span>;
+}
+
+// Mini Before/After Slider for Bento Grid
+function MiniBeforeAfter() {
+  const [position, setPosition] = useState(50);
+  
+  return (
+    <div className="relative w-full h-32 rounded-lg overflow-hidden cursor-ew-resize">
+      {/* After (right side - new) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#00E5FF]/30 to-blue-600/20">
+        <div className="absolute bottom-2 right-2 text-[10px] font-bold text-[#00E5FF] bg-[#0B1C3E]/80 px-2 py-0.5 rounded">AFTER</div>
+        <div className="h-full flex items-center justify-center">
+          <div className="w-20 h-16 bg-[#00E5FF]/20 rounded border border-[#00E5FF]/40 flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#00E5FF]/40 rounded" />
+          </div>
+        </div>
+      </div>
+      
+      {/* Before (left side - old) */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-br from-amber-900/40 to-orange-800/30"
+        style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
+      >
+        <div className="absolute bottom-2 left-2 text-[10px] font-bold text-amber-400 bg-[#0B1C3E]/80 px-2 py-0.5 rounded">BEFORE</div>
+        <div className="h-full flex items-center justify-center">
+          <div className="w-20 h-16 bg-amber-900/40 rounded border border-amber-700/40 flex items-center justify-center">
+            <div className="w-8 h-8 bg-amber-700/40 rounded" />
+          </div>
+        </div>
+      </div>
+      
+      {/* Slider handle */}
+      <div 
+        className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg"
+        style={{ left: `${position}%` }}
+        onMouseDown={(e) => {
+          const startX = e.clientX;
+          const startPos = position;
+          const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+          
+          const handleMove = (moveE: MouseEvent) => {
+            if (!rect) return;
+            const newPos = Math.max(0, Math.min(100, ((moveE.clientX - rect.left) / rect.width) * 100));
+            setPosition(newPos);
+          };
+          
+          const handleUp = () => {
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleUp);
+          };
+          
+          document.addEventListener('mousemove', handleMove);
+          document.addEventListener('mouseup', handleUp);
+        }}
+      >
+        <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center">
+          <div className="flex gap-0.5">
+            <div className="w-0.5 h-3 bg-slate-400 rounded" />
+            <div className="w-0.5 h-3 bg-slate-400 rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mini PDF Document for Bento Grid
+function MiniPdfDocument() {
+  return (
+    <div className="relative w-full h-32 flex items-center justify-center">
+      {/* Main document */}
+      <div className="relative w-24 bg-white rounded shadow-2xl transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+        <div className="p-2">
+          {/* Header with logo placeholder */}
+          <div className="flex items-center gap-1 mb-2">
+            <div className="w-4 h-4 bg-[#0B1C3E] rounded" />
+            <div className="w-10 h-1.5 bg-slate-200 rounded" />
+          </div>
+          {/* Content lines */}
+          <div className="space-y-1">
+            <div className="w-full h-1 bg-slate-100 rounded" />
+            <div className="w-4/5 h-1 bg-slate-100 rounded" />
+            <div className="w-full h-1 bg-slate-100 rounded" />
+          </div>
+          {/* Price box */}
+          <div className="mt-2 bg-[#00E5FF]/10 rounded p-1 text-center">
+            <span className="text-[8px] font-bold text-[#0B1C3E]">$22,900</span>
+          </div>
+          {/* Signature line */}
+          <div className="mt-2 border-t border-slate-200 pt-1">
+            <div className="w-12 h-2 mx-auto">
+              <svg viewBox="0 0 50 10" className="w-full h-full">
+                <path 
+                  d="M5 8 C10 2, 15 8, 20 4 C25 0, 30 6, 35 3 C40 0, 45 5, 48 2" 
+                  stroke="#0B1C3E" 
+                  strokeWidth="1.5" 
+                  fill="none"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+        {/* Checkmark overlay */}
+        <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+          <Check className="w-3 h-3 text-white" />
+        </div>
+      </div>
+      {/* Background documents */}
+      <div className="absolute -z-10 w-20 h-24 bg-slate-700/50 rounded shadow-lg transform rotate-6 translate-x-2 translate-y-1" />
+    </div>
+  );
+}
+
+// Animated Chat Demo
+function AnimatedChatDemo() {
+  const [stage, setStage] = useState(0);
+  const [cycle, setCycle] = useState(0);
+  
+  useEffect(() => {
+    // Reset and restart animation cycle
+    const cycleTimer = setInterval(() => {
+      setStage(0);
+      setCycle(c => c + 1);
+    }, 12000);
+    
+    return () => clearInterval(cycleTimer);
+  }, []);
+
+  useEffect(() => {
+    if (stage === 0) {
+      const timer = setTimeout(() => setStage(1), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [cycle, stage]);
+
+  return (
+    <div className="rounded-2xl bg-slate-800/50 border border-white/10 p-6 backdrop-blur-sm">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-[#00E5FF]/20 flex items-center justify-center">
+          <MessageSquare className="h-5 w-5 text-[#00E5FF]" />
+        </div>
+        <span className="font-semibold">AI Estimator</span>
+        <div className="ml-auto flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-xs text-green-400">Online</span>
+        </div>
+      </div>
+      <div className="space-y-3 min-h-[140px]">
+        {/* AI Initial message */}
+        <div className="bg-slate-700/50 rounded-xl rounded-bl-sm p-4 max-w-[80%]">
+          <p className="text-sm text-slate-300">What's the project?</p>
+        </div>
+        
+        {/* User typing */}
+        {stage >= 1 && (
+          <div className="bg-[#00E5FF]/20 rounded-xl rounded-br-sm p-4 max-w-[85%] ml-auto">
+            <p className="text-sm">
+              {stage === 1 ? (
+                <TypewriterText 
+                  key={cycle}
+                  text="Master bath remodel, 8x10, walk-in shower with bench, frameless glass..."
+                  speed={40}
+                  onComplete={() => setTimeout(() => setStage(2), 800)}
+                />
+              ) : (
+                "Master bath remodel, 8x10, walk-in shower with bench, frameless glass..."
+              )}
+            </p>
+          </div>
+        )}
+        
+        {/* AI Processing */}
+        {stage >= 2 && stage < 3 && (
+          <div className="bg-slate-700/50 rounded-xl rounded-bl-sm p-4 max-w-[60%]">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-[#00E5FF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-[#00E5FF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-[#00E5FF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <span className="text-sm text-slate-400">Calculating...</span>
+            </div>
+          </div>
+        )}
+        
+        {/* AI Response */}
+        {stage >= 2 && (
+          <div className="bg-slate-700/50 rounded-xl rounded-bl-sm p-4 max-w-[85%]">
+            {stage === 2 ? (
+              <p className="text-sm text-slate-300">
+                <TypewriterText 
+                  key={`response-${cycle}`}
+                  text="Quote Generated: $22,900. Ready to review?"
+                  delay={1500}
+                  speed={35}
+                  onComplete={() => setStage(3)}
+                />
+              </p>
+            ) : (
+              <div>
+                <p className="text-sm text-slate-300 mb-2">Quote Generated: <span className="text-[#00E5FF] font-bold">$22,900</span>. Ready to review?</p>
+                <div className="flex gap-2 mt-2">
+                  <span className="text-xs bg-[#00E5FF]/20 text-[#00E5FF] px-2 py-1 rounded-full">View Details</span>
+                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">Send to Client</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Landing() {
   return (
@@ -98,26 +346,125 @@ export default function Landing() {
             </Button>
           </div>
 
-          {/* App Screenshot */}
-          <div className="mt-20 relative animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <div className="relative rounded-2xl bg-slate-900/50 p-2 ring-1 ring-white/10 backdrop-blur-xl lg:p-4">
-              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 aspect-video flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-[#00E5FF]/20 flex items-center justify-center">
-                    <MessageSquare className="h-10 w-10 text-[#00E5FF]" />
+          {/* 3D Tilted App Screenshot with Glassmorphism */}
+          <div className="mt-20 relative animate-fade-in perspective-1000" style={{ animationDelay: '0.4s' }}>
+            {/* Massive Electric Blue Glow Behind */}
+            <div className="absolute inset-0 -z-10">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[#00E5FF] opacity-30 blur-[100px] rounded-full" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-gradient-to-r from-[#00E5FF] via-blue-500 to-[#00E5FF] opacity-20 blur-[60px] rounded-full" />
+            </div>
+            
+            {/* Glassmorphism Container with 3D Tilt */}
+            <div 
+              className="relative rounded-2xl bg-white/5 p-2 lg:p-4 border border-white/10 backdrop-blur-xl shadow-2xl"
+              style={{ 
+                transform: 'perspective(1000px) rotateX(5deg) rotateY(-2deg)',
+                transformStyle: 'preserve-3d'
+              }}
+            >
+              {/* Inner glow border */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#00E5FF]/20 via-transparent to-blue-600/10 pointer-events-none" />
+              
+              {/* Screenshot Content */}
+              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-[#0B1C3E] to-slate-900 aspect-video relative">
+                {/* Mock Dashboard UI */}
+                <div className="absolute inset-0 p-4 lg:p-6">
+                  {/* Top bar */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#00E5FF]/20 flex items-center justify-center">
+                        <div className="w-4 h-4 bg-[#00E5FF] rounded" />
+                      </div>
+                      <div className="w-20 h-3 bg-white/20 rounded" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="w-16 h-6 bg-[#00E5FF]/20 rounded-full" />
+                      <div className="w-6 h-6 bg-white/10 rounded-full" />
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">Live Dashboard Preview</h3>
-                  <p className="text-slate-400">AI-powered estimation in action</p>
+                  
+                  {/* Main content grid */}
+                  <div className="grid grid-cols-3 gap-4 h-[calc(100%-3rem)]">
+                    {/* Left sidebar */}
+                    <div className="col-span-1 space-y-3">
+                      <div className="h-20 bg-white/5 rounded-lg border border-white/10 p-3">
+                        <div className="w-12 h-2 bg-white/30 rounded mb-2" />
+                        <div className="w-full h-2 bg-white/10 rounded mb-1" />
+                        <div className="w-3/4 h-2 bg-white/10 rounded" />
+                      </div>
+                      <div className="h-32 bg-white/5 rounded-lg border border-white/10 p-3">
+                        <div className="w-16 h-2 bg-[#00E5FF]/50 rounded mb-3" />
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="w-12 h-2 bg-white/20 rounded" />
+                            <div className="w-8 h-2 bg-green-500/50 rounded" />
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <div className="w-10 h-2 bg-white/20 rounded" />
+                            <div className="w-10 h-2 bg-[#00E5FF]/50 rounded" />
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <div className="w-14 h-2 bg-white/20 rounded" />
+                            <div className="w-6 h-2 bg-amber-500/50 rounded" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Main content area */}
+                    <div className="col-span-2 bg-white/5 rounded-lg border border-white/10 p-4">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-full bg-[#00E5FF]/20" />
+                        <div className="w-24 h-3 bg-white/20 rounded" />
+                      </div>
+                      <div className="space-y-2 mb-4">
+                        <div className="bg-slate-700/50 rounded-lg p-2 max-w-[60%]">
+                          <div className="w-full h-2 bg-white/20 rounded" />
+                        </div>
+                        <div className="bg-[#00E5FF]/20 rounded-lg p-2 max-w-[70%] ml-auto">
+                          <div className="w-full h-2 bg-white/30 rounded" />
+                        </div>
+                      </div>
+                      {/* Quote card */}
+                      <div className="bg-gradient-to-r from-[#00E5FF]/10 to-transparent rounded-lg p-3 border border-[#00E5FF]/20">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="w-16 h-2 bg-white/20 rounded mb-1" />
+                            <div className="w-24 h-4 bg-[#00E5FF] rounded" />
+                          </div>
+                          <div className="w-16 h-6 bg-green-500 rounded-full" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* "Live" indicator */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-[10px] font-medium text-white/80">LIVE</span>
                 </div>
               </div>
             </div>
-            {/* Glow behind screenshot */}
-            <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-[#00E5FF] via-blue-600 to-[#00E5FF] opacity-20 blur-3xl rounded-3xl" />
+            
+            {/* Floating elements around the screenshot */}
+            <div className="absolute -left-8 top-1/4 bg-[#0B1C3E]/80 backdrop-blur-sm border border-white/10 rounded-lg p-3 shadow-xl transform -rotate-6 hidden lg:block">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-400" />
+                <span className="text-xs font-medium">Quote Sent</span>
+              </div>
+            </div>
+            <div className="absolute -right-8 top-1/3 bg-[#0B1C3E]/80 backdrop-blur-sm border border-white/10 rounded-lg p-3 shadow-xl transform rotate-6 hidden lg:block">
+              <div className="text-center">
+                <span className="text-lg font-bold text-[#00E5FF]">$22,900</span>
+                <p className="text-[10px] text-slate-400">Client Price</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Problem/Solution Grid */}
+      {/* Bento Grid Features Section */}
       <section id="features" className="py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -129,44 +476,84 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Card 1 */}
-            <div className="group relative p-8 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 hover:border-[#00E5FF]/30 transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl bg-red-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <FileSpreadsheet className="h-7 w-7 text-red-400" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">No More Spreadsheets</h3>
-              <p className="text-slate-400">
+          {/* Bento Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Card 1 - No More Spreadsheets (Tall) */}
+            <div className="md:row-span-2 group relative p-6 rounded-2xl bg-[#0B1C3E]/60 border border-white/10 backdrop-blur-sm hover:border-[#00E5FF]/30 transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent pointer-events-none" />
+              <h3 className="text-xl font-bold mb-3 relative z-10">No More Spreadsheets</h3>
+              <p className="text-slate-400 mb-6 relative z-10">
                 Stop guessing margins on napkin math. Our AI calculates accurate costs in seconds, not hours.
               </p>
+              {/* Animated spreadsheet burning graphic */}
+              <div className="relative h-48 flex items-center justify-center">
+                <div className="relative">
+                  {/* Spreadsheet */}
+                  <div className="w-24 h-32 bg-white rounded shadow-lg transform -rotate-6 relative overflow-hidden">
+                    <div className="absolute inset-0 p-2">
+                      <div className="grid grid-cols-3 gap-0.5 h-full">
+                        {Array.from({ length: 15 }).map((_, i) => (
+                          <div key={i} className="bg-slate-100 rounded-sm" />
+                        ))}
+                      </div>
+                    </div>
+                    {/* Red X overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
+                      <X className="w-16 h-16 text-red-500 stroke-[3]" />
+                    </div>
+                  </div>
+                  {/* Glow effect */}
+                  <div className="absolute -inset-4 bg-red-500/20 blur-xl rounded-full -z-10" />
+                </div>
+              </div>
             </div>
 
-            {/* Card 2 */}
-            <div className="group relative p-8 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 hover:border-[#00E5FF]/30 transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl bg-[#00E5FF]/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Camera className="h-7 w-7 text-[#00E5FF]" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Visual Estimates</h3>
-              <p className="text-slate-400">
-                Snap a photo, describe the scope, close the deal. AI understands your project instantly.
+            {/* Card 2 - Visual Estimates (with Before/After) */}
+            <div className="group relative p-6 rounded-2xl bg-[#0B1C3E]/60 border border-white/10 backdrop-blur-sm hover:border-[#00E5FF]/30 transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#00E5FF]/5 to-transparent pointer-events-none" />
+              <h3 className="text-xl font-bold mb-3 relative z-10">Visual Estimates</h3>
+              <p className="text-slate-400 mb-4 text-sm relative z-10">
+                Snap a photo, describe the scope, close the deal.
               </p>
+              {/* Mini Before/After Slider */}
+              <MiniBeforeAfter />
             </div>
 
-            {/* Card 3 */}
-            <div className="group relative p-8 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/10 hover:border-[#00E5FF]/30 transition-all duration-300">
-              <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <FileSignature className="h-7 w-7 text-green-400" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">Instant Contracts</h3>
-              <p className="text-slate-400">
-                Generate signed PDF contracts before you leave the driveway. Close deals on the spot.
+            {/* Card 3 - Instant Contracts (with PDF) */}
+            <div className="group relative p-6 rounded-2xl bg-[#0B1C3E]/60 border border-white/10 backdrop-blur-sm hover:border-[#00E5FF]/30 transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
+              <h3 className="text-xl font-bold mb-3 relative z-10">Instant Contracts</h3>
+              <p className="text-slate-400 mb-4 text-sm relative z-10">
+                Generate signed PDFs before you leave the driveway.
               </p>
+              {/* Mini PDF Document */}
+              <MiniPdfDocument />
+            </div>
+
+            {/* Card 4 - Speed Stats */}
+            <div className="lg:col-span-2 group relative p-6 rounded-2xl bg-[#0B1C3E]/60 border border-white/10 backdrop-blur-sm hover:border-[#00E5FF]/30 transition-all duration-300">
+              <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
+                <div className="text-center">
+                  <div className="text-4xl lg:text-5xl font-black text-[#00E5FF] mb-1">5 min</div>
+                  <p className="text-slate-400 text-sm">Average Quote Time</p>
+                </div>
+                <div className="hidden sm:block w-px h-16 bg-white/10" />
+                <div className="text-center">
+                  <div className="text-4xl lg:text-5xl font-black text-[#00E5FF] mb-1">38%</div>
+                  <p className="text-slate-400 text-sm">Margin Protection</p>
+                </div>
+                <div className="hidden sm:block w-px h-16 bg-white/10" />
+                <div className="text-center">
+                  <div className="text-4xl lg:text-5xl font-black text-green-400 mb-1">+40%</div>
+                  <p className="text-slate-400 text-sm">Close Rate Increase</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How it Works - Zig-Zag */}
+      {/* How it Works - with Animated Chat */}
       <section id="how-it-works" className="py-24 bg-[#0B1C3E]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
@@ -178,7 +565,7 @@ export default function Landing() {
             </p>
           </div>
 
-          {/* Step 1 */}
+          {/* Step 1 - with Animated Chat */}
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-24">
             <div className="order-2 lg:order-1">
               <div className="inline-flex items-center gap-2 text-[#00E5FF] mb-4">
@@ -200,25 +587,8 @@ export default function Landing() {
               </ul>
             </div>
             <div className="order-1 lg:order-2">
-              <div className="rounded-2xl bg-slate-800/50 border border-white/10 p-6 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-[#00E5FF]/20 flex items-center justify-center">
-                    <MessageSquare className="h-5 w-5 text-[#00E5FF]" />
-                  </div>
-                  <span className="font-semibold">AI Estimator</span>
-                </div>
-                <div className="space-y-3">
-                  <div className="bg-slate-700/50 rounded-xl rounded-bl-sm p-4 max-w-[80%]">
-                    <p className="text-sm text-slate-300">What's the project?</p>
-                  </div>
-                  <div className="bg-[#00E5FF]/20 rounded-xl rounded-br-sm p-4 max-w-[80%] ml-auto">
-                    <p className="text-sm">Master bath remodel, 8x10, walk-in shower with bench, double vanity</p>
-                  </div>
-                  <div className="bg-slate-700/50 rounded-xl rounded-bl-sm p-4 max-w-[80%]">
-                    <p className="text-sm text-slate-300">Got it! I'm calculating your estimate now...</p>
-                  </div>
-                </div>
-              </div>
+              {/* Animated Chat Demo */}
+              <AnimatedChatDemo />
             </div>
           </div>
 
@@ -318,9 +688,44 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Trust Section - Logos + Testimonials with Avatars */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Trusted By Logo Strip */}
+          <div className="mb-16">
+            <p className="text-center text-sm text-slate-500 uppercase tracking-wider mb-8">Trusted by Industry Leaders</p>
+            <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-16 opacity-50">
+              {/* NARI */}
+              <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all">
+                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">NARI</span>
+                </div>
+                <span className="text-sm text-slate-400 hidden sm:inline">National Association of the Remodeling Industry</span>
+              </div>
+              {/* NKBA */}
+              <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all">
+                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">NKBA</span>
+                </div>
+                <span className="text-sm text-slate-400 hidden sm:inline">Kitchen & Bath Association</span>
+              </div>
+              {/* NAHB */}
+              <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all">
+                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">NAHB</span>
+                </div>
+                <span className="text-sm text-slate-400 hidden sm:inline">Home Builders</span>
+              </div>
+              {/* BBB */}
+              <div className="flex items-center gap-2 grayscale hover:grayscale-0 transition-all">
+                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">BBB</span>
+                </div>
+                <span className="text-sm text-slate-400 hidden sm:inline">A+ Rated</span>
+              </div>
+            </div>
+          </div>
+
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Trusted by <span className="text-[#00E5FF]">Orlando's Best</span>
@@ -336,34 +741,119 @@ export default function Landing() {
                 quote: "I used to spend 2 hours on each estimate. Now it takes 5 minutes. The AI gets my pricing right every time.",
                 name: "Mike Rodriguez",
                 title: "Owner, Premier Bath & Kitchen",
-                stars: 5
+                stars: 5,
+                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face"
               },
               {
                 quote: "The PDF proposals look so professional, clients sign faster. We've increased close rate by 40% since switching.",
                 name: "Sarah Chen",
                 title: "Sales Director, HomePro Remodeling",
-                stars: 5
+                stars: 5,
+                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face"
               },
               {
                 quote: "Finally, a tool that understands construction. The margin protection alone has saved us thousands.",
                 name: "James Thompson",
                 title: "Founder, Luxe Renovations",
-                stars: 5
+                stars: 5,
+                avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
               }
             ].map((testimonial, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-slate-800/30 border border-white/10">
+              <div key={i} className="p-6 rounded-2xl bg-slate-800/30 border border-white/10 hover:border-[#00E5FF]/20 transition-colors">
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: testimonial.stars }).map((_, j) => (
                     <Star key={j} className="h-5 w-5 fill-[#00E5FF] text-[#00E5FF]" />
                   ))}
                 </div>
                 <p className="text-slate-300 mb-6 italic">"{testimonial.quote}"</p>
-                <div>
-                  <p className="font-semibold">{testimonial.name}</p>
-                  <p className="text-sm text-slate-400">{testimonial.title}</p>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={testimonial.avatar} 
+                    alt={testimonial.name}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-[#00E5FF]/30"
+                  />
+                  <div>
+                    <p className="font-semibold">{testimonial.name}</p>
+                    <p className="text-sm text-slate-400">{testimonial.title}</p>
+                  </div>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Table - "Why Pros Switch" */}
+      <section className="py-24 bg-[#0B1C3E]/30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Why Pros <span className="text-[#00E5FF]">Switch</span>
+            </h2>
+            <p className="text-lg text-slate-400">
+              The difference is night and day
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="text-left p-4 text-slate-400 font-medium">Features</th>
+                  <th className="p-4 text-slate-400 font-medium text-center">Spreadsheets</th>
+                  <th className="p-4 text-center relative">
+                    {/* Recommended badge */}
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2">
+                      <span className="bg-[#00E5FF] text-[#0B1C3E] text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                        RECOMMENDED
+                      </span>
+                    </div>
+                    <div className="bg-gradient-to-b from-[#00E5FF]/20 to-transparent rounded-t-xl py-4 border-2 border-[#00E5FF] border-b-0">
+                      <span className="font-bold text-[#00E5FF]">EstimAIte</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: 'Speed', spreadsheet: 'Hours', estimaite: 'Seconds' },
+                  { feature: 'Accuracy', spreadsheet: 'Guesswork', estimaite: 'Market Rates' },
+                  { feature: 'Visuals', spreadsheet: 'Text Only', estimaite: 'Photo-Realistic' },
+                  { feature: 'AI Protection', spreadsheet: 'None', estimaite: 'Included' },
+                  { feature: 'PDF Proposals', spreadsheet: 'Manual', estimaite: 'One-Click' },
+                  { feature: 'Margin Control', spreadsheet: 'Error-Prone', estimaite: 'Guaranteed' },
+                ].map((row, i) => (
+                  <tr key={i} className="border-t border-white/5">
+                    <td className="p-4 text-slate-300 font-medium">{row.feature}</td>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <X className="w-5 h-5 text-red-400" />
+                        <span className="text-slate-500">{row.spreadsheet}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-center border-x-2 border-[#00E5FF] bg-[#00E5FF]/5">
+                      <div className="flex items-center justify-center gap-2">
+                        <Check className="w-5 h-5 text-[#00E5FF]" />
+                        <span className="text-white font-medium">{row.estimaite}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="p-4"></td>
+                  <td className="p-4"></td>
+                  <td className="p-4 border-x-2 border-b-2 border-[#00E5FF] rounded-b-xl bg-[#00E5FF]/5">
+                    <Link to="/auth" className="block">
+                      <Button className="w-full bg-[#00E5FF] text-[#0B1C3E] hover:bg-[#00E5FF]/90 font-bold">
+                        Start Free Trial
+                      </Button>
+                    </Link>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
       </section>
