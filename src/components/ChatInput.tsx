@@ -1,13 +1,16 @@
 import { useState, KeyboardEvent, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, Loader2 } from "lucide-react";
+import { Send, Mic, MicOff, Loader2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
+  onPhotoUpload?: (file: File) => void;
   disabled?: boolean;
   placeholder?: string;
+  showPhotoUpload?: boolean;
+  isAnalyzingPhoto?: boolean;
 }
 
 // Extend Window interface for Web Speech API
@@ -18,12 +21,20 @@ declare global {
   }
 }
 
-export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
+export function ChatInput({ 
+  onSend, 
+  onPhotoUpload,
+  disabled, 
+  placeholder,
+  showPhotoUpload = false,
+  isAnalyzingPhoto = false,
+}: ChatInputProps) {
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -108,6 +119,34 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
     }
   };
 
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be under 10MB');
+      return;
+    }
+
+    onPhotoUpload?.(file);
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div 
       className={cn(
@@ -116,6 +155,18 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
         isFocused && "border-primary/50 bg-muted/50 shadow-sm"
       )}
     >
+      {/* Hidden file input for photo upload */}
+      {showPhotoUpload && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      )}
+
       <textarea
         ref={textareaRef}
         value={input}
@@ -135,6 +186,30 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
       />
 
       <div className="flex items-center gap-1 sm:gap-1.5 pb-0.5 sm:pb-1">
+        {/* Photo Upload Button */}
+        {showPhotoUpload && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handlePhotoClick}
+            disabled={disabled || isAnalyzingPhoto}
+            className={cn(
+              "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl transition-all duration-300",
+              isAnalyzingPhoto 
+                ? "bg-cyan-500/20 text-cyan-600 animate-pulse" 
+                : "text-muted-foreground hover:text-cyan-600 hover:bg-cyan-500/10"
+            )}
+            title="Upload photo for AI analysis"
+          >
+            {isAnalyzingPhoto ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Camera className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+
         <Button
           type="button"
           variant="ghost"
