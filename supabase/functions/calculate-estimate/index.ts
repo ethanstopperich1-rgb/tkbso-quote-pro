@@ -66,11 +66,13 @@ interface PricingResult {
 // Map trade bucket categories to pricing_configs fields
 // Returns ic, cp, unit, and whether this is a flat rate (ignore quantity)
 // laborOnly: when true, use install-only rates (no material component)
+// dimensions: optional dimensions for lump sum calculations (waterproofing)
 function mapCategoryToPricing(
   category: string,
   taskDescription: string,
   config: PricingConfig,
-  laborOnly: boolean = false
+  laborOnly: boolean = false,
+  dimensions?: { shower_wall_sqft?: number | null; shower_floor_sqft?: number | null }
 ): { ic: number; cp: number; unit: string; flatRate?: boolean } | null {
   const categoryLower = category.toLowerCase();
   const taskLower = taskDescription.toLowerCase();
@@ -130,9 +132,23 @@ function mapCategoryToPricing(
     return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
   }
 
-  // Waterproofing / Support Work
+  // Waterproofing / Support Work - LUMP SUM based on shower dimensions
   if (categoryLower.includes('waterproof') || (categoryLower.includes('support') && taskLower.includes('waterproof'))) {
-    return { ic: Number(config.waterproofing_ic_per_sqft) || 6, cp: Number(config.waterproofing_cp_per_sqft) || 13, unit: 'sqft' };
+    const icPerSqft = Number(config.waterproofing_ic_per_sqft) || 6;
+    const cpPerSqft = Number(config.waterproofing_cp_per_sqft) || 13;
+    
+    // If dimensions are provided, calculate as lump sum based on shower area
+    if (dimensions && (dimensions.shower_wall_sqft || dimensions.shower_floor_sqft)) {
+      const totalShowerSqft = (dimensions.shower_wall_sqft || 0) + (dimensions.shower_floor_sqft || 0);
+      if (totalShowerSqft > 0) {
+        const lumpSumIc = icPerSqft * totalShowerSqft;
+        const lumpSumCp = cpPerSqft * totalShowerSqft;
+        return { ic: lumpSumIc, cp: lumpSumCp, unit: 'ea', flatRate: true };
+      }
+    }
+    
+    // Fallback to per-sqft if no dimensions (shouldn't happen in normal flow)
+    return { ic: icPerSqft, cp: cpPerSqft, unit: 'sqft' };
   }
 
   // Cement Board
@@ -346,7 +362,8 @@ function calculatePricing(
   tradeBuckets: EstimateData['trade_buckets'], 
   config: PricingConfig, 
   laborOnly: boolean = false,
-  pricingMode?: PricingModeOptions
+  pricingMode?: PricingModeOptions,
+  dimensions?: EstimateData['dimensions']
 ) {
   const lineItems: PricingResult[] = [];
   const warnings: string[] = [];
@@ -363,7 +380,7 @@ function calculatePricing(
   }
 
   for (const bucket of tradeBuckets) {
-    const mapping = mapCategoryToPricing(bucket.category, bucket.task_description, config, laborOnly);
+    const mapping = mapCategoryToPricing(bucket.category, bucket.task_description, config, laborOnly, dimensions);
 
     if (!mapping) {
       warnings.push(`No pricing found for: ${bucket.category} - ${bucket.task_description}`);
@@ -968,7 +985,9 @@ TRADE BUCKET MAPPING:
 
 **Tile:** Tile - Wall (sqft), Tile - Shower Floor (sqft), Tile - Main Floor (sqft)
 
-**Support:** Waterproofing (=total tile sqft), Cement Board (=total tile sqft)
+**Support (LUMP SUM - calculated from shower dimensions):** 
+- Waterproofing - LUMP SUM - qty: 1, unit: ea (automatically calculated from shower wall + floor sqft)
+- Cement Board (=total tile sqft)
 
 **Electrical:** 
 - Electrical - Recessed Can (ea), Electrical - Vanity Light (ea)
@@ -1114,7 +1133,7 @@ LABOR ONLY PROJECTS:
     // Step 4: Calculate pricing
     const laborOnly = validated.data.project_header.labor_only || false;
     console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets", laborOnly ? "(LABOR ONLY)" : "", "with margin mode:", pricingModeSettings);
-    const basePricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly, pricingModeSettings);
+    const basePricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly, pricingModeSettings, validated.data.dimensions);
 
     // Management fee is optional - include config for frontend toggle
     const managementFeePercent = Number(pricingConfig.management_fee_percent) || 0.15;
