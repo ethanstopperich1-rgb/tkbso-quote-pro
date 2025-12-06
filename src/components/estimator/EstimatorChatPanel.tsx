@@ -5,7 +5,7 @@ import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, Menu, LayoutDashboard, FileText, Settings, X, Camera } from 'lucide-react';
+import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, Menu, FileText, Camera, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -109,8 +109,10 @@ export function EstimatorChatPanel() {
   const [showLineItems, setShowLineItems] = useState(false);
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
   const [photoEntries, setPhotoEntries] = useState<PhotoAnalysisEntry[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dragCounterRef = useRef(0);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -119,6 +121,54 @@ export function EstimatorChatPanel() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, estimate, photoEntries]);
+
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    if (imageFiles.length === 0) {
+      toast.error('Please drop an image file');
+      return;
+    }
+
+    // Process each image file
+    for (const file of imageFiles) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is too large (max 10MB)`);
+        continue;
+      }
+      await handlePhotoUpload(file);
+    }
+  };
 
   const addAssistantMessage = (content: string) => {
     const message: Message = {
@@ -466,16 +516,38 @@ Add more photos or provide dimensions to generate your quote.`,
   }, {} as Record<string, PricingLineItem[]>) || {};
 
   return (
-    <div className="flex flex-col h-full glass-card-active relative overflow-hidden rounded-xl sm:rounded-2xl">
+    <div 
+      className="flex flex-col h-full glass-card-active relative overflow-hidden rounded-xl sm:rounded-2xl"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag & Drop Overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-primary/10 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl sm:rounded-2xl flex items-center justify-center animate-fade-in">
+          <div className="flex flex-col items-center gap-3 text-primary">
+            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+              <Upload className="h-8 w-8" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-lg">Drop photos here</p>
+              <p className="text-sm text-muted-foreground">Release to analyze with AI vision</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hidden file input for adding more photos */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        multiple
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handlePhotoUpload(file);
+          const files = Array.from(e.target.files || []);
+          files.forEach(file => handlePhotoUpload(file));
           e.target.value = '';
         }}
         className="hidden"
