@@ -143,7 +143,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Total Value</p>
-                <p className="text-3xl sm:text-5xl font-extrabold text-slate-900 mt-1 tracking-tight">
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1 tracking-tight">
                   {formatCurrency(stats.totalValue)}
                 </p>
               </div>
