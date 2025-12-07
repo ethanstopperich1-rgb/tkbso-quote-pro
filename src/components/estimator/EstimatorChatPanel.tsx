@@ -501,6 +501,24 @@ Add more photos or provide dimensions to generate your quote.`,
     fileInputRef.current?.click();
   };
 
+  // Handle updating quantity of a detected item
+  const handleUpdateItem = (entryId: string, itemIndex: number, newQuantity: number) => {
+    setPhotoEntries(prev => prev.map(entry => {
+      if (entry.id !== entryId) return entry;
+      const updatedItems = [...entry.analysis.detected_items];
+      if (updatedItems[itemIndex]) {
+        updatedItems[itemIndex] = { ...updatedItems[itemIndex], quantity: newQuantity };
+      }
+      return {
+        ...entry,
+        analysis: {
+          ...entry.analysis,
+          detected_items: updatedItems,
+        },
+      };
+    }));
+  };
+
   const handleViewEstimate = () => {
     if (savedEstimateId) {
       navigate(`/estimates/${savedEstimateId}`);
@@ -636,6 +654,7 @@ Add more photos or provide dimensions to generate your quote.`,
             entries={photoEntries}
             onRemovePhoto={handleRemovePhoto}
             onAddMore={handleAddMorePhotos}
+            onUpdateItem={handleUpdateItem}
             isAnalyzing={isAnalyzingPhoto}
           />
         )}

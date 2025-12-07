@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Sparkles, CheckCircle2, AlertCircle, X, Plus, Camera } from 'lucide-react';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ interface MultiPhotoAnalysisCardProps {
   entries: PhotoAnalysisEntry[];
   onRemovePhoto: (id: string) => void;
   onAddMore: () => void;
+  onUpdateItem?: (entryId: string, itemIndex: number, newQuantity: number) => void;
   isAnalyzing?: boolean;
 }
 
@@ -31,23 +33,36 @@ const categoryDisplayNames: Record<string, string> = {
   'Glass': 'Glass',
   'Flooring': 'Flooring',
   'Framing': 'Framing',
+  'Accessories': 'Accessories',
 };
 
-// Group items by category across all photos
-function mergeAndGroupItems(entries: PhotoAnalysisEntry[]): Record<string, DetectedItem[]> {
-  const allItems = entries.flatMap(e => e.analysis.detected_items);
+// Extended item with source tracking for editing
+interface TrackedItem extends DetectedItem {
+  entryId: string;
+  itemIndex: number;
+}
+
+// Group items by category across all photos, keeping source info
+function mergeAndGroupItems(entries: PhotoAnalysisEntry[]): Record<string, TrackedItem[]> {
+  const allItems: TrackedItem[] = entries.flatMap(e => 
+    e.analysis.detected_items.map((item, idx) => ({
+      ...item,
+      entryId: e.id,
+      itemIndex: idx,
+    }))
+  );
   return allItems.reduce((acc, item) => {
     const category = categoryDisplayNames[item.category] || item.category;
     if (!acc[category]) acc[category] = [];
-    // Avoid exact duplicates
+    // Avoid exact duplicates by item name only (allow different quantities)
     const isDuplicate = acc[category].some(
-      existing => existing.item === item.item && existing.quantity === item.quantity
+      existing => existing.item === item.item && existing.entryId === item.entryId && existing.itemIndex === item.itemIndex
     );
     if (!isDuplicate) {
       acc[category].push(item);
     }
     return acc;
-  }, {} as Record<string, DetectedItem[]>);
+  }, {} as Record<string, TrackedItem[]>);
 }
 
 // Determine overall project type from all analyses
@@ -64,6 +79,7 @@ export function MultiPhotoAnalysisCard({
   entries, 
   onRemovePhoto, 
   onAddMore,
+  onUpdateItem,
   isAnalyzing 
 }: MultiPhotoAnalysisCardProps) {
   const groupedItems = mergeAndGroupItems(entries);
@@ -155,26 +171,29 @@ export function MultiPhotoAnalysisCard({
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
                 {category}
               </h4>
-              <div className="space-y-1">
-                {items.map((item, idx) => (
+              <div className="space-y-2">
+                {items.map((item) => (
                   <div 
-                    key={idx} 
-                    className="flex items-start gap-2 text-sm"
+                    key={`${item.entryId}-${item.itemIndex}`} 
+                    className="flex items-center gap-2 text-sm"
                   >
-                    <CheckCircle2 className="h-4 w-4 text-cyan-500 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <span className="text-foreground">{item.item}</span>
-                      {item.quantity > 0 && (
-                        <span className="text-muted-foreground ml-1">
-                          ({item.quantity} {item.unit})
-                        </span>
-                      )}
-                      {item.notes && (
-                        <span className="text-muted-foreground text-xs block">
-                          {item.notes}
-                        </span>
-                      )}
-                    </div>
+                    <CheckCircle2 className="h-4 w-4 text-cyan-500 flex-shrink-0" />
+                    <span className="flex-1 text-foreground">{item.item}</span>
+                    {item.quantity >= 0 && (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const newQty = parseInt(e.target.value) || 0;
+                            onUpdateItem?.(item.entryId, item.itemIndex, newQty);
+                          }}
+                          className="w-16 h-7 text-xs text-center px-1"
+                          min={0}
+                        />
+                        <span className="text-muted-foreground text-xs w-8">{item.unit}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
