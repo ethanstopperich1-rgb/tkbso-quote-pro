@@ -443,32 +443,196 @@ export default function Pricing() {
     );
   }
 
-  // Build bathroom trade buckets from config
-  const bathroomBuckets: TradeBucket[] = [
+  // ============ TRADE-BASED ORGANIZATION ============
+  
+  // DEMOLITION & HAUL
+  const demoBuckets: TradeBucket[] = [
     {
-      key: 'demo_haul',
-      name: 'Demo & Haul-Off',
-      description: 'Full bathroom gut: remove existing vanities, tops, tub/shower, wall tile, main floor tile, toilet, mirrors, baseboards, associated substrate; haul off debris.',
-      unit: 'per bathroom',
+      key: 'demo_shower_only',
+      name: 'Demo - Shower Only',
+      description: 'Demo shower area only, haul off debris.',
+      unit: 'each',
+      icField: 'demo_shower_only_ic',
+      cpField: 'demo_shower_only_cp',
+      icValue: config.demo_shower_only_ic,
+      cpValue: config.demo_shower_only_cp,
+    },
+    {
+      key: 'demo_small_bath',
+      name: 'Demo - Small Bath',
+      description: 'Full bathroom gut under 50 sqft.',
+      unit: 'each',
       icField: 'demo_small_bath_ic',
       cpField: 'demo_small_bath_cp',
       icValue: config.demo_small_bath_ic,
       cpValue: config.demo_small_bath_cp,
     },
     {
-      key: 'framing',
-      name: 'Framing & Carpentry',
-      description: 'Pony walls, niches, framing repairs, small layout adjustments (non-structural).',
-      unit: 'per bathroom',
-      icField: 'framing_standard_ic',
-      cpField: 'framing_standard_cp',
-      icValue: config.framing_standard_ic || 900,
-      cpValue: config.framing_standard_cp || 1400,
+      key: 'demo_large_bath',
+      name: 'Demo - Large Bath',
+      description: 'Full bathroom gut 50+ sqft.',
+      unit: 'each',
+      icField: 'demo_large_bath_ic',
+      cpField: 'demo_large_bath_cp',
+      icValue: config.demo_large_bath_ic,
+      cpValue: config.demo_large_bath_cp,
     },
     {
-      key: 'wall_tile',
+      key: 'demo_kitchen',
+      name: 'Demo - Kitchen',
+      description: 'Full kitchen gut: cabinets, counters, backsplash, flooring.',
+      unit: 'each',
+      icField: 'demo_kitchen_ic',
+      cpField: 'demo_kitchen_cp',
+      icValue: config.demo_kitchen_ic,
+      cpValue: config.demo_kitchen_cp,
+    },
+    {
+      key: 'dumpster_bath',
+      name: 'Dumpster/Haul - Bathroom',
+      description: 'Dumpster and haul-off for bathroom demo.',
+      unit: 'each',
+      icField: 'dumpster_bath_ic',
+      cpField: 'dumpster_bath_cp',
+      icValue: config.dumpster_bath_ic,
+      cpValue: config.dumpster_bath_cp,
+    },
+    {
+      key: 'dumpster_kitchen',
+      name: 'Dumpster/Haul - Kitchen',
+      description: 'Dumpster and haul-off for kitchen demo.',
+      unit: 'each',
+      icField: 'dumpster_kitchen_ic',
+      cpField: 'dumpster_kitchen_cp',
+      icValue: config.dumpster_kitchen_ic,
+      cpValue: config.dumpster_kitchen_cp,
+    },
+  ];
+
+  // PLUMBING
+  const plumbingBuckets: TradeBucket[] = [
+    {
+      key: 'plumbing_shower_standard',
+      name: 'Standard Shower Rough-In',
+      description: 'Replace shower valve/trim, no layout change.',
+      unit: 'each',
+      icField: 'plumbing_shower_standard_ic',
+      cpField: 'plumbing_shower_standard_cp',
+      icValue: config.plumbing_shower_standard_ic,
+      cpValue: config.plumbing_shower_standard_cp,
+    },
+    {
+      key: 'plumbing_extra_head',
+      name: 'Extra Head / Diverter',
+      description: 'Additional shower head or body spray.',
+      unit: 'each',
+      icField: 'plumbing_extra_head_ic',
+      cpField: 'plumbing_extra_head_cp',
+      icValue: config.plumbing_extra_head_ic,
+      cpValue: config.plumbing_extra_head_cp,
+    },
+    {
+      key: 'plumbing_tub_to_shower',
+      name: 'Tub to Shower Conversion',
+      description: 'Convert tub to shower, relocate drains.',
+      unit: 'each',
+      icField: 'plumbing_tub_to_shower_ic',
+      cpField: 'plumbing_tub_to_shower_cp',
+      icValue: config.plumbing_tub_to_shower_ic,
+      cpValue: config.plumbing_tub_to_shower_cp,
+    },
+    {
+      key: 'plumbing_tub_freestanding',
+      name: 'Freestanding Tub Install',
+      description: 'Freestanding tub plumbing and installation.',
+      unit: 'each',
+      icField: 'plumbing_tub_freestanding_ic',
+      cpField: 'plumbing_tub_freestanding_cp',
+      icValue: config.plumbing_tub_freestanding_ic,
+      cpValue: config.plumbing_tub_freestanding_cp,
+    },
+    {
+      key: 'plumbing_toilet',
+      name: 'Toilet Swap',
+      description: 'Remove old toilet, install new (no relocation).',
+      unit: 'each',
+      icField: 'plumbing_toilet_ic',
+      cpField: 'plumbing_toilet_cp',
+      icValue: config.plumbing_toilet_ic,
+      cpValue: config.plumbing_toilet_cp,
+    },
+    {
+      key: 'plumbing_smart_valve',
+      name: 'Smart Valve System',
+      description: 'Digital/smart shower valve system.',
+      unit: 'each',
+      icField: 'plumbing_smart_valve_ic',
+      cpField: 'plumbing_smart_valve_cp',
+      icValue: config.plumbing_smart_valve_ic,
+      cpValue: config.plumbing_smart_valve_cp,
+    },
+    {
+      key: 'plumbing_linear_drain',
+      name: 'Linear Drain Install',
+      description: 'Linear/trench drain installation.',
+      unit: 'each',
+      icField: 'plumbing_linear_drain_ic',
+      cpField: 'plumbing_linear_drain_cp',
+      icValue: config.plumbing_linear_drain_ic,
+      cpValue: config.plumbing_linear_drain_cp,
+    },
+  ];
+
+  // ELECTRICAL
+  const electricalBuckets: TradeBucket[] = [
+    {
+      key: 'recessed_can',
+      name: 'Recessed Can Light',
+      description: 'Install recessed can light fixture.',
+      unit: 'each',
+      icField: 'recessed_can_ic_each',
+      cpField: 'recessed_can_cp_each',
+      icValue: config.recessed_can_ic_each,
+      cpValue: config.recessed_can_cp_each,
+    },
+    {
+      key: 'vanity_light',
+      name: 'Vanity Light Install',
+      description: 'Install vanity light fixture.',
+      unit: 'each',
+      icField: 'electrical_vanity_light_ic',
+      cpField: 'electrical_vanity_light_cp',
+      icValue: config.electrical_vanity_light_ic,
+      cpValue: config.electrical_vanity_light_cp,
+    },
+    {
+      key: 'electrical_small_package',
+      name: 'Small Electrical Package',
+      description: 'Bathroom: 2-4 cans, vanity light, fan.',
+      unit: 'each',
+      icField: 'electrical_small_package_ic',
+      cpField: 'electrical_small_package_cp',
+      icValue: config.electrical_small_package_ic,
+      cpValue: config.electrical_small_package_cp,
+    },
+    {
+      key: 'electrical_kitchen_package',
+      name: 'Kitchen Electrical Package',
+      description: 'Kitchen: 5-6 cans, under-cab, switches.',
+      unit: 'each',
+      icField: 'electrical_kitchen_package_ic',
+      cpField: 'electrical_kitchen_package_cp',
+      icValue: config.electrical_kitchen_package_ic,
+      cpValue: config.electrical_kitchen_package_cp,
+    },
+  ];
+
+  // TILE & WATERPROOFING
+  const tileBuckets: TradeBucket[] = [
+    {
+      key: 'tile_wall',
       name: 'Wall Tile Labor',
-      description: 'Shower walls, vertical tile, niches; excludes material.',
+      description: 'Shower walls, vertical tile (excludes material).',
       unit: 'per sqft',
       icField: 'tile_wall_ic_per_sqft',
       cpField: 'tile_wall_cp_per_sqft',
@@ -476,9 +640,9 @@ export default function Pricing() {
       cpValue: config.tile_wall_cp_per_sqft,
     },
     {
-      key: 'shower_floor',
+      key: 'tile_shower_floor',
       name: 'Shower Floor Tile Labor',
-      description: 'Shower floor tile installation labor.',
+      description: 'Shower floor tile installation.',
       unit: 'per sqft',
       icField: 'tile_shower_floor_ic_per_sqft',
       cpField: 'tile_shower_floor_cp_per_sqft',
@@ -486,9 +650,9 @@ export default function Pricing() {
       cpValue: config.tile_shower_floor_cp_per_sqft,
     },
     {
-      key: 'main_floor',
+      key: 'tile_floor',
       name: 'Main Floor Tile Labor',
-      description: 'Main bathroom floor tile installation labor.',
+      description: 'Main floor tile installation.',
       unit: 'per sqft',
       icField: 'tile_floor_ic_per_sqft',
       cpField: 'tile_floor_cp_per_sqft',
@@ -498,7 +662,7 @@ export default function Pricing() {
     {
       key: 'cement_board',
       name: 'Cement Board / Backer',
-      description: 'Backer board installation (labor + material).',
+      description: 'Backer board installation.',
       unit: 'per sqft',
       icField: 'cement_board_ic_per_sqft',
       cpField: 'cement_board_cp_per_sqft',
@@ -508,91 +672,31 @@ export default function Pricing() {
     {
       key: 'waterproofing',
       name: 'Waterproofing',
-      description: 'Membrane, corners, seam banding, pan integration, bonding flange.',
-      unit: 'lump sum',
+      description: 'Membrane, corners, seam banding.',
+      unit: 'per sqft',
       icField: 'waterproofing_ic_per_sqft',
       cpField: 'waterproofing_cp_per_sqft',
       icValue: config.waterproofing_ic_per_sqft,
       cpValue: config.waterproofing_cp_per_sqft,
     },
     {
-      key: 'plumbing_standard',
-      name: 'Plumbing – Standard (no layout change)',
-      description: 'Replace shower valve/trim, reconnect vanity sink, reconnect toilet, install basic fixtures without relocating drains.',
-      unit: 'per bathroom',
-      icField: 'plumbing_shower_standard_ic',
-      cpField: 'plumbing_shower_standard_cp',
-      icValue: config.plumbing_shower_standard_ic,
-      cpValue: config.plumbing_shower_standard_cp,
-    },
-    {
-      key: 'plumbing_layout',
-      name: 'Plumbing – Layout Change / Custom',
-      description: 'Relocate drains, reconfigure shower, add body sprays, relocate tub drains, etc.',
-      unit: 'per bathroom',
-      icField: 'plumbing_tub_to_shower_ic',
-      cpField: 'plumbing_tub_to_shower_cp',
-      icValue: config.plumbing_tub_to_shower_ic || 2500,
-      cpValue: config.plumbing_tub_to_shower_cp || 4000,
-    },
-    {
-      key: 'electrical',
-      name: 'Electrical & Lighting',
-      description: 'Vanity light change-outs, 2–4 recessed cans, bath fan replacement.',
-      unit: 'per bathroom',
-      icField: 'electrical_small_package_ic',
-      cpField: 'electrical_small_package_cp',
-      icValue: config.electrical_small_package_ic,
-      cpValue: config.electrical_small_package_cp,
-    },
-    {
-      key: 'glass',
-      name: 'Glass – Standard Door + Panel',
-      description: 'Frameless shower door with side panel, normal height.',
-      unit: 'per bathroom',
-      icField: 'glass_shower_standard_ic',
-      cpField: 'glass_shower_standard_cp',
-      icValue: config.glass_shower_standard_ic,
-      cpValue: config.glass_shower_standard_cp,
-    },
-    {
-      key: 'vanity',
-      name: 'Vanities & Tops – Standard (48")',
-      description: 'Typical single vanity package with quartz top.',
-      unit: 'per bathroom',
-      icField: 'vanity_48_bundle_ic',
-      cpField: 'vanity_48_bundle_cp',
-      icValue: config.vanity_48_bundle_ic,
-      cpValue: config.vanity_48_bundle_cp,
-    },
-    {
-      key: 'paint',
-      name: 'Paint & Misc Finish',
-      description: 'Patch and touch-up for disturbed areas.',
-      unit: 'per bathroom',
-      icField: 'paint_patch_bath_ic',
-      cpField: 'paint_patch_bath_cp',
-      icValue: config.paint_patch_bath_ic || 400,
-      cpValue: config.paint_patch_bath_cp || 700,
+      key: 'floor_leveling_ls',
+      name: 'Floor Leveling (Lump Sum)',
+      description: 'Self-leveling compound for uneven floors.',
+      unit: 'each',
+      icField: 'floor_leveling_ls_ic',
+      cpField: 'floor_leveling_ls_cp',
+      icValue: config.floor_leveling_ls_ic ?? 500,
+      cpValue: config.floor_leveling_ls_cp ?? 850,
     },
   ];
 
-  // Build kitchen trade buckets from config
-  const kitchenBuckets: TradeBucket[] = [
+  // CABINETRY & VANITIES
+  const cabinetryBuckets: TradeBucket[] = [
     {
-      key: 'demo_kitchen',
-      name: 'Demo & Haul-Off',
-      description: 'Full kitchen gut: remove cabinets, counters, backsplash, appliances disconnect; haul off debris.',
-      unit: 'per kitchen',
-      icField: 'demo_kitchen_ic',
-      cpField: 'demo_kitchen_cp',
-      icValue: config.demo_kitchen_ic,
-      cpValue: config.demo_kitchen_cp,
-    },
-    {
-      key: 'cabinets',
+      key: 'cabinet_box',
       name: 'Cabinets (Material + Install)',
-      description: 'Stock/semi-custom cabinets with installation. Price per cabinet box.',
+      description: 'Stock/semi-custom cabinets with installation.',
       unit: 'per box',
       icField: 'cabinet_lf_ic',
       cpField: 'cabinet_lf_cp',
@@ -610,54 +714,190 @@ export default function Pricing() {
       cpValue: config.cabinet_install_only_lf_cp ?? 85,
     },
     {
-      key: 'backsplash',
-      name: 'Backsplash Tile Labor',
-      description: 'Kitchen backsplash tile installation labor.',
-      unit: 'per sqft',
-      icField: 'tile_wall_ic_per_sqft',
-      cpField: 'tile_wall_cp_per_sqft',
-      icValue: config.tile_wall_ic_per_sqft,
-      cpValue: config.tile_wall_cp_per_sqft,
+      key: 'vanity_30',
+      name: 'Vanity Bundle - 30"',
+      description: '30" vanity with top, sink, faucet, install.',
+      unit: 'each',
+      icField: 'vanity_30_bundle_ic',
+      cpField: 'vanity_30_bundle_cp',
+      icValue: config.vanity_30_bundle_ic,
+      cpValue: config.vanity_30_bundle_cp,
     },
     {
-      key: 'countertop',
-      name: 'Countertop (Quartz)',
-      description: 'Quartz fabrication and installation, includes basic edge profile.',
+      key: 'vanity_36',
+      name: 'Vanity Bundle - 36"',
+      description: '36" vanity with top, sink, faucet, install.',
+      unit: 'each',
+      icField: 'vanity_36_bundle_ic',
+      cpField: 'vanity_36_bundle_cp',
+      icValue: config.vanity_36_bundle_ic,
+      cpValue: config.vanity_36_bundle_cp,
+    },
+    {
+      key: 'vanity_48',
+      name: 'Vanity Bundle - 48"',
+      description: '48" vanity with top, sink, faucet, install.',
+      unit: 'each',
+      icField: 'vanity_48_bundle_ic',
+      cpField: 'vanity_48_bundle_cp',
+      icValue: config.vanity_48_bundle_ic,
+      cpValue: config.vanity_48_bundle_cp,
+    },
+    {
+      key: 'vanity_60',
+      name: 'Vanity Bundle - 60" Double',
+      description: '60" double vanity with top, sinks, faucets, install.',
+      unit: 'each',
+      icField: 'vanity_60_bundle_ic',
+      cpField: 'vanity_60_bundle_cp',
+      icValue: config.vanity_60_bundle_ic,
+      cpValue: config.vanity_60_bundle_cp,
+    },
+    {
+      key: 'vanity_72',
+      name: 'Vanity Bundle - 72" Double',
+      description: '72" double vanity with top, sinks, faucets, install.',
+      unit: 'each',
+      icField: 'vanity_72_bundle_ic',
+      cpField: 'vanity_72_bundle_cp',
+      icValue: config.vanity_72_bundle_ic,
+      cpValue: config.vanity_72_bundle_cp,
+    },
+    {
+      key: 'quartz_countertop',
+      name: 'Quartz Countertop',
+      description: 'Quartz fabrication and install.',
       unit: 'per sqft',
       icField: 'quartz_ic_per_sqft',
       cpField: 'quartz_cp_per_sqft',
       icValue: config.quartz_ic_per_sqft,
       cpValue: config.quartz_cp_per_sqft,
     },
+  ];
+
+  // GLASS
+  const glassBuckets: TradeBucket[] = [
     {
-      key: 'plumbing_kitchen',
-      name: 'Plumbing – Kitchen',
-      description: 'Sink hookup, disposal, dishwasher connection.',
-      unit: 'per kitchen',
-      icField: 'plumbing_toilet_ic',
-      cpField: 'plumbing_toilet_cp',
-      icValue: 350,
-      cpValue: 690,
+      key: 'glass_shower_standard',
+      name: 'Shower Glass - Door + Panel',
+      description: 'Frameless shower door with side panel.',
+      unit: 'each',
+      icField: 'glass_shower_standard_ic',
+      cpField: 'glass_shower_standard_cp',
+      icValue: config.glass_shower_standard_ic,
+      cpValue: config.glass_shower_standard_cp,
     },
     {
-      key: 'electrical_kitchen',
-      name: 'Electrical & Lighting',
-      description: 'Kitchen electrical package (5-6 cans + switches/outlets).',
-      unit: 'per kitchen',
-      icField: 'electrical_kitchen_package_ic',
-      cpField: 'electrical_kitchen_package_cp',
-      icValue: config.electrical_kitchen_package_ic,
-      cpValue: config.electrical_kitchen_package_cp,
+      key: 'glass_panel_only',
+      name: 'Shower Glass - Panel Only',
+      description: 'Fixed glass panel only (no door).',
+      unit: 'each',
+      icField: 'glass_panel_only_ic',
+      cpField: 'glass_panel_only_cp',
+      icValue: config.glass_panel_only_ic,
+      cpValue: config.glass_panel_only_cp,
     },
     {
-      key: 'flooring_kitchen',
-      name: 'Flooring (LVP)',
-      description: 'LVP flooring installation.',
+      key: 'glass_90_return',
+      name: 'Shower Glass - 90° Return',
+      description: '90 degree glass return configuration.',
+      unit: 'each',
+      icField: 'glass_90_return_ic',
+      cpField: 'glass_90_return_cp',
+      icValue: config.glass_90_return_ic,
+      cpValue: config.glass_90_return_cp,
+    },
+  ];
+
+  // PAINT & DRYWALL
+  const paintBuckets: TradeBucket[] = [
+    {
+      key: 'paint_patch',
+      name: 'Paint - Patch & Touch-up',
+      description: 'Drywall patch and touch-up for disturbed areas.',
+      unit: 'each',
+      icField: 'paint_patch_bath_ic',
+      cpField: 'paint_patch_bath_cp',
+      icValue: config.paint_patch_bath_ic ?? 400,
+      cpValue: config.paint_patch_bath_cp ?? 700,
+    },
+    {
+      key: 'paint_full_bath',
+      name: 'Paint - Full Bathroom',
+      description: 'Full bathroom paint (walls and ceiling).',
+      unit: 'each',
+      icField: 'paint_full_bath_ic',
+      cpField: 'paint_full_bath_cp',
+      icValue: config.paint_full_bath_ic ?? 800,
+      cpValue: config.paint_full_bath_cp ?? 1400,
+    },
+    {
+      key: 'drywall',
+      name: 'Drywall (Large Area)',
+      description: 'Drywall installation and finishing.',
+      unit: 'per sqft',
+      icField: 'drywall_ic_per_sqft',
+      cpField: 'drywall_cp_per_sqft',
+      icValue: config.drywall_ic_per_sqft ?? 9,
+      cpValue: config.drywall_cp_per_sqft ?? 15,
+    },
+  ];
+
+  // FRAMING
+  const framingBuckets: TradeBucket[] = [
+    {
+      key: 'framing_standard',
+      name: 'Framing - Standard',
+      description: 'Standard framing/blocking package.',
+      unit: 'each',
+      icField: 'framing_standard_ic',
+      cpField: 'framing_standard_cp',
+      icValue: config.framing_standard_ic ?? 900,
+      cpValue: config.framing_standard_cp ?? 1400,
+    },
+    {
+      key: 'framing_pony_wall',
+      name: 'Framing - Pony Wall',
+      description: 'Pony wall/knee wall construction.',
+      unit: 'each',
+      icField: 'framing_pony_wall_ic',
+      cpField: 'framing_pony_wall_cp',
+      icValue: config.framing_pony_wall_ic ?? 450,
+      cpValue: config.framing_pony_wall_cp ?? 850,
+    },
+    {
+      key: 'niche',
+      name: 'Shower Niche',
+      description: 'Framed shower niche.',
+      unit: 'each',
+      icField: 'niche_ic_each',
+      cpField: 'niche_cp_each',
+      icValue: config.niche_ic_each ?? 300,
+      cpValue: config.niche_cp_each ?? 550,
+    },
+  ];
+
+  // FLOORING
+  const flooringBuckets: TradeBucket[] = [
+    {
+      key: 'lvp',
+      name: 'LVP Flooring',
+      description: 'Luxury vinyl plank installation.',
       unit: 'per sqft',
       icField: 'lvp_ic_per_sqft',
       cpField: 'lvp_cp_per_sqft',
       icValue: config.lvp_ic_per_sqft ?? 2.5,
       cpValue: config.lvp_cp_per_sqft ?? 4.5,
+    },
+    {
+      key: 'barrier',
+      name: 'Flooring Barrier/Underlayment',
+      description: 'Moisture barrier or underlayment.',
+      unit: 'per sqft',
+      icField: 'barrier_ic_per_sqft',
+      cpField: 'barrier_cp_per_sqft',
+      icValue: config.barrier_ic_per_sqft ?? 1.0,
+      cpValue: config.barrier_cp_per_sqft ?? 2.0,
     },
   ];
 
@@ -666,7 +906,7 @@ export default function Pricing() {
     {
       key: 'wall_removal',
       name: 'Wall Removal / Rebuild',
-      description: 'Remove or relocate interior walls, includes framing, drywall patching, and finish work.',
+      description: 'Remove or relocate interior walls.',
       unit: 'each',
       icField: 'wall_removal_ic',
       cpField: 'wall_removal_cp',
@@ -676,7 +916,7 @@ export default function Pricing() {
     {
       key: 'door_relocation',
       name: 'Door Relocation',
-      description: 'Move existing doorway to new location, frame new opening, close old opening.',
+      description: 'Move doorway to new location.',
       unit: 'each',
       icField: 'door_relocation_ic',
       cpField: 'door_relocation_cp',
@@ -686,7 +926,7 @@ export default function Pricing() {
     {
       key: 'door_closure',
       name: 'Door Closure',
-      description: 'Close/seal existing doorway, frame, drywall, and finish.',
+      description: 'Close/seal existing doorway.',
       unit: 'each',
       icField: 'door_closure_ic',
       cpField: 'door_closure_cp',
@@ -694,29 +934,9 @@ export default function Pricing() {
       cpValue: config.door_closure_cp ?? 1100,
     },
     {
-      key: 'entrance_enlargement',
-      name: 'Entrance Enlargement',
-      description: 'Widen or heighten existing doorway opening.',
-      unit: 'each',
-      icField: 'entrance_enlargement_ic',
-      cpField: 'entrance_enlargement_cp',
-      icValue: config.entrance_enlargement_ic ?? 1100,
-      cpValue: config.entrance_enlargement_cp ?? 1700,
-    },
-    {
-      key: 'soffit_removal',
-      name: 'Soffit Removal',
-      description: 'Remove soffit/bulkhead above cabinets or ceiling, includes patching.',
-      unit: 'each',
-      icField: 'soffit_removal_ic',
-      cpField: 'soffit_removal_cp',
-      icValue: config.soffit_removal_ic ?? 950,
-      cpValue: config.soffit_removal_cp ?? 1500,
-    },
-    {
       key: 'shower_enlargement',
       name: 'Shower Enlargement',
-      description: 'Expand shower footprint into adjacent space, includes framing and waterproofing prep.',
+      description: 'Expand shower footprint.',
       unit: 'each',
       icField: 'shower_enlargement_ic',
       cpField: 'shower_enlargement_cp',
@@ -726,7 +946,7 @@ export default function Pricing() {
     {
       key: 'tub_relocation',
       name: 'Tub Relocation',
-      description: 'Move tub to new location, includes plumbing rough-in and drain relocation.',
+      description: 'Move tub to new location.',
       unit: 'each',
       icField: 'tub_relocation_ic',
       cpField: 'tub_relocation_cp',
@@ -736,42 +956,12 @@ export default function Pricing() {
     {
       key: 'toilet_relocation',
       name: 'Toilet Relocation',
-      description: 'Move toilet to new location, includes drain relocation and floor patching.',
+      description: 'Move toilet to new location.',
       unit: 'each',
       icField: 'toilet_relocation_ic',
       cpField: 'toilet_relocation_cp',
       icValue: config.toilet_relocation_ic ?? 1400,
       cpValue: config.toilet_relocation_cp ?? 2200,
-    },
-    {
-      key: 'alcove_builtin',
-      name: 'Alcove / Built-in',
-      description: 'Build alcove, recessed shelf, or built-in storage area.',
-      unit: 'each',
-      icField: 'alcove_builtin_ic',
-      cpField: 'alcove_builtin_cp',
-      icValue: config.alcove_builtin_ic ?? 1050,
-      cpValue: config.alcove_builtin_cp ?? 1650,
-    },
-    {
-      key: 'closet_reframe',
-      name: 'Closet Reframe / Buildout',
-      description: 'Reframe closet space, expand or reconfigure layout.',
-      unit: 'each',
-      icField: 'closet_reframe_ic',
-      cpField: 'closet_reframe_cp',
-      icValue: config.closet_reframe_ic ?? 1400,
-      cpValue: config.closet_reframe_cp ?? 2200,
-    },
-    {
-      key: 'drywall',
-      name: 'Drywall (Large Area)',
-      description: 'Drywall installation and finishing for large areas.',
-      unit: 'per sqft',
-      icField: 'drywall_ic_per_sqft',
-      cpField: 'drywall_cp_per_sqft',
-      icValue: config.drywall_ic_per_sqft ?? 9,
-      cpValue: config.drywall_cp_per_sqft ?? 15,
     },
   ];
 
@@ -779,8 +969,8 @@ export default function Pricing() {
   const sitePrepBuckets: TradeBucket[] = [
     {
       key: 'floor_protection',
-      name: 'Floor Protection (Ram Board)',
-      description: 'Protective floor covering to prevent damage during construction.',
+      name: 'Floor Protection',
+      description: 'Protective floor covering.',
       unit: 'per room',
       icField: 'floor_protection_ic',
       cpField: 'floor_protection_cp',
@@ -789,8 +979,8 @@ export default function Pricing() {
     },
     {
       key: 'dust_barriers',
-      name: 'Dust Barriers / Zip Wall',
-      description: 'Dust containment barriers to protect adjacent spaces.',
+      name: 'Dust Barriers',
+      description: 'Dust containment barriers.',
       unit: 'each',
       icField: 'dust_barriers_ic',
       cpField: 'dust_barriers_cp',
@@ -800,7 +990,7 @@ export default function Pricing() {
     {
       key: 'post_construction_clean',
       name: 'Post-Construction Clean',
-      description: 'Professional cleaning after construction completion.',
+      description: 'Professional cleaning.',
       unit: 'per job',
       icField: 'post_construction_clean_ic',
       cpField: 'post_construction_clean_cp',
@@ -809,8 +999,8 @@ export default function Pricing() {
     },
     {
       key: 'permit_admin_fee',
-      name: 'Permit Runner & Admin Fee',
-      description: 'Permit acquisition, inspections coordination, and administrative fees.',
+      name: 'Permit & Admin Fee',
+      description: 'Permit acquisition and admin.',
       unit: 'per job',
       icField: 'permit_admin_fee_ic',
       cpField: 'permit_admin_fee_cp',
@@ -823,8 +1013,8 @@ export default function Pricing() {
   const mechanicalsBuckets: TradeBucket[] = [
     {
       key: 'hvac_vent_relocate',
-      name: 'Relocate HVAC Vent/Register',
-      description: 'Move existing HVAC vent or register to new location.',
+      name: 'HVAC Vent Relocation',
+      description: 'Move existing HVAC vent.',
       unit: 'each',
       icField: 'hvac_vent_relocate_ic',
       cpField: 'hvac_vent_relocate_cp',
@@ -832,19 +1022,9 @@ export default function Pricing() {
       cpValue: (config as any).hvac_vent_relocate_cp ?? 450,
     },
     {
-      key: 'exhaust_fan',
-      name: 'Exhaust Fan Install',
-      description: 'Bathroom or kitchen exhaust fan installation including venting.',
-      unit: 'each',
-      icField: 'electrical_vanity_light_ic',
-      cpField: 'electrical_vanity_light_cp',
-      icValue: config.electrical_vanity_light_ic ?? 200,
-      cpValue: config.electrical_vanity_light_cp ?? 350,
-    },
-    {
       key: 'range_hood_ducting',
-      name: 'Range Hood Ducting (New Run)',
-      description: 'New ductwork run for range hood exhaust.',
+      name: 'Range Hood Ducting',
+      description: 'New ductwork for range hood.',
       unit: 'each',
       icField: 'range_hood_ducting_ic',
       cpField: 'range_hood_ducting_cp',
@@ -853,8 +1033,8 @@ export default function Pricing() {
     },
     {
       key: 'appliance_install_standard',
-      name: 'Appliance Install (Standard Pkg)',
-      description: 'Standard appliance installation package for typical kitchen appliances.',
+      name: 'Appliance Install - Standard',
+      description: 'Standard appliance package.',
       unit: 'per kitchen',
       icField: 'appliance_install_standard_ic',
       cpField: 'appliance_install_standard_cp',
@@ -863,8 +1043,8 @@ export default function Pricing() {
     },
     {
       key: 'appliance_install_pro',
-      name: 'Appliance Install (Pro/Built-in)',
-      description: 'Professional or built-in appliance installation requiring custom work.',
+      name: 'Appliance Install - Pro/Built-in',
+      description: 'Pro or built-in appliance install.',
       unit: 'per kitchen',
       icField: 'appliance_install_pro_ic',
       cpField: 'appliance_install_pro_cp',
@@ -1084,41 +1264,162 @@ export default function Pricing() {
           onChange={handleChange}
         />
 
-        {/* 3. Bathroom Trade Buckets - Open by default */}
+        {/* TRADE-BASED SECTIONS */}
+        
+        {/* Demolition & Haul */}
         <AccordionSection 
-          title="Bathroom Trade Buckets" 
-          icon={<Bath className="h-5 w-5" />}
+          title="Demolition & Haul" 
+          icon={<HardHat className="h-5 w-5" />}
           defaultOpen={true}
         >
           <TradeBucketsCard
-            title="Bathroom Trade Buckets"
-            description="PRIMARY pricing engine for bathroom estimates."
-            icon={<Bath className="h-5 w-5" />}
-            buckets={bathroomBuckets}
+            title="Demolition & Haul"
+            description="Demo packages and dumpster/haul-off."
+            icon={<HardHat className="h-5 w-5" />}
+            buckets={demoBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
             pricingMode={pricingMode}
           />
         </AccordionSection>
 
-        {/* 4. Kitchen Trade Buckets - Collapsed by default */}
+        {/* Plumbing */}
         <AccordionSection 
-          title="Kitchen Trade Buckets" 
+          title="Plumbing" 
+          icon={<Wrench className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Plumbing"
+            description="Shower rough-in, toilet, tub, drains."
+            icon={<Wrench className="h-5 w-5" />}
+            buckets={plumbingBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Electrical */}
+        <AccordionSection 
+          title="Electrical" 
+          icon={<Settings2 className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Electrical"
+            description="Lighting, cans, switches, outlets."
+            icon={<Settings2 className="h-5 w-5" />}
+            buckets={electricalBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Tile & Waterproofing */}
+        <AccordionSection 
+          title="Tile & Waterproofing" 
+          icon={<Bath className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Tile & Waterproofing"
+            description="Wall tile, floor tile, cement board, waterproofing."
+            icon={<Bath className="h-5 w-5" />}
+            buckets={tileBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Cabinetry & Vanities */}
+        <AccordionSection 
+          title="Cabinetry & Vanities" 
           icon={<ChefHat className="h-5 w-5" />}
           defaultOpen={false}
         >
           <TradeBucketsCard
-            title="Kitchen Trade Buckets"
-            description="Trade buckets for kitchen remodel estimates."
+            title="Cabinetry & Vanities"
+            description="Kitchen cabinets, vanity bundles, countertops."
             icon={<ChefHat className="h-5 w-5" />}
-            buckets={kitchenBuckets}
+            buckets={cabinetryBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
             pricingMode={pricingMode}
           />
         </AccordionSection>
 
-        {/* 6. Structural / Complex Work - Collapsed by default */}
+        {/* Glass */}
+        <AccordionSection 
+          title="Glass" 
+          icon={<Bath className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Glass"
+            description="Shower glass doors and panels."
+            icon={<Bath className="h-5 w-5" />}
+            buckets={glassBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Paint & Drywall */}
+        <AccordionSection 
+          title="Paint & Drywall" 
+          icon={<Palette className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Paint & Drywall"
+            description="Paint touch-up, full paint, drywall."
+            icon={<Palette className="h-5 w-5" />}
+            buckets={paintBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Framing */}
+        <AccordionSection 
+          title="Framing" 
+          icon={<HardHat className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Framing"
+            description="Standard framing, pony walls, niches."
+            icon={<HardHat className="h-5 w-5" />}
+            buckets={framingBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Flooring */}
+        <AccordionSection 
+          title="Flooring" 
+          icon={<Bath className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Flooring"
+            description="LVP, underlayment, barriers."
+            icon={<Bath className="h-5 w-5" />}
+            buckets={flooringBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Structural / Complex Work */}
         <AccordionSection 
           title="Structural / Complex Work" 
           icon={<HardHat className="h-5 w-5" />}
@@ -1126,7 +1427,7 @@ export default function Pricing() {
         >
           <TradeBucketsCard
             title="Structural / Complex Work"
-            description="Major layout changes and relocations."
+            description="Wall removal, relocations, major changes."
             icon={<HardHat className="h-5 w-5" />}
             buckets={structuralBuckets}
             onChange={handleChange}
@@ -1135,7 +1436,7 @@ export default function Pricing() {
           />
         </AccordionSection>
 
-        {/* 7. Site Prep & General Conditions - Collapsed by default */}
+        {/* Site Prep & General Conditions */}
         <AccordionSection 
           title="Site Prep & General Conditions" 
           icon={<Truck className="h-5 w-5" />}
@@ -1143,7 +1444,7 @@ export default function Pricing() {
         >
           <TradeBucketsCard
             title="Site Prep & General Conditions"
-            description="Protection, cleaning, permits, and job site setup."
+            description="Protection, cleaning, permits."
             icon={<Truck className="h-5 w-5" />}
             buckets={sitePrepBuckets}
             onChange={handleChange}
@@ -1152,7 +1453,7 @@ export default function Pricing() {
           />
         </AccordionSection>
 
-        {/* 8. Mechanicals & Appliances - Collapsed by default */}
+        {/* Mechanicals & Appliances */}
         <AccordionSection 
           title="Mechanicals & Appliances" 
           icon={<Thermometer className="h-5 w-5" />}
@@ -1160,7 +1461,7 @@ export default function Pricing() {
         >
           <TradeBucketsCard
             title="Mechanicals & Appliances"
-            description="HVAC, range hood ducting, and appliance installation."
+            description="HVAC, range hood, appliance install."
             icon={<Thermometer className="h-5 w-5" />}
             buckets={mechanicalsBuckets}
             onChange={handleChange}
