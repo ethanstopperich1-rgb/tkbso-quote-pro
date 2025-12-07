@@ -21,18 +21,22 @@ interface MultiPhotoAnalysisCardProps {
   isAnalyzing?: boolean;
 }
 
-// Map vision categories to trade bucket display names
+// Map vision categories to trade bucket display names (consolidate related categories)
 const categoryDisplayNames: Record<string, string> = {
   'Demo': 'Demolition',
   'Demolition': 'Demolition',
   'Plumbing': 'Plumbing',
   'Electrical': 'Electrical',
-  'Tile': 'Tile',
+  'Tile': 'Tile & Waterproofing',
+  'Tile & Waterproofing': 'Tile & Waterproofing',
+  'Support': 'Tile & Waterproofing',
+  'Waterproofing': 'Tile & Waterproofing',
   'Cabinetry': 'Cabinetry',
   'Countertops': 'Countertops',
   'Glass': 'Glass',
   'Flooring': 'Flooring',
   'Framing': 'Framing',
+  'Framing/Structural': 'Framing',
   'Accessories': 'Accessories',
 };
 

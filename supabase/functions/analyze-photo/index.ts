@@ -24,10 +24,12 @@ For each item you detect, categorize it into the appropriate trade bucket:
 - Recessed cans (count them)
 - Vanity lights, under-cabinet lighting
 
-**TILE:**
+**TILE & WATERPROOFING:**
 - Wall tile areas (estimate sqft if possible)
 - Floor tile areas
 - Shower floor tile
+- Waterproofing needed for wet areas
+- Cement board backing
 - Note tile type if visible (subway, large format, mosaic)
 
 **CABINETRY:**
@@ -47,7 +49,7 @@ For each item you detect, categorize it into the appropriate trade bucket:
 - LVP, tile, hardwood visible
 - Estimate room size
 
-**FRAMING/STRUCTURAL:**
+**FRAMING:**
 - Wall modifications needed
 - Niche locations
 - Structural changes visible
@@ -66,7 +68,7 @@ Output your analysis as a JSON object with this structure:
   "confidence": "high" | "medium" | "low",
   "detected_items": [
     {
-      "category": "string (Demo, Plumbing, Electrical, Tile, Cabinetry, Countertops, Glass, Flooring, Framing, Accessories)",
+      "category": "string (Demo, Plumbing, Electrical, Tile & Waterproofing, Cabinetry, Countertops, Glass, Flooring, Framing, Accessories)",
       "item": "string description",
       "quantity": number,
       "unit": "ea" | "sqft" | "lf" | "box",
