@@ -52,13 +52,21 @@ For each item you detect, categorize it into the appropriate trade bucket:
 - Niche locations
 - Structural changes visible
 
+**ACCESSORIES:**
+- Mirrors (count and estimate size if visible)
+- Towel bars (count)
+- Towel rings (count)
+- Toilet paper holders (count)
+- Robe hooks
+- Shower shelves or niches
+
 Output your analysis as a JSON object with this structure:
 {
   "project_type": "Kitchen" | "Bathroom" | "Unknown",
   "confidence": "high" | "medium" | "low",
   "detected_items": [
     {
-      "category": "string (Demo, Plumbing, Electrical, Tile, Cabinetry, Countertops, Glass, Flooring, Framing)",
+      "category": "string (Demo, Plumbing, Electrical, Tile, Cabinetry, Countertops, Glass, Flooring, Framing, Accessories)",
       "item": "string description",
       "quantity": number,
       "unit": "ea" | "sqft" | "lf" | "box",
