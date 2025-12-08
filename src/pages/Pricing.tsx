@@ -234,6 +234,46 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> & Record<string, any> = {
   // Granite & Quartzite
   granite_slab_allowance_cp: 1200,
   quartzite_slab_allowance_cp: 1800,
+  
+  // Finish Carpentry & Millwork
+  baseboard_install_lf_ic: 3.5,
+  baseboard_install_lf_cp: 6.5,
+  crown_molding_lf_ic: 6,
+  crown_molding_lf_cp: 12,
+  window_door_casing_ic: 75,
+  window_door_casing_cp: 150,
+  shoe_molding_lf_ic: 2,
+  shoe_molding_lf_cp: 4,
+  wainscoting_sqft_ic: 12,
+  wainscoting_sqft_cp: 22,
+  
+  // Electrical Systems & Upgrades
+  panel_upgrade_200a_ic: 2500,
+  panel_upgrade_200a_cp: 3800,
+  dedicated_circuit_240v_ic: 450,
+  dedicated_circuit_240v_cp: 850,
+  undercab_led_ic: 400,
+  undercab_led_cp: 750,
+  heated_floor_sqft_ic: 18,
+  heated_floor_sqft_cp: 32,
+  
+  // Luxury Plumbing & Gas
+  steam_generator_ic: 1200,
+  steam_generator_cp: 2200,
+  gas_line_new_ic: 800,
+  gas_line_new_cp: 1500,
+  pot_filler_ic: 550,
+  pot_filler_cp: 950,
+  tankless_water_heater_ic: 1800,
+  tankless_water_heater_cp: 3200,
+  
+  // Logistics & Admin
+  portable_toilet_ic: 150,
+  portable_toilet_cp: 250,
+  engineering_stamp_ic: 800,
+  engineering_stamp_cp: 1500,
+  hoa_access_fee_ic: 0,
+  hoa_access_fee_cp: 500,
 };
 
 // Market description default
@@ -395,6 +435,26 @@ export default function Pricing() {
       ['range_hood_ducting_ic', 'range_hood_ducting_cp'],
       ['appliance_install_standard_ic', 'appliance_install_standard_cp'],
       ['appliance_install_pro_ic', 'appliance_install_pro_cp'],
+      // Finish Carpentry
+      ['baseboard_install_lf_ic', 'baseboard_install_lf_cp'],
+      ['crown_molding_lf_ic', 'crown_molding_lf_cp'],
+      ['window_door_casing_ic', 'window_door_casing_cp'],
+      ['shoe_molding_lf_ic', 'shoe_molding_lf_cp'],
+      ['wainscoting_sqft_ic', 'wainscoting_sqft_cp'],
+      // Electrical Systems & Upgrades
+      ['panel_upgrade_200a_ic', 'panel_upgrade_200a_cp'],
+      ['dedicated_circuit_240v_ic', 'dedicated_circuit_240v_cp'],
+      ['undercab_led_ic', 'undercab_led_cp'],
+      ['heated_floor_sqft_ic', 'heated_floor_sqft_cp'],
+      // Luxury Plumbing & Gas
+      ['steam_generator_ic', 'steam_generator_cp'],
+      ['gas_line_new_ic', 'gas_line_new_cp'],
+      ['pot_filler_ic', 'pot_filler_cp'],
+      ['tankless_water_heater_ic', 'tankless_water_heater_cp'],
+      // Logistics & Admin
+      ['portable_toilet_ic', 'portable_toilet_cp'],
+      ['engineering_stamp_ic', 'engineering_stamp_cp'],
+      ['hoa_access_fee_ic', 'hoa_access_fee_cp'],
     ];
     
     for (const [icField, cpField] of icCpPairs) {
@@ -1009,6 +1069,182 @@ export default function Pricing() {
     },
   ];
 
+  // FINISH CARPENTRY & MILLWORK
+  const finishCarpentryBuckets: TradeBucket[] = [
+    {
+      key: 'baseboard_install',
+      name: 'Baseboard Install (Labor)',
+      description: 'Install baseboard molding.',
+      unit: 'per LF',
+      icField: 'baseboard_install_lf_ic',
+      cpField: 'baseboard_install_lf_cp',
+      icValue: (config as any).baseboard_install_lf_ic ?? 3.5,
+      cpValue: (config as any).baseboard_install_lf_cp ?? 6.5,
+    },
+    {
+      key: 'crown_molding',
+      name: 'Crown Molding Install',
+      description: 'Install crown molding.',
+      unit: 'per LF',
+      icField: 'crown_molding_lf_ic',
+      cpField: 'crown_molding_lf_cp',
+      icValue: (config as any).crown_molding_lf_ic ?? 6,
+      cpValue: (config as any).crown_molding_lf_cp ?? 12,
+    },
+    {
+      key: 'window_door_casing',
+      name: 'Window/Door Casing',
+      description: 'Install casing around window or door.',
+      unit: 'per opening',
+      icField: 'window_door_casing_ic',
+      cpField: 'window_door_casing_cp',
+      icValue: (config as any).window_door_casing_ic ?? 75,
+      cpValue: (config as any).window_door_casing_cp ?? 150,
+    },
+    {
+      key: 'shoe_molding',
+      name: 'Shoe Molding / Quarter Round',
+      description: 'Install shoe molding or quarter round.',
+      unit: 'per LF',
+      icField: 'shoe_molding_lf_ic',
+      cpField: 'shoe_molding_lf_cp',
+      icValue: (config as any).shoe_molding_lf_ic ?? 2,
+      cpValue: (config as any).shoe_molding_lf_cp ?? 4,
+    },
+    {
+      key: 'wainscoting',
+      name: 'Wainscoting / Shiplap',
+      description: 'Install wainscoting or shiplap.',
+      unit: 'per sqft',
+      icField: 'wainscoting_sqft_ic',
+      cpField: 'wainscoting_sqft_cp',
+      icValue: (config as any).wainscoting_sqft_ic ?? 12,
+      cpValue: (config as any).wainscoting_sqft_cp ?? 22,
+    },
+  ];
+
+  // ELECTRICAL SYSTEMS & UPGRADES
+  const electricalUpgradesBuckets: TradeBucket[] = [
+    {
+      key: 'panel_upgrade_200a',
+      name: 'Main Panel Upgrade (200A)',
+      description: 'Upgrade main electrical panel to 200 amp.',
+      unit: 'each',
+      icField: 'panel_upgrade_200a_ic',
+      cpField: 'panel_upgrade_200a_cp',
+      icValue: (config as any).panel_upgrade_200a_ic ?? 2500,
+      cpValue: (config as any).panel_upgrade_200a_cp ?? 3800,
+    },
+    {
+      key: 'dedicated_circuit_240v',
+      name: 'Dedicated Circuit (240V)',
+      description: 'Install dedicated 240V circuit.',
+      unit: 'each',
+      icField: 'dedicated_circuit_240v_ic',
+      cpField: 'dedicated_circuit_240v_cp',
+      icValue: (config as any).dedicated_circuit_240v_ic ?? 450,
+      cpValue: (config as any).dedicated_circuit_240v_cp ?? 850,
+    },
+    {
+      key: 'undercab_led',
+      name: 'Under-Cabinet LED Tape Light',
+      description: 'Install LED tape lighting under cabinets.',
+      unit: 'per cabinet run',
+      icField: 'undercab_led_ic',
+      cpField: 'undercab_led_cp',
+      icValue: (config as any).undercab_led_ic ?? 400,
+      cpValue: (config as any).undercab_led_cp ?? 750,
+    },
+    {
+      key: 'heated_floor',
+      name: 'Heated Floor System (Mat + Stat)',
+      description: 'Electric radiant floor heating with thermostat.',
+      unit: 'per sqft',
+      icField: 'heated_floor_sqft_ic',
+      cpField: 'heated_floor_sqft_cp',
+      icValue: (config as any).heated_floor_sqft_ic ?? 18,
+      cpValue: (config as any).heated_floor_sqft_cp ?? 32,
+    },
+  ];
+
+  // LUXURY PLUMBING & GAS
+  const luxuryPlumbingBuckets: TradeBucket[] = [
+    {
+      key: 'steam_generator',
+      name: 'Steam Generator Install',
+      description: 'Install steam generator for shower.',
+      unit: 'each',
+      icField: 'steam_generator_ic',
+      cpField: 'steam_generator_cp',
+      icValue: (config as any).steam_generator_ic ?? 1200,
+      cpValue: (config as any).steam_generator_cp ?? 2200,
+    },
+    {
+      key: 'gas_line_new',
+      name: 'Gas Line Run (New)',
+      description: 'Run new gas line.',
+      unit: 'each',
+      icField: 'gas_line_new_ic',
+      cpField: 'gas_line_new_cp',
+      icValue: (config as any).gas_line_new_ic ?? 800,
+      cpValue: (config as any).gas_line_new_cp ?? 1500,
+    },
+    {
+      key: 'pot_filler',
+      name: 'Pot Filler Rough + Trim',
+      description: 'Install pot filler faucet.',
+      unit: 'each',
+      icField: 'pot_filler_ic',
+      cpField: 'pot_filler_cp',
+      icValue: (config as any).pot_filler_ic ?? 550,
+      cpValue: (config as any).pot_filler_cp ?? 950,
+    },
+    {
+      key: 'tankless_water_heater',
+      name: 'Tankless Water Heater Install',
+      description: 'Install tankless water heater.',
+      unit: 'each',
+      icField: 'tankless_water_heater_ic',
+      cpField: 'tankless_water_heater_cp',
+      icValue: (config as any).tankless_water_heater_ic ?? 1800,
+      cpValue: (config as any).tankless_water_heater_cp ?? 3200,
+    },
+  ];
+
+  // LOGISTICS & ADMIN
+  const logisticsAdminBuckets: TradeBucket[] = [
+    {
+      key: 'portable_toilet',
+      name: 'Portable Toilet Rental',
+      description: 'Portable toilet rental for job site.',
+      unit: 'per month',
+      icField: 'portable_toilet_ic',
+      cpField: 'portable_toilet_cp',
+      icValue: (config as any).portable_toilet_ic ?? 150,
+      cpValue: (config as any).portable_toilet_cp ?? 250,
+    },
+    {
+      key: 'engineering_stamp',
+      name: 'Engineering / Architect Stamp',
+      description: 'Engineering or architectural review and stamp.',
+      unit: 'per job',
+      icField: 'engineering_stamp_ic',
+      cpField: 'engineering_stamp_cp',
+      icValue: (config as any).engineering_stamp_ic ?? 800,
+      cpValue: (config as any).engineering_stamp_cp ?? 1500,
+    },
+    {
+      key: 'hoa_access_fee',
+      name: 'Condo/HOA Access Fee',
+      description: 'Building access/elevator reservation fees.',
+      unit: 'per job',
+      icField: 'hoa_access_fee_ic',
+      cpField: 'hoa_access_fee_cp',
+      icValue: (config as any).hoa_access_fee_ic ?? 0,
+      cpValue: (config as any).hoa_access_fee_cp ?? 500,
+    },
+  ];
+
   // Build mechanicals & appliances trade buckets
   const mechanicalsBuckets: TradeBucket[] = [
     {
@@ -1464,6 +1700,74 @@ export default function Pricing() {
             description="HVAC, range hood, appliance install."
             icon={<Thermometer className="h-5 w-5" />}
             buckets={mechanicalsBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Finish Carpentry & Millwork */}
+        <AccordionSection 
+          title="Finish Carpentry & Millwork" 
+          icon={<HardHat className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Finish Carpentry & Millwork"
+            description="Baseboards, crown molding, wainscoting, casings."
+            icon={<HardHat className="h-5 w-5" />}
+            buckets={finishCarpentryBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Electrical Systems & Upgrades */}
+        <AccordionSection 
+          title="Electrical Systems & Upgrades" 
+          icon={<Settings2 className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Electrical Systems & Upgrades"
+            description="Panel upgrades, 240V circuits, heated floors, LED tape."
+            icon={<Settings2 className="h-5 w-5" />}
+            buckets={electricalUpgradesBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Luxury Plumbing & Gas */}
+        <AccordionSection 
+          title="Luxury Plumbing & Gas" 
+          icon={<Wrench className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Luxury Plumbing & Gas"
+            description="Steam, gas lines, pot fillers, tankless water heaters."
+            icon={<Wrench className="h-5 w-5" />}
+            buckets={luxuryPlumbingBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Logistics & Admin */}
+        <AccordionSection 
+          title="Logistics & Admin" 
+          icon={<Truck className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Logistics & Admin"
+            description="Portable toilets, engineering stamps, HOA fees."
+            icon={<Truck className="h-5 w-5" />}
+            buckets={logisticsAdminBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
             pricingMode={pricingMode}
