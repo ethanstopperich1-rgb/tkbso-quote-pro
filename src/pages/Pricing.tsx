@@ -24,7 +24,6 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { GlobalSettingsCard } from '@/components/pricing/GlobalSettingsCard';
-import { PerSqftReferenceCard } from '@/components/pricing/PerSqftReferenceCard';
 import { TradeBucketsCard, TradeBucket } from '@/components/pricing/TradeBucketsCard';
 import { AllowancesCard } from '@/components/pricing/AllowancesCard';
 import { cn } from '@/lib/utils';
@@ -2838,18 +2837,6 @@ export default function Pricing() {
           onMarketDescriptionChange={setMarketDescription}
           onPricingModeChange={setPricingMode}
           onApplyMarginToAll={handleApplyMarginToAll}
-        />
-
-        {/* 2. Per-Sqft Reference Rates - Always visible */}
-        <PerSqftReferenceCard
-          kitchenIcPerSqft={config.kitchen_ic_per_sqft}
-          kitchenCpPerSqft={config.kitchen_cp_per_sqft}
-          bathIcPerSqft={config.bath_ic_per_sqft}
-          bathCpPerSqft={config.bath_cp_per_sqft}
-          closetIcPerSqft={config.closet_ic_per_sqft}
-          closetCpPerSqft={config.closet_cp_per_sqft}
-          targetMargin={config.target_margin}
-          onChange={handleChange}
         />
 
         {/* Search/Filter Bar */}
