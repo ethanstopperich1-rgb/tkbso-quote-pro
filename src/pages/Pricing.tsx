@@ -1734,32 +1734,12 @@ export default function Pricing() {
     },
   ];
 
-  // Build site prep & general conditions trade buckets
-  const sitePrepBuckets: TradeBucket[] = [
-    {
-      key: 'floor_protection',
-      name: 'Floor Protection',
-      description: 'Protective floor covering.',
-      unit: 'per room',
-      icField: 'floor_protection_ic',
-      cpField: 'floor_protection_cp',
-      icValue: (config as any).floor_protection_ic ?? 150,
-      cpValue: (config as any).floor_protection_cp ?? 250,
-    },
-    {
-      key: 'dust_barriers',
-      name: 'Dust Barriers',
-      description: 'Dust containment barriers.',
-      unit: 'each',
-      icField: 'dust_barriers_ic',
-      cpField: 'dust_barriers_cp',
-      icValue: (config as any).dust_barriers_ic ?? 100,
-      cpValue: (config as any).dust_barriers_cp ?? 200,
-    },
+  // Build cleaning trade buckets
+  const cleaningBuckets: TradeBucket[] = [
     {
       key: 'post_construction_clean',
       name: 'Post-Construction Clean',
-      description: 'Professional cleaning.',
+      description: 'Professional cleaning after job completion.',
       unit: 'per job',
       icField: 'post_construction_clean_ic',
       cpField: 'post_construction_clean_cp',
@@ -1767,14 +1747,14 @@ export default function Pricing() {
       cpValue: (config as any).post_construction_clean_cp ?? 500,
     },
     {
-      key: 'permit_admin_fee',
-      name: 'Permit & Admin Fee',
-      description: 'Permit acquisition and admin.',
-      unit: 'per job',
-      icField: 'permit_admin_fee_ic',
-      cpField: 'permit_admin_fee_cp',
-      icValue: (config as any).permit_admin_fee_ic ?? 300,
-      cpValue: (config as any).permit_admin_fee_cp ?? 600,
+      key: 'daily_cleanup',
+      name: 'Daily Cleanup',
+      description: 'Daily jobsite cleanup (occupied homes).',
+      unit: 'per day',
+      icField: 'daily_cleanup_ic',
+      cpField: 'daily_cleanup_cp',
+      icValue: (config as any).daily_cleanup_ic ?? 75,
+      cpValue: (config as any).daily_cleanup_cp ?? 125,
     },
   ];
 
@@ -1922,6 +1902,16 @@ export default function Pricing() {
 
   // LOGISTICS & ADMIN
   const logisticsAdminBuckets: TradeBucket[] = [
+    {
+      key: 'permit_admin_fee',
+      name: 'Permit & Admin Fee',
+      description: 'Permit acquisition and admin.',
+      unit: 'per job',
+      icField: 'permit_admin_fee_ic',
+      cpField: 'permit_admin_fee_cp',
+      icValue: (config as any).permit_admin_fee_ic ?? 300,
+      cpValue: (config as any).permit_admin_fee_cp ?? 600,
+    },
     {
       key: 'portable_toilet',
       name: 'Portable Toilet Rental',
@@ -3343,17 +3333,17 @@ export default function Pricing() {
           />
         </AccordionSection>
 
-        {/* Site Prep & General Conditions */}
+        {/* Cleaning */}
         <AccordionSection 
-          title="Site Prep & General Conditions" 
-          icon={<Truck className="h-5 w-5" />}
+          title="Cleaning" 
+          icon={<Sparkles className="h-5 w-5" />}
           defaultOpen={false}
         >
           <TradeBucketsCard
-            title="Site Prep & General Conditions"
-            description="Protection, cleaning, permits."
-            icon={<Truck className="h-5 w-5" />}
-            buckets={sitePrepBuckets}
+            title="Cleaning"
+            description="Post-construction and daily cleanup services."
+            icon={<Sparkles className="h-5 w-5" />}
+            buckets={cleaningBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
             pricingMode={pricingMode}
