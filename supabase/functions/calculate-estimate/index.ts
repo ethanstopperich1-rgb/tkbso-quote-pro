@@ -77,18 +77,69 @@ function mapCategoryToPricing(
   const categoryLower = category.toLowerCase();
   const taskLower = taskDescription.toLowerCase();
 
-  // Demolition - FLAT RATE (always quantity = 1)
+  // ============ DEMOLITION & HAUL - GRANULAR CATEGORIES ============
+  
+  // Site Protection & Setup
+  if (categoryLower.includes('site protection') || categoryLower.includes('protection') || categoryLower.includes('setup')) {
+    if (taskLower.includes('ramboard') || taskLower.includes('floor protection')) {
+      return { ic: Number((config as any).floor_protection_ramboard_sqft_ic) || 0.5, cp: Number((config as any).floor_protection_ramboard_sqft_cp) || 1.0, unit: 'sqft' };
+    } else if (taskLower.includes('dust') || taskLower.includes('zipwall') || taskLower.includes('barrier')) {
+      return { ic: Number((config as any).dust_barrier_zipwall_ic) || 150, cp: Number((config as any).dust_barrier_zipwall_cp) || 300, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('air scrubber') || taskLower.includes('hepa')) {
+      return { ic: Number((config as any).air_scrubber_weekly_ic) || 200, cp: Number((config as any).air_scrubber_weekly_cp) || 350, unit: 'ea' };
+    } else if (taskLower.includes('furniture') || taskLower.includes('moving') || taskLower.includes('content')) {
+      return { ic: Number((config as any).furniture_moving_hourly_ic) || 45, cp: Number((config as any).furniture_moving_hourly_cp) || 85, unit: 'ea' };
+    }
+    // Default site protection
+    return { ic: Number((config as any).dust_barrier_zipwall_ic) || 150, cp: Number((config as any).dust_barrier_zipwall_cp) || 300, unit: 'ea', flatRate: true };
+  }
+
+  // Heavy/Difficult Demo (Surcharges) - check before standard demo
+  if (categoryLower.includes('heavy demo') || categoryLower.includes('difficult demo') || categoryLower.includes('surcharge')) {
+    if (taskLower.includes('mud-set') || taskLower.includes('mudset') || taskLower.includes('concrete bed')) {
+      return { ic: Number((config as any).demo_tile_mudset_sqft_ic) || 6, cp: Number((config as any).demo_tile_mudset_sqft_cp) || 12, unit: 'sqft' };
+    } else if (taskLower.includes('cast iron') || taskLower.includes('castiron') || taskLower.includes('smash')) {
+      return { ic: Number((config as any).demo_castiron_tub_ic) || 250, cp: Number((config as any).demo_castiron_tub_cp) || 500, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('glued') || taskLower.includes('glue-down') || taskLower.includes('glueddown')) {
+      return { ic: Number((config as any).demo_glueddown_sqft_ic) || 4, cp: Number((config as any).demo_glueddown_sqft_cp) || 8, unit: 'sqft' };
+    } else if (taskLower.includes('popcorn') || taskLower.includes('ceiling')) {
+      return { ic: Number((config as any).demo_popcorn_ceiling_sqft_ic) || 3.5, cp: Number((config as any).demo_popcorn_ceiling_sqft_cp) || 7, unit: 'sqft' };
+    }
+    // Default heavy demo
+    return { ic: Number((config as any).demo_tile_mudset_sqft_ic) || 6, cp: Number((config as any).demo_tile_mudset_sqft_cp) || 12, unit: 'sqft' };
+  }
+
+  // Disposal & Logistics
+  if (categoryLower.includes('disposal') || categoryLower.includes('logistics') || categoryLower.includes('haul')) {
+    if (taskLower.includes('dumpster') || taskLower.includes('20 yard') || taskLower.includes('20yd')) {
+      return { ic: Number((config as any).dumpster_20yd_ic) || 550, cp: Number((config as any).dumpster_20yd_cp) || 750, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('live load') || taskLower.includes('liveload') || taskLower.includes('truck')) {
+      return { ic: Number((config as any).liveload_haul_ic) || 400, cp: Number((config as any).liveload_haul_cp) || 700, unit: 'ea' };
+    } else if (taskLower.includes('difficult access') || taskLower.includes('stair') || taskLower.includes('carry fee')) {
+      return { ic: Number((config as any).difficult_access_fee_ic) || 300, cp: Number((config as any).difficult_access_fee_cp) || 600, unit: 'ea', flatRate: true };
+    }
+    // Default disposal (dumpster)
+    return { ic: Number((config as any).dumpster_20yd_ic) || 550, cp: Number((config as any).dumpster_20yd_cp) || 750, unit: 'ea', flatRate: true };
+  }
+
+  // Standard Demolition - FLAT RATE (always quantity = 1)
   if (categoryLower.includes('demo')) {
-    if (taskLower.includes('shower') && taskLower.includes('only')) {
+    // Check for specific granular demo items first
+    if (taskLower.includes('soffit')) {
+      return { ic: Number((config as any).demo_soffit_lf_ic) || 15, cp: Number((config as any).demo_soffit_lf_cp) || 30, unit: 'lf' };
+    } else if (taskLower.includes('deconstruct') || taskLower.includes('save') || taskLower.includes('reuse')) {
+      return { ic: Number((config as any).demo_cabinet_deconstruct_ic) || 500, cp: Number((config as any).demo_cabinet_deconstruct_cp) || 900, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('shower') && taskLower.includes('only')) {
       return { ic: Number(config.demo_shower_only_ic) || 900, cp: Number(config.demo_shower_only_cp) || 1450, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('small') || taskLower.includes('standard bath')) {
-      return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea', flatRate: true };
+      return { ic: Number((config as any).demo_bath_standard_ic) || Number(config.demo_small_bath_ic) || 600, cp: Number((config as any).demo_bath_standard_cp) || Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('large') || taskLower.includes('full bath') || taskLower.includes('master')) {
       return { ic: Number(config.demo_large_bath_ic) || 1650, cp: Number(config.demo_large_bath_cp) || 2500, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('kitchen') || taskLower.includes('full kitchen') || taskLower.includes('gut kitchen')) {
-      return { ic: Number(config.demo_kitchen_ic) || 1750, cp: Number(config.demo_kitchen_cp) || 2800, unit: 'ea', flatRate: true };
+      return { ic: Number((config as any).demo_kitchen_standard_ic) || Number(config.demo_kitchen_ic) || 800, cp: Number((config as any).demo_kitchen_standard_cp) || Number(config.demo_kitchen_cp) || 1500, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.demo_small_bath_ic) || 1300, cp: Number(config.demo_small_bath_cp) || 2050, unit: 'ea', flatRate: true };
+    // Default standard bath demo
+    return { ic: Number((config as any).demo_bath_standard_ic) || Number(config.demo_small_bath_ic) || 600, cp: Number((config as any).demo_bath_standard_cp) || Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
   }
 
   // Plumbing - FLAT RATE packages
