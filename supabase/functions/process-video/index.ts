@@ -52,31 +52,65 @@ serve(async (req) => {
 
 AVAILABLE TRADE CATEGORIES:
 - Site Protection & Setup
-- Standard Demolition
+- Standard Demolition (specify: shower-only, small bath, large bath, kitchen)
 - Heavy/Difficult Demo
-- Disposal & Logistics
+- Disposal & Logistics (dumpster size)
 - Water Damage & Rot Repair
 - Hidden Structural Issues
 - Code-Mandated Upgrades
-- Plumbing
-- Specialty Plumbing Systems
-- Electrical
+- Plumbing (standard shower, extra head, toilet, tub-to-shower, freestanding)
+- Plumbing Relocations (CRITICAL: tub relocation, toilet relocation, drain relocation)
+- Specialty Plumbing Systems (linear drain, smart valve)
+- Electrical (recessed cans, vanity lights, package)
 - Smart Home / Specialty Electrical
-- Tile & Waterproofing
+- Tile & Waterproofing (wall tile sqft, floor tile sqft, shower floor sqft)
 - Tile Specialty Work
-- Cabinetry & Vanities
+- Cabinetry & Vanities (vanity size in inches)
 - Cabinet Customization
-- Glass
+- Glass (standard, panel only, 90 return)
 - Paint & Drywall
 - Trim & Millwork
-- Framing
+- Framing - CRITICAL STRUCTURAL ITEMS:
+  * Wall removal
+  * New wall construction
+  * Door relocation (moving doorway)
+  * Door closure (closing off doorway)
+  * New doorway framing
+  * Pocket door installation
+  * Soffit removal (get linear feet!)
+  * Entrance enlargement
+  * Shower enlargement
+  * Alcove/built-in construction
+  * Bench framing
+- Built-In Closets - CAPTURE ALL:
+  * Closet framing (count + dimensions)
+  * Closet drywall (sqft)
+  * Closet shelving systems (per closet)
+  * Closet doors (per set)
+  * Paint closet interiors
+- Ceiling Work - DON'T FORGET:
+  * Ceiling drywall (sqft from room dimensions)
+  * Ceiling texture (sqft)
+  * Ceiling paint (sqft)
+- Drywall Work (patches for old openings, new wall drywall)
+- Mirrors (capture count!)
+- Floating Shelves
 - Flooring
-- Structural / Complex Work
 - Countertop Fabrication Add-Ons
 - Decorative Finishes
 - Mechanicals & Appliances
 - Miscellaneous Always-Needed
 - Allowances
+
+CRITICAL EXTRACTION RULES - DO NOT MISS THESE:
+1. When contractor mentions "relocating entrance" or "new doorway" → add Door Relocation AND Door Closure
+2. When contractor mentions "soffits" → add Soffit Removal with estimated linear feet
+3. When contractor mentions "closets" → add Closet Framing, Closet Drywall, Closet Shelving, Closet Doors, Paint
+4. When contractor mentions "ceiling" → add Ceiling Drywall + Ceiling Texture + Ceiling Paint
+5. When contractor mentions "mirrors" → add Mirrors with count
+6. When contractor mentions "relocate toilet/tub/drain" → add Plumbing Relocation (NOT standard plumbing!)
+7. When contractor mentions "alcove" or "built-in" → add Alcove/Built-in framing
+8. When contractor mentions room dimensions + 10ft ceilings → ceiling sqft = room sqft
 
 EXTRACTION RULES:
 1. Cross-reference narration with visual elements
@@ -90,6 +124,7 @@ EXTRACTION RULES:
 For dimensions:
 - Use standard reference objects (doors are 80" tall, outlets are 4.5" wide, standard counters are 36" high)
 - If a person is visible, average adult height is 5'7"
+- Calculate ceiling sqft from room dimensions (length × width)
 
 OUTPUT MUST BE VALID JSON matching this schema:
 {
