@@ -1,5 +1,5 @@
 import { useState, KeyboardEvent, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, Loader2, Camera, Video } from "lucide-react";
+import { Send, Mic, MicOff, Loader2, Camera, Video, ImagePlus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -42,7 +42,9 @@ export function ChatInput({
   const [isFocused, setIsFocused] = useState(false);
   const recognitionRef = useRef<any>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -127,34 +129,27 @@ export function ChatInput({
     }
   };
 
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
+  const handlePhotoUploadClick = () => {
+    photoInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCameraClick = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const handleVideoUploadClick = () => {
+    videoInputRef.current?.click();
+  };
+
+  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Handle video files
-    if (file.type.startsWith('video/')) {
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error('Video must be under 100MB');
-        return;
-      }
-      onVideoUpload?.(file);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      return;
-    }
-
-    // Handle image files
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image or video file');
+      toast.error('Please upload an image file');
       return;
     }
 
-    // Validate file size (max 10MB for images)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image must be under 10MB');
       return;
@@ -162,9 +157,29 @@ export function ChatInput({
 
     onPhotoUpload?.(file);
     
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
+
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      toast.error('Please upload a video file');
+      return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error('Video must be under 100MB');
+      return;
+    }
+
+    onVideoUpload?.(file);
+    
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
@@ -176,14 +191,36 @@ export function ChatInput({
         isFocused && "border-primary/50 bg-muted/50 shadow-sm"
       )}
     >
-      {/* Hidden file input for photo/video upload */}
+      {/* Hidden file inputs */}
       {showPhotoUpload && (
+        <>
+          {/* Photo upload from gallery/files */}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoFileChange}
+            className="hidden"
+          />
+          {/* Camera capture */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoFileChange}
+            className="hidden"
+          />
+        </>
+      )}
+      
+      {/* Video upload input */}
+      {showVideoCapture && (
         <input
-          ref={fileInputRef}
+          ref={videoInputRef}
           type="file"
-          accept="image/*,video/*"
-          capture="environment"
-          onChange={handleFileChange}
+          accept="video/*"
+          onChange={handleVideoFileChange}
           className="hidden"
         />
       )}
@@ -207,13 +244,13 @@ export function ChatInput({
       />
 
       <div className="flex items-center gap-1 sm:gap-1.5 pb-0.5 sm:pb-1">
-        {/* Photo Upload Button */}
+        {/* Photo Upload Button (from gallery/files) */}
         {showPhotoUpload && (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            onClick={handlePhotoClick}
+            onClick={handlePhotoUploadClick}
             disabled={disabled || isAnalyzingPhoto}
             className={cn(
               "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl transition-all duration-300",
@@ -221,17 +258,55 @@ export function ChatInput({
                 ? "bg-cyan-500/20 text-cyan-600 animate-pulse" 
                 : "text-muted-foreground hover:text-cyan-600 hover:bg-cyan-500/10"
             )}
-            title="Upload photo for AI analysis"
+            title="Upload photo from device"
           >
             {isAnalyzingPhoto ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Camera className="h-4 w-4" />
+              <ImagePlus className="h-4 w-4" />
             )}
           </Button>
         )}
 
-        {/* Video Capture Button */}
+        {/* Camera Capture Button */}
+        {showPhotoUpload && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleCameraClick}
+            disabled={disabled || isAnalyzingPhoto}
+            className={cn(
+              "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl transition-all duration-300",
+              "text-muted-foreground hover:text-cyan-600 hover:bg-cyan-500/10"
+            )}
+            title="Take photo with camera"
+          >
+            <Camera className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Video Upload Button */}
+        {showVideoCapture && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleVideoUploadClick}
+            disabled={disabled || isProcessingVideo}
+            className={cn(
+              "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl transition-all duration-300",
+              isProcessingVideo 
+                ? "bg-purple-500/20 text-purple-600 animate-pulse" 
+                : "text-muted-foreground hover:text-purple-600 hover:bg-purple-500/10"
+            )}
+            title="Upload video from device"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Video Record Button */}
         {showVideoCapture && (
           <Button
             type="button"
