@@ -10,6 +10,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
 import Onboarding from "./pages/Onboarding";
+import Welcome from "./pages/Welcome";
 import Dashboard from "./pages/Dashboard";
 import Estimator from "./pages/Estimator";
 import Estimates from "./pages/Estimates";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
             <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/estimator" element={<Estimator />} />

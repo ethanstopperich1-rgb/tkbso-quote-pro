@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Upload, Building2, User, Phone, MapPin, ArrowLeft, Check } from 'lucide-react';
+import { Upload, Building2, User, Phone, MapPin, ArrowLeft, Check, Lightbulb } from 'lucide-react';
 import { defaultSettings } from '@/types/settings';
 
 // Extract dominant color from an image
@@ -69,6 +69,8 @@ function extractDominantColor(imageUrl: string): Promise<string> {
 
 type ProjectType = 'kitchen' | 'bathroom' | 'full-home' | 'additions' | 'basement' | 'commercial';
 
+const TOTAL_STEPS = 4;
+
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user, contractor, refreshProfile } = useAuth();
@@ -79,6 +81,7 @@ export default function Onboarding() {
   const [extractedColor, setExtractedColor] = useState<string>('#0EA5E9');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Step 1: Company Info
   const [formData, setFormData] = useState({
     companyName: '',
     firstName: '',
@@ -88,8 +91,59 @@ export default function Onboarding() {
     logoUrl: '',
   });
 
+  // Step 2: Project Types
   const [selectedTypes, setSelectedTypes] = useState<ProjectType[]>([]);
   const [teamSize, setTeamSize] = useState<string>('');
+
+  // Step 3: Pricing
+  const [pricingStrategy, setPricingStrategy] = useState<string>('standard');
+  const [marketLocation, setMarketLocation] = useState<string>('');
+  const [laborRates, setLaborRates] = useState({
+    general: 65,
+    skilled: 95,
+    tile: 12,
+    cabinet: 150,
+  });
+
+  // Step 4: Branding
+  const [primaryColor, setPrimaryColor] = useState('#0B1C3E');
+  const [accentColor, setAccentColor] = useState('#00E5FF');
+
+  // Auto-save progress
+  useEffect(() => {
+    const saved = localStorage.getItem('onboarding_progress');
+    if (saved) {
+      try {
+        const { step: savedStep, data, timestamp } = JSON.parse(saved);
+        if (Date.now() - timestamp < 86400000) {
+          setStep(savedStep);
+          if (data.formData) setFormData(data.formData);
+          if (data.selectedTypes) setSelectedTypes(data.selectedTypes);
+          if (data.teamSize) setTeamSize(data.teamSize);
+          if (data.pricingStrategy) setPricingStrategy(data.pricingStrategy);
+          if (data.laborRates) setLaborRates(data.laborRates);
+          if (data.marketLocation) setMarketLocation(data.marketLocation);
+          if (data.primaryColor) setPrimaryColor(data.primaryColor);
+          if (data.accentColor) setAccentColor(data.accentColor);
+          toast.info('We saved your progress! Pick up where you left off.');
+        }
+      } catch (e) {
+        console.error('Error restoring progress:', e);
+      }
+    }
+  }, []);
+
+  const saveProgress = () => {
+    localStorage.setItem('onboarding_progress', JSON.stringify({
+      step,
+      data: { formData, selectedTypes, teamSize, pricingStrategy, laborRates, marketLocation, primaryColor, accentColor },
+      timestamp: Date.now()
+    }));
+  };
+
+  useEffect(() => {
+    saveProgress();
+  }, [step, formData, selectedTypes, teamSize, pricingStrategy, laborRates, marketLocation, primaryColor, accentColor]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,6 +167,7 @@ export default function Onboarding() {
       
       const color = await extractDominantColor(previewUrl);
       setExtractedColor(color);
+      setPrimaryColor(color);
       
       const fileExt = file.name.split('.').pop();
       const fileName = `${contractor.id}/logo.${fileExt}`;
@@ -176,7 +231,11 @@ export default function Onboarding() {
       toast.error('Please select at least one project type');
       return;
     }
-    handleFinalSubmit();
+    setStep(3);
+  };
+
+  const handleStep3Submit = () => {
+    setStep(4);
   };
 
   const handleFinalSubmit = async () => {
@@ -189,6 +248,14 @@ export default function Onboarding() {
     
     try {
       const currentSettings = contractor.settings || defaultSettings;
+      
+      // Calculate target margin based on pricing strategy
+      const marginMap: Record<string, number> = {
+        conservative: 0.28,
+        standard: 0.38,
+        premium: 0.48,
+      };
+      
       const updatedSettings = {
         ...currentSettings,
         companyProfile: {
@@ -201,10 +268,13 @@ export default function Onboarding() {
         branding: {
           ...currentSettings.branding,
           logoUrl: formData.logoUrl || logoPreview || '',
-          primaryColor: extractedColor,
+          primaryColor: primaryColor,
+          accentColor: accentColor,
         },
         projectTypes: selectedTypes,
         teamSize: teamSize,
+        pricingStrategy: pricingStrategy,
+        marketLocation: marketLocation,
         onboardingCompleted: true,
       };
       
@@ -214,13 +284,23 @@ export default function Onboarding() {
           name: formData.companyName,
           primary_contact_name: `${formData.firstName} ${formData.lastName}`.trim(),
           primary_contact_phone: formData.phone,
-          service_area: formData.address,
+          service_area: formData.address || marketLocation,
           logo_url: formData.logoUrl || logoPreview || null,
           settings: JSON.parse(JSON.stringify(updatedSettings)),
         })
         .eq('id', contractor.id);
       
       if (contractorError) throw contractorError;
+      
+      // Update pricing config with selected strategy
+      const { error: pricingError } = await supabase
+        .from('pricing_configs')
+        .update({
+          target_margin: marginMap[pricingStrategy] || 0.38,
+        })
+        .eq('contractor_id', contractor.id);
+      
+      if (pricingError) console.warn('Could not update pricing config:', pricingError);
       
       const { error: profileError } = await supabase
         .from('profiles')
@@ -231,9 +311,12 @@ export default function Onboarding() {
       
       if (profileError) throw profileError;
       
+      // Clear saved progress
+      localStorage.removeItem('onboarding_progress');
+      
       await refreshProfile();
       toast.success('Welcome! Your profile is set up.');
-      navigate('/estimates');
+      navigate('/welcome');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save profile';
       toast.error(errorMessage);
@@ -251,19 +334,35 @@ export default function Onboarding() {
     { id: 'commercial' as ProjectType, icon: '🏢', label: 'Commercial Projects' },
   ];
 
+  const pricingStrategies = [
+    { id: 'conservative', label: 'Conservative', margin: '25-30%', desc: 'Competitive pricing' },
+    { id: 'standard', label: 'Standard', margin: '35-40%', desc: 'Industry average', recommended: true },
+    { id: 'premium', label: 'Premium', margin: '45-50%', desc: 'High-end positioning' },
+  ];
+
+  const getStepLabel = () => {
+    switch (step) {
+      case 1: return 'About 2 minutes';
+      case 2: return 'Halfway there!';
+      case 3: return 'Almost done!';
+      case 4: return 'Final step!';
+      default: return '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full">
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-slate-600">Step {step} of 2</span>
-            <span className="text-sm text-slate-500">{step === 1 ? 'About 2 minutes' : 'Almost done!'}</span>
+            <span className="text-sm font-semibold text-slate-600">Step {step} of {TOTAL_STEPS}</span>
+            <span className="text-sm text-slate-500">{getStepLabel()}</span>
           </div>
           <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-500" 
-              style={{ width: `${step * 50}%` }}
+              style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
             />
           </div>
         </div>
@@ -275,49 +374,6 @@ export default function Onboarding() {
             <p className="text-slate-600 mb-8">This helps us customize EstimAIte for your workflow</p>
 
             <form onSubmit={handleStep1Submit} className="space-y-6">
-              {/* Logo Upload */}
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">Company Logo</Label>
-                <div 
-                  className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-cyan-400 hover:bg-cyan-50/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {logoPreview ? (
-                    <div className="space-y-3">
-                      <img 
-                        src={logoPreview} 
-                        alt="Logo preview" 
-                        className="h-16 w-auto mx-auto object-contain"
-                      />
-                      <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-                        <span>Brand color:</span>
-                        <div 
-                          className="w-6 h-6 rounded-full border border-slate-200" 
-                          style={{ backgroundColor: extractedColor }}
-                        />
-                        <span className="font-mono text-xs">{extractedColor}</span>
-                      </div>
-                      <p className="text-sm text-slate-500">Click to change</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Upload className="h-8 w-8 mx-auto text-slate-400" />
-                      <p className="text-sm text-slate-600">
-                        {isUploadingLogo ? 'Uploading...' : 'Click to upload your logo'}
-                      </p>
-                      <p className="text-xs text-slate-400">PNG, JPG up to 5MB</p>
-                    </div>
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
-              </div>
-
               {/* Company Name */}
               <div>
                 <Label htmlFor="companyName" className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
@@ -490,12 +546,260 @@ export default function Onboarding() {
               </Button>
               <Button 
                 onClick={handleStep2Submit}
-                disabled={selectedTypes.length === 0 || isSubmitting}
+                disabled={selectedTypes.length === 0}
                 className="flex-1 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50"
               >
-                {isSubmitting ? 'Setting up...' : 'Get Started →'}
+                Continue →
               </Button>
             </div>
+          </div>
+        )}
+
+        {/* Step 3: Pricing Setup */}
+        {step === 3 && (
+          <div className="bg-white rounded-2xl p-8 shadow-lg">
+            <h2 className="text-3xl font-bold mb-2 text-slate-900">Set your default pricing</h2>
+            <p className="text-slate-600 mb-8">We'll pre-fill with industry standards, but you can customize later</p>
+
+            {/* Pricing Strategy Selector */}
+            <div className="mb-8">
+              <Label className="block text-sm font-semibold text-slate-700 mb-3">
+                Choose your pricing approach
+              </Label>
+              <div className="grid grid-cols-3 gap-4">
+                {pricingStrategies.map(strategy => (
+                  <label
+                    key={strategy.id}
+                    className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                      pricingStrategy === strategy.id
+                        ? 'border-cyan-400 bg-cyan-50'
+                        : 'border-slate-200 hover:border-cyan-300'
+                    }`}
+                  >
+                    {strategy.recommended && (
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded">
+                        RECOMMENDED
+                      </span>
+                    )}
+                    <input
+                      type="radio"
+                      name="pricing"
+                      value={strategy.id}
+                      checked={pricingStrategy === strategy.id}
+                      onChange={(e) => setPricingStrategy(e.target.value)}
+                      className="sr-only"
+                    />
+                    <p className="font-bold text-slate-900 mb-1">{strategy.label}</p>
+                    <p className="text-cyan-600 font-semibold text-sm mb-1">{strategy.margin}</p>
+                    <p className="text-xs text-slate-600">{strategy.desc}</p>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Default Labor Rates */}
+            <div className="bg-slate-50 rounded-xl p-6 mb-8">
+              <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <span>💰</span>
+                Default Labor Rates (you can adjust these anytime)
+              </h3>
+              <div className="space-y-4">
+                {[
+                  { key: 'general', label: 'General Labor', unit: '$/hr' },
+                  { key: 'skilled', label: 'Skilled Trade (Plumbing/Electrical)', unit: '$/hr' },
+                  { key: 'tile', label: 'Tile Labor', unit: '$/sqft' },
+                  { key: 'cabinet', label: 'Cabinet Install', unit: '$/box' },
+                ].map(rate => (
+                  <div key={rate.key} className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">{rate.label}</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={laborRates[rate.key as keyof typeof laborRates]}
+                        onChange={(e) => setLaborRates(prev => ({ ...prev, [rate.key]: Number(e.target.value) }))}
+                        className="w-24 px-3 py-2 border border-slate-300 rounded-lg text-right"
+                      />
+                      <span className="text-sm text-slate-600 w-12">{rate.unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Regional Adjustment */}
+            <div className="mb-8">
+              <Label htmlFor="marketLocation" className="block text-sm font-semibold text-slate-700 mb-2">
+                Your Market Location
+              </Label>
+              <Input
+                id="marketLocation"
+                placeholder="e.g., Orlando, FL"
+                value={marketLocation}
+                onChange={(e) => setMarketLocation(e.target.value)}
+                className="h-12 border-2 border-slate-300 rounded-lg focus:border-cyan-400 focus:ring-cyan-400"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                We'll adjust pricing recommendations based on your local market
+              </p>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex gap-4">
+              <Button 
+                variant="outline"
+                onClick={() => setStep(2)}
+                className="px-6 h-12 border-2 border-slate-300 rounded-lg font-semibold hover:bg-slate-50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" /> Back
+              </Button>
+              <Button 
+                onClick={handleStep3Submit}
+                className="flex-1 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 rounded-lg font-bold text-lg hover:shadow-lg transition-all"
+              >
+                Continue →
+              </Button>
+            </div>
+
+            {/* Help Text */}
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900 flex items-start gap-2">
+                <Lightbulb className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span><strong>Pro Tip:</strong> You can always adjust these rates later in Settings. We recommend starting with Standard pricing and adjusting based on your actual project wins.</span>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Branding */}
+        {step === 4 && (
+          <div className="bg-white rounded-2xl p-8 shadow-lg">
+            <h2 className="text-3xl font-bold mb-2 text-slate-900">Brand your proposals</h2>
+            <p className="text-slate-600 mb-8">Make your estimates look professional and uniquely yours</p>
+
+            {/* Logo Upload */}
+            <div className="mb-8">
+              <Label className="block text-sm font-semibold text-slate-700 mb-3">
+                Company Logo
+              </Label>
+              <div 
+                className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-cyan-400 transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {logoPreview ? (
+                  <div className="space-y-3">
+                    <img 
+                      src={logoPreview} 
+                      alt="Logo preview" 
+                      className="max-h-24 mx-auto object-contain"
+                    />
+                    <p className="text-sm text-slate-500">Click to change</p>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+                    <p className="font-semibold text-slate-900 mb-2">
+                      {isUploadingLogo ? 'Uploading...' : 'Click to upload logo'}
+                    </p>
+                    <p className="text-sm text-slate-500">PNG, JPG, or SVG (max 2MB)</p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Brand Colors */}
+            <div className="mb-8">
+              <Label className="block text-sm font-semibold text-slate-700 mb-3">
+                Brand Colors (used in proposals)
+              </Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-slate-600 mb-2">Primary Color</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="w-16 h-12 rounded-lg cursor-pointer border-0"
+                    />
+                    <Input 
+                      type="text"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-600 mb-2">Accent Color</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="w-16 h-12 rounded-lg cursor-pointer border-0"
+                    />
+                    <Input 
+                      type="text"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="mb-8 p-6 bg-slate-50 rounded-xl border border-slate-200">
+              <p className="text-xs font-semibold text-slate-600 mb-3">PROPOSAL PREVIEW</p>
+              <div className="bg-white rounded-lg p-6 border border-slate-200">
+                {logoPreview && <img src={logoPreview} alt="Logo" className="h-12 mb-4 object-contain" />}
+                <h3 className="text-xl font-bold mb-2" style={{ color: primaryColor }}>
+                  Kitchen Renovation Proposal
+                </h3>
+                <p className="text-slate-600 text-sm mb-4">Prepared for: John & Jane Smith</p>
+                <div 
+                  className="inline-block px-4 py-2 rounded-lg text-white font-semibold text-sm" 
+                  style={{ backgroundColor: accentColor }}
+                >
+                  Total Investment: $45,000
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex gap-4">
+              <Button 
+                variant="outline"
+                onClick={() => setStep(3)}
+                className="px-6 h-12 border-2 border-slate-300 rounded-lg font-semibold hover:bg-slate-50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" /> Back
+              </Button>
+              <Button 
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting}
+                className="flex-1 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {isSubmitting ? 'Setting up...' : 'Complete Setup →'}
+              </Button>
+            </div>
+
+            {/* Skip Option */}
+            <button 
+              onClick={handleFinalSubmit}
+              disabled={isSubmitting}
+              className="w-full text-center text-slate-500 text-sm mt-4 hover:text-slate-700 disabled:opacity-50"
+            >
+              Skip branding for now
+            </button>
           </div>
         )}
       </div>
