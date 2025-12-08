@@ -31,15 +31,15 @@ interface ForgottenItemsModalProps {
 export function ForgottenItemsModal({
   open,
   onOpenChange,
-  suggestions,
+  suggestions = [],
   onAddItems,
   onSkip,
 }: ForgottenItemsModalProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    new Set(suggestions.filter(s => s.autoAdd).map(s => s.id))
+    new Set((suggestions || []).filter(s => s.autoAdd).map(s => s.id))
   );
   const [quantities, setQuantities] = useState<Record<string, number>>(
-    Object.fromEntries(suggestions.map(s => [s.id, s.quantity || 1]))
+    Object.fromEntries((suggestions || []).map(s => [s.id, s.quantity || 1]))
   );
 
   const toggleItem = (id: string) => {
