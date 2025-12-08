@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Image,
 } from '@react-pdf/renderer';
+import { formatLineItemForPdf } from '@/lib/line-item-descriptions';
 
 // Register Helvetica-like system fonts (built-in, no external loading needed)
 // Using Helvetica which is built into @react-pdf/renderer
@@ -468,7 +469,7 @@ export function ProposalPdfDocument({
               <Text style={styles.categoryText}>{item.category}</Text>
             </View>
             <View style={styles.taskCol}>
-              <Text style={styles.taskText}>{item.task}</Text>
+              <Text style={styles.taskText}>{formatLineItemForPdf(item.task)}</Text>
             </View>
             <View style={styles.includedCol}>
               {item.included ? (
