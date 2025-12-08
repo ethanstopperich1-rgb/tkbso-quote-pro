@@ -175,13 +175,14 @@ export function EstimatorChatPanel() {
 
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    const videoFiles = files.filter(file => file.type.startsWith('video/'));
     
-    if (imageFiles.length === 0) {
-      toast.error('Please drop an image file');
+    if (imageFiles.length === 0 && videoFiles.length === 0) {
+      toast.error('Please drop an image or video file');
       return;
     }
 
-    // Process each image file
+    // Process image files
     for (const file of imageFiles) {
       if (file.size > 10 * 1024 * 1024) {
         toast.error(`${file.name} is too large (max 10MB)`);
@@ -189,6 +190,241 @@ export function EstimatorChatPanel() {
       }
       await handlePhotoUpload(file);
     }
+
+    // Process video files (one at a time)
+    if (videoFiles.length > 0) {
+      const videoFile = videoFiles[0];
+      if (videoFile.size > 100 * 1024 * 1024) {
+        toast.error('Video must be under 100MB');
+        return;
+      }
+      await handleVideoUpload(videoFile);
+    }
+  };
+
+  // Handle video file upload for AI analysis
+  const handleVideoUpload = async (file: File) => {
+    if (!contractor?.id) {
+      toast.error('Please log in to use video analysis');
+      return;
+    }
+
+    setIsProcessingVideo(true);
+    
+    // Add processing message
+    const processingMessage: Message = {
+      id: 'video-processing-' + Date.now(),
+      role: 'assistant',
+      content: '🎥 **Processing video...** Extracting audio and analyzing frames. This may take a moment.',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, processingMessage]);
+
+    try {
+      const videoBlob = file;
+      
+      // Extract audio and transcribe
+      let transcript = '';
+      try {
+        const audioBase64 = await extractAudioFromVideoFile(videoBlob);
+        
+        const transcriptionResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ 
+              audio: audioBase64,
+              mimeType: 'audio/wav'
+            })
+          }
+        );
+
+        if (transcriptionResponse.ok) {
+          const transcriptionResult = await transcriptionResponse.json();
+          if (transcriptionResult?.text) {
+            transcript = transcriptionResult.text;
+          }
+        }
+      } catch (audioError) {
+        console.error('Audio extraction error:', audioError);
+      }
+      
+      // Extract frames
+      const frames = await extractFramesFromVideoFile(videoBlob);
+      
+      // Analyze with AI
+      const analysisResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-video`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            videoFrames: frames,
+            audioTranscript: transcript,
+            projectType: 'Remodeling'
+          })
+        }
+      );
+
+      if (!analysisResponse.ok) {
+        throw new Error('Video analysis failed');
+      }
+
+      const result = await analysisResponse.json() as VideoAnalysisResult;
+
+      // Remove processing message
+      setMessages(prev => prev.filter(m => !m.id.startsWith('video-processing-')));
+      
+      // Handle the result
+      handleVideoAnalyzed(result);
+
+    } catch (error) {
+      console.error('Error processing video:', error);
+      setMessages(prev => prev.filter(m => !m.id.startsWith('video-processing-')));
+      toast.error(error instanceof Error ? error.message : 'Failed to process video');
+    } finally {
+      setIsProcessingVideo(false);
+    }
+  };
+
+  // Helper: Extract audio from video file
+  const extractAudioFromVideoFile = async (videoBlob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(videoBlob);
+      
+      video.onloadedmetadata = async () => {
+        try {
+          const audioContext = new AudioContext({ sampleRate: 16000 });
+          const arrayBuffer = await videoBlob.arrayBuffer();
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          
+          const numberOfChannels = 1;
+          const length = audioBuffer.length;
+          const sampleRate = 16000;
+          const offlineContext = new OfflineAudioContext(numberOfChannels, length, sampleRate);
+          const source = offlineContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(offlineContext.destination);
+          source.start();
+          
+          const renderedBuffer = await offlineContext.startRendering();
+          const channelData = renderedBuffer.getChannelData(0);
+          
+          const pcmData = new Int16Array(channelData.length);
+          for (let i = 0; i < channelData.length; i++) {
+            const s = Math.max(-1, Math.min(1, channelData[i]));
+            pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          
+          // Create WAV file
+          const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+          const view = new DataView(buffer);
+          const writeString = (offset: number, str: string) => {
+            for (let i = 0; i < str.length; i++) {
+              view.setUint8(offset + i, str.charCodeAt(i));
+            }
+          };
+          writeString(0, 'RIFF');
+          view.setUint32(4, 36 + pcmData.length * 2, true);
+          writeString(8, 'WAVE');
+          writeString(12, 'fmt ');
+          view.setUint32(16, 16, true);
+          view.setUint16(20, 1, true);
+          view.setUint16(22, 1, true);
+          view.setUint32(24, sampleRate, true);
+          view.setUint32(28, sampleRate * 2, true);
+          view.setUint16(32, 2, true);
+          view.setUint16(34, 16, true);
+          writeString(36, 'data');
+          view.setUint32(40, pcmData.length * 2, true);
+          for (let i = 0; i < pcmData.length; i++) {
+            view.setInt16(44 + i * 2, pcmData[i], true);
+          }
+          
+          // Convert to base64
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          
+          URL.revokeObjectURL(video.src);
+          resolve(btoa(binary));
+        } catch (err) {
+          // Fallback: send video as-is
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(videoBlob);
+        }
+      };
+      
+      video.onerror = reject;
+    });
+  };
+
+  // Helper: Extract frames from video file
+  const extractFramesFromVideoFile = async (videoBlob: Blob, intervalSeconds = 2): Promise<string[]> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(videoBlob);
+      video.muted = true;
+      
+      const frames: string[] = [];
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      video.onloadedmetadata = () => {
+        canvas.width = Math.min(video.videoWidth, 640);
+        canvas.height = Math.min(video.videoHeight, 480);
+        
+        const duration = video.duration;
+        const timestamps: number[] = [];
+        
+        for (let t = 0; t < duration; t += intervalSeconds) {
+          timestamps.push(t);
+        }
+        
+        const limitedTimestamps = timestamps.slice(0, 10);
+        let currentIndex = 0;
+        
+        const captureFrame = () => {
+          if (currentIndex >= limitedTimestamps.length) {
+            URL.revokeObjectURL(video.src);
+            resolve(frames);
+            return;
+          }
+          video.currentTime = limitedTimestamps[currentIndex];
+        };
+        
+        video.onseeked = () => {
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            const base64 = dataUrl.split(',')[1];
+            frames.push(base64);
+          }
+          currentIndex++;
+          captureFrame();
+        };
+        
+        captureFrame();
+      };
+      
+      video.onerror = reject;
+    });
   };
 
   const addAssistantMessage = (content: string) => {
@@ -805,23 +1041,29 @@ Add more photos or provide dimensions to generate your quote.`,
               <Upload className="h-8 w-8" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-lg">Drop photos here</p>
-              <p className="text-sm text-muted-foreground">Release to analyze with AI vision</p>
+              <p className="font-semibold text-lg">Drop photos or videos here</p>
+              <p className="text-sm text-muted-foreground">Release to analyze with AI</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Hidden file input for adding more photos */}
+      {/* Hidden file input for adding photos and videos */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         capture="environment"
         multiple
         onChange={(e) => {
           const files = Array.from(e.target.files || []);
-          files.forEach(file => handlePhotoUpload(file));
+          files.forEach(file => {
+            if (file.type.startsWith('video/')) {
+              handleVideoUpload(file);
+            } else {
+              handlePhotoUpload(file);
+            }
+          });
           e.target.value = '';
         }}
         className="hidden"
@@ -1087,6 +1329,7 @@ Add more photos or provide dimensions to generate your quote.`,
         <ChatInput 
           onSend={handleSendMessage} 
           onPhotoUpload={handlePhotoUpload}
+          onVideoUpload={handleVideoUpload}
           onVideoClick={() => setShowVideoModal(true)}
           disabled={isLoading || isAnalyzingPhoto || isProcessingVideo}
           showPhotoUpload={true}
