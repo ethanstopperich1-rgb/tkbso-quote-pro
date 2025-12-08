@@ -193,13 +193,17 @@ export function EstimatorChatPanel() {
       return;
     }
 
-    // Process image files
-    for (const file of imageFiles) {
+    // Process image files (batch upload)
+    const validImageFiles = imageFiles.filter(file => {
       if (file.size > 10 * 1024 * 1024) {
         toast.error(`${file.name} is too large (max 10MB)`);
-        continue;
+        return false;
       }
-      await handlePhotoUpload(file);
+      return true;
+    });
+    
+    if (validImageFiles.length > 0) {
+      await handlePhotoUpload(validImageFiles);
     }
 
     // Process video files (one at a time)
@@ -866,170 +870,187 @@ Add dimensions or confirm to generate your quote.`,
     }
   };
 
-  // Handle photo upload for AI vision analysis
-  const handlePhotoUpload = async (file: File) => {
+  // Process a single photo file
+  const processPhotoFile = async (file: File): Promise<PhotoAnalysisEntry | null> => {
+    let processedFile = file;
+    let mimeType = file.type;
+    
+    // Convert HEIC/HEIF to JPEG
+    if (file.type === 'image/heic' || file.type === 'image/heif' || 
+        file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+      console.log('Converting HEIC/HEIF to JPEG...');
+      
+      const heic2any = (await import('heic2any')).default;
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.9,
+      });
+      
+      const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      processedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+      mimeType = 'image/jpeg';
+    }
+    
+    // Convert to base64
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onload = () => {
+        const result = reader.result as string;
+        if (!result || !result.includes(',')) {
+          reject(new Error('Invalid FileReader result'));
+          return;
+        }
+        const base64 = result.split(',')[1];
+        if (!base64 || base64.length === 0) {
+          reject(new Error('Empty base64 data after split'));
+          return;
+        }
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+      reader.onabort = () => reject(new Error('File reading was aborted'));
+    });
+    
+    reader.readAsDataURL(processedFile);
+
+    const base64Data = await base64Promise;
+    const imagePreview = `data:${mimeType};base64,${base64Data}`;
+
+    // Call the analyze-photo edge function
+    const requestBody = {
+      image_base64: base64Data,
+      mime_type: mimeType,
+    };
+    
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-photo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please wait a moment.');
+      }
+      if (response.status === 402) {
+        throw new Error('AI quota exceeded. Please try again later.');
+      }
+      throw new Error(errorData.error || 'Failed to analyze photo');
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || 'Analysis failed');
+    }
+
+    return {
+      id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+      analysis: data.analysis,
+      imagePreview,
+    };
+  };
+
+  // Handle photo upload for AI vision analysis (supports multiple files)
+  const handlePhotoUpload = async (files: File[]) => {
     if (!contractor?.id) {
       toast.error('Please log in to use photo analysis');
       return;
     }
 
+    if (files.length === 0) return;
+
     setIsAnalyzingPhoto(true);
 
+    // Add a "scanning" message
+    const scanningMessage: Message = {
+      id: 'scanning-' + Date.now(),
+      role: 'assistant',
+      content: files.length === 1 
+        ? '📷 **Scanning photo...** Analyzing visible trade items with AI vision.'
+        : `📷 **Scanning ${files.length} photos...** Analyzing visible trade items with AI vision.`,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, scanningMessage]);
+
     try {
-      let processedFile = file;
-      let mimeType = file.type;
+      const results: PhotoAnalysisEntry[] = [];
+      let totalItemsDetected = 0;
+      let lastProjectType = '';
+
+      // Process all photos (in parallel for speed)
+      const processPromises = files.map(file => processPhotoFile(file).catch(err => {
+        console.error(`Error processing ${file.name}:`, err);
+        toast.error(`Failed to analyze ${file.name}`);
+        return null;
+      }));
+
+      const processedResults = await Promise.all(processPromises);
       
-      // Convert HEIC/HEIF to JPEG
-      if (file.type === 'image/heic' || file.type === 'image/heif' || 
-          file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-        console.log('Converting HEIC/HEIF to JPEG...');
-        toast.info('Converting HEIC image...');
-        
-        const heic2any = (await import('heic2any')).default;
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.9,
-        });
-        
-        // heic2any can return an array for multi-image HEIC, take the first
-        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        processedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
-        mimeType = 'image/jpeg';
-        console.log('HEIC conversion complete');
-      }
-      
-      // Convert to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          console.log('FileReader result length:', result?.length);
-          console.log('FileReader result preview:', result?.substring(0, 100));
-          if (!result || !result.includes(',')) {
-            reject(new Error('Invalid FileReader result'));
-            return;
+      for (const result of processedResults) {
+        if (result) {
+          results.push(result);
+          totalItemsDetected += result.analysis.detected_items.length;
+          if (result.analysis.project_type && result.analysis.project_type !== 'Unknown') {
+            lastProjectType = result.analysis.project_type;
           }
-          const base64 = result.split(',')[1];
-          console.log('Extracted base64 length:', base64?.length);
-          if (!base64 || base64.length === 0) {
-            reject(new Error('Empty base64 data after split'));
-            return;
-          }
-          resolve(base64);
-        };
-        reader.onerror = (error) => {
-          console.error('FileReader error:', error);
-          reject(error);
-        };
-        reader.onabort = () => {
-          console.error('FileReader aborted');
-          reject(new Error('File reading was aborted'));
-        };
-      });
-      
-      console.log('Starting to read file:', processedFile.name, 'size:', processedFile.size, 'type:', processedFile.type);
-      reader.readAsDataURL(processedFile);
-
-      const base64Data = await base64Promise;
-      const imagePreview = `data:${mimeType};base64,${base64Data}`;
-      
-      console.log('Photo upload - base64 length:', base64Data?.length);
-      console.log('Photo upload - mime type:', mimeType);
-
-      // Add a "scanning" message
-      const scanningMessage: Message = {
-        id: 'scanning-' + Date.now(),
-        role: 'assistant',
-        content: '📷 **Scanning photo...** Analyzing visible trade items with AI vision.',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, scanningMessage]);
-
-      // Call the analyze-photo edge function
-      const requestBody = {
-        image_base64: base64Data,
-        mime_type: mimeType,
-      };
-      console.log('Sending to edge function:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('Request body keys:', Object.keys(requestBody));
-      console.log('Request body image_base64 exists:', !!requestBody.image_base64);
-      console.log('Request body image_base64 length:', requestBody.image_base64?.length);
-      
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-photo`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-      
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment.');
         }
-        if (response.status === 402) {
-          throw new Error('AI quota exceeded. Please try again later.');
-        }
-        throw new Error(errorData.error || 'Failed to analyze photo');
       }
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Analysis failed');
+      if (results.length === 0) {
+        throw new Error('Could not analyze any of the uploaded photos');
       }
 
-      // Remove the scanning message and add results
+      // Remove the scanning message
       setMessages(prev => prev.filter(m => !m.id.startsWith('scanning-')));
       
-      // Add to photo entries (supports multiple photos)
-      const newEntry: PhotoAnalysisEntry = {
-        id: Date.now().toString(),
-        analysis: data.analysis,
-        imagePreview,
-      };
-      setPhotoEntries(prev => [...prev, newEntry]);
+      // Add all to photo entries
+      setPhotoEntries(prev => [...prev, ...results]);
 
       // Update context with detected project type
-      if (data.analysis.project_type && data.analysis.project_type !== 'Unknown') {
+      if (lastProjectType) {
         setContext(prev => ({
           ...prev,
-          projectType: data.analysis.project_type,
+          projectType: lastProjectType,
         }));
       }
 
       // Add confirmation message
-      const photoCount = photoEntries.length + 1;
+      const newPhotoCount = photoEntries.length + results.length;
       const confirmMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: photoCount === 1 
-          ? `✨ **Photo analyzed!** I detected ${data.analysis.detected_items.length} trade items for a ${data.analysis.project_type} project.
+        content: results.length === 1 
+          ? newPhotoCount === 1 
+            ? `✨ **Photo analyzed!** I detected ${totalItemsDetected} trade items for a ${lastProjectType || 'remodeling'} project.
 
 📷 Upload more photos to capture different areas, or confirm the items and add dimensions.`
-          : `✨ **Photo ${photoCount} added!** Found ${data.analysis.detected_items.length} more items. Total: ${photoEntries.reduce((sum, e) => sum + e.analysis.detected_items.length, 0) + data.analysis.detected_items.length} items detected.
+            : `✨ **Photo added!** Found ${totalItemsDetected} more items. Total: ${photoEntries.reduce((sum, e) => sum + e.analysis.detected_items.length, 0) + totalItemsDetected} items detected.
 
-Add more photos or provide dimensions to generate your quote.`,
+Add more photos or provide dimensions to generate your quote.`
+          : `✨ **${results.length} photos analyzed!** Detected ${totalItemsDetected} trade items across all images.
+
+📷 Upload more photos or provide dimensions to generate your quote.`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, confirmMessage]);
       setConversationHistory(prev => [...prev, { role: 'assistant', content: confirmMessage.content }]);
 
-      toast.success(`Photo ${photoCount} analyzed!`);
+      toast.success(results.length === 1 ? 'Photo analyzed!' : `${results.length} photos analyzed!`);
 
     } catch (error) {
       console.error('Photo analysis error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to analyze photo');
+      toast.error(error instanceof Error ? error.message : 'Failed to analyze photos');
       
       // Remove scanning message on error
       setMessages(prev => prev.filter(m => !m.id.startsWith('scanning-')));
       
-      addAssistantMessage("I couldn't analyze that photo. Please try a clearer image, or just describe the project.");
+      addAssistantMessage("I couldn't analyze the photo(s). Please try clearer images, or just describe the project.");
     } finally {
       setIsAnalyzingPhoto(false);
     }
@@ -1122,19 +1143,23 @@ Add more photos or provide dimensions to generate your quote.`,
         multiple
         onChange={(e) => {
           const files = Array.from(e.target.files || []);
+          const imageFiles: File[] = [];
+          
           files.forEach(file => {
             const isVideo = file.type.startsWith('video/');
-            const isHeic = file.name.toLowerCase().endsWith('.heic') || 
-                          file.name.toLowerCase().endsWith('.heif') ||
-                          file.type === 'image/heic' || 
-                          file.type === 'image/heif';
             
             if (isVideo) {
               handleVideoUpload(file);
             } else {
-              handlePhotoUpload(file);
+              imageFiles.push(file);
             }
           });
+          
+          // Process all images at once
+          if (imageFiles.length > 0) {
+            handlePhotoUpload(imageFiles);
+          }
+          
           e.target.value = '';
         }}
         className="hidden"
