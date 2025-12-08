@@ -372,7 +372,9 @@ export interface ProposalPdfProps {
   contractorEmail?: string;
   logoUrl?: string;
   headerTitle?: string;
+  tagline?: string;
   footerDisclaimer?: string;
+  showPoweredBy?: boolean;
 }
 
 export function ProposalPdfDocument({
@@ -393,7 +395,9 @@ export function ProposalPdfDocument({
   contractorEmail = 'info@yourcompany.com',
   logoUrl,
   headerTitle,
+  tagline,
   footerDisclaimer,
+  showPoweredBy = true,
 }: ProposalPdfProps) {
   const fullAddress = [address, city, state, zip].filter(Boolean).join(', ');
   
@@ -409,7 +413,7 @@ export function ProposalPdfDocument({
         <View style={styles.pageHeader} fixed>
           {logoUrl && <Image src={logoUrl} style={styles.logo} />}
           <Text style={styles.companyName}>{headerTitle || contractorName}</Text>
-          <Text style={styles.tagline}>Professional Remodeling Services</Text>
+          <Text style={styles.tagline}>{tagline || 'Professional Remodeling Services'}</Text>
         </View>
 
         {/* Client Info Block */}
@@ -608,9 +612,16 @@ export function ProposalPdfDocument({
         </View>
 
         {/* Footer */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8, marginTop: 20 }}>
-          <Text style={styles.footerText}>{contractorPhone} | {contractorEmail}</Text>
-          <Text style={styles.pageNumber}>Page 2 of 2</Text>
+        <View style={{ flexDirection: 'column', borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8, marginTop: 20 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={styles.footerText}>{contractorPhone} | {contractorEmail}</Text>
+            <Text style={styles.pageNumber}>Page 2 of 2</Text>
+          </View>
+          {showPoweredBy && (
+            <Text style={{ fontSize: 7, color: '#94a3b8', textAlign: 'center', marginTop: 6 }}>
+              Powered by EstimAIte
+            </Text>
+          )}
         </View>
       </Page>
     </Document>
