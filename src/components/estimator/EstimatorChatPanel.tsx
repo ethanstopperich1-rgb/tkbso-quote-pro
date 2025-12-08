@@ -865,6 +865,29 @@ Add dimensions or confirm to generate your quote.`,
     setIsAnalyzingPhoto(true);
 
     try {
+      let processedFile = file;
+      let mimeType = file.type;
+      
+      // Convert HEIC/HEIF to JPEG
+      if (file.type === 'image/heic' || file.type === 'image/heif' || 
+          file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+        console.log('Converting HEIC/HEIF to JPEG...');
+        toast.info('Converting HEIC image...');
+        
+        const heic2any = (await import('heic2any')).default;
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.9,
+        });
+        
+        // heic2any can return an array for multi-image HEIC, take the first
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        processedFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+        mimeType = 'image/jpeg';
+        console.log('HEIC conversion complete');
+      }
+      
       // Convert to base64
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve, reject) => {
@@ -875,13 +898,13 @@ Add dimensions or confirm to generate your quote.`,
         };
         reader.onerror = reject;
       });
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
 
       const base64Data = await base64Promise;
-      const imagePreview = `data:${file.type};base64,${base64Data}`;
+      const imagePreview = `data:${mimeType};base64,${base64Data}`;
       
       console.log('Photo upload - base64 length:', base64Data?.length);
-      console.log('Photo upload - mime type:', file.type);
+      console.log('Photo upload - mime type:', mimeType);
 
       // Add a "scanning" message
       const scanningMessage: Message = {
@@ -895,7 +918,7 @@ Add dimensions or confirm to generate your quote.`,
       // Call the analyze-photo edge function
       const requestBody = {
         image_base64: base64Data,
-        mime_type: file.type,
+        mime_type: mimeType,
       };
       console.log('Sending to edge function:', import.meta.env.VITE_SUPABASE_URL);
       console.log('Request body keys:', Object.keys(requestBody));
@@ -1063,13 +1086,19 @@ Add more photos or provide dimensions to generate your quote.`,
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,video/*"
+        accept="image/*,video/*,.heic,.heif"
         capture="environment"
         multiple
         onChange={(e) => {
           const files = Array.from(e.target.files || []);
           files.forEach(file => {
-            if (file.type.startsWith('video/')) {
+            const isVideo = file.type.startsWith('video/');
+            const isHeic = file.name.toLowerCase().endsWith('.heic') || 
+                          file.name.toLowerCase().endsWith('.heif') ||
+                          file.type === 'image/heic' || 
+                          file.type === 'image/heif';
+            
+            if (isVideo) {
               handleVideoUpload(file);
             } else {
               handlePhotoUpload(file);
