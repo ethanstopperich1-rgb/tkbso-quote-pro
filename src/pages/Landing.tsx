@@ -413,24 +413,19 @@ export default function Landing() {
           <h2 className="text-4xl font-bold text-center mb-4 text-white">Simple, Transparent Pricing</h2>
           <p className="text-xl text-slate-300 text-center mb-16">Start free, upgrade when you're ready</p>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Starter Plan */}
-            <div className="bg-[#1E293B] rounded-2xl p-8">
-              <h3 className="text-2xl font-bold text-white mb-2">Starter</h3>
-              <p className="text-slate-400 mb-6">Perfect for trying it out</p>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-white">$0</span>
+            <div className="bg-[#1E293B] rounded-2xl p-6">
+              <h3 className="text-xl font-bold text-white mb-2">Starter</h3>
+              <p className="text-slate-400 text-sm mb-4">Perfect for trying it out</p>
+              <div className="mb-4">
+                <span className="text-4xl font-bold text-white">$0</span>
                 <span className="text-slate-400">/month</span>
               </div>
-              <ul className="space-y-3 mb-8">
-                {[
-                  '5 estimates per month',
-                  'Chat estimator',
-                  'Basic PDF proposals',
-                  'Email support'
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3 text-slate-300">
-                    <Check className="h-5 w-5 text-[#00E5FF]" />
+              <ul className="space-y-2 mb-6">
+                {['5 estimates per month', 'Chat Estimator only', 'Basic PDF proposals', 'Community support'].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
+                    <Check className="h-4 w-4 text-slate-500 flex-shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -438,44 +433,100 @@ export default function Landing() {
               <Button 
                 onClick={() => navigate('/signup')}
                 variant="outline" 
-                className="w-full border-2 border-white text-white hover:bg-white hover:text-[#0F172A] py-6 font-semibold"
+                className="w-full border-2 border-white text-white hover:bg-white hover:text-[#0F172A] py-5 font-semibold"
               >
                 Start Free
               </Button>
             </div>
 
             {/* Pro Plan - Featured */}
-            <div className="relative bg-[#00E5FF] rounded-2xl p-8">
-              <div className="absolute -top-3 right-8 bg-[#0F172A] text-white px-3 py-1 rounded-full text-xs font-bold">
+            <div className="relative bg-white rounded-2xl p-6 lg:scale-105 shadow-xl">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
                 MOST POPULAR
               </div>
-              <h3 className="text-2xl font-bold text-[#0F172A] mb-2">Pro</h3>
-              <p className="text-[#0F172A]/70 mb-6">For serious contractors</p>
-              <div className="mb-6">
-                <span className="text-5xl font-bold text-[#0F172A]">$99</span>
-                <span className="text-[#0F172A]/70">/month</span>
+              <h3 className="text-xl font-bold text-[#0F172A] mb-2">Pro</h3>
+              <p className="text-slate-600 text-sm mb-1">For serious contractors</p>
+              <div className="mb-1">
+                <span className="text-4xl font-bold text-[#0F172A]">$597</span>
+                <span className="text-slate-600">/month</span>
               </div>
-              <ul className="space-y-3 mb-8">
-                {[
-                  'Unlimited estimates',
-                  'Photo & video analysis',
-                  'Custom branding',
-                  'Priority support',
-                  'Team collaboration',
-                  'API access'
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3 text-[#0F172A]">
-                    <Check className="h-5 w-5 text-[#0F172A]" />
-                    {feature}
+              <p className="text-xs text-slate-500 mb-3">or $5,370/year <span className="text-green-600 font-semibold">(save $1,794)</span></p>
+              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-2 mb-4">
+                <p className="text-xs text-cyan-800 font-medium">💰 Saves 10 hrs/week = $6,000/month</p>
+              </div>
+              <ul className="space-y-2 mb-6">
+                {['Unlimited estimates', 'Photo-to-Quote (AI)', 'Video Walk-and-Talk (AI)', 'Custom branding', 'Forgotten Items Checker', 'Priority email support'].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
+                    <Check className="h-4 w-4 text-cyan-500 flex-shrink-0" />
+                    <span className={i < 3 ? 'font-semibold' : ''}>{feature}</span>
                   </li>
                 ))}
               </ul>
               <Button 
                 onClick={() => navigate('/signup')}
-                className="w-full bg-[#0F172A] text-white hover:bg-[#1E293B] py-6 font-semibold"
+                className="w-full bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] py-5 font-semibold hover:shadow-lg"
               >
-                Start 14-Day Free Trial
+                Start 14-Day Trial →
               </Button>
+              <p className="text-xs text-slate-500 text-center mt-2">No credit card required</p>
+            </div>
+
+            {/* Premium Plan */}
+            <div className="bg-[#1E293B] rounded-2xl p-6">
+              <h3 className="text-xl font-bold text-white mb-2">Premium</h3>
+              <p className="text-slate-400 text-sm mb-1">For growing teams</p>
+              <div className="mb-1">
+                <span className="text-4xl font-bold text-white">$1,197</span>
+                <span className="text-slate-400">/month</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-3">or $10,773/year <span className="text-green-500 font-semibold">(save $3,591)</span></p>
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 mb-4">
+                <p className="text-xs text-blue-300 font-medium">👥 Includes 3 user seats</p>
+              </div>
+              <ul className="space-y-2 mb-6">
+                {['Everything in Pro', '3 user seats included', 'Team collaboration', 'API access', 'White-label proposals', 'Priority phone support'].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
+                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                    <span className={i < 2 ? 'font-semibold' : ''}>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button 
+                onClick={() => navigate('/signup')}
+                className="w-full bg-white text-[#0F172A] hover:bg-slate-100 py-5 font-semibold"
+              >
+                Start 14-Day Trial →
+              </Button>
+              <p className="text-xs text-slate-500 text-center mt-2">No credit card required</p>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div className="bg-gradient-to-br from-[#0F172A] to-blue-900 rounded-2xl p-6 border border-slate-700">
+              <h3 className="text-xl font-bold text-white mb-2">Enterprise</h3>
+              <p className="text-slate-400 text-sm mb-1">For large operations</p>
+              <p className="text-xs text-slate-500 mb-1">Starting at</p>
+              <div className="mb-3">
+                <span className="text-4xl font-bold text-white">$2,997</span>
+                <span className="text-slate-400">/month</span>
+              </div>
+              <div className="bg-white/10 border border-white/20 rounded-lg p-2 mb-4">
+                <p className="text-xs text-white font-medium">🏢 For showrooms & franchises</p>
+              </div>
+              <ul className="space-y-2 mb-6">
+                {['Everything in Premium', 'Unlimited user seats', 'Custom integrations', 'Dedicated account manager', 'On-site training', 'SLA guarantees'].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
+                    <Check className="h-4 w-4 text-cyan-400 flex-shrink-0" />
+                    <span className={i < 2 ? 'font-semibold' : ''}>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button 
+                onClick={() => navigate('/contact')}
+                className="w-full bg-white text-[#0F172A] hover:bg-slate-100 py-5 font-semibold"
+              >
+                Contact Sales
+              </Button>
+              <p className="text-xs text-slate-500 text-center mt-2">Schedule a demo</p>
             </div>
           </div>
         </div>
@@ -507,59 +558,39 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#0F172A] py-16">
+      <footer className="bg-[#0F172A] py-12">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            <div>
-              <h4 className="font-bold text-white mb-4">Product</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li><Link to="/features" className="hover:text-white transition-colors">Features</Link></li>
-                <li><Link to="/plans" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link to="/integrations" className="hover:text-white transition-colors">Integrations</Link></li>
-                <li><Link to="/api" className="hover:text-white transition-colors">API</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></li>
-                <li><Link to="/careers" className="hover:text-white transition-colors">Careers</Link></li>
-                <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Resources</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li><Link to="/docs" className="hover:text-white transition-colors">Documentation</Link></li>
-                <li><Link to="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link to="/community" className="hover:text-white transition-colors">Community</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4">Legal</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
-                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link to="/security" className="hover:text-white transition-colors">Security</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            {/* Logo & Copyright */}
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold text-white">Estim</span>
               <span className="text-xl font-bold text-[#00E5FF]">AI</span>
               <span className="text-xl font-bold text-white">te</span>
-              <span className="text-slate-400 ml-4">© 2025 EstimAIte. All rights reserved.</span>
+              <span className="text-slate-500 ml-4 text-sm">© 2025 All rights reserved.</span>
             </div>
+
+            {/* Legal Links */}
+            <div className="flex items-center gap-6 text-sm text-slate-400">
+              <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link to="/security" className="hover:text-white transition-colors">Security</Link>
+            </div>
+
+            {/* Social Icons */}
             <div className="flex items-center gap-4">
+              {/* X (Twitter) */}
               <a href="#" className="text-slate-400 hover:text-white transition-colors">
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/></svg>
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
               </a>
+              {/* Facebook */}
+              <a href="#" className="text-slate-400 hover:text-white transition-colors">
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </a>
+              {/* LinkedIn */}
               <a href="#" className="text-slate-400 hover:text-white transition-colors">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
               </a>
+              {/* Instagram */}
               <a href="#" className="text-slate-400 hover:text-white transition-colors">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
               </a>
