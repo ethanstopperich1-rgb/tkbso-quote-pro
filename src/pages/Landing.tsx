@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Play, Check, Star, MessageSquare, Camera, Video, Zap, Shield, Clock, Users, TrendingUp, Award, Menu, X, ChevronRight } from 'lucide-react';
+import { ArrowRight, Check, Star, MessageSquare, Camera, Video, Zap, Shield, Clock, Users, TrendingUp, Award, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 
@@ -232,19 +232,13 @@ export default function Landing() {
               Upload a photo, describe the job, or record a video. Get professional estimates in under 3 minutes.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            {/* CTA Button */}
+            <div className="mb-6">
               <Button 
                 onClick={() => navigate('/signup')}
                 className="bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] px-8 py-6 rounded-lg font-bold text-lg hover:shadow-lg hover:shadow-[#00E5FF]/30 transition-all"
               >
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-2 border-slate-600 text-white px-8 py-6 rounded-lg font-semibold hover:border-slate-400 hover:bg-white/5 transition-all"
-              >
-                <Play className="mr-2 h-5 w-5" /> Watch Demo
               </Button>
             </div>
 
@@ -385,53 +379,6 @@ export default function Landing() {
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-[#0F172A]">{item.title}</h3>
                 <p className="text-slate-600">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="bg-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-16 text-[#0F172A]">Trusted by Kitchen & Bath Pros</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                quote: "EstimAIte saved me 10 hours per week on estimating. Now I can focus on selling and building.",
-                author: "Mike Rodriguez",
-                title: "Owner, Premier Kitchen Remodeling",
-                stat: "3x more quotes per week"
-              },
-              {
-                quote: "The visualizer feature closes deals on the spot. Clients can SEE what they're buying.",
-                author: "Sarah Chen",
-                title: "Lead Designer, Bath Transformations",
-                stat: "45% higher close rate"
-              },
-              {
-                quote: "We increased our average margin by 8% just by catching forgotten line items.",
-                author: "David Thompson",
-                title: "Estimator, Elite Renovations",
-                stat: "$12K more profit/month"
-              }
-            ].map((testimonial, i) => (
-              <div key={i} className="bg-white rounded-xl p-6 border border-slate-100 shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-                <div className="flex items-center gap-1 text-yellow-400 mb-4">
-                  {[1,2,3,4,5].map(j => <Star key={j} className="w-4 h-4 fill-current" />)}
-                </div>
-                <p className="text-slate-700 mb-4 italic">"{testimonial.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#00E5FF] to-[#3B82F6] rounded-full" />
-                  <div>
-                    <p className="font-semibold text-[#0F172A]">{testimonial.author}</p>
-                    <p className="text-sm text-slate-600">{testimonial.title}</p>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <p className="text-[#00E5FF] font-bold">{testimonial.stat}</p>
-                </div>
               </div>
             ))}
           </div>
