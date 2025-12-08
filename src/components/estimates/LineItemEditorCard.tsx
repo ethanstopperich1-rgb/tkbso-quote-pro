@@ -19,7 +19,9 @@ import {
   Edit2, 
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -90,6 +92,50 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
   });
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
+  // AI quick add handler
+  const handleAiAdd = async () => {
+    if (!aiInput.trim() || aiLoading) return;
+    
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-line-item', {
+        body: { input: aiInput }
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      const parsed = data.lineItem;
+      const quantity = parsed.quantity || 1;
+      const icPerUnit = parsed.ic_per_unit || 0;
+      const cpPerUnit = parsed.cp_per_unit || 0;
+
+      const item: LineItem = {
+        category: parsed.category || 'Other',
+        task_description: parsed.task_description || aiInput,
+        quantity,
+        unit: parsed.unit || 'ea',
+        ic_per_unit: icPerUnit,
+        cp_per_unit: cpPerUnit,
+        ic_total: quantity * icPerUnit,
+        cp_total: quantity * cpPerUnit,
+        margin_percent: cpPerUnit > 0 ? ((cpPerUnit - icPerUnit) / cpPerUnit) * 100 : 0,
+      };
+
+      setLineItems([...lineItems, item]);
+      setAiInput('');
+      setHasChanges(true);
+      toast.success(`Added: ${item.task_description}`);
+    } catch (err) {
+      console.error('AI parse error:', err);
+      toast.error('Failed to parse. Try: "demo $1500" or "tile wall 128sqft $39/sqft"');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Load line items from estimate payload
   useEffect(() => {
@@ -298,14 +344,36 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
             )}
           </div>
 
-          {/* Add Item Button */}
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Line Item
-              </Button>
-            </DialogTrigger>
+          {/* AI Quick Add */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAiAdd()}
+                placeholder='Try: "demo $1500" or "tile wall 128sqft $39/sqft"'
+                className="pl-9 h-9 text-sm"
+                disabled={aiLoading}
+              />
+            </div>
+            <Button 
+              size="sm" 
+              onClick={handleAiAdd} 
+              disabled={aiLoading || !aiInput.trim()}
+              className="h-9"
+            >
+              {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            </Button>
+            
+            {/* Manual Add Dialog */}
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Manual
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Add Line Item</DialogTitle>
@@ -433,6 +501,7 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
               </div>
             </DialogContent>
           </Dialog>
+          </div>
 
           {/* Line Items by Category */}
           <div className="space-y-3">
