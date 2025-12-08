@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Palette, Upload, X, RefreshCw, Check, FileDown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,7 +20,7 @@ interface Props {
   companyName: string;
 }
 
-const PRO_COLORS = [
+const PRIMARY_COLORS = [
   { name: 'Navy', value: '#0B1C3E' },
   { name: 'Blue', value: '#2563EB' },
   { name: 'Green', value: '#059669' },
@@ -27,11 +28,22 @@ const PRO_COLORS = [
   { name: 'Red', value: '#DC2626' },
 ];
 
+const ACCENT_COLORS = [
+  { name: 'Cyan', value: '#00E5FF' },
+  { name: 'Orange', value: '#F97316' },
+  { name: 'Purple', value: '#8B5CF6' },
+  { name: 'Gold', value: '#EAB308' },
+  { name: 'Pink', value: '#EC4899' },
+];
+
 export function BrandingCard({ data, onChange, contractorId, initials, companyName }: Props) {
   const [uploading, setUploading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [customColorActive, setCustomColorActive] = useState(
-    !PRO_COLORS.some(c => c.value === data.primaryColor)
+  const [customPrimaryActive, setCustomPrimaryActive] = useState(
+    !PRIMARY_COLORS.some(c => c.value === data.primaryColor)
+  );
+  const [customAccentActive, setCustomAccentActive] = useState(
+    !ACCENT_COLORS.some(c => c.value === data.accentColor)
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +87,9 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
         contractorEmail: 'info@yourcompany.com',
         logoUrl: data.logoUrl || undefined,
         headerTitle: data.headerTitle || companyName || 'Your Company Name',
+        tagline: data.tagline || undefined,
         footerDisclaimer: data.pdfFooterDisclaimer || undefined,
+        showPoweredBy: data.showPoweredBy,
       };
 
       const blob = await pdf(<ProposalPdfDocument {...sampleProps} />).toBlob();
@@ -91,7 +105,7 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
     }
   };
 
-  const update = (field: keyof Branding, value: string) => {
+  const update = (field: keyof Branding, value: string | boolean) => {
     onChange({ ...data, [field]: value });
   };
 
@@ -99,7 +113,6 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
     const file = e.target.files?.[0];
     if (!file || !contractorId) return;
 
-    // Accept common image MIME types and also check file extension as fallback
     const validMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/x-png'];
     const validExtensions = ['.png', '.jpg', '.jpeg', '.svg'];
     const fileExtension = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
@@ -146,9 +159,14 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
     update('logoUrl', '');
   };
 
-  const selectColor = (color: string, isPreset: boolean) => {
+  const selectPrimaryColor = (color: string, isPreset: boolean) => {
     update('primaryColor', color);
-    setCustomColorActive(!isPreset);
+    setCustomPrimaryActive(!isPreset);
+  };
+
+  const selectAccentColor = (color: string, isPreset: boolean) => {
+    update('accentColor', color);
+    setCustomAccentActive(!isPreset);
   };
 
   return (
@@ -170,7 +188,6 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
           <div className="space-y-3">
             <Label className="text-slate-700 text-sm">Company Logo</Label>
             <div className="flex items-center gap-4">
-              {/* Circular Dropzone */}
               <div
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
@@ -230,25 +247,26 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
             </div>
           </div>
 
-          {/* Color Swatches */}
+          {/* Primary Color Swatches */}
           <div className="space-y-3">
-            <Label className="text-slate-700 text-sm">Brand Primary Color</Label>
+            <Label className="text-slate-700 text-sm">Primary Color</Label>
+            <p className="text-xs text-slate-400 -mt-1">Used for headers and titles</p>
             <div className="flex flex-wrap gap-3">
-              {PRO_COLORS.map((color) => (
+              {PRIMARY_COLORS.map((color) => (
                 <button
                   key={color.value}
-                  onClick={() => selectColor(color.value, true)}
+                  onClick={() => selectPrimaryColor(color.value, true)}
                   className={cn(
                     'group relative w-10 h-10 rounded-full transition-all',
                     'ring-2 ring-offset-2',
-                    data.primaryColor === color.value && !customColorActive
+                    data.primaryColor === color.value && !customPrimaryActive
                       ? 'ring-cyan-500'
                       : 'ring-transparent hover:ring-slate-300'
                   )}
                   style={{ backgroundColor: color.value }}
                   title={color.name}
                 >
-                  {data.primaryColor === color.value && !customColorActive && (
+                  {data.primaryColor === color.value && !customPrimaryActive && (
                     <Check className="absolute inset-0 m-auto h-5 w-5 text-white" />
                   )}
                 </button>
@@ -258,21 +276,21 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
               <div className="relative">
                 <input
                   type="color"
-                  value={customColorActive ? data.primaryColor : '#888888'}
-                  onChange={(e) => selectColor(e.target.value, false)}
+                  value={customPrimaryActive ? data.primaryColor : '#888888'}
+                  onChange={(e) => selectPrimaryColor(e.target.value, false)}
                   className="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer"
                 />
                 <div
                   className={cn(
                     'w-10 h-10 rounded-full flex items-center justify-center transition-all',
                     'ring-2 ring-offset-2',
-                    customColorActive
+                    customPrimaryActive
                       ? 'ring-cyan-500'
                       : 'ring-transparent hover:ring-slate-300',
                     'bg-gradient-to-br from-rose-400 via-purple-400 to-cyan-400'
                   )}
                 >
-                  {customColorActive && (
+                  {customPrimaryActive && (
                     <div
                       className="w-6 h-6 rounded-full border-2 border-white"
                       style={{ backgroundColor: data.primaryColor }}
@@ -286,6 +304,63 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
             </p>
           </div>
 
+          {/* Accent Color Swatches */}
+          <div className="space-y-3">
+            <Label className="text-slate-700 text-sm">Accent Color</Label>
+            <p className="text-xs text-slate-400 -mt-1">Used for prices and highlights</p>
+            <div className="flex flex-wrap gap-3">
+              {ACCENT_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => selectAccentColor(color.value, true)}
+                  className={cn(
+                    'group relative w-10 h-10 rounded-full transition-all',
+                    'ring-2 ring-offset-2',
+                    data.accentColor === color.value && !customAccentActive
+                      ? 'ring-cyan-500'
+                      : 'ring-transparent hover:ring-slate-300'
+                  )}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                >
+                  {data.accentColor === color.value && !customAccentActive && (
+                    <Check className="absolute inset-0 m-auto h-5 w-5 text-white" />
+                  )}
+                </button>
+              ))}
+              
+              {/* Custom Accent Color */}
+              <div className="relative">
+                <input
+                  type="color"
+                  value={customAccentActive ? data.accentColor : '#888888'}
+                  onChange={(e) => selectAccentColor(e.target.value, false)}
+                  className="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer"
+                />
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center transition-all',
+                    'ring-2 ring-offset-2',
+                    customAccentActive
+                      ? 'ring-cyan-500'
+                      : 'ring-transparent hover:ring-slate-300',
+                    'bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400'
+                  )}
+                >
+                  {customAccentActive && (
+                    <div
+                      className="w-6 h-6 rounded-full border-2 border-white"
+                      style={{ backgroundColor: data.accentColor }}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400">
+              Selected: <span className="font-mono">{data.accentColor}</span>
+            </p>
+          </div>
+
           {/* Quote Header */}
           <div className="space-y-2">
             <Label htmlFor="headerTitle" className="text-slate-700 text-sm">Quote Header Title</Label>
@@ -296,6 +371,31 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
               placeholder="THE KITCHEN AND BATH STORE OF ORLANDO"
               className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
             />
+          </div>
+
+          {/* Tagline */}
+          <div className="space-y-2">
+            <Label htmlFor="tagline" className="text-slate-700 text-sm">Company Tagline (optional)</Label>
+            <Input
+              id="tagline"
+              value={data.tagline}
+              onChange={(e) => update('tagline', e.target.value)}
+              placeholder="e.g., Orlando's Premier Remodeling Partner"
+              className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+            />
+          </div>
+
+          {/* Proposal Title */}
+          <div className="space-y-2">
+            <Label htmlFor="proposalTitle" className="text-slate-700 text-sm">Proposal Title</Label>
+            <Input
+              id="proposalTitle"
+              value={data.proposalTitle}
+              onChange={(e) => update('proposalTitle', e.target.value)}
+              placeholder="Investment Proposal"
+              className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+            />
+            <p className="text-xs text-slate-400">Change to "Quote", "Estimate", "Proposal", etc.</p>
           </div>
 
           {/* Signature */}
@@ -320,6 +420,18 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
               placeholder="Prices valid for 30 days. Subject to site inspection..."
               rows={3}
               className="border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all resize-none"
+            />
+          </div>
+
+          {/* Powered By Toggle */}
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+            <div>
+              <Label className="text-slate-700 text-sm font-medium">Show "Powered by EstimAIte"</Label>
+              <p className="text-xs text-slate-400 mt-0.5">Display EstimAIte branding in PDF footer</p>
+            </div>
+            <Switch
+              checked={data.showPoweredBy}
+              onCheckedChange={(checked) => update('showPoweredBy', checked)}
             />
           </div>
         </div>
@@ -363,12 +475,15 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
               >
                 {data.headerTitle || companyName || 'YOUR COMPANY NAME'}
               </h2>
+              {data.tagline && (
+                <p className="text-sm text-slate-500 mt-1">{data.tagline}</p>
+              )}
             </div>
             
             {/* Fake Content */}
             <div className="p-4 space-y-3">
               <div className="text-center mb-4">
-                <p className="text-sm font-medium text-slate-700">Remodel Quote for</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wide">{data.proposalTitle || 'Investment Proposal'}</p>
                 <p className="text-lg font-bold text-slate-900">John & Jane Doe</p>
               </div>
               
@@ -379,7 +494,7 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
               <div className="pt-4 mt-4 border-t border-slate-100">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Total Investment</span>
-                  <span className="font-bold" style={{ color: data.primaryColor }}>$24,500</span>
+                  <span className="font-bold" style={{ color: data.accentColor }}>$24,500</span>
                 </div>
               </div>
             </div>
@@ -389,6 +504,9 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
               <p className="text-[10px] text-slate-400 leading-relaxed">
                 {data.pdfFooterDisclaimer || 'Your legal disclaimer will appear here...'}
               </p>
+              {data.showPoweredBy && (
+                <p className="text-[9px] text-slate-300 mt-1">Powered by EstimAIte</p>
+              )}
             </div>
           </div>
 

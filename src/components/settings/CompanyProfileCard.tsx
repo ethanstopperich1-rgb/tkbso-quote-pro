@@ -138,15 +138,48 @@ export function CompanyProfileCard({ data, onChange }: Props) {
             <div className="space-y-2">
               <Label htmlFor="address" className="text-slate-700 text-sm flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                Address
+                Street Address
               </Label>
               <Input
                 id="address"
                 value={data.address}
                 onChange={(e) => update('address', e.target.value)}
-                placeholder="123 Main St, Orlando, FL 32801"
+                placeholder="123 Main Street"
                 className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="city" className="text-slate-700 text-sm">City</Label>
+                <Input
+                  id="city"
+                  value={data.city}
+                  onChange={(e) => update('city', e.target.value)}
+                  placeholder="Orlando"
+                  className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state" className="text-slate-700 text-sm">State</Label>
+                <Input
+                  id="state"
+                  value={data.state}
+                  onChange={(e) => update('state', e.target.value)}
+                  placeholder="FL"
+                  className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zip" className="text-slate-700 text-sm">ZIP</Label>
+                <Input
+                  id="zip"
+                  value={data.zip}
+                  onChange={(e) => update('zip', e.target.value)}
+                  placeholder="32801"
+                  className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+                />
+              </div>
             </div>
             
             <div className="space-y-2">

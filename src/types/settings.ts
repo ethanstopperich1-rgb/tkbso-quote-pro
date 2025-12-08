@@ -6,6 +6,9 @@ export interface CompanyProfile {
   phone: string;
   email: string;
   address: string;
+  city: string;
+  state: string;
+  zip: string;
   website: string;
   preferredContact: 'email' | 'phone' | 'text';
 }
@@ -15,8 +18,11 @@ export interface Branding {
   primaryColor: string;
   accentColor: string;
   headerTitle: string;
+  tagline: string;
   signatureText: string;
   pdfFooterDisclaimer: string;
+  proposalTitle: string;
+  showPoweredBy: boolean;
 }
 
 export interface License {
@@ -73,16 +79,22 @@ export const defaultSettings: ContractorSettings = {
     phone: '',
     email: '',
     address: '',
+    city: '',
+    state: '',
+    zip: '',
     website: '',
     preferredContact: 'email',
   },
   branding: {
     logoUrl: '',
-    primaryColor: '#1e3a8a',
-    accentColor: '#3b82f6',
+    primaryColor: '#0B1C3E',
+    accentColor: '#00E5FF',
     headerTitle: '',
+    tagline: '',
     signatureText: '',
     pdfFooterDisclaimer: '',
+    proposalTitle: 'Investment Proposal',
+    showPoweredBy: true,
   },
   licenses: [],
   insurance: {
