@@ -87,6 +87,41 @@ interface ConversationMessage {
   content: string;
 }
 
+// Conversation phases for tracking workflow progress
+type ConversationPhase = 'project_type' | 'scope_gathering' | 'materials' | 'client_details' | 'review' | 'complete';
+
+interface ConversationState {
+  phase: ConversationPhase;
+  projectType: string | null;
+  scopeItems: string[];
+  materialsConfirmed: boolean;
+  questionsAsked: string[];
+  readyForQuote: boolean;
+  clientDetails: {
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+  };
+  clientDetailsSkipped: boolean;
+}
+
+const initialConversationState: ConversationState = {
+  phase: 'project_type',
+  projectType: null,
+  scopeItems: [],
+  materialsConfirmed: false,
+  questionsAsked: [],
+  readyForQuote: false,
+  clientDetails: {
+    name: null,
+    phone: null,
+    email: null,
+    address: null,
+  },
+  clientDetailsSkipped: false,
+};
+
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
@@ -104,6 +139,7 @@ export function EstimatorChatPanel() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [context, setContext] = useState<ConversationContext>({});
+  const [conversationState, setConversationState] = useState<ConversationState>(initialConversationState);
   const [isLoading, setIsLoading] = useState(false);
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
   const [savedEstimateId, setSavedEstimateId] = useState<string | null>(null);
@@ -286,6 +322,7 @@ export function EstimatorChatPanel() {
         ? `${content}\n\n[Photo Analysis Context]\n${photoContext}`
         : content;
 
+      // Pass current conversation state to help AI understand where we are
       const { data, error } = await supabase.functions.invoke('calculate-estimate', {
         body: { 
           message: messageWithContext,
@@ -293,6 +330,7 @@ export function EstimatorChatPanel() {
           contractor_id: contractor.id,
           conversation_history: updatedHistory,
           photo_analysis: photoEntries.length > 0 ? mergePhotoAnalyses(photoEntries) : null,
+          conversation_state: conversationState,
         }
       });
 
@@ -313,12 +351,54 @@ export function EstimatorChatPanel() {
             scope: { ...prev.scope, ...response.parsed?.scope },
             dimensions: { ...prev.dimensions, ...response.parsed?.dimensions },
           }));
+
+          // Update conversation state based on what we learned
+          setConversationState(prev => {
+            const newState = { ...prev };
+            
+            // Update project type if detected
+            if (response.parsed?.project_type) {
+              newState.projectType = response.parsed.project_type;
+              if (newState.phase === 'project_type') {
+                newState.phase = 'scope_gathering';
+              }
+            }
+
+            // Track scope items gathered
+            if (response.parsed?.scope) {
+              const scopeItems = Object.entries(response.parsed.scope)
+                .filter(([_, v]) => v !== null)
+                .map(([k]) => k);
+              newState.scopeItems = [...new Set([...prev.scopeItems, ...scopeItems])];
+            }
+
+            // Check if dimensions gathered
+            if (response.parsed?.dimensions) {
+              const hasDimensions = Object.values(response.parsed.dimensions).some(v => v !== null);
+              if (hasDimensions && newState.phase === 'scope_gathering') {
+                newState.phase = 'materials';
+              }
+            }
+
+            // Track questions asked to avoid repetition
+            newState.questionsAsked = [...new Set([...prev.questionsAsked, followUp])];
+            
+            return newState;
+          });
         }
         return;
       }
 
       // We have a complete estimate!
       setEstimate(response);
+      
+      // Update conversation state to complete
+      setConversationState(prev => ({
+        ...prev,
+        phase: 'complete',
+        readyForQuote: true,
+        projectType: response.project_header.project_type,
+      }));
       
       // Save to database with conversation history
       const estimateId = await saveEstimateToDatabase(response, updatedHistory);
@@ -360,6 +440,7 @@ export function EstimatorChatPanel() {
     setMessages([WELCOME_MESSAGE]);
     setConversationHistory([]);
     setContext({});
+    setConversationState(initialConversationState);
     setEstimate(null);
     setSavedEstimateId(null);
     setShowLineItems(false);
@@ -851,6 +932,28 @@ Add more photos or provide dimensions to generate your quote.`,
 
       {/* Input - compact on mobile */}
       <div className="relative p-2 sm:p-4 border-t border-border">
+        {/* Phase Progress Indicator */}
+        {conversationState.phase !== 'project_type' && conversationState.phase !== 'complete' && (
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <div className="flex gap-1">
+              {['project_type', 'scope_gathering', 'materials', 'client_details'].map((phase, i) => (
+                <div
+                  key={phase}
+                  className={`h-1.5 rounded-full transition-colors ${
+                    i <= ['project_type', 'scope_gathering', 'materials', 'client_details'].indexOf(conversationState.phase)
+                      ? 'bg-primary w-6'
+                      : 'bg-muted w-4'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="capitalize">
+              {conversationState.phase === 'scope_gathering' && 'Gathering scope...'}
+              {conversationState.phase === 'materials' && 'Material details...'}
+              {conversationState.phase === 'client_details' && 'Client info...'}
+            </span>
+          </div>
+        )}
         <ChatInput 
           onSend={handleSendMessage} 
           onPhotoUpload={handlePhotoUpload}
@@ -863,9 +966,17 @@ Add more photos or provide dimensions to generate your quote.`,
           placeholder={
             photoEntries.length > 0 && !estimate
               ? "Confirm items or add dimensions (e.g., '5x8 bathroom')..."
-              : !context.projectType 
-                ? "Describe project, upload photo, or record video..." 
-                : `Describe the ${context.projectType.toLowerCase()} scope...`
+              : conversationState.phase === 'project_type'
+                ? "Describe project, upload photo, or record video..."
+              : conversationState.phase === 'scope_gathering'
+                ? `Describe the ${conversationState.projectType?.toLowerCase() || 'project'} scope...`
+              : conversationState.phase === 'materials'
+                ? "What type of tile/materials? (e.g., porcelain, quartz)"
+              : conversationState.phase === 'client_details'
+                ? "Client name, phone, email, address..."
+              : estimate
+                ? "Add scope, change details, or start new..."
+              : `Describe the ${context.projectType?.toLowerCase() || 'project'} scope...`
           }
         />
       </div>

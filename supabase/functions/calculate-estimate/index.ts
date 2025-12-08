@@ -888,7 +888,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, contractor_id, conversation_history } = await req.json();
+    const { message, context, contractor_id, conversation_history, conversation_state } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -935,6 +935,16 @@ serve(async (req) => {
 
     // Step 2: First, analyze if we have enough info
     console.log("Analyzing conversation for completeness...");
+    
+    // Build context including conversation state
+    const fullContext = {
+      ...context,
+      conversation_phase: conversation_state?.phase || 'project_type',
+      project_type: conversation_state?.projectType || context?.projectType,
+      scope_items_gathered: conversation_state?.scopeItems || [],
+      questions_already_asked: conversation_state?.questionsAsked || [],
+    };
+    
     const analysisResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -944,7 +954,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: conversationalSystemPrompt + `\n\nCURRENT CONTEXT: ${JSON.stringify(context || {})}` },
+          { role: "system", content: conversationalSystemPrompt + `\n\nCURRENT CONTEXT: ${JSON.stringify(fullContext)}\n\nIMPORTANT: Questions already asked (DO NOT REPEAT): ${JSON.stringify(fullContext.questions_already_asked)}` },
           ...conversationMessages
         ],
         tools: [{
