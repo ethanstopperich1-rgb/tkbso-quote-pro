@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 interface ChatInputProps {
   onSend: (message: string) => void;
   onPhotoUpload?: (file: File) => void;
+  onVideoUpload?: (file: File) => void;
   onVideoClick?: () => void;
   disabled?: boolean;
   placeholder?: string;
@@ -27,6 +28,7 @@ declare global {
 export function ChatInput({ 
   onSend, 
   onPhotoUpload,
+  onVideoUpload,
   onVideoClick,
   disabled, 
   placeholder,
@@ -133,13 +135,26 @@ export function ChatInput({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+    // Handle video files
+    if (file.type.startsWith('video/')) {
+      if (file.size > 100 * 1024 * 1024) {
+        toast.error('Video must be under 100MB');
+        return;
+      }
+      onVideoUpload?.(file);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
-    // Validate file size (max 10MB)
+    // Handle image files
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image or video file');
+      return;
+    }
+
+    // Validate file size (max 10MB for images)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image must be under 10MB');
       return;
@@ -161,12 +176,12 @@ export function ChatInput({
         isFocused && "border-primary/50 bg-muted/50 shadow-sm"
       )}
     >
-      {/* Hidden file input for photo upload */}
+      {/* Hidden file input for photo/video upload */}
       {showPhotoUpload && (
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           capture="environment"
           onChange={handleFileChange}
           className="hidden"
