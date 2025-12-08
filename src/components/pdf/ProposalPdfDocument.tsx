@@ -5,24 +5,16 @@ import {
   View,
   StyleSheet,
   Image,
-  Font,
 } from '@react-pdf/renderer';
 
-// Register Inter font
-Font.register({
-  family: 'Inter',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hjp-Ek-_EeA.woff2', fontWeight: 600 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hjp-Ek-_EeA.woff2', fontWeight: 700 },
-  ],
-});
+// Register Helvetica-like system fonts (built-in, no external loading needed)
+// Using Helvetica which is built into @react-pdf/renderer
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     paddingBottom: 60,
-    fontFamily: 'Inter',
+    fontFamily: 'Helvetica',
     fontSize: 10,
     color: '#1e293b',
     justifyContent: 'flex-start',
@@ -30,7 +22,7 @@ const styles = StyleSheet.create({
   page2: {
     padding: 40,
     paddingBottom: 60,
-    fontFamily: 'Inter',
+    fontFamily: 'Helvetica',
     fontSize: 10,
     color: '#1e293b',
     justifyContent: 'space-between',
