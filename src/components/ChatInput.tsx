@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
-  onPhotoUpload?: (file: File) => void;
+  onPhotoUpload?: (files: File[]) => void;
   onVideoUpload?: (file: File) => void;
   onVideoClick?: () => void;
   disabled?: boolean;
@@ -142,20 +142,30 @@ export function ChatInput({
   };
 
   const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
+    const validFiles: File[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not an image file`);
+        continue;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 10MB limit`);
+        continue;
+      }
+      
+      validFiles.push(file);
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be under 10MB');
-      return;
+    if (validFiles.length > 0) {
+      onPhotoUpload?.(validFiles);
     }
-
-    onPhotoUpload?.(file);
     
     if (e.target) {
       e.target.value = '';
@@ -199,6 +209,7 @@ export function ChatInput({
             ref={photoInputRef}
             type="file"
             accept="image/*"
+            multiple
             onChange={handlePhotoFileChange}
             className="hidden"
           />
@@ -207,6 +218,7 @@ export function ChatInput({
             ref={cameraInputRef}
             type="file"
             accept="image/*"
+            multiple
             capture="environment"
             onChange={handlePhotoFileChange}
             className="hidden"
