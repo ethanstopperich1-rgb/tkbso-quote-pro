@@ -12,6 +12,17 @@ import { useNavigate } from 'react-router-dom';
 import { MultiPhotoAnalysisCard, PhotoAnalysisEntry, mergePhotoAnalyses } from './MultiPhotoAnalysisCard';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 import { VideoRecordingModal, VideoAnalysisResult } from './VideoRecordingModal';
+import { ClientDetailsForm } from './ClientDetailsForm';
+import { ForgottenItemsModal } from './ForgottenItemsModal';
+import { 
+  ConversationState, 
+  initialConversationState, 
+  mapScopeToLineItems, 
+  validateQuoteCompleteness,
+  updateStateFromMessage,
+  isReadyForClientDetails,
+  hasCompleteClientDetails 
+} from '@/lib/estimator-scope-mapper';
 
 interface PricingLineItem {
   category: string;
@@ -87,40 +98,7 @@ interface ConversationMessage {
   content: string;
 }
 
-// Conversation phases for tracking workflow progress
-type ConversationPhase = 'project_type' | 'scope_gathering' | 'materials' | 'client_details' | 'review' | 'complete';
-
-interface ConversationState {
-  phase: ConversationPhase;
-  projectType: string | null;
-  scopeItems: string[];
-  materialsConfirmed: boolean;
-  questionsAsked: string[];
-  readyForQuote: boolean;
-  clientDetails: {
-    name: string | null;
-    phone: string | null;
-    email: string | null;
-    address: string | null;
-  };
-  clientDetailsSkipped: boolean;
-}
-
-const initialConversationState: ConversationState = {
-  phase: 'project_type',
-  projectType: null,
-  scopeItems: [],
-  materialsConfirmed: false,
-  questionsAsked: [],
-  readyForQuote: false,
-  clientDetails: {
-    name: null,
-    phone: null,
-    email: null,
-    address: null,
-  },
-  clientDetailsSkipped: false,
-};
+// ConversationState and initialConversationState imported from @/lib/estimator-scope-mapper
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
@@ -149,6 +127,10 @@ export function EstimatorChatPanel() {
   const [isDragging, setIsDragging] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [isProcessingVideo, setIsProcessingVideo] = useState(false);
+  const [showClientDetailsForm, setShowClientDetailsForm] = useState(false);
+  const [showForgottenItemsModal, setShowForgottenItemsModal] = useState(false);
+  const [forgottenItems, setForgottenItems] = useState<string[]>([]);
+  const [pendingClientDetails, setPendingClientDetails] = useState<{name: string; phone: string; email: string; address: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const dragCounterRef = useRef(0);
@@ -358,7 +340,10 @@ export function EstimatorChatPanel() {
             
             // Update project type if detected
             if (response.parsed?.project_type) {
-              newState.projectType = response.parsed.project_type;
+              const pType = response.parsed.project_type;
+              if (pType === 'Kitchen' || pType === 'Bathroom') {
+                newState.projectType = pType;
+              }
               if (newState.phase === 'project_type') {
                 newState.phase = 'scope_gathering';
               }
@@ -393,11 +378,12 @@ export function EstimatorChatPanel() {
       setEstimate(response);
       
       // Update conversation state to complete
+      const projectType = response.project_header.project_type;
       setConversationState(prev => ({
         ...prev,
-        phase: 'complete',
+        phase: 'complete' as const,
         readyForQuote: true,
-        projectType: response.project_header.project_type,
+        projectType: (projectType === 'Kitchen' || projectType === 'Bathroom') ? projectType : prev.projectType,
       }));
       
       // Save to database with conversation history
@@ -447,6 +433,141 @@ export function EstimatorChatPanel() {
     setPhotoEntries([]);
     setShowVideoModal(false);
     setIsProcessingVideo(false);
+    setShowClientDetailsForm(false);
+    setShowForgottenItemsModal(false);
+    setForgottenItems([]);
+    setPendingClientDetails(null);
+  };
+
+  // Handle client details form submission
+  const handleClientDetailsSubmit = async (details: {name: string; phone: string; email: string; address: string}) => {
+    // Update conversation state with client details
+    setConversationState(prev => ({
+      ...prev,
+      clientDetails: {
+        name: details.name || null,
+        phone: details.phone || null,
+        email: details.email || null,
+        address: details.address || null,
+      },
+      phase: 'review' as const,
+    }));
+    setShowClientDetailsForm(false);
+
+    // Check for forgotten items before generating
+    const allScopeText = conversationHistory
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .join(' ');
+    const lineItems = mapScopeToLineItems(allScopeText, conversationState);
+    const missing = validateQuoteCompleteness(allScopeText, lineItems);
+
+    if (missing.length > 0) {
+      setForgottenItems(missing);
+      setPendingClientDetails(details);
+      setShowForgottenItemsModal(true);
+    } else {
+      // Generate quote directly
+      await generateQuoteWithDetails(details);
+    }
+  };
+
+  // Handle skip client details
+  const handleSkipClientDetails = async () => {
+    setConversationState(prev => ({
+      ...prev,
+      clientDetailsSkipped: true,
+      phase: 'review' as const,
+    }));
+    setShowClientDetailsForm(false);
+    
+    // Generate quote without client details
+    await generateQuoteWithDetails(null);
+  };
+
+  // Handle forgotten items confirmation
+  const handleForgottenItemsConfirm = async (selectedItems: string[]) => {
+    if (selectedItems.length > 0) {
+      // Add selected items to scope via a message
+      const itemsMessage = `Adding: ${selectedItems.join(', ')}`;
+      addAssistantMessage(`Got it! Adding ${selectedItems.length} items to the scope: ${selectedItems.join(', ')}`);
+    }
+    
+    // Generate quote
+    if (pendingClientDetails) {
+      await generateQuoteWithDetails(pendingClientDetails);
+    } else {
+      await generateQuoteWithDetails(null);
+    }
+    setPendingClientDetails(null);
+  };
+
+  // Generate quote with optional client details
+  const generateQuoteWithDetails = async (details: {name: string; phone: string; email: string; address: string} | null) => {
+    if (!contractor?.id) return;
+
+    setIsLoading(true);
+    
+    // Build a comprehensive message including client details
+    let message = "Generate the quote now.";
+    if (details?.name) {
+      message = `Generate quote for client: ${details.name}`;
+      if (details.phone) message += `, phone: ${details.phone}`;
+      if (details.email) message += `, email: ${details.email}`;
+      if (details.address) message += `, address: ${details.address}`;
+    }
+
+    const updatedHistory = [...conversationHistory, { role: 'user' as const, content: message }];
+    setConversationHistory(updatedHistory);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('calculate-estimate', {
+        body: { 
+          message,
+          context,
+          contractor_id: contractor.id,
+          conversation_history: updatedHistory,
+          photo_analysis: photoEntries.length > 0 ? mergePhotoAnalyses(photoEntries) : null,
+          conversation_state: {
+            ...conversationState,
+            clientDetails: details || conversationState.clientDetails,
+            clientDetailsSkipped: !details,
+          },
+        }
+      });
+
+      if (error) throw error;
+      
+      const response = data as EstimateResponse;
+      
+      if (response.needsMoreInfo) {
+        addAssistantMessage(response.followUpQuestion || "I need a bit more information to generate the quote.");
+        return;
+      }
+
+      setEstimate(response);
+      
+      const projectType = response.project_header.project_type;
+      setConversationState(prev => ({
+        ...prev,
+        phase: 'complete' as const,
+        readyForQuote: true,
+        projectType: (projectType === 'Kitchen' || projectType === 'Bathroom') ? projectType : prev.projectType,
+      }));
+      
+      const estimateId = await saveEstimateToDatabase(response, updatedHistory);
+      if (estimateId) {
+        setSavedEstimateId(estimateId);
+      }
+
+      addAssistantMessage(`**${response.project_header.project_type} Quote Ready** ✓\n${response.trade_buckets.length} trade items`);
+      
+    } catch (err) {
+      console.error('Error generating quote:', err);
+      toast.error('Failed to generate quote');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle video analysis result
@@ -793,6 +914,15 @@ Add more photos or provide dimensions to generate your quote.`,
             isAnalyzing={isAnalyzingPhoto}
           />
         )}
+
+        {/* Client Details Form - shown when ready for client details */}
+        {showClientDetailsForm && !estimate && (
+          <ClientDetailsForm
+            onSubmit={handleClientDetailsSubmit}
+            onSkip={handleSkipClientDetails}
+            isLoading={isLoading}
+          />
+        )}
         
         {isLoading && (
           <div className="flex items-center gap-3 text-muted-foreground animate-fade-in">
@@ -987,6 +1117,25 @@ Add more photos or provide dimensions to generate your quote.`,
         onOpenChange={setShowVideoModal}
         onVideoAnalyzed={handleVideoAnalyzed}
         contractorId={contractor?.id || ''}
+      />
+
+      {/* Forgotten Items Modal */}
+      <ForgottenItemsModal
+        open={showForgottenItemsModal}
+        onOpenChange={setShowForgottenItemsModal}
+        suggestions={forgottenItems.map((item, i) => ({
+          id: `missing-${i}`,
+          item,
+          category: 'Missing Items',
+          reason: 'Detected in scope but not in line items',
+          autoAdd: true,
+        }))}
+        onAddItems={(items) => {
+          handleForgottenItemsConfirm(items.map(i => i.item));
+        }}
+        onSkip={() => {
+          handleForgottenItemsConfirm([]);
+        }}
       />
     </div>
   );
