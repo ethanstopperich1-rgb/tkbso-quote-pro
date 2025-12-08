@@ -11,6 +11,10 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Estimator from "./pages/Estimator";
+import EstimatorLauncher from "./pages/EstimatorLauncher";
+import EstimatorChat from "./pages/EstimatorChat";
+import EstimatorPhoto from "./pages/EstimatorPhoto";
+import EstimatorVideo from "./pages/EstimatorVideo";
 import Estimates from "./pages/Estimates";
 import EstimateDetail from "./pages/EstimateDetail";
 import Pricing from "./pages/Pricing";
@@ -33,6 +37,10 @@ const App = () => (
             <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/estimator" element={<Estimator />} />
+              <Route path="/estimator/new" element={<EstimatorLauncher />} />
+              <Route path="/estimator/chat" element={<EstimatorChat />} />
+              <Route path="/estimator/photo" element={<EstimatorPhoto />} />
+              <Route path="/estimator/video" element={<EstimatorVideo />} />
               <Route path="/estimates" element={<Estimates />} />
               <Route path="/estimates/:id" element={<EstimateDetail />} />
               <Route path="/pricing" element={<Pricing />} />
