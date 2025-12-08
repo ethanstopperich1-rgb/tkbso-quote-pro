@@ -71,6 +71,9 @@
     --chart-3: 172 66% 50%;
     --chart-4: 158 64% 52%;
     --chart-5: 215 16% 47%;
+
+    /* Brand identity color (for headers, logos) - can be overridden by BrandingContext */
+    --brand-primary: 222 47% 15%;
   }
 
   /* Dark mode variant */

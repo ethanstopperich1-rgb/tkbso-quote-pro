@@ -97,21 +97,25 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     
-    // Apply primary color
-    if (branding.primaryColor) {
-      const primaryHSL = hexToHSL(branding.primaryColor);
-      if (primaryHSL) {
-        root.style.setProperty('--primary', primaryHSL);
-        root.style.setProperty('--sidebar-primary', primaryHSL);
-      }
-    }
-
-    // Apply accent color
+    // Use accent color for interactive elements (buttons, links, focus rings)
     if (branding.accentColor) {
       const accentHSL = hexToHSL(branding.accentColor);
       if (accentHSL) {
+        root.style.setProperty('--primary', accentHSL);
         root.style.setProperty('--accent', accentHSL);
+        root.style.setProperty('--ring', accentHSL);
+        root.style.setProperty('--sidebar-primary', accentHSL);
         root.style.setProperty('--sidebar-accent', accentHSL);
+        root.style.setProperty('--sidebar-ring', accentHSL);
+        root.style.setProperty('--chart-1', accentHSL);
+      }
+    }
+
+    // Store brand primary for direct use (headers, branding elements)
+    if (branding.primaryColor) {
+      const brandHSL = hexToHSL(branding.primaryColor);
+      if (brandHSL) {
+        root.style.setProperty('--brand-primary', brandHSL);
       }
     }
 
@@ -119,8 +123,12 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     return () => {
       root.style.removeProperty('--primary');
       root.style.removeProperty('--accent');
+      root.style.removeProperty('--ring');
       root.style.removeProperty('--sidebar-primary');
       root.style.removeProperty('--sidebar-accent');
+      root.style.removeProperty('--sidebar-ring');
+      root.style.removeProperty('--brand-primary');
+      root.style.removeProperty('--chart-1');
     };
   }, [branding.primaryColor, branding.accentColor]);
 
