@@ -583,6 +583,14 @@ export function ProposalPdfDocument({
                 start, pending material lead times.
               </Text>
             </View>
+
+            <View style={styles.noteBox}>
+              <Text style={styles.noteTitle}>Note V: Change Orders</Text>
+              <Text style={styles.noteText}>
+                Any work requested outside the scope of this proposal will be documented as a change order. 
+                Change orders require written approval and may affect the project timeline and total investment.
+              </Text>
+            </View>
           </View>
 
         {/* Signature Section */}
