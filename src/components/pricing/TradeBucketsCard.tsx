@@ -14,6 +14,8 @@ export interface TradeBucket {
   cpField: string;
   icValue: number;
   cpValue: number;
+  commonlyForgotten?: boolean;
+  isModifier?: boolean;
 }
 
 interface TradeBucketsCardProps {
@@ -127,6 +129,16 @@ export function TradeBucketsCard({
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-slate-800">{bucket.name}</span>
+                        {bucket.commonlyForgotten && (
+                          <Badge variant="outline" className="text-[9px] border-amber-300 text-amber-700 bg-amber-50">
+                            Often Missed
+                          </Badge>
+                        )}
+                        {bucket.isModifier && (
+                          <Badge variant="outline" className="text-[9px] border-purple-300 text-purple-700 bg-purple-50">
+                            Modifier
+                          </Badge>
+                        )}
                         {hasWarning && (
                           <AlertTriangle className="h-4 w-4 text-rose-500" />
                         )}
