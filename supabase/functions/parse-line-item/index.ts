@@ -7,7 +7,7 @@ const corsHeaders = {
 
 // Main trade categories (parent buckets)
 const TRADE_CATEGORIES = [
-  'Demo', 'Framing', 'Plumbing', 'Electrical', 'Tile', 'Waterproofing', 
+  'Demo', 'Framing', 'Plumbing', 'Electrical', 'Tile & Support', 
   'Glass', 'Vanity', 'Paint', 'Drywall', 'Cabinets', 'Countertop', 
   'Flooring', 'Structural', 'Materials', 'Other'
 ];
@@ -27,20 +27,54 @@ serve(async (req) => {
 
     const systemPrompt = `You are a line item parser for construction estimates. Parse the user's natural language into a structured line item.
 
-CATEGORY MAPPING RULES (CRITICAL):
-- Drain relocation, toilet relocation, tub relocation, shower rough-in, extra head, linear drain → "Plumbing"
-- Pony wall, niche, blocking, framing → "Framing"  
-- Wall removal, door relocation, door closure, soffit removal, entrance work → "Structural"
-- Recessed can, vanity light, exhaust fan → "Electrical"
-- Wall tile, floor tile, shower floor tile → "Tile"
-- Shower glass, glass panel, mirror → "Glass"
-- Vanity (any size) → "Vanity"
-- Quartz, granite, countertop → "Countertop"
-- Demo, dumpster, haul-off → "Demo"
-- Paint, ceiling paint, touch-up → "Paint"
-- Drywall, ceiling drywall, patch → "Drywall"
-- LVP, floor leveling → "Flooring"
-- Tile material, plumbing fixtures, allowances → "Materials"
+CATEGORY MAPPING RULES (CRITICAL - use your judgment to infer the right category):
+
+PLUMBING (any water/drain/fixture work):
+- Drain relocation, toilet relocation, tub relocation, shower rough-in, extra head, linear drain
+- Faucet, valve, supply line, p-trap, rough-in, fixture install, water heater, bidet
+- ANY mention of moving/relocating water or drain lines
+
+FRAMING (wood structure work):
+- Pony wall, niche, blocking, framing, header, stud wall, knee wall
+- Shower bench framing, seat framing, any wood framework
+
+STRUCTURAL (major layout changes):
+- Wall removal, door relocation, door closure, soffit removal, entrance work
+- Load bearing, beam install, opening enlargement, header install
+
+ELECTRICAL (power/lighting):
+- Recessed can, vanity light, exhaust fan, outlet, switch, GFCI
+- Circuit, panel work, lighting fixture, under cabinet lights
+
+TILE & SUPPORT (tile AND waterproofing AND cement board - ALL go together):
+- Wall tile, floor tile, shower floor tile, backsplash tile, accent tile
+- Waterproofing, Kerdi, RedGard, membrane, shower pan liner
+- Cement board, backer board, Durock, Hardiebacker, substrate prep
+- ANY tile-related prep or installation work
+
+GLASS (shower enclosures/mirrors):
+- Shower glass, glass panel, mirror, frameless, semi-frameless, 90° return
+
+VANITY (bathroom vanities):
+- Vanity (any size: 24", 30", 36", 48", 60", 72"), vanity cabinet, vanity install
+
+COUNTERTOP:
+- Quartz, granite, marble, countertop, counter install, fabrication
+
+DEMO (demolition):
+- Demo, demolition, tear out, rip out, dumpster, haul-off, debris removal
+
+PAINT & DRYWALL:
+- Paint, painting, ceiling paint, touch-up, drywall, patch, texture, skim coat
+
+FLOORING:
+- LVP, vinyl plank, floor tile (main floor), floor leveling, subfloor, underlayment
+
+CABINETS:
+- Kitchen cabinets, cabinet install, upper cabinets, base cabinets, pantry
+
+MATERIALS (allowances only):
+- Tile material allowance, plumbing fixture allowance, material cost
 
 Units: ea (each), sqft (square feet), lf (linear feet), hr (hour), ls (lump sum)
 
@@ -48,14 +82,16 @@ Examples:
 - "drain relocation $1200" → category: Plumbing, description: "Drain Relocation", qty 1, ls, $1200 CP
 - "pony wall $850" → category: Framing, description: "Pony Wall", qty 1, ea, $850 CP
 - "demo for $1500" → category: Demo, description: "Full Demo", qty 1, ls, $1500 CP
-- "tile wall 128 sqft at $39/sqft" → category: Tile, description: "Wall Tile", qty 128, sqft, $39/sqft CP
+- "tile wall 128 sqft at $39/sqft" → category: Tile & Support, description: "Wall Tile", qty 128, sqft, $39/sqft CP
 - "3 recessed cans at $110 each" → category: Electrical, description: "Recessed Cans", qty 3, ea, $110 CP
 - "vanity 48 for $2600" → category: Vanity, description: "48\" Vanity Bundle", qty 1, ea, $2600 CP
-- "waterproofing 64 sqft $13/sqft" → category: Waterproofing, description: "Shower Waterproofing", qty 64, sqft, $13/sqft CP
+- "waterproofing 64 sqft $13/sqft" → category: Tile & Support, description: "Waterproofing", qty 64, sqft, $13/sqft CP
+- "cement board 80 sqft" → category: Tile & Support, description: "Cement Board", qty 80, sqft
 - "toilet relocation $950" → category: Plumbing, description: "Toilet Relocation", qty 1, ea, $950 CP
 - "wall removal $2500" → category: Structural, description: "Wall Removal", qty 1, ea, $2500 CP
+- "move the shower valve" → category: Plumbing, description: "Valve Relocation", qty 1, ea
 
-Parse the input and return a line item. If IC (internal cost) is not specified, estimate it at 60% of CP.`;
+Use your best judgment to infer the correct category based on context. If IC is not specified, estimate it at 60% of CP.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
