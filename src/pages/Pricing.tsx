@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { PricingConfig } from '@/types/database';
-import { Save, RefreshCw, RotateCcw, ChevronDown, Truck, Settings2, Thermometer, Search, X } from 'lucide-react';
-import { Bath, ChefHat, Wrench, HardHat, Palette, Zap, Droplets, Shield, Home, Hammer, Sparkles, AlertCircle, FileText, DoorOpen } from 'lucide-react';
+import { Save, RefreshCw, RotateCcw, ChevronDown, Truck, Settings2, Thermometer, Search, X, Filter } from 'lucide-react';
+import { Bath, ChefHat, Wrench, HardHat, Palette, Zap, Droplets, Shield, Home, Hammer, Sparkles, AlertCircle, FileText, DoorOpen, Layers, Plug, Flame, Scissors, Info } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -2341,6 +2341,16 @@ export default function Pricing() {
       icValue: (config as any).schluter_profile_ic ?? 15,
       cpValue: (config as any).schluter_profile_cp ?? 28,
     },
+    {
+      key: 'heated_floor_mat',
+      name: 'Heated Floor Mat Install',
+      description: 'Radiant heated floor mat installation.',
+      unit: 'per sqft',
+      icField: 'heated_floor_sqft_ic',
+      cpField: 'heated_floor_sqft_cp',
+      icValue: (config as any).heated_floor_sqft_ic ?? 18,
+      cpValue: (config as any).heated_floor_sqft_cp ?? 32,
+    },
   ];
 
   // 10. COUNTERTOP FABRICATION ADD-ONS
@@ -2842,6 +2852,39 @@ export default function Pricing() {
           onChange={handleChange}
         />
 
+        {/* Search/Filter Bar */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search line items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10 border-slate-200 focus:ring-2 focus:ring-cyan-400"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <Filter className="h-4 w-4" />
+              <span>25 categories · 237 line items</span>
+            </div>
+          </div>
+          {searchQuery && (
+            <p className="mt-3 text-sm text-slate-600">
+              Showing results for "<span className="font-medium">{searchQuery}</span>"
+            </p>
+          )}
+        </div>
+
         {/* TRADE-BASED SECTIONS */}
         
         {/* Demo Section - 4 Sub-Categories */}
@@ -3145,7 +3188,246 @@ export default function Pricing() {
           />
         </AccordionSection>
 
-        {/* 9. Allowances - Collapsed by default */}
+        {/* Water Damage & Rot Repair */}
+        <AccordionSection 
+          title="Water Damage & Rot Repair" 
+          icon={<Droplets className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Water Damage & Rot Repair"
+            description="Discovery items found during demo (40% of bath remodels)"
+            icon={<Droplets className="h-5 w-5" />}
+            buckets={waterDamageBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Hidden Structural Issues */}
+        <AccordionSection 
+          title="Hidden Structural Issues" 
+          icon={<HardHat className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Hidden Structural Issues"
+            description="Major discoveries requiring engineer involvement"
+            icon={<HardHat className="h-5 w-5" />}
+            buckets={hiddenStructuralBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Code-Mandated Upgrades */}
+        <AccordionSection 
+          title="Code-Mandated Upgrades" 
+          icon={<AlertCircle className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <div className="space-y-4">
+            {/* Yellow info banner */}
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">
+                <span className="font-semibold">Important:</span> These items are legally required once a permit is pulled but are frequently forgotten in estimates.
+              </p>
+            </div>
+            <TradeBucketsCard
+              title="Code-Mandated Upgrades"
+              description="Required by inspector when permit is pulled"
+              icon={<AlertCircle className="h-5 w-5" />}
+              buckets={codeUpgradesBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+          </div>
+        </AccordionSection>
+
+        {/* Occupied Home Premiums */}
+        <AccordionSection 
+          title="Occupied Home Premiums" 
+          icon={<Home className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Occupied Home Premiums"
+            description="Services for clients living in home during work"
+            icon={<Home className="h-5 w-5" />}
+            buckets={occupiedHomeBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Trim & Millwork Extended */}
+        <AccordionSection 
+          title="Trim & Millwork (Itemized)" 
+          icon={<Scissors className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Trim & Millwork (Itemized)"
+            description="Finish carpentry broken into billable components"
+            icon={<Scissors className="h-5 w-5" />}
+            buckets={trimMillworkBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Specialty Plumbing Systems */}
+        <AccordionSection 
+          title="Specialty Plumbing Systems" 
+          icon={<Wrench className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Specialty Plumbing Systems"
+            description="Premium plumbing upgrades & rough-ins"
+            icon={<Wrench className="h-5 w-5" />}
+            buckets={specialtyPlumbingBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Smart Home / Specialty Electrical */}
+        <AccordionSection 
+          title="Smart Home / Specialty Electrical" 
+          icon={<Plug className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Smart Home / Specialty Electrical"
+            description="Modern electrical systems & automation"
+            icon={<Plug className="h-5 w-5" />}
+            buckets={smartElectricalBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Cabinet Customization */}
+        <AccordionSection 
+          title="Cabinet Customization" 
+          icon={<ChefHat className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Cabinet Customization"
+            description="Upgrade options for cabinetry (high-margin add-ons)"
+            icon={<ChefHat className="h-5 w-5" />}
+            buckets={cabinetCustomBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Tile Specialty Work */}
+        <AccordionSection 
+          title="Tile Specialty Work" 
+          icon={<Layers className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Tile Specialty Work"
+            description="Premium tile patterns, materials, and installations"
+            icon={<Layers className="h-5 w-5" />}
+            buckets={tileSpecialtyBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Countertop Fabrication Add-Ons */}
+        <AccordionSection 
+          title="Countertop Fabrication Add-Ons" 
+          icon={<Layers className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Countertop Fabrication Add-Ons"
+            description="Cutouts, edges, and custom fabrication (markup fabricator fees)"
+            icon={<Layers className="h-5 w-5" />}
+            buckets={countertopAddOnsBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Decorative Finishes */}
+        <AccordionSection 
+          title="Decorative Finishes" 
+          icon={<Palette className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Decorative Finishes"
+            description="Aesthetic upgrades & custom millwork"
+            icon={<Palette className="h-5 w-5" />}
+            buckets={decorativeFinishesBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Contingency & Protection */}
+        <AccordionSection 
+          title="Contingency & Protection" 
+          icon={<Shield className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <TradeBucketsCard
+            title="Contingency & Protection"
+            description="Legal protection & discovery allowances"
+            icon={<Shield className="h-5 w-5" />}
+            buckets={contingencyBuckets}
+            onChange={handleChange}
+            targetMargin={config.target_margin}
+            pricingMode={pricingMode}
+          />
+        </AccordionSection>
+
+        {/* Miscellaneous Always-Needed */}
+        <AccordionSection 
+          title="Miscellaneous Always-Needed" 
+          icon={<Wrench className="h-5 w-5" />}
+          defaultOpen={false}
+        >
+          <div className="space-y-4">
+            {/* Commonly forgotten banner */}
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">
+                <span className="font-semibold">Commonly Forgotten:</span> These small items add up fast and are frequently left off estimates.
+              </p>
+            </div>
+            <TradeBucketsCard
+              title="Miscellaneous Always-Needed"
+              description="Small items that add up fast (commonly forgotten)"
+              icon={<Wrench className="h-5 w-5" />}
+              buckets={miscBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+          </div>
+        </AccordionSection>
+
+        {/* Allowances - Collapsed by default */}
         <AccordionSection 
           title="Allowances (Material Only)" 
           icon={<Palette className="h-5 w-5" />}
