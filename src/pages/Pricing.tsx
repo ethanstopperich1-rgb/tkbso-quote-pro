@@ -493,10 +493,55 @@ export default function Pricing() {
       ['hoa_access_fee_ic', 'hoa_access_fee_cp'],
     ];
     
+    // Default IC values for fields not in the database yet
+    const icDefaults: Record<string, number> = {
+      // Site Protection & Setup
+      floor_protection_ramboard_sqft_ic: 0.5,
+      dust_barrier_zipwall_ic: 150,
+      air_scrubber_weekly_ic: 200,
+      furniture_moving_hourly_ic: 45,
+      // Standard Demolition
+      demo_kitchen_standard_ic: 800,
+      demo_bath_standard_ic: 600,
+      demo_soffit_lf_ic: 15,
+      demo_cabinet_deconstruct_ic: 500,
+      // Heavy/Difficult Demo
+      demo_tile_mudset_sqft_ic: 6,
+      demo_castiron_tub_ic: 250,
+      demo_glueddown_sqft_ic: 4,
+      demo_popcorn_ceiling_sqft_ic: 3.5,
+      // Disposal & Logistics
+      dumpster_20yd_ic: 550,
+      liveload_haul_ic: 400,
+      difficult_access_fee_ic: 300,
+      // Finish Carpentry
+      baseboard_install_lf_ic: 3.5,
+      crown_molding_lf_ic: 6,
+      window_door_casing_ic: 75,
+      shoe_molding_lf_ic: 2,
+      wainscoting_sqft_ic: 12,
+      // Electrical Systems
+      panel_upgrade_200a_ic: 2500,
+      dedicated_circuit_240v_ic: 450,
+      undercab_led_ic: 400,
+      heated_floor_sqft_ic: 18,
+      // Luxury Plumbing & Gas
+      steam_generator_ic: 1200,
+      gas_line_new_ic: 800,
+      pot_filler_ic: 550,
+      tankless_wh_ic: 1800,
+      // Logistics & Admin
+      portable_toilet_monthly_ic: 150,
+      engineering_stamp_ic: 800,
+      hoa_access_fee_ic: 0,
+    };
+
     for (const [icField, cpField] of icCpPairs) {
-      const icValue = (updatedConfig as any)[icField];
+      // Use config value or fall back to default
+      const icValue = (updatedConfig as any)[icField] ?? icDefaults[icField];
       if (icValue != null && icValue > 0) {
         const cpValue = icValue / (1 - margin);
+        (updatedConfig as any)[icField] = icValue; // ensure IC is set
         (updatedConfig as any)[cpField] = Math.round(cpValue * 100) / 100;
       }
     }
