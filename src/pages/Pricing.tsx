@@ -1856,7 +1856,7 @@ export default function Pricing() {
     },
   ];
 
-  // LUXURY PLUMBING & GAS
+  // LUXURY PLUMBING (no gas - gas is separate)
   const luxuryPlumbingBuckets: TradeBucket[] = [
     {
       key: 'steam_generator',
@@ -1867,16 +1867,6 @@ export default function Pricing() {
       cpField: 'steam_generator_cp',
       icValue: (config as any).steam_generator_ic ?? 1200,
       cpValue: (config as any).steam_generator_cp ?? 2200,
-    },
-    {
-      key: 'gas_line_new',
-      name: 'Gas Line Run (New)',
-      description: 'Run new gas line.',
-      unit: 'each',
-      icField: 'gas_line_new_ic',
-      cpField: 'gas_line_new_cp',
-      icValue: (config as any).gas_line_new_ic ?? 800,
-      cpValue: (config as any).gas_line_new_cp ?? 1500,
     },
     {
       key: 'pot_filler',
@@ -1897,6 +1887,30 @@ export default function Pricing() {
       cpField: 'tankless_water_heater_cp',
       icValue: (config as any).tankless_water_heater_ic ?? 1800,
       cpValue: (config as any).tankless_water_heater_cp ?? 3200,
+    },
+  ];
+
+  // GAS
+  const gasBuckets: TradeBucket[] = [
+    {
+      key: 'gas_line_new',
+      name: 'Gas Line Run (New)',
+      description: 'Run new gas line.',
+      unit: 'each',
+      icField: 'gas_line_new_ic',
+      cpField: 'gas_line_new_cp',
+      icValue: (config as any).gas_line_new_ic ?? 800,
+      cpValue: (config as any).gas_line_new_cp ?? 1500,
+    },
+    {
+      key: 'gas_line_range',
+      name: 'Gas Line for Range',
+      description: 'Gas line installation for range.',
+      unit: 'per LF',
+      icField: 'gas_line_range_ic',
+      cpField: 'gas_line_range_cp',
+      icValue: (config as any).gas_line_range_ic ?? 18,
+      cpValue: (config as any).gas_line_range_cp ?? 32,
     },
   ];
 
@@ -2314,16 +2328,6 @@ export default function Pricing() {
       cpField: 'ice_maker_line_cp',
       icValue: (config as any).ice_maker_line_ic ?? 8,
       cpValue: (config as any).ice_maker_line_cp ?? 15,
-    },
-    {
-      key: 'gas_line_range',
-      name: 'Gas Line for Range',
-      description: 'Gas line installation for range.',
-      unit: 'per LF',
-      icField: 'gas_line_range_ic',
-      cpField: 'gas_line_range_cp',
-      icValue: (config as any).gas_line_range_ic ?? 18,
-      cpValue: (config as any).gas_line_range_cp ?? 32,
     },
     {
       key: 'pressure_balance_valve',
@@ -3186,15 +3190,35 @@ export default function Pricing() {
           icon={<Wrench className="h-5 w-5" />}
           defaultOpen={false}
         >
-          <TradeBucketsCard
-            title="Plumbing"
-            description="Shower rough-in, toilet, tub, drains."
-            icon={<Wrench className="h-5 w-5" />}
-            buckets={plumbingBuckets}
-            onChange={handleChange}
-            targetMargin={config.target_margin}
-            pricingMode={pricingMode}
-          />
+          <div className="space-y-4">
+            <TradeBucketsCard
+              title="Standard Plumbing"
+              description="Shower rough-in, toilet, tub, drains."
+              icon={<Wrench className="h-5 w-5" />}
+              buckets={plumbingBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+            <TradeBucketsCard
+              title="Luxury Plumbing"
+              description="Steam, pot fillers, tankless water heaters."
+              icon={<Wrench className="h-5 w-5" />}
+              buckets={luxuryPlumbingBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+            <TradeBucketsCard
+              title="Specialty Plumbing Systems"
+              description="Recirculation pumps, water softener rough-ins, specialty rough-ins."
+              icon={<Wrench className="h-5 w-5" />}
+              buckets={specialtyPlumbingBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+          </div>
         </AccordionSection>
 
         {/* Electrical */}
@@ -3203,11 +3227,48 @@ export default function Pricing() {
           icon={<Settings2 className="h-5 w-5" />}
           defaultOpen={false}
         >
+          <div className="space-y-4">
+            <TradeBucketsCard
+              title="Standard Electrical"
+              description="Lighting, cans, switches, outlets."
+              icon={<Settings2 className="h-5 w-5" />}
+              buckets={electricalBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+            <TradeBucketsCard
+              title="Systems & Upgrades"
+              description="Panel upgrades, 240V circuits, heated floors, LED tape."
+              icon={<Settings2 className="h-5 w-5" />}
+              buckets={electricalUpgradesBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+            <TradeBucketsCard
+              title="Smart Home / Specialty"
+              description="Toe-kick lighting, in-drawer outlets, smart switches, EV charger."
+              icon={<Settings2 className="h-5 w-5" />}
+              buckets={smartElectricalBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+          </div>
+        </AccordionSection>
+
+        {/* Gas */}
+        <AccordionSection 
+          title="Gas" 
+          icon={<Flame className="h-5 w-5" />}
+          defaultOpen={false}
+        >
           <TradeBucketsCard
-            title="Electrical"
-            description="Lighting, cans, switches, outlets."
-            icon={<Settings2 className="h-5 w-5" />}
-            buckets={electricalBuckets}
+            title="Gas"
+            description="Gas line installation and connections."
+            icon={<Flame className="h-5 w-5" />}
+            buckets={gasBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
             pricingMode={pricingMode}
@@ -3384,40 +3445,6 @@ export default function Pricing() {
           />
         </AccordionSection>
 
-        {/* Electrical Systems & Upgrades */}
-        <AccordionSection 
-          title="Electrical Systems & Upgrades" 
-          icon={<Settings2 className="h-5 w-5" />}
-          defaultOpen={false}
-        >
-          <TradeBucketsCard
-            title="Electrical Systems & Upgrades"
-            description="Panel upgrades, 240V circuits, heated floors, LED tape."
-            icon={<Settings2 className="h-5 w-5" />}
-            buckets={electricalUpgradesBuckets}
-            onChange={handleChange}
-            targetMargin={config.target_margin}
-            pricingMode={pricingMode}
-          />
-        </AccordionSection>
-
-        {/* Luxury Plumbing & Gas */}
-        <AccordionSection 
-          title="Luxury Plumbing & Gas" 
-          icon={<Wrench className="h-5 w-5" />}
-          defaultOpen={false}
-        >
-          <TradeBucketsCard
-            title="Luxury Plumbing & Gas"
-            description="Steam, gas lines, pot fillers, tankless water heaters."
-            icon={<Wrench className="h-5 w-5" />}
-            buckets={luxuryPlumbingBuckets}
-            onChange={handleChange}
-            targetMargin={config.target_margin}
-            pricingMode={pricingMode}
-          />
-        </AccordionSection>
-
         {/* Logistics & Admin */}
         <AccordionSection 
           title="Logistics & Admin" 
@@ -3523,40 +3550,6 @@ export default function Pricing() {
             description="Finish carpentry broken into billable components"
             icon={<Scissors className="h-5 w-5" />}
             buckets={trimMillworkBuckets}
-            onChange={handleChange}
-            targetMargin={config.target_margin}
-            pricingMode={pricingMode}
-          />
-        </AccordionSection>
-
-        {/* Specialty Plumbing Systems */}
-        <AccordionSection 
-          title="Specialty Plumbing Systems" 
-          icon={<Wrench className="h-5 w-5" />}
-          defaultOpen={false}
-        >
-          <TradeBucketsCard
-            title="Specialty Plumbing Systems"
-            description="Premium plumbing upgrades & rough-ins"
-            icon={<Wrench className="h-5 w-5" />}
-            buckets={specialtyPlumbingBuckets}
-            onChange={handleChange}
-            targetMargin={config.target_margin}
-            pricingMode={pricingMode}
-          />
-        </AccordionSection>
-
-        {/* Smart Home / Specialty Electrical */}
-        <AccordionSection 
-          title="Smart Home / Specialty Electrical" 
-          icon={<Plug className="h-5 w-5" />}
-          defaultOpen={false}
-        >
-          <TradeBucketsCard
-            title="Smart Home / Specialty Electrical"
-            description="Modern electrical systems & automation"
-            icon={<Plug className="h-5 w-5" />}
-            buckets={smartElectricalBuckets}
             onChange={handleChange}
             targetMargin={config.target_margin}
             pricingMode={pricingMode}
