@@ -60,21 +60,43 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> & Record<string, any> = {
   barrier_ic_per_sqft: 1.0,
   barrier_cp_per_sqft: 2.0,
   
-  // Demo Packages
-  demo_shower_only_ic: 900,
-  demo_shower_only_cp: 1450,
-  demo_small_bath_ic: 1800,
-  demo_small_bath_cp: 2700,
-  demo_large_bath_ic: 2200,
-  demo_large_bath_cp: 3300,
-  demo_kitchen_ic: 1750,
-  demo_kitchen_cp: 2800,
+  // Site Protection & Setup
+  floor_protection_ramboard_sqft_ic: 0.5,
+  floor_protection_ramboard_sqft_cp: 1.0,
+  dust_barrier_zipwall_ic: 150,
+  dust_barrier_zipwall_cp: 300,
+  air_scrubber_weekly_ic: 200,
+  air_scrubber_weekly_cp: 350,
+  furniture_moving_hourly_ic: 45,
+  furniture_moving_hourly_cp: 85,
   
-  // Dumpster/Haul
-  dumpster_bath_ic: 400,
-  dumpster_bath_cp: 750,
-  dumpster_kitchen_ic: 825,
-  dumpster_kitchen_cp: 1400,
+  // Standard Demolition
+  demo_kitchen_standard_ic: 800,
+  demo_kitchen_standard_cp: 1500,
+  demo_bath_standard_ic: 600,
+  demo_bath_standard_cp: 1200,
+  demo_soffit_lf_ic: 15,
+  demo_soffit_lf_cp: 30,
+  demo_cabinet_deconstruct_ic: 500,
+  demo_cabinet_deconstruct_cp: 900,
+  
+  // Heavy/Difficult Demo (Surcharges)
+  demo_tile_mudset_sqft_ic: 6,
+  demo_tile_mudset_sqft_cp: 12,
+  demo_castiron_tub_ic: 250,
+  demo_castiron_tub_cp: 500,
+  demo_glueddown_sqft_ic: 4,
+  demo_glueddown_sqft_cp: 8,
+  demo_popcorn_ceiling_sqft_ic: 3.5,
+  demo_popcorn_ceiling_sqft_cp: 7,
+  
+  // Disposal & Logistics
+  dumpster_20yd_ic: 550,
+  dumpster_20yd_cp: 750,
+  liveload_haul_ic: 400,
+  liveload_haul_cp: 700,
+  difficult_access_fee_ic: 300,
+  difficult_access_fee_cp: 600,
   
   // Framing & Structure
   framing_standard_ic: 900,
@@ -370,10 +392,26 @@ export default function Pricing() {
     
     // List of IC/CP field pairs
     const icCpPairs = [
-      ['demo_shower_only_ic', 'demo_shower_only_cp'],
-      ['demo_small_bath_ic', 'demo_small_bath_cp'],
-      ['demo_large_bath_ic', 'demo_large_bath_cp'],
-      ['demo_kitchen_ic', 'demo_kitchen_cp'],
+      // Site Protection & Setup
+      ['floor_protection_ramboard_sqft_ic', 'floor_protection_ramboard_sqft_cp'],
+      ['dust_barrier_zipwall_ic', 'dust_barrier_zipwall_cp'],
+      ['air_scrubber_weekly_ic', 'air_scrubber_weekly_cp'],
+      ['furniture_moving_hourly_ic', 'furniture_moving_hourly_cp'],
+      // Standard Demolition
+      ['demo_kitchen_standard_ic', 'demo_kitchen_standard_cp'],
+      ['demo_bath_standard_ic', 'demo_bath_standard_cp'],
+      ['demo_soffit_lf_ic', 'demo_soffit_lf_cp'],
+      ['demo_cabinet_deconstruct_ic', 'demo_cabinet_deconstruct_cp'],
+      // Heavy/Difficult Demo
+      ['demo_tile_mudset_sqft_ic', 'demo_tile_mudset_sqft_cp'],
+      ['demo_castiron_tub_ic', 'demo_castiron_tub_cp'],
+      ['demo_glueddown_sqft_ic', 'demo_glueddown_sqft_cp'],
+      ['demo_popcorn_ceiling_sqft_ic', 'demo_popcorn_ceiling_sqft_cp'],
+      // Disposal & Logistics
+      ['dumpster_20yd_ic', 'dumpster_20yd_cp'],
+      ['liveload_haul_ic', 'liveload_haul_cp'],
+      ['difficult_access_fee_ic', 'difficult_access_fee_cp'],
+      // Tile & Waterproofing
       ['tile_wall_ic_per_sqft', 'tile_wall_cp_per_sqft'],
       ['tile_floor_ic_per_sqft', 'tile_floor_cp_per_sqft'],
       ['tile_shower_floor_ic_per_sqft', 'tile_shower_floor_cp_per_sqft'],
@@ -414,8 +452,6 @@ export default function Pricing() {
       ['barrier_ic_per_sqft', 'barrier_cp_per_sqft'],
       ['cabinet_lf_ic', 'cabinet_lf_cp'],
       ['cabinet_install_only_lf_ic', 'cabinet_install_only_lf_cp'],
-      ['dumpster_bath_ic', 'dumpster_bath_cp'],
-      ['dumpster_kitchen_ic', 'dumpster_kitchen_cp'],
       ['wall_removal_ic', 'wall_removal_cp'],
       ['door_relocation_ic', 'door_relocation_cp'],
       ['door_closure_ic', 'door_closure_cp'],
@@ -505,67 +541,169 @@ export default function Pricing() {
 
   // ============ TRADE-BASED ORGANIZATION ============
   
-  // DEMOLITION & HAUL
-  const demoBuckets: TradeBucket[] = [
+  // 1. SITE PROTECTION & SETUP
+  const siteProtectionBuckets: TradeBucket[] = [
     {
-      key: 'demo_shower_only',
-      name: 'Demo - Shower Only',
-      description: 'Demo shower area only, haul off debris.',
-      unit: 'each',
-      icField: 'demo_shower_only_ic',
-      cpField: 'demo_shower_only_cp',
-      icValue: config.demo_shower_only_ic,
-      cpValue: config.demo_shower_only_cp,
+      key: 'floor_protection_ramboard',
+      name: 'Heavy Duty Floor Protection (Ramboard)',
+      description: 'Ramboard floor protection for high-traffic areas.',
+      unit: 'per sqft',
+      icField: 'floor_protection_ramboard_sqft_ic',
+      cpField: 'floor_protection_ramboard_sqft_cp',
+      icValue: (config as any).floor_protection_ramboard_sqft_ic ?? 0.5,
+      cpValue: (config as any).floor_protection_ramboard_sqft_cp ?? 1.0,
     },
     {
-      key: 'demo_small_bath',
-      name: 'Demo - Small Bath',
-      description: 'Full bathroom gut under 50 sqft.',
-      unit: 'each',
-      icField: 'demo_small_bath_ic',
-      cpField: 'demo_small_bath_cp',
-      icValue: config.demo_small_bath_ic,
-      cpValue: config.demo_small_bath_cp,
+      key: 'dust_barrier_zipwall',
+      name: 'Dust Barrier / ZipWall Setup',
+      description: 'ZipWall dust barrier containment per room.',
+      unit: 'per room',
+      icField: 'dust_barrier_zipwall_ic',
+      cpField: 'dust_barrier_zipwall_cp',
+      icValue: (config as any).dust_barrier_zipwall_ic ?? 150,
+      cpValue: (config as any).dust_barrier_zipwall_cp ?? 300,
     },
     {
-      key: 'demo_large_bath',
-      name: 'Demo - Large Bath',
-      description: 'Full bathroom gut 50+ sqft.',
-      unit: 'each',
-      icField: 'demo_large_bath_ic',
-      cpField: 'demo_large_bath_cp',
-      icValue: config.demo_large_bath_ic,
-      cpValue: config.demo_large_bath_cp,
+      key: 'air_scrubber',
+      name: 'Air Scrubber Rental (HEPA)',
+      description: 'HEPA air scrubber rental for dust control.',
+      unit: 'per week',
+      icField: 'air_scrubber_weekly_ic',
+      cpField: 'air_scrubber_weekly_cp',
+      icValue: (config as any).air_scrubber_weekly_ic ?? 200,
+      cpValue: (config as any).air_scrubber_weekly_cp ?? 350,
     },
     {
-      key: 'demo_kitchen',
-      name: 'Demo - Kitchen',
-      description: 'Full kitchen gut: cabinets, counters, backsplash, flooring.',
+      key: 'furniture_moving',
+      name: 'Furniture/Content Moving',
+      description: 'Moving furniture and contents for access.',
+      unit: 'per hour',
+      icField: 'furniture_moving_hourly_ic',
+      cpField: 'furniture_moving_hourly_cp',
+      icValue: (config as any).furniture_moving_hourly_ic ?? 45,
+      cpValue: (config as any).furniture_moving_hourly_cp ?? 85,
+    },
+  ];
+
+  // 2. STANDARD DEMOLITION
+  const standardDemoBuckets: TradeBucket[] = [
+    {
+      key: 'demo_kitchen_standard',
+      name: 'Full Kitchen Gut (Standard)',
+      description: 'Standard kitchen demo: cabinets, counters, backsplash.',
       unit: 'each',
-      icField: 'demo_kitchen_ic',
-      cpField: 'demo_kitchen_cp',
-      icValue: config.demo_kitchen_ic,
-      cpValue: config.demo_kitchen_cp,
+      icField: 'demo_kitchen_standard_ic',
+      cpField: 'demo_kitchen_standard_cp',
+      icValue: (config as any).demo_kitchen_standard_ic ?? 800,
+      cpValue: (config as any).demo_kitchen_standard_cp ?? 1500,
     },
     {
-      key: 'dumpster_bath',
-      name: 'Dumpster/Haul - Bathroom',
-      description: 'Dumpster and haul-off for bathroom demo.',
+      key: 'demo_bath_standard',
+      name: 'Full Bath Gut (Standard)',
+      description: 'Standard bathroom demo: fixtures, tile, vanity.',
       unit: 'each',
-      icField: 'dumpster_bath_ic',
-      cpField: 'dumpster_bath_cp',
-      icValue: config.dumpster_bath_ic,
-      cpValue: config.dumpster_bath_cp,
+      icField: 'demo_bath_standard_ic',
+      cpField: 'demo_bath_standard_cp',
+      icValue: (config as any).demo_bath_standard_ic ?? 600,
+      cpValue: (config as any).demo_bath_standard_cp ?? 1200,
     },
     {
-      key: 'dumpster_kitchen',
-      name: 'Dumpster/Haul - Kitchen',
-      description: 'Dumpster and haul-off for kitchen demo.',
+      key: 'demo_soffit',
+      name: 'Soffit Demolition',
+      description: 'Remove existing soffits.',
+      unit: 'per LF',
+      icField: 'demo_soffit_lf_ic',
+      cpField: 'demo_soffit_lf_cp',
+      icValue: (config as any).demo_soffit_lf_ic ?? 15,
+      cpValue: (config as any).demo_soffit_lf_cp ?? 30,
+    },
+    {
+      key: 'demo_cabinet_deconstruct',
+      name: 'Cabinet Deconstruction (Save for Reuse)',
+      description: 'Careful removal of cabinets for donor reuse.',
+      unit: 'per kitchen',
+      icField: 'demo_cabinet_deconstruct_ic',
+      cpField: 'demo_cabinet_deconstruct_cp',
+      icValue: (config as any).demo_cabinet_deconstruct_ic ?? 500,
+      cpValue: (config as any).demo_cabinet_deconstruct_cp ?? 900,
+    },
+  ];
+
+  // 3. HEAVY/DIFFICULT DEMO (Surcharges)
+  const heavyDemoBuckets: TradeBucket[] = [
+    {
+      key: 'demo_tile_mudset',
+      name: 'Tile Removal (Mud-Set/Concrete Bed)',
+      description: 'Remove mud-set or concrete bed tile.',
+      unit: 'per sqft',
+      icField: 'demo_tile_mudset_sqft_ic',
+      cpField: 'demo_tile_mudset_sqft_cp',
+      icValue: (config as any).demo_tile_mudset_sqft_ic ?? 6,
+      cpValue: (config as any).demo_tile_mudset_sqft_cp ?? 12,
+    },
+    {
+      key: 'demo_castiron_tub',
+      name: 'Cast Iron Tub Smash/Removal',
+      description: 'Break up and remove cast iron tub.',
       unit: 'each',
-      icField: 'dumpster_kitchen_ic',
-      cpField: 'dumpster_kitchen_cp',
-      icValue: config.dumpster_kitchen_ic,
-      cpValue: config.dumpster_kitchen_cp,
+      icField: 'demo_castiron_tub_ic',
+      cpField: 'demo_castiron_tub_cp',
+      icValue: (config as any).demo_castiron_tub_ic ?? 250,
+      cpValue: (config as any).demo_castiron_tub_cp ?? 500,
+    },
+    {
+      key: 'demo_glueddown',
+      name: 'Glued-Down Wood/Tile Removal',
+      description: 'Remove glued-down flooring.',
+      unit: 'per sqft',
+      icField: 'demo_glueddown_sqft_ic',
+      cpField: 'demo_glueddown_sqft_cp',
+      icValue: (config as any).demo_glueddown_sqft_ic ?? 4,
+      cpValue: (config as any).demo_glueddown_sqft_cp ?? 8,
+    },
+    {
+      key: 'demo_popcorn_ceiling',
+      name: 'Popcorn Ceiling Removal (Scrape & Skim)',
+      description: 'Scrape popcorn ceiling and skim coat.',
+      unit: 'per sqft',
+      icField: 'demo_popcorn_ceiling_sqft_ic',
+      cpField: 'demo_popcorn_ceiling_sqft_cp',
+      icValue: (config as any).demo_popcorn_ceiling_sqft_ic ?? 3.5,
+      cpValue: (config as any).demo_popcorn_ceiling_sqft_cp ?? 7,
+    },
+  ];
+
+  // 4. DISPOSAL & LOGISTICS
+  const disposalBuckets: TradeBucket[] = [
+    {
+      key: 'dumpster_20yd',
+      name: 'Dumpster (20 Yard)',
+      description: '20 yard dumpster rental and pickup.',
+      unit: 'each',
+      icField: 'dumpster_20yd_ic',
+      cpField: 'dumpster_20yd_cp',
+      icValue: (config as any).dumpster_20yd_ic ?? 550,
+      cpValue: (config as any).dumpster_20yd_cp ?? 750,
+    },
+    {
+      key: 'liveload_haul',
+      name: 'Live Load / Truck Haul-Away',
+      description: 'Live load debris into truck and haul away.',
+      unit: 'per load',
+      icField: 'liveload_haul_ic',
+      cpField: 'liveload_haul_cp',
+      icValue: (config as any).liveload_haul_ic ?? 400,
+      cpValue: (config as any).liveload_haul_cp ?? 700,
+    },
+    {
+      key: 'difficult_access_fee',
+      name: 'Difficult Access / Stair Carry Fee',
+      description: 'Surcharge for difficult access (stairs, elevator, distance).',
+      unit: 'per job',
+      icField: 'difficult_access_fee_ic',
+      cpField: 'difficult_access_fee_cp',
+      icValue: (config as any).difficult_access_fee_ic ?? 300,
+      cpValue: (config as any).difficult_access_fee_cp ?? 600,
     },
   ];
 
@@ -1502,21 +1640,50 @@ export default function Pricing() {
 
         {/* TRADE-BASED SECTIONS */}
         
-        {/* Demolition & Haul */}
+        {/* Demo Section - 4 Sub-Categories */}
         <AccordionSection 
           title="Demolition & Haul" 
           icon={<HardHat className="h-5 w-5" />}
           defaultOpen={true}
         >
-          <TradeBucketsCard
-            title="Demolition & Haul"
-            description="Demo packages and dumpster/haul-off."
-            icon={<HardHat className="h-5 w-5" />}
-            buckets={demoBuckets}
-            onChange={handleChange}
-            targetMargin={config.target_margin}
-            pricingMode={pricingMode}
-          />
+          <div className="space-y-4">
+            <TradeBucketsCard
+              title="Site Protection & Setup"
+              description="Floor protection, dust barriers, air scrubbers, moving."
+              icon={<HardHat className="h-5 w-5" />}
+              buckets={siteProtectionBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+            <TradeBucketsCard
+              title="Standard Demolition"
+              description="Kitchen and bath gut, soffit demo, cabinet deconstruction."
+              icon={<HardHat className="h-5 w-5" />}
+              buckets={standardDemoBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+            <TradeBucketsCard
+              title="Heavy/Difficult Demo (Surcharges)"
+              description="Mud-set tile, cast iron tub, glued-down, popcorn ceiling."
+              icon={<HardHat className="h-5 w-5" />}
+              buckets={heavyDemoBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+            <TradeBucketsCard
+              title="Disposal & Logistics"
+              description="Dumpsters, haul-away, difficult access fees."
+              icon={<Truck className="h-5 w-5" />}
+              buckets={disposalBuckets}
+              onChange={handleChange}
+              targetMargin={config.target_margin}
+              pricingMode={pricingMode}
+            />
+          </div>
         </AccordionSection>
 
         {/* Plumbing */}
