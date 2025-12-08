@@ -4,14 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
   Dialog,
   DialogContent,
   DialogHeader,
@@ -54,29 +46,33 @@ interface LineItemEditorCardProps {
   hideInternalCost?: boolean;
 }
 
-const CATEGORIES = [
-  'Demo',
-  'Framing',
-  'Plumbing',
-  'Electrical',
-  'Tile',
-  'Waterproofing',
-  'Glass',
-  'Vanity',
-  'Paint',
-  'Cabinets',
-  'Countertop',
-  'Materials - Tile',
-  'Materials - Plumbing',
-  'Materials - Cabinets',
-  'Materials - Countertop',
-  'Materials - Glass',
-  'Materials - Flooring',
-  'Materials - Other',
-  'Other'
-];
+// Organized by trade type for faster selection
+const CATEGORY_GROUPS = {
+  'Demo & Haul': ['Demo', 'Dumpster/Haul'],
+  'Structural': ['Wall Removal', 'New Wall', 'Door Relocation', 'Door Closure', 'Pocket Door', 'New Doorway', 'Soffit Removal', 'Entrance Enlargement', 'Shower Enlargement', 'Alcove/Built-In'],
+  'Framing': ['Framing', 'Niche', 'Blocking'],
+  'Plumbing': ['Plumbing', 'Drain Relocation', 'Toilet Relocation', 'Tub Relocation'],
+  'Electrical': ['Electrical', 'Recessed Can', 'Vanity Light', 'Exhaust Fan'],
+  'Tile & Waterproofing': ['Tile - Wall', 'Tile - Floor', 'Tile - Shower Floor', 'Waterproofing', 'Cement Board'],
+  'Glass': ['Glass - Shower', 'Glass - Panel', 'Glass - 90° Return', 'Mirror'],
+  'Cabinetry & Vanity': ['Cabinets', 'Vanity', 'Closet Shelving', 'Floating Shelves'],
+  'Countertops': ['Countertop - Quartz', 'Countertop - Granite', 'Countertop - Other'],
+  'Paint & Drywall': ['Paint', 'Drywall', 'Ceiling Work', 'Texture'],
+  'Flooring': ['Flooring - LVP', 'Flooring - Tile', 'Floor Leveling'],
+  'Materials': ['Materials - Tile', 'Materials - Plumbing', 'Materials - Cabinets', 'Materials - Countertop', 'Materials - Flooring'],
+  'Other': ['Other', 'Management Fee', 'Post-Construction Clean']
+};
 
-const UNITS = ['ea', 'sqft', 'lf', 'hr', 'ls'];
+// Flatten for select options
+const ALL_CATEGORIES = Object.values(CATEGORY_GROUPS).flat();
+
+const UNITS = [
+  { value: 'ea', label: 'Each' },
+  { value: 'sqft', label: 'Sq Ft' },
+  { value: 'lf', label: 'Linear Ft' },
+  { value: 'hr', label: 'Hour' },
+  { value: 'ls', label: 'Lump Sum' }
+];
 
 export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false, hideInternalCost = false }: LineItemEditorCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -310,80 +306,127 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
                 Add Line Item
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Add Line Item</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Select 
-                      value={newItem.category} 
-                      onValueChange={(v) => setNewItem({ ...newItem, category: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Unit</Label>
-                    <Select 
-                      value={newItem.unit} 
-                      onValueChange={(v) => setNewItem({ ...newItem, unit: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {UNITS.map(u => (
-                          <SelectItem key={u} value={u}>{u}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              <div className="space-y-4 pt-2">
+                {/* Category - Grouped for faster selection */}
                 <div className="space-y-2">
-                  <Label>Description</Label>
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Category</Label>
+                  <Select 
+                    value={newItem.category} 
+                    onValueChange={(v) => setNewItem({ ...newItem, category: v })}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select category..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {Object.entries(CATEGORY_GROUPS).map(([group, categories]) => (
+                        <div key={group}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
+                            {group}
+                          </div>
+                          {categories.map(cat => (
+                            <SelectItem key={cat} value={cat} className="pl-4">
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Description</Label>
                   <Input
                     value={newItem.task_description}
                     onChange={(e) => setNewItem({ ...newItem, task_description: e.target.value })}
-                    placeholder="e.g., Demo - Shower Only"
+                    placeholder="e.g., Remove existing vanity"
+                    className="h-9"
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+
+                {/* Quantity & Unit in one row */}
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
-                    <Label>Quantity</Label>
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Qty</Label>
                     <Input
                       type="number"
                       value={newItem.quantity}
                       onChange={(e) => setNewItem({ ...newItem, quantity: parseFloat(e.target.value) || 0 })}
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>IC/Unit ($)</Label>
-                    <Input
-                      type="number"
-                      value={newItem.ic_per_unit}
-                      onChange={(e) => setNewItem({ ...newItem, ic_per_unit: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>CP/Unit ($)</Label>
-                    <Input
-                      type="number"
-                      value={newItem.cp_per_unit}
-                      onChange={(e) => setNewItem({ ...newItem, cp_per_unit: parseFloat(e.target.value) || 0 })}
-                    />
+                  <div className="col-span-2 space-y-2">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Unit</Label>
+                    <div className="flex gap-1">
+                      {UNITS.map(u => (
+                        <Button
+                          key={u.value}
+                          type="button"
+                          variant={newItem.unit === u.value ? "default" : "outline"}
+                          size="sm"
+                          className="flex-1 h-9 text-xs"
+                          onClick={() => setNewItem({ ...newItem, unit: u.value })}
+                        >
+                          {u.label}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <Button onClick={handleAddItem} className="w-full">
+
+                {/* Pricing */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Internal Cost</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                      <Input
+                        type="number"
+                        value={newItem.ic_per_unit}
+                        onChange={(e) => setNewItem({ ...newItem, ic_per_unit: parseFloat(e.target.value) || 0 })}
+                        className="h-9 pl-7"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Client Price</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                      <Input
+                        type="number"
+                        value={newItem.cp_per_unit}
+                        onChange={(e) => setNewItem({ ...newItem, cp_per_unit: parseFloat(e.target.value) || 0 })}
+                        className="h-9 pl-7"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                {(newItem.quantity || 0) > 0 && ((newItem.ic_per_unit || 0) > 0 || (newItem.cp_per_unit || 0) > 0) && (
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg text-sm">
+                    <span className="text-muted-foreground">Line Total:</span>
+                    <div className="flex gap-4">
+                      <span className="text-muted-foreground">
+                        IC: {formatCurrency((newItem.quantity || 0) * (newItem.ic_per_unit || 0))}
+                      </span>
+                      <span className="font-semibold text-primary">
+                        CP: {formatCurrency((newItem.quantity || 0) * (newItem.cp_per_unit || 0))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleAddItem} 
+                  className="w-full"
+                  disabled={!newItem.task_description}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Item
                 </Button>
@@ -392,120 +435,118 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
           </Dialog>
 
           {/* Line Items by Category */}
-          {Object.entries(groupedItems).map(([category, items]) => (
-            <div key={category} className="space-y-2">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                {category}
-              </h4>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40%]">Description</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    {!hideInternalCost && <TableHead className="text-right">IC</TableHead>}
-                    <TableHead className="text-right">CP</TableHead>
-                    {!hideInternalCost && <TableHead className="w-[80px]"></TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={item.originalIndex}>
-                      {editingIndex === item.originalIndex ? (
-                        <>
-                          <TableCell>
+          <div className="space-y-3">
+            {Object.entries(groupedItems).map(([category, items]) => {
+              const categoryTotal = items.reduce((sum, i) => sum + i.cp_total, 0);
+              return (
+                <div key={category} className="border rounded-lg overflow-hidden">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b">
+                    <span className="text-sm font-semibold">{category}</span>
+                    <span className="text-sm font-medium text-primary">{formatCurrency(categoryTotal)}</span>
+                  </div>
+                  
+                  {/* Items */}
+                  <div className="divide-y">
+                    {items.map((item) => (
+                      <div key={item.originalIndex} className="group">
+                        {editingIndex === item.originalIndex ? (
+                          <div className="p-3 bg-muted/20 space-y-3">
                             <Input
                               value={editForm.task_description}
                               onChange={(e) => setEditForm({ ...editForm, task_description: e.target.value })}
                               className="h-8"
+                              placeholder="Description"
                             />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              value={editForm.quantity}
-                              onChange={(e) => setEditForm({ ...editForm, quantity: parseFloat(e.target.value) || 1 })}
-                              className="h-8 w-16 text-right"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              value={editForm.ic_total}
-                              onChange={(e) => setEditForm({ ...editForm, ic_total: parseFloat(e.target.value) || 0 })}
-                              className="h-8 w-24 text-right"
-                              placeholder="IC Total"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              value={editForm.cp_total}
-                              onChange={(e) => setEditForm({ ...editForm, cp_total: parseFloat(e.target.value) || 0 })}
-                              className="h-8 w-24 text-right"
-                              placeholder="CP Total"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveItemEdit}>
-                                <Save className="h-3 w-3" />
-                              </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancelEdit}>
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </>
-                      ) : (
-                        <>
-                          <TableCell className="font-medium">
-                            {item.task_description}
-                            <span className="text-muted-foreground text-xs ml-2">({item.unit})</span>
-                          </TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
-                          {!hideInternalCost && (
-                            <TableCell className="text-right text-muted-foreground">
-                              {formatCurrency(item.ic_total)}
-                            </TableCell>
-                          )}
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(item.cp_total)}
-                          </TableCell>
-                          {!hideInternalCost && (
-                            <TableCell>
+                            <div className="grid grid-cols-4 gap-2">
+                              <Input
+                                type="number"
+                                value={editForm.quantity}
+                                onChange={(e) => setEditForm({ ...editForm, quantity: parseFloat(e.target.value) || 1 })}
+                                className="h-8"
+                                placeholder="Qty"
+                              />
+                              {!hideInternalCost && (
+                                <Input
+                                  type="number"
+                                  value={editForm.ic_total}
+                                  onChange={(e) => setEditForm({ ...editForm, ic_total: parseFloat(e.target.value) || 0 })}
+                                  className="h-8"
+                                  placeholder="IC Total"
+                                />
+                              )}
+                              <Input
+                                type="number"
+                                value={editForm.cp_total}
+                                onChange={(e) => setEditForm({ ...editForm, cp_total: parseFloat(e.target.value) || 0 })}
+                                className="h-8"
+                                placeholder="CP Total"
+                              />
                               <div className="flex gap-1">
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-7 w-7"
-                                  onClick={() => handleEditItem(item.originalIndex)}
-                                >
-                                  <Edit2 className="h-3 w-3" />
+                                <Button size="sm" variant="default" className="h-8 flex-1" onClick={handleSaveItemEdit}>
+                                  <Save className="h-3 w-3" />
                                 </Button>
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => handleDeleteItem(item.originalIndex)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
+                                <Button size="sm" variant="ghost" className="h-8" onClick={handleCancelEdit}>
+                                  <X className="h-3 w-3" />
                                 </Button>
                               </div>
-                            </TableCell>
-                          )}
-                        </>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/20 transition-colors">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium truncate">{item.task_description}</span>
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {item.quantity} {item.unit}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {!hideInternalCost && (
+                                <span className="text-sm text-muted-foreground w-20 text-right">
+                                  {formatCurrency(item.ic_total)}
+                                </span>
+                              )}
+                              <span className="text-sm font-medium w-20 text-right">
+                                {formatCurrency(item.cp_total)}
+                              </span>
+                              {!hideInternalCost && (
+                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="h-7 w-7"
+                                    onClick={() => handleEditItem(item.originalIndex)}
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteItem(item.originalIndex)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           {lineItems.length === 0 && (
-            <p className="text-center text-muted-foreground text-sm py-8">
-              No line items found. Add items to build your estimate.
-            </p>
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <p className="text-muted-foreground">No line items yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Click "Add Line Item" to build your estimate</p>
+            </div>
           )}
         </CardContent>
       )}
