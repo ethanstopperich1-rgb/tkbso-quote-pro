@@ -5,18 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CATEGORIES = [
-  'Demo', 'Dumpster/Haul', 'Wall Removal', 'New Wall', 'Door Relocation', 'Door Closure', 
-  'Pocket Door', 'New Doorway', 'Soffit Removal', 'Entrance Enlargement', 'Shower Enlargement', 
-  'Alcove/Built-In', 'Framing', 'Niche', 'Blocking', 'Plumbing', 'Drain Relocation', 
-  'Toilet Relocation', 'Tub Relocation', 'Electrical', 'Recessed Can', 'Vanity Light', 
-  'Exhaust Fan', 'Tile - Wall', 'Tile - Floor', 'Tile - Shower Floor', 'Waterproofing', 
-  'Cement Board', 'Glass - Shower', 'Glass - Panel', 'Glass - 90° Return', 'Mirror', 
-  'Cabinets', 'Vanity', 'Closet Shelving', 'Floating Shelves', 'Countertop - Quartz', 
-  'Countertop - Granite', 'Countertop - Other', 'Paint', 'Drywall', 'Ceiling Work', 
-  'Texture', 'Flooring - LVP', 'Flooring - Tile', 'Floor Leveling', 'Materials - Tile', 
-  'Materials - Plumbing', 'Materials - Cabinets', 'Materials - Countertop', 
-  'Materials - Flooring', 'Other', 'Management Fee', 'Post-Construction Clean'
+// Main trade categories (parent buckets)
+const TRADE_CATEGORIES = [
+  'Demo', 'Framing', 'Plumbing', 'Electrical', 'Tile', 'Waterproofing', 
+  'Glass', 'Vanity', 'Paint', 'Drywall', 'Cabinets', 'Countertop', 
+  'Flooring', 'Structural', 'Materials', 'Other'
 ];
 
 serve(async (req) => {
@@ -34,16 +27,33 @@ serve(async (req) => {
 
     const systemPrompt = `You are a line item parser for construction estimates. Parse the user's natural language into a structured line item.
 
-Available categories: ${CATEGORIES.join(', ')}
+CATEGORY MAPPING RULES (CRITICAL):
+- Drain relocation, toilet relocation, tub relocation, shower rough-in, extra head, linear drain → "Plumbing"
+- Pony wall, niche, blocking, framing → "Framing"  
+- Wall removal, door relocation, door closure, soffit removal, entrance work → "Structural"
+- Recessed can, vanity light, exhaust fan → "Electrical"
+- Wall tile, floor tile, shower floor tile → "Tile"
+- Shower glass, glass panel, mirror → "Glass"
+- Vanity (any size) → "Vanity"
+- Quartz, granite, countertop → "Countertop"
+- Demo, dumpster, haul-off → "Demo"
+- Paint, ceiling paint, touch-up → "Paint"
+- Drywall, ceiling drywall, patch → "Drywall"
+- LVP, floor leveling → "Flooring"
+- Tile material, plumbing fixtures, allowances → "Materials"
 
 Units: ea (each), sqft (square feet), lf (linear feet), hr (hour), ls (lump sum)
 
 Examples:
-- "add demo for $1500" → Demo, qty 1, ls, $1500 CP
-- "tile wall 128 sqft at $39/sqft" → Tile - Wall, qty 128, sqft, $39/sqft CP
-- "3 recessed cans at $110 each" → Recessed Can, qty 3, ea, $110 CP
-- "vanity 48 for $2600" → Vanity, qty 1, ea, $2600 CP
-- "waterproofing 64 sqft $13/sqft" → Waterproofing, qty 64, sqft, $13/sqft CP
+- "drain relocation $1200" → category: Plumbing, description: "Drain Relocation", qty 1, ls, $1200 CP
+- "pony wall $850" → category: Framing, description: "Pony Wall", qty 1, ea, $850 CP
+- "demo for $1500" → category: Demo, description: "Full Demo", qty 1, ls, $1500 CP
+- "tile wall 128 sqft at $39/sqft" → category: Tile, description: "Wall Tile", qty 128, sqft, $39/sqft CP
+- "3 recessed cans at $110 each" → category: Electrical, description: "Recessed Cans", qty 3, ea, $110 CP
+- "vanity 48 for $2600" → category: Vanity, description: "48\" Vanity Bundle", qty 1, ea, $2600 CP
+- "waterproofing 64 sqft $13/sqft" → category: Waterproofing, description: "Shower Waterproofing", qty 64, sqft, $13/sqft CP
+- "toilet relocation $950" → category: Plumbing, description: "Toilet Relocation", qty 1, ea, $950 CP
+- "wall removal $2500" → category: Structural, description: "Wall Removal", qty 1, ea, $2500 CP
 
 Parse the input and return a line item. If IC (internal cost) is not specified, estimate it at 60% of CP.`;
 
@@ -69,12 +79,12 @@ Parse the input and return a line item. If IC (internal cost) is not specified, 
               properties: {
                 category: { 
                   type: "string", 
-                  description: "The trade category",
-                  enum: CATEGORIES
+                  description: "The parent trade category",
+                  enum: TRADE_CATEGORIES
                 },
                 task_description: { 
                   type: "string", 
-                  description: "Brief description of the work"
+                  description: "Specific description of the work (e.g., 'Drain Relocation', 'Pony Wall', '48\" Vanity')"
                 },
                 quantity: { 
                   type: "number", 
@@ -121,6 +131,8 @@ Parse the input and return a line item. If IC (internal cost) is not specified, 
     if (!lineItem.ic_per_unit) {
       lineItem.ic_per_unit = Math.round(lineItem.cp_per_unit * 0.6 * 100) / 100;
     }
+
+    console.log("Parsed line item:", lineItem);
 
     return new Response(JSON.stringify({ lineItem }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
