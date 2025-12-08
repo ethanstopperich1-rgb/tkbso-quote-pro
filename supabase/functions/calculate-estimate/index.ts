@@ -147,6 +147,9 @@ function mapCategoryToPricing(
     if (taskLower.includes('reconnect') || taskLower.includes('hook up') || taskLower.includes('hookup')) {
       // Kitchen plumbing reconnect (sink, dishwasher, etc.)
       return { ic: 800, cp: 1400, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('drain') && taskLower.includes('reloc')) {
+      // Shower drain relocation
+      return { ic: 500, cp: 1200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('toilet') && taskLower.includes('reloc')) {
       // Toilet relocation - expensive due to drain work
       return { ic: 1100, cp: 2200, unit: 'ea', flatRate: true };
@@ -240,6 +243,12 @@ function mapCategoryToPricing(
     } else if (taskLower.includes('wall build') || taskLower.includes('new wall')) {
       // Build new wall (per linear foot)
       return { ic: 35, cp: 65, unit: 'lf' };
+    } else if (taskLower.includes('pocket door')) {
+      // Pocket door framing + hardware
+      return { ic: 650, cp: 1200, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('doorway') && taskLower.includes('new')) {
+      // Frame new doorway opening
+      return { ic: 500, cp: 950, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('door') && taskLower.includes('reloc')) {
       // Door relocation - framing new opening + closing old
       return { ic: 1200, cp: 2200, unit: 'ea', flatRate: true };
@@ -249,9 +258,12 @@ function mapCategoryToPricing(
     } else if (taskLower.includes('door') && taskLower.includes('enlarg')) {
       // Enlarge doorway/entrance
       return { ic: 900, cp: 1700, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('entrance') && taskLower.includes('enlarg')) {
+      // Enlarge entrance
+      return { ic: 900, cp: 1700, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('soffit')) {
-      // Soffit removal
-      return { ic: 800, cp: 1500, unit: 'ea', flatRate: true };
+      // Soffit removal - per linear foot if specified, otherwise flat
+      return { ic: 15, cp: 30, unit: 'lf' };
     } else if (taskLower.includes('shower') && taskLower.includes('enlarg')) {
       // Enlarge shower footprint
       return { ic: 1800, cp: 3200, unit: 'ea', flatRate: true };
@@ -261,13 +273,65 @@ function mapCategoryToPricing(
     } else if (taskLower.includes('bench')) {
       // Shower bench framing
       return { ic: 400, cp: 750, unit: 'ea' };
+    } else if (taskLower.includes('closet') && taskLower.includes('build')) {
+      // Closet framing
+      return { ic: 900, cp: 1800, unit: 'ea', flatRate: true };
     }
     return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea', flatRate: true };
   }
 
+  // Closet-specific work
+  if (categoryLower.includes('closet')) {
+    if (taskLower.includes('shelv')) {
+      // Closet shelving system per closet
+      return { ic: 800, cp: 1500, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('door')) {
+      // Closet doors per set
+      return { ic: 400, cp: 800, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('build') || taskLower.includes('frame')) {
+      // Closet framing
+      return { ic: 900, cp: 1800, unit: 'ea', flatRate: true };
+    }
+    // Default closet work
+    return { ic: 800, cp: 1500, unit: 'ea', flatRate: true };
+  }
+
+  // Ceiling-specific work
+  if (categoryLower.includes('ceiling')) {
+    if (taskLower.includes('texture')) {
+      return { ic: 2, cp: 5, unit: 'sqft' };
+    } else if (taskLower.includes('paint')) {
+      return { ic: 2, cp: 4, unit: 'sqft' };
+    } else if (taskLower.includes('drywall')) {
+      return { ic: 10, cp: 18, unit: 'sqft' };
+    }
+    // Default ceiling work
+    return { ic: 10, cp: 18, unit: 'sqft' };
+  }
+
+  // Mirrors
+  if (categoryLower.includes('mirror')) {
+    // Custom mirror installation
+    return { ic: 150, cp: 350, unit: 'ea' };
+  }
+
+  // Floating shelves
+  if (categoryLower.includes('shelf') || categoryLower.includes('shelv')) {
+    if (taskLower.includes('float')) {
+      return { ic: 100, cp: 250, unit: 'ea' };
+    }
+    return { ic: 100, cp: 250, unit: 'ea' };
+  }
+
   // Paint - FLAT RATE packages
   if (categoryLower.includes('paint')) {
-    if (taskLower.includes('full')) {
+    if (taskLower.includes('closet')) {
+      // Paint closet interior
+      return { ic: 200, cp: 400, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('ceiling')) {
+      // Ceiling paint
+      return { ic: 2, cp: 4, unit: 'sqft' };
+    } else if (taskLower.includes('full')) {
       return { ic: Number(config.paint_full_bath_ic) || 1200, cp: Number(config.paint_full_bath_cp) || 1900, unit: 'ea', flatRate: true };
     }
     return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1000, unit: 'ea', flatRate: true };
@@ -275,7 +339,10 @@ function mapCategoryToPricing(
 
   // Drywall - for structural work
   if (categoryLower.includes('drywall')) {
-    if (taskLower.includes('new wall') || taskLower.includes('full wall')) {
+    if (taskLower.includes('closet')) {
+      // Closet drywall per sqft
+      return { ic: 8, cp: 15, unit: 'sqft' };
+    } else if (taskLower.includes('new wall') || taskLower.includes('full wall')) {
       return { ic: 8, cp: 15, unit: 'sqft' };
     } else if (taskLower.includes('patch')) {
       return { ic: 400, cp: 750, unit: 'ea', flatRate: true };
@@ -623,19 +690,38 @@ const analysisJsonSchema = {
     },
     parsed_scope: {
       type: "object",
-      description: "What we understood from the user's input",
+      description: "ALL scope items detected from conversation - MUST capture EVERYTHING mentioned",
       properties: {
-        demo: { type: ["string", "null"] },
+        // Standard trades
+        demo: { type: ["string", "null"], description: "Demo scope including size (small/large bath, kitchen)" },
         cabinets: { type: ["string", "null"] },
         countertops: { type: ["string", "null"] },
         backsplash: { type: ["string", "null"] },
         flooring: { type: ["string", "null"] },
-        tile: { type: ["string", "null"] },
-        plumbing: { type: ["string", "null"] },
+        tile: { type: ["string", "null"], description: "Wall tile, floor tile, shower tile details" },
+        plumbing: { type: ["string", "null"], description: "Standard plumbing work" },
         electrical: { type: ["string", "null"] },
         glass: { type: ["string", "null"] },
-        vanity: { type: ["string", "null"] },
-        paint: { type: ["string", "null"] }
+        vanity: { type: ["string", "null"], description: "Vanity size(s) and quantity" },
+        paint: { type: ["string", "null"] },
+        // CRITICAL - STRUCTURAL WORK (often missed!)
+        structural_walls: { type: ["string", "null"], description: "Wall removal, new walls, wall modifications" },
+        door_work: { type: ["string", "null"], description: "Door relocations, new doorways, door closures, pocket doors" },
+        soffit_work: { type: ["string", "null"], description: "Soffit removal, linear feet if mentioned" },
+        entrance_changes: { type: ["string", "null"], description: "Bathroom/room entrance relocations or enlargements" },
+        // CRITICAL - BUILT-IN CONSTRUCTION (often missed!)
+        closets: { type: ["string", "null"], description: "Built-in closets - capture dimensions and count" },
+        alcoves: { type: ["string", "null"], description: "Built-in alcoves, niches with vanities/shelving" },
+        shelving: { type: ["string", "null"], description: "Built-in shelves, floating shelves" },
+        // CRITICAL - CEILING WORK (often missed!)
+        ceiling_work: { type: ["string", "null"], description: "Ceiling drywall, texture, paint - capture sqft" },
+        // CRITICAL - PLUMBING RELOCATIONS (different from standard!)
+        plumbing_relocations: { type: ["string", "null"], description: "Tub relocation, toilet relocation, drain relocation" },
+        // CRITICAL - ACCESSORIES (often missed!)
+        mirrors: { type: ["string", "null"], description: "Mirrors - capture count" },
+        accessories: { type: ["string", "null"], description: "Towel bars, TP holders, hooks, etc." },
+        // DRYWALL specific
+        drywall: { type: ["string", "null"], description: "Drywall repair, new drywall, patches for old openings" }
       }
     },
     parsed_dimensions: {
@@ -768,6 +854,50 @@ When user requests changes after quote, set action to "generate_estimate" to reb
 
 CAPTURE ALL OF THIS. These are critical for pricing. Do not dismiss or ignore structural work.
 
+## CRITICAL: COMPLETE SCOPE EXTRACTION CHECKLIST
+
+**BEFORE generating an estimate, mentally check if the contractor mentioned ANY of these. If mentioned, you MUST include them in the estimate:**
+
+### STRUCTURAL WORK ($$$ - Often Missed!)
+- [ ] Wall removal (old doorways, partition walls)
+- [ ] New wall construction
+- [ ] Door relocation (moving doorway to new location)
+- [ ] Door closure (closing off old doorway with drywall)
+- [ ] New doorway framing
+- [ ] Pocket door installation (framing + hardware)
+- [ ] Soffit removal (capture linear feet!)
+- [ ] Entrance enlargement
+- [ ] Shower enlargement
+
+### BUILT-IN CONSTRUCTION ($$$ - Often Missed!)
+- [ ] Built-in closets (framing + drywall + shelving + doors + paint)
+- [ ] Alcoves with vanity/shelving
+- [ ] Floating shelves / built-in shelves
+
+### CEILING WORK ($$$ - Often Missed!)
+- [ ] Ceiling drywall (new or repair) - calculate sqft from room dimensions
+- [ ] Ceiling texture
+- [ ] Ceiling paint
+
+### PLUMBING RELOCATIONS ($$$ - Different from standard!)
+- [ ] Tub relocation (moving tub to different location)
+- [ ] Toilet relocation (moving toilet - requires new drain)
+- [ ] Drain relocation (shower drain moved)
+- [ ] Supply line rerouting
+
+### DRYWALL WORK
+- [ ] Drywall for old door openings
+- [ ] Drywall patches/repairs
+- [ ] New wall drywall
+
+### ACCESSORIES ($ - Often Forgotten!)
+- [ ] Mirrors (capture count!)
+- [ ] Towel bars, rings, hooks
+- [ ] TP holders
+- [ ] Robe hooks
+
+**IF THE CONTRACTOR MENTIONED IT, IT MUST BE IN THE ESTIMATE!**
+
 ## CONVERSATION FLOW
 
 **Step 1 - Identify Project Type**
@@ -777,6 +907,7 @@ If unclear, ask: "Is this a kitchen or bathroom project?"
 
 FOR BATHROOMS, understand:
 - Demo level: full gut, shower only, cosmetic refresh
+- Demo size: small bath (<50 sqft), large bath (50+ sqft), master bath
 - Shower/tub: walk-in shower, tub-to-shower conversion, keep tub
 - Tile: wall tile height (full height vs wainscot), floor tile areas
 - **TILE MATERIAL TYPE**: porcelain, ceramic, natural stone, large format, mosaic - THIS IS CRITICAL
@@ -784,9 +915,25 @@ FOR BATHROOMS, understand:
 - Vanity: size or custom dimensions
 - Toilet: replace, relocate, or keep
 - Lighting: recessed cans, vanity light
-- STRUCTURAL: wall changes, entrance changes, soffit removal
-- PLUMBING RELOCATIONS: tub relocation, toilet relocation, drain changes
-- CLOSETS: if mentioned, capture scope
+- **STRUCTURAL WORK ($$$ - ASK IF NOT MENTIONED!):**
+  - Wall removal / new walls
+  - Door relocations, door closures, new doorways
+  - Pocket door installations
+  - Soffit removal (get linear feet!)
+  - Entrance enlargement / relocation
+- **BUILT-IN CONSTRUCTION ($$$ - ASK IF NOT MENTIONED!):**
+  - Built-in closets (capture dimensions + count!)
+  - Alcoves with vanity/shelving
+  - Floating shelves
+- **CEILING WORK ($$$ - Often forgotten!):**
+  - Ceiling drywall (calculate from room sqft)
+  - Ceiling texture + paint
+- **PLUMBING RELOCATIONS (different from standard!):**
+  - Tub relocation (moving to new location)
+  - Toilet relocation (requires new drain - expensive!)
+  - Drain relocation (shower drain moved)
+- **MIRRORS** - capture count!
+- **DRYWALL REPAIRS** for old openings being closed
 
 FOR KITCHENS, understand:
 - Demo level: full gut, partial, refresh
@@ -1077,6 +1224,45 @@ NOTE: Countertop pricing is ALL-IN (slab material + fabrication + installation).
 **Backsplash:** Backsplash - Tile (sqft) - NOTE: Material included in "Materials - Tile" total
 
 **Framing (LABOR BUNDLE - materials included):** Framing - Standard, Framing - Niche (ea)
+
+**STRUCTURAL WORK ($$$ - CRITICAL FOR COMPLEX JOBS):**
+- Framing - Wall Removal (ea) - removing non-load-bearing walls
+- Framing - New Wall (lf) - building new walls
+- Framing - Door Relocation (ea) - moving doorway to new location
+- Framing - Door Closure (ea) - closing off existing doorway with drywall
+- Framing - New Doorway (ea) - framing new opening
+- Framing - Pocket Door (ea) - pocket door framing + hardware
+- Framing - Soffit Removal (ea or lf) - removing soffits
+- Framing - Entrance Enlargement (ea) - enlarging doorway/entrance
+- Framing - Shower Enlargement (ea) - expanding shower footprint
+- Framing - Alcove/Built-in (ea) - creating alcove or built-in space
+- Framing - Bench (ea) - shower bench framing
+
+**BUILT-IN CLOSETS ($$$ - CAPTURE ALL COMPONENTS):**
+- Framing - Closet Build (ea) - closet framing per closet
+- Drywall - Closet (sqft) - drywall for closet walls
+- Closet Shelving System (ea) - per closet shelving installation
+- Paint - Closet Interior (ea) - painting closet interior
+- Closet Doors (ea) - closet door installation (bifold, sliding, etc.)
+
+**CEILING WORK ($$$ - DON'T FORGET!):**
+- Drywall - Ceiling (sqft) - new ceiling drywall
+- Ceiling Texture (sqft) - ceiling texture application
+- Paint - Ceiling (sqft) - ceiling paint
+
+**DRYWALL WORK:**
+- Drywall - New Wall (sqft) - new wall drywall
+- Drywall - Patch (ea) - patching old openings/holes
+- Drywall - Ceiling (sqft) - ceiling drywall
+
+**PLUMBING RELOCATIONS ($$$ - Different from standard plumbing!):**
+- Plumbing - Tub Relocation (ea) - moving tub to new location
+- Plumbing - Toilet Relocation (ea) - moving toilet (requires new drain)
+- Plumbing - Drain Relocation (ea) - relocating shower drain
+
+**ACCESSORIES:**
+- Mirrors - Custom (ea) - custom mirror installation
+- Floating Shelves (ea) - wooden floating shelf installation
 
 **Paint (LABOR BUNDLE - materials included):** Paint - Patch, Paint - Full Bath
 
