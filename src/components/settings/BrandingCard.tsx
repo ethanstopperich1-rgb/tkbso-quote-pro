@@ -4,13 +4,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Palette, Upload, X, RefreshCw, Check, FileDown, Loader2 } from 'lucide-react';
+import { Palette, Upload, X, RefreshCw, Check, FileDown, Loader2, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Branding } from '@/types/settings';
 import { cn } from '@/lib/utils';
 import { pdf } from '@react-pdf/renderer';
 import { ProposalPdfDocument } from '@/components/pdf/ProposalPdfDocument';
+import { extractColorsFromImage } from '@/lib/color-extractor';
 
 interface Props {
   data: Branding;
@@ -38,6 +39,7 @@ const ACCENT_COLORS = [
 
 export function BrandingCard({ data, onChange, contractorId, initials, companyName }: Props) {
   const [uploading, setUploading] = useState(false);
+  const [extractingColors, setExtractingColors] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [customPrimaryActive, setCustomPrimaryActive] = useState(
     !PRIMARY_COLORS.some(c => c.value === data.primaryColor)
@@ -46,6 +48,26 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
     !ACCENT_COLORS.some(c => c.value === data.accentColor)
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const extractAndApplyColors = async (imageUrl: string) => {
+    setExtractingColors(true);
+    try {
+      const colors = await extractColorsFromImage(imageUrl);
+      onChange({
+        ...data,
+        primaryColor: colors.primary,
+        accentColor: colors.accent,
+      });
+      setCustomPrimaryActive(!PRIMARY_COLORS.some(c => c.value === colors.primary));
+      setCustomAccentActive(!ACCENT_COLORS.some(c => c.value === colors.accent));
+      toast.success('Colors extracted from logo!');
+    } catch (error) {
+      console.error('Color extraction error:', error);
+      toast.error('Could not extract colors from logo');
+    } finally {
+      setExtractingColors(false);
+    }
+  };
 
   const generatePreviewPdf = async () => {
     setGeneratingPdf(true);
@@ -145,8 +167,12 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
         .from('contractor-assets')
         .getPublicUrl(filePath);
 
-      update('logoUrl', urlData.publicUrl);
-      toast.success('Logo uploaded successfully');
+      const publicUrl = urlData.publicUrl + '?t=' + Date.now(); // Cache bust
+      update('logoUrl', publicUrl);
+      toast.success('Logo uploaded! Extracting colors...');
+      
+      // Auto-extract colors from the uploaded logo
+      await extractAndApplyColors(publicUrl);
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload logo');
@@ -228,21 +254,39 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
                   onChange={handleLogoUpload}
                   className="hidden"
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="border-slate-200"
-                >
-                  {uploading ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading || extractingColors}
+                    className="border-slate-200"
+                  >
+                    {uploading ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    {data.logoUrl ? 'Change Logo' : 'Upload Logo'}
+                  </Button>
+                  {data.logoUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => extractAndApplyColors(data.logoUrl!)}
+                      disabled={extractingColors || uploading}
+                      className="border-slate-200"
+                    >
+                      {extractingColors ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4 mr-2" />
+                      )}
+                      Extract Colors
+                    </Button>
                   )}
-                  {data.logoUrl ? 'Change Logo' : 'Upload Logo'}
-                </Button>
-                <p className="text-xs text-slate-400 mt-2">PNG, JPG, or SVG. Max 5MB.</p>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">PNG, JPG, or SVG. Max 5MB. Colors auto-extracted on upload.</p>
               </div>
             </div>
           </div>
