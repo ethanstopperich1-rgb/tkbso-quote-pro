@@ -174,7 +174,18 @@ export function EstimatorChatPanel() {
     dragCounterRef.current = 0;
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    // Check by both mime type AND extension for better HEIC support
+    const isImageFile = (file: File) => {
+      const name = file.name.toLowerCase();
+      return file.type.startsWith('image/') || 
+             name.endsWith('.heic') || 
+             name.endsWith('.heif') ||
+             name.endsWith('.jpg') ||
+             name.endsWith('.jpeg') ||
+             name.endsWith('.png') ||
+             name.endsWith('.webp');
+    };
+    const imageFiles = files.filter(isImageFile);
     const videoFiles = files.filter(file => file.type.startsWith('video/'));
     
     if (imageFiles.length === 0 && videoFiles.length === 0) {
@@ -893,11 +904,31 @@ Add dimensions or confirm to generate your quote.`,
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onload = () => {
           const result = reader.result as string;
+          console.log('FileReader result length:', result?.length);
+          console.log('FileReader result preview:', result?.substring(0, 100));
+          if (!result || !result.includes(',')) {
+            reject(new Error('Invalid FileReader result'));
+            return;
+          }
           const base64 = result.split(',')[1];
+          console.log('Extracted base64 length:', base64?.length);
+          if (!base64 || base64.length === 0) {
+            reject(new Error('Empty base64 data after split'));
+            return;
+          }
           resolve(base64);
         };
-        reader.onerror = reject;
+        reader.onerror = (error) => {
+          console.error('FileReader error:', error);
+          reject(error);
+        };
+        reader.onabort = () => {
+          console.error('FileReader aborted');
+          reject(new Error('File reading was aborted'));
+        };
       });
+      
+      console.log('Starting to read file:', processedFile.name, 'size:', processedFile.size, 'type:', processedFile.type);
       reader.readAsDataURL(processedFile);
 
       const base64Data = await base64Promise;
