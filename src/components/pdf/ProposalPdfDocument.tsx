@@ -553,7 +553,15 @@ export function ProposalPdfDocument({
             <Text style={styles.sectionTitle}>Project Notes</Text>
             
             <View style={styles.noteBox}>
-              <Text style={styles.noteTitle}>Note I: Work Site Precautions</Text>
+              <Text style={styles.noteTitle}>Note I: Permits</Text>
+              <Text style={styles.noteText}>
+                Permits, if required, are EXCLUDED from this proposal. Any permit fees or associated 
+                inspections are the responsibility of the homeowner unless otherwise agreed in writing.
+              </Text>
+            </View>
+
+            <View style={styles.noteBox}>
+              <Text style={styles.noteTitle}>Note II: Work Site Precautions</Text>
               <Text style={styles.noteText}>
                 {contractorName} will take reasonable precautions to minimize dust and disruption, including 
                 installing floor protection, sealing vents, and maintaining a clean workspace.
@@ -561,7 +569,7 @@ export function ProposalPdfDocument({
             </View>
 
             <View style={styles.noteBox}>
-              <Text style={styles.noteTitle}>Note II: Fixture Allowances</Text>
+              <Text style={styles.noteTitle}>Note III: Fixture Allowances</Text>
               <Text style={styles.noteText}>
                 All fixtures to be supplied by {contractorName} under standard allowance unless specific 
                 models are chosen by the homeowner prior to ordering.
@@ -569,7 +577,7 @@ export function ProposalPdfDocument({
             </View>
 
             <View style={styles.noteBox}>
-              <Text style={styles.noteTitle}>Note III: Project Timeline</Text>
+              <Text style={styles.noteTitle}>Note IV: Project Timeline</Text>
               <Text style={styles.noteText}>
                 Estimated timeline for completion is approximately {estimatedDays} days from project 
                 start, pending material lead times.
