@@ -86,6 +86,12 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
   };
 
   const generatePreviewPdf = async () => {
+    // Open window immediately (synchronously) to avoid popup blocker
+    const pdfWindow = window.open('', '_blank');
+    if (pdfWindow) {
+      pdfWindow.document.write('<html><head><title>Generating PDF...</title></head><body style="font-family: system-ui; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;"><div style="text-align: center;"><div style="font-size: 24px; margin-bottom: 16px;">📄</div><div>Generating PDF preview...</div></div></body></html>');
+    }
+
     setGeneratingPdf(true);
     try {
       const date = new Date().toLocaleDateString('en-US', {
@@ -138,11 +144,17 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
 
       const blob = await pdf(<ProposalPdfDocument {...sampleProps} />).toBlob();
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      if (pdfWindow) {
+        pdfWindow.location.href = url;
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
       toast.success('Preview PDF generated!');
     } catch (error) {
       console.error('PDF generation error:', error);
+      if (pdfWindow) {
+        pdfWindow.document.write('<html><head><title>Error</title></head><body style="font-family: system-ui; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;"><div style="text-align: center; color: #dc2626;"><div style="font-size: 24px; margin-bottom: 16px;">❌</div><div>Failed to generate PDF. Please try again.</div></div></body></html>');
+      }
       toast.error('Failed to generate preview PDF');
     } finally {
       setGeneratingPdf(false);
