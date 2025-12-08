@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ArrowLeft, Video, Square, RotateCcw, ArrowRight, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,32 @@ import { Card, CardContent } from '@/components/ui/card';
 
 type ProcessingStep = 1 | 2 | 3;
 
+interface DetectedLineItem {
+  category: string;
+  item: string;
+  quantity: number;
+  unit: string;
+  confidence: number;
+  source: string;
+}
+
+interface VideoAnalysisResult {
+  project_summary: string;
+  line_items: DetectedLineItem[];
+  timeline_notes: string | null;
+  special_requests: string[];
+  concerns_flagged: string[];
+  transcript: string;
+  room_dimensions: {
+    length_ft: number | null;
+    width_ft: number | null;
+    confidence: number;
+  } | null;
+}
+
 const PROCESSING_STEPS = [
-  { step: 1, title: 'Transcribing Audio', description: 'Converting speech to text' },
-  { step: 2, title: 'Analyzing Video Frames', description: 'Identifying fixtures & materials' },
+  { step: 1, title: 'Transcribing Audio', description: 'Converting speech to text with Whisper' },
+  { step: 2, title: 'Analyzing Video Frames', description: 'Identifying fixtures & materials with AI' },
   { step: 3, title: 'Synthesizing Estimate', description: 'Mapping to line items' },
 ];
 
@@ -29,6 +53,7 @@ export default function EstimatorVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recordedBlobRef = useRef<Blob | null>(null);
   
   const [isRecording, setIsRecording] = useState(false);
   const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
@@ -36,6 +61,7 @@ export default function EstimatorVideo() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState<ProcessingStep>(1);
+  const [processingStatus, setProcessingStatus] = useState('');
 
   // Recording timer
   useEffect(() => {
@@ -69,7 +95,9 @@ export default function EstimatorVideo() {
         videoRef.current.srcObject = mediaStream;
       }
 
-      const mediaRecorder = new MediaRecorder(mediaStream);
+      const mediaRecorder = new MediaRecorder(mediaStream, {
+        mimeType: 'video/webm;codecs=vp8,opus'
+      });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -81,6 +109,7 @@ export default function EstimatorVideo() {
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        recordedBlobRef.current = blob;
         const url = URL.createObjectURL(blob);
         setRecordedVideo(url);
         
@@ -89,7 +118,7 @@ export default function EstimatorVideo() {
         setStream(null);
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Capture in 1-second chunks
       setIsRecording(true);
       setRecordingTime(0);
 
@@ -111,42 +140,263 @@ export default function EstimatorVideo() {
       URL.revokeObjectURL(recordedVideo);
     }
     setRecordedVideo(null);
+    recordedBlobRef.current = null;
     setRecordingTime(0);
   };
 
+  // Extract audio from video blob
+  const extractAudioFromVideo = async (videoBlob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(videoBlob);
+      
+      video.onloadedmetadata = async () => {
+        try {
+          const audioContext = new AudioContext({ sampleRate: 16000 });
+          const arrayBuffer = await videoBlob.arrayBuffer();
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          
+          // Convert to mono
+          const numberOfChannels = 1;
+          const length = audioBuffer.length;
+          const sampleRate = 16000;
+          const offlineContext = new OfflineAudioContext(numberOfChannels, length, sampleRate);
+          const source = offlineContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(offlineContext.destination);
+          source.start();
+          
+          const renderedBuffer = await offlineContext.startRendering();
+          const channelData = renderedBuffer.getChannelData(0);
+          
+          // Convert to 16-bit PCM
+          const pcmData = new Int16Array(channelData.length);
+          for (let i = 0; i < channelData.length; i++) {
+            const s = Math.max(-1, Math.min(1, channelData[i]));
+            pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          
+          // Create WAV file
+          const wavBuffer = createWavFile(pcmData, sampleRate);
+          const base64 = arrayBufferToBase64(wavBuffer);
+          
+          URL.revokeObjectURL(video.src);
+          resolve(base64);
+        } catch (err) {
+          // Fallback: send the whole video as audio
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(videoBlob);
+        }
+      };
+      
+      video.onerror = reject;
+    });
+  };
+
+  const createWavFile = (pcmData: Int16Array, sampleRate: number): ArrayBuffer => {
+    const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+    const view = new DataView(buffer);
+    
+    // WAV header
+    const writeString = (offset: number, str: string) => {
+      for (let i = 0; i < str.length; i++) {
+        view.setUint8(offset + i, str.charCodeAt(i));
+      }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + pcmData.length * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, pcmData.length * 2, true);
+    
+    // Write PCM data
+    const offset = 44;
+    for (let i = 0; i < pcmData.length; i++) {
+      view.setInt16(offset + i * 2, pcmData[i], true);
+    }
+    
+    return buffer;
+  };
+
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+
+  // Extract frames from video
+  const extractFramesFromVideo = async (videoBlob: Blob, intervalSeconds = 2): Promise<string[]> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(videoBlob);
+      video.muted = true;
+      
+      const frames: string[] = [];
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      video.onloadedmetadata = () => {
+        canvas.width = Math.min(video.videoWidth, 640);
+        canvas.height = Math.min(video.videoHeight, 480);
+        
+        const duration = video.duration;
+        const timestamps: number[] = [];
+        
+        for (let t = 0; t < duration; t += intervalSeconds) {
+          timestamps.push(t);
+        }
+        
+        // Limit to 10 frames max
+        const limitedTimestamps = timestamps.slice(0, 10);
+        
+        let currentIndex = 0;
+        
+        const captureFrame = () => {
+          if (currentIndex >= limitedTimestamps.length) {
+            URL.revokeObjectURL(video.src);
+            resolve(frames);
+            return;
+          }
+          
+          video.currentTime = limitedTimestamps[currentIndex];
+        };
+        
+        video.onseeked = () => {
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            const base64 = dataUrl.split(',')[1];
+            frames.push(base64);
+          }
+          currentIndex++;
+          captureFrame();
+        };
+        
+        captureFrame();
+      };
+      
+      video.onerror = reject;
+    });
+  };
+
   const processVideo = async () => {
-    if (!recordedVideo || !contractor?.id) {
+    if (!recordedBlobRef.current || !contractor?.id) {
       toast.error('No video to process');
       return;
     }
 
     setIsProcessing(true);
     setProcessingStep(1);
+    setProcessingStatus('Extracting audio...');
 
     try {
-      // Simulate processing steps (in real implementation, this would be API calls)
+      const videoBlob = recordedBlobRef.current;
+      
       // Step 1: Transcribe audio
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setProcessingStep(2);
+      setProcessingStatus('Transcribing audio with Whisper...');
       
-      // Step 2: Analyze frames
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      setProcessingStep(3);
-      
-      // Step 3: Synthesize estimate
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      let transcript = '';
+      try {
+        // Extract audio and convert to base64
+        const audioBase64 = await extractAudioFromVideo(videoBlob);
+        
+        // Call transcribe-audio edge function
+        const { data: transcriptionResult, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
+          body: { 
+            audio: audioBase64,
+            mimeType: 'audio/wav'
+          }
+        });
 
-      toast.success('Video processed successfully!');
+        if (transcriptionError) {
+          console.error('Transcription error:', transcriptionError);
+          toast.error('Audio transcription failed, continuing with video analysis only');
+        } else if (transcriptionResult?.text) {
+          transcript = transcriptionResult.text;
+          console.log('Transcript:', transcript);
+        }
+      } catch (audioError) {
+        console.error('Audio extraction error:', audioError);
+        // Continue without transcript
+      }
       
-      // TODO: Navigate to estimate builder with processed data
-      // For now, navigate to chat with a message
-      navigate('/estimator/chat');
+      setProcessingStep(2);
+      setProcessingStatus('Extracting video frames...');
+      
+      // Step 2: Extract frames and analyze
+      const frames = await extractFramesFromVideo(videoBlob);
+      console.log(`Extracted ${frames.length} frames`);
+      
+      setProcessingStatus('Analyzing video with AI...');
+      
+      // Call process-video edge function
+      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('process-video', {
+        body: {
+          videoFrames: frames,
+          audioTranscript: transcript,
+          projectType: 'Remodeling'
+        }
+      });
+
+      if (analysisError) {
+        console.error('Video analysis error:', analysisError);
+        throw new Error('Video analysis failed');
+      }
+
+      setProcessingStep(3);
+      setProcessingStatus('Building estimate...');
+      
+      // Short delay to show final step
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const result = analysisResult as VideoAnalysisResult;
+      console.log('Analysis result:', result);
+
+      // Store results and navigate to chat with pre-filled data
+      if (result.line_items && result.line_items.length > 0) {
+        toast.success(`Detected ${result.line_items.length} items from video`);
+        
+        // Navigate to chat with video analysis context
+        navigate('/estimator/chat', {
+          state: {
+            videoAnalysis: result,
+            initialMessage: result.project_summary || 'Video analysis complete. Review detected items.'
+          }
+        });
+      } else {
+        toast.warning('No items detected. Try recording with more detail.');
+        navigate('/estimator/chat', {
+          state: {
+            videoAnalysis: result,
+            initialMessage: transcript || 'Video processed but no items detected. Please describe the project.'
+          }
+        });
+      }
 
     } catch (error) {
       console.error('Error processing video:', error);
-      toast.error('Failed to process video');
+      toast.error(error instanceof Error ? error.message : 'Failed to process video');
     } finally {
       setIsProcessing(false);
+      setProcessingStatus('');
     }
   };
 
@@ -171,8 +421,11 @@ export default function EstimatorVideo() {
             <h2 className="text-2xl font-bold text-foreground mb-4">
               AI is Processing Your Video
             </h2>
-            <p className="text-muted-foreground mb-8">
-              This typically takes 30-60 seconds. We're transcribing your narration and analyzing the visual content.
+            <p className="text-muted-foreground mb-2">
+              {processingStatus || 'Processing...'}
+            </p>
+            <p className="text-sm text-muted-foreground mb-8">
+              This typically takes 30-60 seconds.
             </p>
 
             <div className="max-w-sm mx-auto space-y-4">
