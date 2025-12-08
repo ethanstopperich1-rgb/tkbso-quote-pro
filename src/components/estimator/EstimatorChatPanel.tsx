@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { MultiPhotoAnalysisCard, PhotoAnalysisEntry, mergePhotoAnalyses } from './MultiPhotoAnalysisCard';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
+import { VideoRecordingModal, VideoAnalysisResult } from './VideoRecordingModal';
 
 interface PricingLineItem {
   category: string;
@@ -91,7 +92,7 @@ const WELCOME_MESSAGE: Message = {
   role: 'assistant',
   content: `Hey! What project are we estimating today?
 
-📷 **Upload a photo** for instant AI detection, or just tell me:
+📷 **Upload a photo** or 🎥 **Record a video walk-through** for instant AI detection, or just tell me:
 
 **Kitchen** or **Bathroom**?`,
   timestamp: new Date(),
@@ -110,6 +111,8 @@ export function EstimatorChatPanel() {
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
   const [photoEntries, setPhotoEntries] = useState<PhotoAnalysisEntry[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [isProcessingVideo, setIsProcessingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const dragCounterRef = useRef(0);
@@ -361,6 +364,57 @@ export function EstimatorChatPanel() {
     setSavedEstimateId(null);
     setShowLineItems(false);
     setPhotoEntries([]);
+    setShowVideoModal(false);
+    setIsProcessingVideo(false);
+  };
+
+  // Handle video analysis result
+  const handleVideoAnalyzed = async (result: VideoAnalysisResult) => {
+    setIsProcessingVideo(false);
+    
+    // Add video analysis message to chat
+    const videoMessage: Message = {
+      id: 'video-' + Date.now(),
+      role: 'assistant',
+      content: `🎥 **Video analyzed!** Detected ${result.line_items?.length || 0} trade items.
+
+${result.project_summary || 'Processing complete.'}
+
+${result.transcript ? `**You said:** "${result.transcript.slice(0, 200)}${result.transcript.length > 200 ? '...' : ''}"` : ''}
+
+Add dimensions or confirm to generate your quote.`,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, videoMessage]);
+    setConversationHistory(prev => [...prev, { role: 'assistant', content: videoMessage.content }]);
+
+    // Convert video line items to photo analysis format for unified handling
+    if (result.line_items && result.line_items.length > 0) {
+      const videoEntry: PhotoAnalysisEntry = {
+        id: 'video-' + Date.now(),
+        analysis: {
+          project_type: result.line_items[0]?.category?.includes('Kitchen') ? 'Kitchen' : 'Bathroom',
+          confidence: 'medium',
+          detected_items: result.line_items.map(item => ({
+            category: item.category,
+            item: item.item,
+            quantity: item.quantity,
+            unit: item.unit,
+          })),
+          observations: result.project_summary,
+        },
+        imagePreview: undefined, // Video doesn't have a preview image
+      };
+      setPhotoEntries(prev => [...prev, videoEntry]);
+
+      // Update context with detected project type
+      if (videoEntry.analysis.project_type) {
+        setContext(prev => ({
+          ...prev,
+          projectType: videoEntry.analysis.project_type,
+        }));
+      }
+    }
   };
 
   // Handle photo upload for AI vision analysis
@@ -800,18 +854,29 @@ Add more photos or provide dimensions to generate your quote.`,
         <ChatInput 
           onSend={handleSendMessage} 
           onPhotoUpload={handlePhotoUpload}
-          disabled={isLoading || isAnalyzingPhoto}
+          onVideoClick={() => setShowVideoModal(true)}
+          disabled={isLoading || isAnalyzingPhoto || isProcessingVideo}
           showPhotoUpload={true}
+          showVideoCapture={true}
           isAnalyzingPhoto={isAnalyzingPhoto}
+          isProcessingVideo={isProcessingVideo}
           placeholder={
             photoEntries.length > 0 && !estimate
               ? "Confirm items or add dimensions (e.g., '5x8 bathroom')..."
               : !context.projectType 
-                ? "Describe project or upload a photo..." 
+                ? "Describe project, upload photo, or record video..." 
                 : `Describe the ${context.projectType.toLowerCase()} scope...`
           }
         />
       </div>
+
+      {/* Video Recording Modal */}
+      <VideoRecordingModal
+        open={showVideoModal}
+        onOpenChange={setShowVideoModal}
+        onVideoAnalyzed={handleVideoAnalyzed}
+        contractorId={contractor?.id || ''}
+      />
     </div>
   );
 }

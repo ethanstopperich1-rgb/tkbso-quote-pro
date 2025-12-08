@@ -1,5 +1,5 @@
 import { useState, KeyboardEvent, useEffect, useRef } from "react";
-import { Send, Mic, MicOff, Loader2, Camera } from "lucide-react";
+import { Send, Mic, MicOff, Loader2, Camera, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -7,10 +7,13 @@ import { cn } from "@/lib/utils";
 interface ChatInputProps {
   onSend: (message: string) => void;
   onPhotoUpload?: (file: File) => void;
+  onVideoClick?: () => void;
   disabled?: boolean;
   placeholder?: string;
   showPhotoUpload?: boolean;
+  showVideoCapture?: boolean;
   isAnalyzingPhoto?: boolean;
+  isProcessingVideo?: boolean;
 }
 
 // Extend Window interface for Web Speech API
@@ -24,10 +27,13 @@ declare global {
 export function ChatInput({ 
   onSend, 
   onPhotoUpload,
+  onVideoClick,
   disabled, 
   placeholder,
   showPhotoUpload = false,
+  showVideoCapture = false,
   isAnalyzingPhoto = false,
+  isProcessingVideo = false,
 }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -206,6 +212,30 @@ export function ChatInput({
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Camera className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+
+        {/* Video Capture Button */}
+        {showVideoCapture && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onVideoClick}
+            disabled={disabled || isProcessingVideo}
+            className={cn(
+              "h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl transition-all duration-300",
+              isProcessingVideo 
+                ? "bg-red-500/20 text-red-600 animate-pulse" 
+                : "text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
+            )}
+            title="Record video walk-through"
+          >
+            {isProcessingVideo ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Video className="h-4 w-4" />
             )}
           </Button>
         )}
