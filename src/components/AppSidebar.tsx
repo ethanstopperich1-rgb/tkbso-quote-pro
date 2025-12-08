@@ -1,6 +1,7 @@
 import { LayoutDashboard, MessageSquare, FileText, DollarSign, LogOut, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useBranding } from "@/contexts/BrandingContext";
 import {
   Sidebar,
   SidebarContent,
@@ -25,12 +26,12 @@ const navItems = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const { profile, contractor, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
+  const { branding } = useBranding();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  const companyName = contractor?.settings?.companyProfile?.companyName || contractor?.name || 'My Company';
-  const logoUrl = contractor?.settings?.branding?.logoUrl;
+  const { companyName, logoUrl, primaryColor, accentColor } = branding;
 
   return (
     <Sidebar 
@@ -46,11 +47,17 @@ export function AppSidebar() {
               className="w-10 h-10 rounded-xl object-contain bg-white/10 flex-shrink-0 border border-white/10"
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl flex-shrink-0 relative overflow-hidden" style={{ backgroundColor: '#0B1C3E' }}>
+            <div 
+              className="w-10 h-10 rounded-xl flex-shrink-0 relative overflow-hidden" 
+              style={{ backgroundColor: primaryColor }}
+            >
               <span className="absolute inset-0 flex items-center justify-center text-white font-black text-lg">
                 {companyName.slice(0, 1).toUpperCase()}
               </span>
-              <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ backgroundColor: '#00E5FF' }} />
+              <div 
+                className="absolute top-1 right-1 w-2 h-2 rounded-full" 
+                style={{ backgroundColor: accentColor }} 
+              />
             </div>
           )}
           {!isCollapsed && (
