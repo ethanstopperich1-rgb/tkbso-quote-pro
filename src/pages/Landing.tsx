@@ -307,8 +307,8 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Chat Estimator */}
             <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-slate-100">
-              <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
-                <MessageSquare className="h-8 w-8 text-blue-600" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-6 shadow-md">
+                <MessageSquare className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-2xl font-bold mb-3 text-[#0F172A]">Chat Estimator</h3>
               <p className="text-slate-600 mb-4">
@@ -325,8 +325,8 @@ export default function Landing() {
               <div className="absolute -top-3 right-8 bg-[#00E5FF] text-[#0F172A] px-3 py-1 rounded-full text-xs font-bold">
                 MOST POPULAR
               </div>
-              <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
-                <Camera className="h-8 w-8 text-purple-600" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-6 shadow-md">
+                <Camera className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-2xl font-bold mb-3 text-[#0F172A]">Photo-to-Quote</h3>
               <p className="text-slate-600 mb-4">
@@ -340,8 +340,8 @@ export default function Landing() {
 
             {/* Video Walk-and-Talk */}
             <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-slate-100">
-              <div className="w-16 h-16 bg-orange-100 rounded-xl flex items-center justify-center mb-6">
-                <Video className="h-8 w-8 text-orange-600" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-6 shadow-md">
+                <Video className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-2xl font-bold mb-3 text-[#0F172A]">Video Walk-and-Talk</h3>
               <p className="text-slate-600 mb-4">
@@ -432,8 +432,7 @@ export default function Landing() {
               </ul>
               <Button 
                 onClick={() => navigate('/signup')}
-                variant="outline" 
-                className="w-full border-2 border-white text-white hover:bg-white hover:text-[#0F172A] py-5 font-semibold"
+                className="w-full bg-white text-[#0F172A] hover:bg-slate-100 py-5 font-semibold"
               >
                 Start Free
               </Button>
