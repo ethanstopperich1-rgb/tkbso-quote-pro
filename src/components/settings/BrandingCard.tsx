@@ -69,6 +69,22 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
     }
   };
 
+  // Helper to convert image URL to base64 for PDF rendering
+  const imageUrlToBase64 = async (url: string): Promise<string | undefined> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(undefined);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return undefined;
+    }
+  };
+
   const generatePreviewPdf = async () => {
     setGeneratingPdf(true);
     try {
@@ -77,6 +93,12 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
         month: 'long',
         day: 'numeric',
       });
+
+      // Convert logo to base64 to avoid Buffer issues in browser
+      let logoBase64: string | undefined;
+      if (data.logoUrl) {
+        logoBase64 = await imageUrlToBase64(data.logoUrl);
+      }
 
       const sampleProps = {
         clientName: 'John & Jane Doe',
@@ -107,7 +129,7 @@ export function BrandingCard({ data, onChange, contractorId, initials, companyNa
         contractorName: companyName || 'Your Company Name',
         contractorPhone: '(407) 555-1234',
         contractorEmail: 'info@yourcompany.com',
-        logoUrl: data.logoUrl || undefined,
+        logoUrl: logoBase64,
         headerTitle: data.headerTitle || companyName || 'Your Company Name',
         tagline: data.tagline || undefined,
         footerDisclaimer: data.pdfFooterDisclaimer || undefined,
