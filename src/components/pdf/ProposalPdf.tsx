@@ -304,16 +304,30 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
     unit?: string;
   }> | undefined;
 
+  // Category normalization mapping - combines related trades
+  const normalizeCategory = (cat: string): string => {
+    const lower = cat.toLowerCase();
+    // Combine Tile, Support, Waterproofing, Cement Board into single category
+    if (lower === 'tile' || lower === 'support' || lower === 'waterproofing' || 
+        lower === 'cement board' || lower === 'tile & waterproofing' || 
+        lower === 'tile & support' || lower.includes('backer board')) {
+      return 'Tile & Support';
+    }
+    if (lower === 'demo' || lower === 'demolition') {
+      return 'Demolition';
+    }
+    if (lower === 'paint' || lower === 'drywall' || lower === 'paint & drywall') {
+      return 'Paint & Drywall';
+    }
+    return cat;
+  };
+
   if (lineItems && lineItems.length > 0) {
     // Group line items by category
     const grouped: Record<string, { items: LineItem[]; total: number }> = {};
     
     for (const item of lineItems) {
-      // Normalize category names
-      let category = item.category || 'Other';
-      if (category.toLowerCase() === 'demo') {
-        category = 'Demolition';
-      }
+      const category = normalizeCategory(item.category || 'Other');
       
       if (!grouped[category]) {
         grouped[category] = { items: [], total: 0 };
