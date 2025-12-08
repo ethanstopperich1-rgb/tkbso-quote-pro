@@ -174,6 +174,8 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> & Record<string, any> = {
   vanity_72_bundle_cp: 4200,
   vanity_84_bundle_ic: 3200,
   vanity_84_bundle_cp: 5000,
+  vanity_96_bundle_ic: 3800,
+  vanity_96_bundle_cp: 6000,
   
   // Quartz & Counters
   quartz_ic_per_sqft: 15,
@@ -637,6 +639,7 @@ export default function Pricing() {
       ['vanity_60_bundle_ic', 'vanity_60_bundle_cp'],
       ['vanity_72_bundle_ic', 'vanity_72_bundle_cp'],
       ['vanity_84_bundle_ic', 'vanity_84_bundle_cp'],
+      ['vanity_96_bundle_ic', 'vanity_96_bundle_cp'],
       ['quartz_ic_per_sqft', 'quartz_cp_per_sqft'],
       ['framing_standard_ic', 'framing_standard_cp'],
       ['framing_pony_wall_ic', 'framing_pony_wall_cp'],
@@ -1261,6 +1264,26 @@ export default function Pricing() {
       cpField: 'vanity_72_bundle_cp',
       icValue: config.vanity_72_bundle_ic,
       cpValue: config.vanity_72_bundle_cp,
+    },
+    {
+      key: 'vanity_84',
+      name: 'Vanity Bundle - 84" Double',
+      description: '84" double vanity with top, sinks, faucets, install.',
+      unit: 'each',
+      icField: 'vanity_84_bundle_ic',
+      cpField: 'vanity_84_bundle_cp',
+      icValue: config.vanity_84_bundle_ic,
+      cpValue: config.vanity_84_bundle_cp,
+    },
+    {
+      key: 'vanity_96',
+      name: 'Vanity Bundle - 96"+ Double',
+      description: '96"+ oversized double vanity with top, sinks, faucets, install.',
+      unit: 'each',
+      icField: 'vanity_96_bundle_ic',
+      cpField: 'vanity_96_bundle_cp',
+      icValue: (config as any).vanity_96_bundle_ic ?? 3800,
+      cpValue: (config as any).vanity_96_bundle_cp ?? 6000,
     },
     {
       key: 'quartz_countertop',
