@@ -55,7 +55,7 @@ const CATEGORY_GROUPS = {
   'Framing': ['Framing', 'Niche', 'Blocking'],
   'Plumbing': ['Plumbing', 'Drain Relocation', 'Toilet Relocation', 'Tub Relocation'],
   'Electrical': ['Electrical', 'Recessed Can', 'Vanity Light', 'Exhaust Fan'],
-  'Tile & Waterproofing': ['Tile - Wall', 'Tile - Floor', 'Tile - Shower Floor', 'Waterproofing', 'Cement Board'],
+  'Tile & Support': ['Tile - Wall', 'Tile - Floor', 'Tile - Shower Floor', 'Waterproofing', 'Cement Board'],
   'Glass': ['Glass - Shower', 'Glass - Panel', 'Glass - 90° Return', 'Mirror'],
   'Cabinetry & Vanity': ['Cabinets', 'Vanity', 'Closet Shelving', 'Floating Shelves'],
   'Countertops': ['Countertop - Quartz', 'Countertop - Granite', 'Countertop - Other'],
