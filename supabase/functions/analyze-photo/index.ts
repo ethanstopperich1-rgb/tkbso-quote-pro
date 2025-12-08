@@ -93,9 +93,29 @@ serve(async (req) => {
   }
 
   try {
-    const { image_base64, image_url, mime_type } = await req.json();
+    // Log incoming request details
+    console.log('Received analyze-photo request');
+    console.log('Content-Type:', req.headers.get('content-type'));
+    
+    let body;
+    try {
+      body = await req.json();
+      console.log('Request body keys:', Object.keys(body || {}));
+      console.log('Has image_base64:', !!body?.image_base64);
+      console.log('Has image_url:', !!body?.image_url);
+      console.log('image_base64 length:', body?.image_base64?.length || 0);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { image_base64, image_url, mime_type } = body || {};
 
     if (!image_base64 && !image_url) {
+      console.error('No image provided in request. Body:', JSON.stringify(body).substring(0, 200));
       return new Response(
         JSON.stringify({ error: 'No image provided' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -879,6 +879,9 @@ Add dimensions or confirm to generate your quote.`,
 
       const base64Data = await base64Promise;
       const imagePreview = `data:${file.type};base64,${base64Data}`;
+      
+      console.log('Photo upload - base64 length:', base64Data?.length);
+      console.log('Photo upload - mime type:', file.type);
 
       // Add a "scanning" message
       const scanningMessage: Message = {
@@ -890,17 +893,25 @@ Add dimensions or confirm to generate your quote.`,
       setMessages(prev => [...prev, scanningMessage]);
 
       // Call the analyze-photo edge function
+      const requestBody = {
+        image_base64: base64Data,
+        mime_type: file.type,
+      };
+      console.log('Sending to edge function:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('Request body keys:', Object.keys(requestBody));
+      console.log('Request body image_base64 exists:', !!requestBody.image_base64);
+      console.log('Request body image_base64 length:', requestBody.image_base64?.length);
+      
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-photo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({
-          image_base64: base64Data,
-          mime_type: file.type,
-        }),
+        body: JSON.stringify(requestBody),
       });
+      
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
