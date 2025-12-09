@@ -21,15 +21,34 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Loader2
+  Loader2,
+  GripVertical
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/pricing-calculator';
 import { Estimate } from '@/types/database';
 import { cn } from '@/lib/utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface LineItem {
+  id?: string;
   category: string;
   task_description: string;
   quantity: number;
@@ -76,6 +95,145 @@ const UNITS = [
   { value: 'ls', label: 'Lump Sum' }
 ];
 
+// Sortable Line Item Component
+interface SortableLineItemProps {
+  item: LineItem & { originalIndex: number };
+  editingIndex: number | null;
+  editForm: Partial<LineItem>;
+  setEditForm: (form: Partial<LineItem>) => void;
+  handleEditItem: (index: number) => void;
+  handleSaveItemEdit: () => void;
+  handleCancelEdit: () => void;
+  handleDeleteItem: (index: number) => void;
+  hideInternalCost: boolean;
+}
+
+function SortableLineItem({
+  item,
+  editingIndex,
+  editForm,
+  setEditForm,
+  handleEditItem,
+  handleSaveItemEdit,
+  handleCancelEdit,
+  handleDeleteItem,
+  hideInternalCost,
+}: SortableLineItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id || `item-${item.originalIndex}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="group">
+      {editingIndex === item.originalIndex ? (
+        <div className="p-3 bg-muted/20 space-y-3">
+          <Input
+            value={editForm.task_description}
+            onChange={(e) => setEditForm({ ...editForm, task_description: e.target.value })}
+            className="h-8"
+            placeholder="Description"
+          />
+          <div className="grid grid-cols-4 gap-2">
+            <Input
+              type="number"
+              value={editForm.quantity}
+              onChange={(e) => setEditForm({ ...editForm, quantity: parseFloat(e.target.value) || 1 })}
+              className="h-8"
+              placeholder="Qty"
+            />
+            {!hideInternalCost && (
+              <Input
+                type="number"
+                value={editForm.ic_total}
+                onChange={(e) => setEditForm({ ...editForm, ic_total: parseFloat(e.target.value) || 0 })}
+                className="h-8"
+                placeholder="IC Total"
+              />
+            )}
+            <Input
+              type="number"
+              value={editForm.cp_total}
+              onChange={(e) => setEditForm({ ...editForm, cp_total: parseFloat(e.target.value) || 0 })}
+              className="h-8"
+              placeholder="CP Total"
+            />
+            <div className="flex gap-1">
+              <Button size="sm" variant="default" className="h-8 flex-1" onClick={handleSaveItemEdit}>
+                <Save className="h-3 w-3" />
+              </Button>
+              <Button size="sm" variant="ghost" className="h-8" onClick={handleCancelEdit}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/20 transition-colors">
+          {/* Drag Handle */}
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing p-1 -ml-2 mr-2 text-muted-foreground hover:text-foreground touch-none"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium truncate">{item.task_description}</span>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {item.quantity} {item.unit}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {!hideInternalCost && (
+              <span className="text-sm text-muted-foreground w-20 text-right">
+                {formatCurrency(item.ic_total)}
+              </span>
+            )}
+            <span className="text-sm font-medium w-20 text-right">
+              {formatCurrency(item.cp_total)}
+            </span>
+            {!hideInternalCost && (
+              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-7 w-7"
+                  onClick={() => handleEditItem(item.originalIndex)}
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-7 w-7 text-destructive hover:text-destructive"
+                  onClick={() => handleDeleteItem(item.originalIndex)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false, hideInternalCost = false }: LineItemEditorCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
@@ -94,6 +252,18 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
   const [hasChanges, setHasChanges] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // AI quick add handler
   const handleAiAdd = async () => {
@@ -114,6 +284,7 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
       const cpPerUnit = parsed.cp_per_unit || 0;
 
       const item: LineItem = {
+        id: `item-${Date.now()}`,
         category: parsed.category || 'Other',
         task_description: parsed.task_description || aiInput,
         quantity,
@@ -141,7 +312,12 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
   useEffect(() => {
     const payload = estimate.internal_json_payload as any;
     if (payload?.pricing?.line_items) {
-      setLineItems(payload.pricing.line_items);
+      // Ensure each item has an id for drag-and-drop
+      const itemsWithIds = payload.pricing.line_items.map((item: LineItem, index: number) => ({
+        ...item,
+        id: item.id || `item-${index}-${Date.now()}`,
+      }));
+      setLineItems(itemsWithIds);
     }
   }, [estimate.internal_json_payload]);
 
@@ -209,6 +385,7 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
     const cpPerUnit = newItem.cp_per_unit || 0;
 
     const item: LineItem = {
+      id: `item-${Date.now()}`,
       category: newItem.category || 'Other',
       task_description: newItem.task_description || 'New Item',
       quantity,
@@ -231,6 +408,22 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
     });
     setIsAddDialogOpen(false);
     setHasChanges(true);
+  };
+
+  // Handle drag end for reordering
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setLineItems((items) => {
+        const oldIndex = items.findIndex((item) => (item.id || `item-${items.indexOf(item)}`) === active.id);
+        const newIndex = items.findIndex((item) => (item.id || `item-${items.indexOf(item)}`) === over.id);
+        
+        const reordered = arrayMove(items, oldIndex, newIndex);
+        return reordered;
+      });
+      setHasChanges(true);
+    }
   };
 
   const handleSaveAll = async () => {
@@ -286,13 +479,11 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
 
   const { totalIc, totalCp, overallMargin } = calculateTotals(lineItems);
 
-  // Group items by category
-  const groupedItems = lineItems.reduce((acc, item, index) => {
-    const cat = item.category;
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push({ ...item, originalIndex: index });
-    return acc;
-  }, {} as Record<string, (LineItem & { originalIndex: number })[]>);
+  // Add originalIndex to items for rendering
+  const itemsWithIndex = lineItems.map((item, index) => ({
+    ...item,
+    originalIndex: index,
+  }));
 
   return (
     <Card>
@@ -503,113 +694,40 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
           </Dialog>
           </div>
 
-          {/* Line Items by Category */}
-          <div className="space-y-3">
-            {Object.entries(groupedItems).map(([category, items]) => {
-              const categoryTotal = items.reduce((sum, i) => sum + i.cp_total, 0);
-              return (
-                <div key={category} className="border rounded-lg overflow-hidden">
-                  {/* Category Header */}
-                  <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b">
-                    <span className="text-sm font-semibold">{category}</span>
-                    <span className="text-sm font-medium text-primary">{formatCurrency(categoryTotal)}</span>
-                  </div>
-                  
-                  {/* Items */}
-                  <div className="divide-y">
-                    {items.map((item) => (
-                      <div key={item.originalIndex} className="group">
-                        {editingIndex === item.originalIndex ? (
-                          <div className="p-3 bg-muted/20 space-y-3">
-                            <Input
-                              value={editForm.task_description}
-                              onChange={(e) => setEditForm({ ...editForm, task_description: e.target.value })}
-                              className="h-8"
-                              placeholder="Description"
-                            />
-                            <div className="grid grid-cols-4 gap-2">
-                              <Input
-                                type="number"
-                                value={editForm.quantity}
-                                onChange={(e) => setEditForm({ ...editForm, quantity: parseFloat(e.target.value) || 1 })}
-                                className="h-8"
-                                placeholder="Qty"
-                              />
-                              {!hideInternalCost && (
-                                <Input
-                                  type="number"
-                                  value={editForm.ic_total}
-                                  onChange={(e) => setEditForm({ ...editForm, ic_total: parseFloat(e.target.value) || 0 })}
-                                  className="h-8"
-                                  placeholder="IC Total"
-                                />
-                              )}
-                              <Input
-                                type="number"
-                                value={editForm.cp_total}
-                                onChange={(e) => setEditForm({ ...editForm, cp_total: parseFloat(e.target.value) || 0 })}
-                                className="h-8"
-                                placeholder="CP Total"
-                              />
-                              <div className="flex gap-1">
-                                <Button size="sm" variant="default" className="h-8 flex-1" onClick={handleSaveItemEdit}>
-                                  <Save className="h-3 w-3" />
-                                </Button>
-                                <Button size="sm" variant="ghost" className="h-8" onClick={handleCancelEdit}>
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/20 transition-colors">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium truncate">{item.task_description}</span>
-                                <span className="text-xs text-muted-foreground shrink-0">
-                                  {item.quantity} {item.unit}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              {!hideInternalCost && (
-                                <span className="text-sm text-muted-foreground w-20 text-right">
-                                  {formatCurrency(item.ic_total)}
-                                </span>
-                              )}
-                              <span className="text-sm font-medium w-20 text-right">
-                                {formatCurrency(item.cp_total)}
-                              </span>
-                              {!hideInternalCost && (
-                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    className="h-7 w-7"
-                                    onClick={() => handleEditItem(item.originalIndex)}
-                                  >
-                                    <Edit2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    className="h-7 w-7 text-destructive hover:text-destructive"
-                                    onClick={() => handleDeleteItem(item.originalIndex)}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+          {/* Draggable Line Items */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={itemsWithIndex.map(item => item.id || `item-${item.originalIndex}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-1 border rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b">
+                  <span className="text-xs text-muted-foreground">Drag items to reorder</span>
+                  <span className="text-sm font-medium text-primary">{formatCurrency(totalCp)}</span>
                 </div>
-              );
-            })}
-          </div>
+                <div className="divide-y">
+                  {itemsWithIndex.map((item) => (
+                    <SortableLineItem
+                      key={item.id || `item-${item.originalIndex}`}
+                      item={item}
+                      editingIndex={editingIndex}
+                      editForm={editForm}
+                      setEditForm={setEditForm}
+                      handleEditItem={handleEditItem}
+                      handleSaveItemEdit={handleSaveItemEdit}
+                      handleCancelEdit={handleCancelEdit}
+                      handleDeleteItem={handleDeleteItem}
+                      hideInternalCost={hideInternalCost}
+                    />
+                  ))}
+                </div>
+              </div>
+            </SortableContext>
+          </DndContext>
 
           {lineItems.length === 0 && (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
