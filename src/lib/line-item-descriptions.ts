@@ -469,6 +469,22 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
     description: 'Includes mounting of vanity light fixture, wiring connections, and alignment for proper placement.',
     unit: 'each'
   },
+  'led_mirror': {
+    description: 'Includes mounting, wiring connection, leveling, and integration of backlit LED mirror with existing electrical system.',
+    unit: 'each'
+  },
+  'led_mirror_installation': {
+    description: 'Includes mounting, wiring connection, leveling, and integration of backlit LED mirror with existing electrical system.',
+    unit: 'each'
+  },
+  'mirror_led': {
+    description: 'Includes mounting, wiring connection, leveling, and integration of backlit LED mirror with existing electrical system.',
+    unit: 'each'
+  },
+  'backlit_mirror': {
+    description: 'Includes mounting, wiring connection, leveling, and integration of backlit LED mirror with existing electrical system.',
+    unit: 'each'
+  },
   'electrical_small_package': {
     description: 'Includes basic outlet and switch modifications needed to support standard renovation layouts.',
     unit: 'each'
@@ -721,6 +737,19 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
   'cabinet_labor_only': {
     description: 'Includes installation of customer-provided cabinets including leveling and fastening.',
     unit: 'per box'
+  },
+  // Generic vanity entry - MUST come before vanity_light matches
+  'vanity': {
+    description: 'Includes vanity cabinet, countertop, sink, and basic plumbing preparation for installation.',
+    unit: 'each'
+  },
+  'vanity_installation': {
+    description: 'Includes vanity cabinet, countertop, sink, and basic plumbing preparation for installation.',
+    unit: 'each'
+  },
+  'vanity_cabinet': {
+    description: 'Includes vanity cabinet, countertop, sink, and basic plumbing preparation for installation.',
+    unit: 'each'
   },
   'vanity_30': {
     description: 'Includes vanity cabinet, countertop, sink, and basic plumbing preparation for installation.',
@@ -1364,18 +1393,32 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
   // Try keyword matching with priority for more specific keywords
   const keywords = normalizedTask.split('_').filter(w => w.length > 2);
   // Sort keywords by length (longer = more specific) and filter out generic words
-  const genericWords = ['install', 'package', 'standard', 'basic', 'full', 'small', 'large', 'new', 'the', 'and', 'for'];
+  const genericWords = ['install', 'package', 'standard', 'basic', 'full', 'small', 'large', 'new', 'the', 'and', 'for', 'installation'];
   const specificKeywords = keywords
     .filter(k => !genericWords.includes(k))
     .sort((a, b) => b.length - a.length);
   
-  // Try matching with specific keywords first
+  // Try matching with specific keywords first, but penalize entries with extra unrelated words
   for (const keyword of specificKeywords) {
     const keywordMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
     for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
       if (key.includes(keyword)) {
-        // Score based on how much of the key matches
-        const score = keyword.length / key.length;
+        // Split key into parts to check for extra unrelated words
+        const keyParts = key.split('_');
+        const taskParts = normalizedTask.split('_').filter(w => w.length > 2);
+        
+        // Count how many key parts are NOT in the task (penalty for extra words)
+        const extraWords = keyParts.filter(kp => kp.length > 2 && !taskParts.some(tp => tp.includes(kp) || kp.includes(tp)));
+        
+        // Score: keyword match strength minus penalty for extra words
+        // Higher score = better match
+        let score = keyword.length / key.length;
+        score -= extraWords.length * 0.3; // Penalize for each extra unrelated word
+        
+        // Bonus for exact or near-exact matches
+        if (key === normalizedTask) score += 1.0;
+        else if (normalizedTask.startsWith(key) || key.startsWith(normalizedTask.split('_')[0])) score += 0.5;
+        
         keywordMatches.push({ key, value, score });
       }
     }
