@@ -305,8 +305,22 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
   }> | undefined;
 
   // Category normalization mapping - combines related trades
-  const normalizeCategory = (cat: string): string => {
+  // Also check task description for proper categorization
+  const normalizeCategory = (cat: string, taskDescription?: string): string => {
     const lower = cat.toLowerCase();
+    const taskLower = (taskDescription || '').toLowerCase();
+    
+    // LED Mirror is electrical work, not glass - check task description first
+    if (taskLower.includes('led mirror') || taskLower.includes('backlit mirror') || 
+        taskLower.includes('mirror') && taskLower.includes('wiring')) {
+      return 'Electrical';
+    }
+    
+    // Vanity Light is electrical, not vanity
+    if (taskLower.includes('vanity light') || taskLower.includes('light fixture')) {
+      return 'Electrical';
+    }
+    
     // Combine Tile, Support, Waterproofing, Cement Board into single category
     if (lower === 'tile' || lower === 'support' || lower === 'waterproofing' || 
         lower === 'cement board' || lower === 'tile & waterproofing' || 
@@ -319,6 +333,13 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
     if (lower === 'paint' || lower === 'drywall' || lower === 'paint & drywall') {
       return 'Paint & Drywall';
     }
+    // Materials categories - group by type
+    if (lower.includes('materials') && lower.includes('plumbing')) {
+      return 'Materials - Plumbing';
+    }
+    if (lower.includes('materials') && lower.includes('tile')) {
+      return 'Materials - Tile';
+    }
     return cat;
   };
 
@@ -327,7 +348,7 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
     const grouped: Record<string, { items: LineItem[]; total: number }> = {};
     
     for (const item of lineItems) {
-      const category = normalizeCategory(item.category || 'Other');
+      const category = normalizeCategory(item.category || 'Other', item.task_description);
       
       if (!grouped[category]) {
         grouped[category] = { items: [], total: 0 };
