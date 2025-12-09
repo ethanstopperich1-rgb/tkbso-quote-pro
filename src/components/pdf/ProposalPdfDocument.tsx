@@ -531,7 +531,9 @@ export function ProposalPdfDocument({
                   ${progressAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
                 </Text>
                 <Text style={styles.milestoneLabel}>
-                  Progress — Upon completion of tile, rough plumbing & electrical
+                  Progress — {projectType?.toLowerCase() === 'kitchen' 
+                    ? 'Due at arrival of cabinetry' 
+                    : 'Due at start of tile installation'}
                 </Text>
               </View>
               <View style={styles.milestoneRow}>
