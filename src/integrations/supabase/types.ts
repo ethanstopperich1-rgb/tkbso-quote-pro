@@ -476,6 +476,8 @@ export type Database = {
       }
       pricing_configs: {
         Row: {
+          air_scrubber_weekly_cp: number | null
+          air_scrubber_weekly_ic: number | null
           alcove_builtin_cp: number | null
           alcove_builtin_ic: number | null
           appliance_install_pro_cp: number | null
@@ -505,25 +507,47 @@ export type Database = {
           contractor_id: string
           created_at: string | null
           currency: string | null
+          demo_bath_standard_cp: number | null
+          demo_bath_standard_ic: number | null
+          demo_cabinet_deconstruct_cp: number | null
+          demo_cabinet_deconstruct_ic: number | null
+          demo_castiron_tub_cp: number | null
+          demo_castiron_tub_ic: number | null
+          demo_glueddown_sqft_cp: number | null
+          demo_glueddown_sqft_ic: number | null
           demo_haul_margin: number | null
           demo_kitchen_cp: number | null
           demo_kitchen_ic: number | null
+          demo_kitchen_standard_cp: number | null
+          demo_kitchen_standard_ic: number | null
           demo_large_bath_cp: number | null
           demo_large_bath_ic: number | null
+          demo_popcorn_ceiling_sqft_cp: number | null
+          demo_popcorn_ceiling_sqft_ic: number | null
           demo_shower_only_cp: number | null
           demo_shower_only_ic: number | null
           demo_small_bath_cp: number | null
           demo_small_bath_ic: number | null
+          demo_soffit_lf_cp: number | null
+          demo_soffit_lf_ic: number | null
+          demo_tile_mudset_sqft_cp: number | null
+          demo_tile_mudset_sqft_ic: number | null
+          difficult_access_fee_cp: number | null
+          difficult_access_fee_ic: number | null
           door_closure_cp: number | null
           door_closure_ic: number | null
           door_relocation_cp: number | null
           door_relocation_ic: number | null
           drywall_cp_per_sqft: number | null
           drywall_ic_per_sqft: number | null
+          dumpster_20yd_cp: number | null
+          dumpster_20yd_ic: number | null
           dumpster_bath_cp: number | null
           dumpster_bath_ic: number | null
           dumpster_kitchen_cp: number | null
           dumpster_kitchen_ic: number | null
+          dust_barrier_zipwall_cp: number | null
+          dust_barrier_zipwall_ic: number | null
           dust_barriers_cp: number | null
           dust_barriers_ic: number | null
           electrical_dishwasher_disposal_cp: number | null
@@ -548,6 +572,8 @@ export type Database = {
           floor_leveling_small_ic: number | null
           floor_protection_cp: number | null
           floor_protection_ic: number | null
+          floor_protection_ramboard_sqft_cp: number | null
+          floor_protection_ramboard_sqft_ic: number | null
           frameless_glass_cp_per_sqft: number | null
           frameless_glass_ic_per_sqft: number | null
           framing_margin: number | null
@@ -556,6 +582,8 @@ export type Database = {
           framing_standard_cp: number | null
           framing_standard_ic: number | null
           freestanding_tub_allowance_cp: number | null
+          furniture_moving_hourly_cp: number | null
+          furniture_moving_hourly_ic: number | null
           garbage_disposal_allowance_cp: number | null
           gc_permit_fee_cp: number | null
           gc_permit_fee_ic: number | null
@@ -578,6 +606,8 @@ export type Database = {
           kitchen_refresh_multiplier: number | null
           kitchen_target_margin: number | null
           lighting_fixture_allowance_cp: number | null
+          liveload_haul_cp: number | null
+          liveload_haul_ic: number | null
           low_range_multiplier: number | null
           lvp_cp_per_sqft: number | null
           lvp_ic_per_sqft: number | null
@@ -673,6 +703,8 @@ export type Database = {
           waterproofing_margin: number | null
         }
         Insert: {
+          air_scrubber_weekly_cp?: number | null
+          air_scrubber_weekly_ic?: number | null
           alcove_builtin_cp?: number | null
           alcove_builtin_ic?: number | null
           appliance_install_pro_cp?: number | null
@@ -702,25 +734,47 @@ export type Database = {
           contractor_id: string
           created_at?: string | null
           currency?: string | null
+          demo_bath_standard_cp?: number | null
+          demo_bath_standard_ic?: number | null
+          demo_cabinet_deconstruct_cp?: number | null
+          demo_cabinet_deconstruct_ic?: number | null
+          demo_castiron_tub_cp?: number | null
+          demo_castiron_tub_ic?: number | null
+          demo_glueddown_sqft_cp?: number | null
+          demo_glueddown_sqft_ic?: number | null
           demo_haul_margin?: number | null
           demo_kitchen_cp?: number | null
           demo_kitchen_ic?: number | null
+          demo_kitchen_standard_cp?: number | null
+          demo_kitchen_standard_ic?: number | null
           demo_large_bath_cp?: number | null
           demo_large_bath_ic?: number | null
+          demo_popcorn_ceiling_sqft_cp?: number | null
+          demo_popcorn_ceiling_sqft_ic?: number | null
           demo_shower_only_cp?: number | null
           demo_shower_only_ic?: number | null
           demo_small_bath_cp?: number | null
           demo_small_bath_ic?: number | null
+          demo_soffit_lf_cp?: number | null
+          demo_soffit_lf_ic?: number | null
+          demo_tile_mudset_sqft_cp?: number | null
+          demo_tile_mudset_sqft_ic?: number | null
+          difficult_access_fee_cp?: number | null
+          difficult_access_fee_ic?: number | null
           door_closure_cp?: number | null
           door_closure_ic?: number | null
           door_relocation_cp?: number | null
           door_relocation_ic?: number | null
           drywall_cp_per_sqft?: number | null
           drywall_ic_per_sqft?: number | null
+          dumpster_20yd_cp?: number | null
+          dumpster_20yd_ic?: number | null
           dumpster_bath_cp?: number | null
           dumpster_bath_ic?: number | null
           dumpster_kitchen_cp?: number | null
           dumpster_kitchen_ic?: number | null
+          dust_barrier_zipwall_cp?: number | null
+          dust_barrier_zipwall_ic?: number | null
           dust_barriers_cp?: number | null
           dust_barriers_ic?: number | null
           electrical_dishwasher_disposal_cp?: number | null
@@ -745,6 +799,8 @@ export type Database = {
           floor_leveling_small_ic?: number | null
           floor_protection_cp?: number | null
           floor_protection_ic?: number | null
+          floor_protection_ramboard_sqft_cp?: number | null
+          floor_protection_ramboard_sqft_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
           framing_margin?: number | null
@@ -753,6 +809,8 @@ export type Database = {
           framing_standard_cp?: number | null
           framing_standard_ic?: number | null
           freestanding_tub_allowance_cp?: number | null
+          furniture_moving_hourly_cp?: number | null
+          furniture_moving_hourly_ic?: number | null
           garbage_disposal_allowance_cp?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
@@ -775,6 +833,8 @@ export type Database = {
           kitchen_refresh_multiplier?: number | null
           kitchen_target_margin?: number | null
           lighting_fixture_allowance_cp?: number | null
+          liveload_haul_cp?: number | null
+          liveload_haul_ic?: number | null
           low_range_multiplier?: number | null
           lvp_cp_per_sqft?: number | null
           lvp_ic_per_sqft?: number | null
@@ -870,6 +930,8 @@ export type Database = {
           waterproofing_margin?: number | null
         }
         Update: {
+          air_scrubber_weekly_cp?: number | null
+          air_scrubber_weekly_ic?: number | null
           alcove_builtin_cp?: number | null
           alcove_builtin_ic?: number | null
           appliance_install_pro_cp?: number | null
@@ -899,25 +961,47 @@ export type Database = {
           contractor_id?: string
           created_at?: string | null
           currency?: string | null
+          demo_bath_standard_cp?: number | null
+          demo_bath_standard_ic?: number | null
+          demo_cabinet_deconstruct_cp?: number | null
+          demo_cabinet_deconstruct_ic?: number | null
+          demo_castiron_tub_cp?: number | null
+          demo_castiron_tub_ic?: number | null
+          demo_glueddown_sqft_cp?: number | null
+          demo_glueddown_sqft_ic?: number | null
           demo_haul_margin?: number | null
           demo_kitchen_cp?: number | null
           demo_kitchen_ic?: number | null
+          demo_kitchen_standard_cp?: number | null
+          demo_kitchen_standard_ic?: number | null
           demo_large_bath_cp?: number | null
           demo_large_bath_ic?: number | null
+          demo_popcorn_ceiling_sqft_cp?: number | null
+          demo_popcorn_ceiling_sqft_ic?: number | null
           demo_shower_only_cp?: number | null
           demo_shower_only_ic?: number | null
           demo_small_bath_cp?: number | null
           demo_small_bath_ic?: number | null
+          demo_soffit_lf_cp?: number | null
+          demo_soffit_lf_ic?: number | null
+          demo_tile_mudset_sqft_cp?: number | null
+          demo_tile_mudset_sqft_ic?: number | null
+          difficult_access_fee_cp?: number | null
+          difficult_access_fee_ic?: number | null
           door_closure_cp?: number | null
           door_closure_ic?: number | null
           door_relocation_cp?: number | null
           door_relocation_ic?: number | null
           drywall_cp_per_sqft?: number | null
           drywall_ic_per_sqft?: number | null
+          dumpster_20yd_cp?: number | null
+          dumpster_20yd_ic?: number | null
           dumpster_bath_cp?: number | null
           dumpster_bath_ic?: number | null
           dumpster_kitchen_cp?: number | null
           dumpster_kitchen_ic?: number | null
+          dust_barrier_zipwall_cp?: number | null
+          dust_barrier_zipwall_ic?: number | null
           dust_barriers_cp?: number | null
           dust_barriers_ic?: number | null
           electrical_dishwasher_disposal_cp?: number | null
@@ -942,6 +1026,8 @@ export type Database = {
           floor_leveling_small_ic?: number | null
           floor_protection_cp?: number | null
           floor_protection_ic?: number | null
+          floor_protection_ramboard_sqft_cp?: number | null
+          floor_protection_ramboard_sqft_ic?: number | null
           frameless_glass_cp_per_sqft?: number | null
           frameless_glass_ic_per_sqft?: number | null
           framing_margin?: number | null
@@ -950,6 +1036,8 @@ export type Database = {
           framing_standard_cp?: number | null
           framing_standard_ic?: number | null
           freestanding_tub_allowance_cp?: number | null
+          furniture_moving_hourly_cp?: number | null
+          furniture_moving_hourly_ic?: number | null
           garbage_disposal_allowance_cp?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
@@ -972,6 +1060,8 @@ export type Database = {
           kitchen_refresh_multiplier?: number | null
           kitchen_target_margin?: number | null
           lighting_fixture_allowance_cp?: number | null
+          liveload_haul_cp?: number | null
+          liveload_haul_ic?: number | null
           low_range_multiplier?: number | null
           lvp_cp_per_sqft?: number | null
           lvp_ic_per_sqft?: number | null
