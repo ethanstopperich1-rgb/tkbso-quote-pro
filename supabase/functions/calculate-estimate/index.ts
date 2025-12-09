@@ -1213,9 +1213,10 @@ NOTE: Glass bundles already include materials. Do NOT add "Materials - Glass" se
 - Vanity - 30in through Vanity - 84in - qty: 1, unit: ea
 NOTE: Vanity bundles include vanity cabinet, top, and installation. Do NOT add separate material lines.
 
-**Cabinets (CRITICAL - USE LINEAR FEET, NOT SQFT):**
+**Cabinets (PACKAGE - INCLUDES MATERIALS + LABOR, DO NOT SEPARATE):**
 - Cabinets - Kitchen (LF) - estimate linear feet based on kitchen size
 - Example: 12x14 kitchen (168 sqft) ≈ 22-25 LF of cabinets
+- NOTE: Cabinet pricing is ALL-IN (cabinet materials + installation labor). Do NOT add separate "Materials - Cabinets".
 
 **Quartz/Countertop (LUMP SUM BUNDLE - INCLUDES MATERIALS + INSTALLATION):**
 - Quartz - Countertop - qty: countertop sqft, unit: sqft
@@ -1278,13 +1279,6 @@ Add SEPARATE material line items ONLY for these categories where labor and mater
 - quantity: total tile sqft (wall + floor + backsplash combined)
 - unit: sqft
 
-**Materials - Cabinets:** Add when new KITCHEN cabinets are in scope  
-- Category: "Materials - Cabinets"
-- task_description: "Cabinet material - [style: painted/stained/thermofoil]"
-- quantity: linear feet of cabinets
-- unit: lf
-
-
 **Materials - Plumbing:** Add when plumbing fixtures needed
 - Category: "Materials - Plumbing"  
 - task_description: "Plumbing fixtures - faucet, valve, trim kit"
@@ -1298,6 +1292,7 @@ Add SEPARATE material line items ONLY for these categories where labor and mater
 - unit: sqft
 
 ## DO NOT ADD MATERIAL LINES FOR THESE (already bundled):
+- Cabinets (Cabinets - Kitchen is all-in: cabinet materials + installation)
 - Countertops (Quartz - Countertop is all-in: slab + fab + install)
 - Glass (Glass - Shower Standard, Panel Only, 90 Return include materials)
 - Vanities (Vanity bundles include cabinet + top)
