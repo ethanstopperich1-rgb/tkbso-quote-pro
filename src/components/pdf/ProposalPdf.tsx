@@ -312,26 +312,78 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
     
     // LED Mirror is electrical work, not glass - check task description first
     if (taskLower.includes('led mirror') || taskLower.includes('backlit mirror') || 
-        taskLower.includes('mirror') && taskLower.includes('wiring')) {
+        (taskLower.includes('mirror') && taskLower.includes('wiring'))) {
       return 'Electrical';
     }
     
     // Vanity Light is electrical, not vanity
-    if (taskLower.includes('vanity light') || taskLower.includes('light fixture')) {
+    if (taskLower.includes('vanity light') || taskLower.includes('light fixture') ||
+        taskLower.includes('recessed') || taskLower.includes('can light')) {
       return 'Electrical';
+    }
+    
+    // Exhaust fan is electrical/mechanical
+    if (taskLower.includes('exhaust fan') || taskLower.includes('bath fan') || 
+        taskLower.includes('vent fan')) {
+      return 'Electrical';
+    }
+    
+    // Bathroom accessories - towel bars, TP holders, robe hooks, etc.
+    if (taskLower.includes('towel bar') || taskLower.includes('towel ring') || 
+        taskLower.includes('towel rack') || taskLower.includes('toilet paper') ||
+        taskLower.includes('tp holder') || taskLower.includes('robe hook') ||
+        taskLower.includes('shower shelf') || taskLower.includes('soap dish') ||
+        taskLower.includes('grab bar') || taskLower.includes('accessories')) {
+      return 'Accessories';
+    }
+    
+    // Mirror (non-LED) goes to Accessories
+    if (taskLower.includes('mirror') && !taskLower.includes('led') && !taskLower.includes('backlit')) {
+      return 'Accessories';
+    }
+    
+    // Toilet is plumbing
+    if (taskLower.includes('toilet') && !taskLower.includes('paper')) {
+      return 'Plumbing';
+    }
+    
+    // Shower door/glass enclosure
+    if (taskLower.includes('shower door') || taskLower.includes('glass door') ||
+        taskLower.includes('frameless glass') || taskLower.includes('glass panel') ||
+        taskLower.includes('glass enclosure')) {
+      return 'Glass';
     }
     
     // Combine Tile, Support, Waterproofing, Cement Board into single category
     if (lower === 'tile' || lower === 'support' || lower === 'waterproofing' || 
         lower === 'cement board' || lower === 'tile & waterproofing' || 
-        lower === 'tile & support' || lower.includes('backer board')) {
+        lower === 'tile & support' || lower.includes('backer board') ||
+        lower.includes('floor tile') || lower.includes('wall tile') ||
+        lower.includes('shower floor') || lower.includes('shower wall')) {
       return 'Tile & Support';
     }
-    if (lower === 'demo' || lower === 'demolition') {
+    if (lower === 'demo' || lower === 'demolition' || lower.includes('haul')) {
       return 'Demolition';
     }
     if (lower === 'paint' || lower === 'drywall' || lower === 'paint & drywall') {
       return 'Paint & Drywall';
+    }
+    // Vanity cabinet (not light)
+    if (lower === 'vanity' || lower.includes('vanity cabinet')) {
+      return 'Vanity';
+    }
+    // Countertop/Quartz
+    if (lower === 'countertop' || lower === 'quartz' || lower.includes('countertops')) {
+      return 'Countertop';
+    }
+    // Cabinetry
+    if (lower === 'cabinet' || lower === 'cabinetry' || lower.includes('cabinets')) {
+      return 'Cabinetry';
+    }
+    // Framing/Structural
+    if (lower === 'framing' || lower === 'structural' || lower.includes('blocking') ||
+        lower.includes('niche')) {
+      return 'Framing';
     }
     // Materials categories - group by type
     if (lower.includes('materials') && lower.includes('plumbing')) {
