@@ -1234,22 +1234,104 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
     description: 'Includes layout, installation, and leveling of standard closet shelving system.',
     unit: 'per closet'
   },
+  // ============================================
+  // BATHROOM ACCESSORIES
+  // ============================================
+  
   'towel_bar_install': {
-    description: 'Includes installation and mounting of bathroom accessories.',
-    unit: 'per fixture'
+    description: 'Includes mounting and leveling of towel bar with secure wall anchoring.',
+    unit: 'each'
+  },
+  'towel_bar': {
+    description: 'Includes mounting and leveling of towel bar with secure wall anchoring.',
+    unit: 'each'
+  },
+  'towel_ring': {
+    description: 'Includes mounting of towel ring with secure wall anchoring.',
+    unit: 'each'
+  },
+  'towel_rack': {
+    description: 'Includes mounting and leveling of towel rack with secure wall anchoring.',
+    unit: 'each'
   },
   'toilet_paper_holder': {
-    description: 'Includes installation and mounting of bathroom accessories.',
-    unit: 'per fixture'
+    description: 'Includes mounting of toilet paper holder with secure wall anchoring.',
+    unit: 'each'
+  },
+  'tp_holder': {
+    description: 'Includes mounting of toilet paper holder with secure wall anchoring.',
+    unit: 'each'
+  },
+  'robe_hook': {
+    description: 'Includes mounting of robe hook with secure wall anchoring.',
+    unit: 'each'
+  },
+  'robe_hooks': {
+    description: 'Includes mounting of robe hooks with secure wall anchoring.',
+    unit: 'per set'
   },
   'grab_bar': {
-    description: 'Includes installation of safety grab bar with secure mounting to structural backing.',
+    description: 'Includes installation of ADA-compliant safety grab bar with secure structural mounting for weight support.',
+    unit: 'each'
+  },
+  'grab_bars': {
+    description: 'Includes installation of ADA-compliant safety grab bars with secure structural mounting for weight support.',
+    unit: 'per set'
+  },
+  'shower_shelf': {
+    description: 'Includes mounting and leveling of shower shelf or corner caddy.',
+    unit: 'each'
+  },
+  'soap_dish': {
+    description: 'Includes mounting of soap dish or shower accessories.',
+    unit: 'each'
+  },
+  'soap_niche': {
+    description: 'Includes installation of recessed soap niche with waterproofing integration.',
+    unit: 'each'
+  },
+  'accessories_install': {
+    description: 'Includes installation and mounting of bathroom accessories package (towel bar, TP holder, robe hooks).',
+    unit: 'per set'
+  },
+  'bathroom_accessories': {
+    description: 'Includes installation and mounting of bathroom accessories package (towel bar, TP holder, robe hooks).',
+    unit: 'per set'
+  },
+  'mirror_install': {
+    description: 'Includes mounting, leveling, and secure installation of bathroom vanity mirror.',
+    unit: 'each'
+  },
+  'mirror': {
+    description: 'Includes mounting, leveling, and secure installation of bathroom vanity mirror.',
+    unit: 'each'
+  },
+  'medicine_cabinet': {
+    description: 'Includes installation of recessed or surface-mount medicine cabinet with door alignment.',
     unit: 'each'
   },
   'curved_shower_rod': {
     description: 'Includes installation of curved shower rod for expanded shower clearance.',
     unit: 'each'
   },
+  'shower_rod': {
+    description: 'Includes installation of shower curtain rod with secure wall mounting.',
+    unit: 'each'
+  },
+  'hand_shower': {
+    description: 'Includes installation of hand-held shower attachment with slide bar or wall mount.',
+    unit: 'each'
+  },
+  'shower_bench': {
+    description: 'Includes installation of built-in or fold-down shower bench with waterproof integration.',
+    unit: 'each'
+  },
+  'shower_seat': {
+    description: 'Includes installation of built-in or fold-down shower seat with waterproof integration.',
+    unit: 'each'
+  },
+  
+  // Final Touches
   'final_caulking': {
     description: 'Includes final interior caulking of trim, corners, and wet areas.',
     unit: 'per room'
