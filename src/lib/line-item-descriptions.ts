@@ -1374,18 +1374,35 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
     return LINE_ITEM_DESCRIPTIONS[normalizedTask];
   }
   
-  // Try partial matches - prioritize longer key matches for better accuracy
+  // Try partial matches - prioritize EXACT word matches over longer keys with extra words
+  const taskWords = normalizedTask.split('_').filter(w => w.length > 1);
   const partialMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
+  
   for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
+    const keyWords = key.split('_');
+    
+    // Check if task contains the key
     if (normalizedTask.includes(key)) {
-      partialMatches.push({ key, value, score: key.length });
-    } else if (key.includes(normalizedTask)) {
+      // Bonus for exact match
+      const isExact = normalizedTask === key || taskWords.includes(key);
+      partialMatches.push({ key, value, score: isExact ? key.length + 100 : key.length });
+    } 
+    // Check if key contains the task
+    else if (key.includes(normalizedTask)) {
       partialMatches.push({ key, value, score: normalizedTask.length });
+    }
+    // Check for exact first-word match (e.g., "vanity" matches "vanity_60in" but NOT "vanity_light")
+    else if (taskWords[0] && keyWords[0] === taskWords[0]) {
+      // Only match if key doesn't have extra unrelated words
+      const extraKeyWords = keyWords.slice(1).filter(kw => !taskWords.includes(kw) && kw.length > 2);
+      if (extraKeyWords.length === 0) {
+        partialMatches.push({ key, value, score: key.length + 50 });
+      }
     }
   }
   
   if (partialMatches.length > 0) {
-    // Return the match with the longest key (most specific)
+    // Return the match with the highest score
     partialMatches.sort((a, b) => b.score - a.score);
     return partialMatches[0].value;
   }
