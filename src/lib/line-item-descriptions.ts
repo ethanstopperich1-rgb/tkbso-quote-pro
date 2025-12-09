@@ -676,6 +676,18 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
     description: 'Includes delivery, assembly (if applicable), installation, leveling, and anchoring of cabinetry.',
     unit: 'per box'
   },
+  'cabinetry_package': {
+    description: 'Includes delivery, assembly (if applicable), installation, leveling, and anchoring of cabinetry.',
+    unit: 'per box'
+  },
+  'cabinets': {
+    description: 'Includes delivery, assembly (if applicable), installation, leveling, and anchoring of cabinetry.',
+    unit: 'per box'
+  },
+  'cabinetry': {
+    description: 'Includes delivery, assembly (if applicable), installation, leveling, and anchoring of cabinetry.',
+    unit: 'per box'
+  },
   'cabinet_install': {
     description: 'Includes installation of customer-provided cabinets including leveling and fastening.',
     unit: 'per box'
@@ -714,6 +726,38 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
   },
   'quartz_countertop': {
     description: 'Includes measurement, fabrication, delivery, and installation of quartz countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'quartz_countertops': {
+    description: 'Includes measurement, fabrication, delivery, and installation of quartz countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'countertop': {
+    description: 'Includes measurement, fabrication, delivery, and installation of countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'countertops': {
+    description: 'Includes measurement, fabrication, delivery, and installation of countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'laminate_countertop': {
+    description: 'Includes measurement, fabrication, delivery, and installation of laminate countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'laminate_countertops': {
+    description: 'Includes measurement, fabrication, delivery, and installation of laminate countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'granite_countertop': {
+    description: 'Includes measurement, fabrication, delivery, and installation of granite countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'granite_countertops': {
+    description: 'Includes measurement, fabrication, delivery, and installation of granite countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'butcher_block_countertop': {
+    description: 'Includes measurement, fabrication, delivery, and installation of butcher block countertop surfaces.',
     unit: 'per sqft'
   },
   
@@ -1259,20 +1303,44 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
     return LINE_ITEM_DESCRIPTIONS[normalizedTask];
   }
   
-  // Try partial matches
+  // Try partial matches - prioritize longer key matches for better accuracy
+  const partialMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
   for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
-    if (normalizedTask.includes(key) || key.includes(normalizedTask)) {
-      return value;
+    if (normalizedTask.includes(key)) {
+      partialMatches.push({ key, value, score: key.length });
+    } else if (key.includes(normalizedTask)) {
+      partialMatches.push({ key, value, score: normalizedTask.length });
     }
   }
   
-  // Try keyword matching
+  if (partialMatches.length > 0) {
+    // Return the match with the longest key (most specific)
+    partialMatches.sort((a, b) => b.score - a.score);
+    return partialMatches[0].value;
+  }
+  
+  // Try keyword matching with priority for more specific keywords
   const keywords = normalizedTask.split('_').filter(w => w.length > 2);
-  for (const keyword of keywords) {
+  // Sort keywords by length (longer = more specific) and filter out generic words
+  const genericWords = ['install', 'package', 'standard', 'basic', 'full', 'small', 'large', 'new', 'the', 'and', 'for'];
+  const specificKeywords = keywords
+    .filter(k => !genericWords.includes(k))
+    .sort((a, b) => b.length - a.length);
+  
+  // Try matching with specific keywords first
+  for (const keyword of specificKeywords) {
+    const keywordMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
     for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
       if (key.includes(keyword)) {
-        return value;
+        // Score based on how much of the key matches
+        const score = keyword.length / key.length;
+        keywordMatches.push({ key, value, score });
       }
+    }
+    if (keywordMatches.length > 0) {
+      // Return the best scoring match
+      keywordMatches.sort((a, b) => b.score - a.score);
+      return keywordMatches[0].value;
     }
   }
   
