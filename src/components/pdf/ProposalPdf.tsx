@@ -471,7 +471,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
     day: 'numeric',
   });
 
-  const notes = estimate.job_notes || defaults.termsText || 'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are included unless noted otherwise.';
+  const notes = estimate.job_notes || defaults.termsText || 'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are excluded unless noted otherwise.';
 
   return (
     <Document>
