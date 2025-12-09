@@ -1165,6 +1165,76 @@ export default function Pricing() {
       cpValue: config.electrical_vanity_light_cp,
     },
     {
+      key: 'outlet_install',
+      name: 'Outlet Install',
+      description: 'Install new electrical outlet.',
+      unit: 'each',
+      icField: 'outlet_install_ic',
+      cpField: 'outlet_install_cp',
+      icValue: (config as any).outlet_install_ic ?? 65,
+      cpValue: (config as any).outlet_install_cp ?? 120,
+    },
+    {
+      key: 'switch_install',
+      name: 'Switch Install',
+      description: 'Install new light switch.',
+      unit: 'each',
+      icField: 'switch_install_ic',
+      cpField: 'switch_install_cp',
+      icValue: (config as any).switch_install_ic ?? 55,
+      cpValue: (config as any).switch_install_cp ?? 100,
+    },
+    {
+      key: 'dimmer_upgrade',
+      name: 'Dimmer Switch Upgrade',
+      description: 'Upgrade standard switch to dimmer.',
+      unit: 'each',
+      icField: 'dimmer_upgrade_ic',
+      cpField: 'dimmer_upgrade_cp',
+      icValue: (config as any).dimmer_upgrade_ic ?? 75,
+      cpValue: (config as any).dimmer_upgrade_cp ?? 140,
+    },
+    {
+      key: 'new_line_run',
+      name: 'New Line Run',
+      description: 'Run new electrical line/circuit.',
+      unit: 'each',
+      icField: 'new_line_run_ic',
+      cpField: 'new_line_run_cp',
+      icValue: (config as any).new_line_run_ic ?? 250,
+      cpValue: (config as any).new_line_run_cp ?? 450,
+    },
+    {
+      key: 'dishwasher_circuit',
+      name: 'Dedicated Dishwasher Circuit',
+      description: 'Separate circuit for dishwasher.',
+      unit: 'each',
+      icField: 'dishwasher_circuit_ic',
+      cpField: 'dishwasher_circuit_cp',
+      icValue: (config as any).dishwasher_circuit_ic ?? 200,
+      cpValue: (config as any).dishwasher_circuit_cp ?? 375,
+    },
+    {
+      key: 'breaker_install',
+      name: 'Breaker Install',
+      description: 'Install new circuit breaker.',
+      unit: 'each',
+      icField: 'breaker_install_ic',
+      cpField: 'breaker_install_cp',
+      icValue: (config as any).breaker_install_ic ?? 125,
+      cpValue: (config as any).breaker_install_cp ?? 225,
+    },
+    {
+      key: 'gfci_install',
+      name: 'GFCI Outlet Install',
+      description: 'Install GFCI protected outlet.',
+      unit: 'each',
+      icField: 'gfci_install_ic',
+      cpField: 'gfci_install_cp',
+      icValue: (config as any).gfci_install_ic ?? 85,
+      cpValue: (config as any).gfci_install_cp ?? 150,
+    },
+    {
       key: 'electrical_small_package',
       name: 'Small Electrical Package',
       description: 'Bathroom: 2-4 cans, vanity light, fan.',
@@ -1637,6 +1707,16 @@ export default function Pricing() {
       cpField: 'laminate_cp_per_sqft',
       icValue: (config as any).laminate_ic_per_sqft ?? 2.25,
       cpValue: (config as any).laminate_cp_per_sqft ?? 4,
+    },
+    {
+      key: 'wood_look_tile',
+      name: 'Wood-Look Tile Install',
+      description: 'Wood-look porcelain tile flooring.',
+      unit: 'per sqft',
+      icField: 'wood_look_tile_ic_per_sqft',
+      cpField: 'wood_look_tile_cp_per_sqft',
+      icValue: (config as any).wood_look_tile_ic_per_sqft ?? 8,
+      cpValue: (config as any).wood_look_tile_cp_per_sqft ?? 14,
     },
     {
       key: 'hardwood',
@@ -2171,46 +2251,6 @@ export default function Pricing() {
       icValue: (config as any).daily_cleanup_ic ?? 75,
       cpValue: (config as any).daily_cleanup_cp ?? 125,
     },
-    {
-      key: 'temp_kitchen',
-      name: 'Temporary Kitchen Setup',
-      description: 'Set up temporary cooking area.',
-      unit: 'each',
-      icField: 'temp_kitchen_ic',
-      cpField: 'temp_kitchen_cp',
-      icValue: (config as any).temp_kitchen_ic ?? 800,
-      cpValue: (config as any).temp_kitchen_cp ?? 1500,
-    },
-    {
-      key: 'bathroom_trailer',
-      name: 'Bathroom Trailer Rental',
-      description: 'Portable bathroom trailer rental.',
-      unit: 'per week',
-      icField: 'bathroom_trailer_ic',
-      cpField: 'bathroom_trailer_cp',
-      icValue: (config as any).bathroom_trailer_ic ?? 400,
-      cpValue: (config as any).bathroom_trailer_cp ?? 700,
-    },
-    {
-      key: 'quiet_hours_premium',
-      name: 'Soundproofing/Quiet Hours Premium',
-      description: 'Premium for restricted work hours.',
-      unit: 'per job',
-      icField: 'quiet_hours_premium_ic',
-      cpField: 'quiet_hours_premium_cp',
-      icValue: (config as any).quiet_hours_premium_ic ?? 500,
-      cpValue: (config as any).quiet_hours_premium_cp ?? 900,
-    },
-    {
-      key: 'weekend_afterhours',
-      name: 'Weekend/After-Hours Work',
-      description: 'Premium for non-standard work hours.',
-      unit: 'per hour',
-      icField: 'weekend_afterhours_ic',
-      cpField: 'weekend_afterhours_cp',
-      icValue: (config as any).weekend_afterhours_ic ?? 85,
-      cpValue: (config as any).weekend_afterhours_cp ?? 150,
-    },
   ];
 
   // 5. TRIM & MILLWORK (Extended)
@@ -2530,8 +2570,18 @@ export default function Pricing() {
     },
   ];
 
-  // 9. TILE SPECIALTY WORK
+  // 9. TILE SPECIALTY WORK & BACKSPLASH
   const tileSpecialtyBuckets: TradeBucket[] = [
+    {
+      key: 'tile_backsplash',
+      name: 'Tile Backsplash Install',
+      description: 'Kitchen or bath tile backsplash installation.',
+      unit: 'per sqft',
+      icField: 'tile_backsplash_ic_per_sqft',
+      cpField: 'tile_backsplash_cp_per_sqft',
+      icValue: (config as any).tile_backsplash_ic_per_sqft ?? 18,
+      cpValue: (config as any).tile_backsplash_cp_per_sqft ?? 32,
+    },
     {
       key: 'accent_tile_band',
       name: 'Accent Tile Band/Border',
@@ -2639,24 +2689,14 @@ export default function Pricing() {
       cpValue: (config as any).cooktop_cutout_cp ?? 380,
     },
     {
-      key: 'edge_profile_upgrade',
-      name: 'Edge Profile Upgrade',
-      description: 'Upgraded edge profile (ogee, beveled).',
-      unit: 'per edge',
-      icField: 'edge_profile_upgrade_ic',
-      cpField: 'edge_profile_upgrade_cp',
-      icValue: (config as any).edge_profile_upgrade_ic ?? 18,
-      cpValue: (config as any).edge_profile_upgrade_cp ?? 35,
-    },
-    {
       key: 'fullheight_backsplash',
-      name: 'Full-Height Backsplash',
-      description: 'Full-height stone backsplash.',
-      unit: 'per sqft',
+      name: 'Full-Height Backsplash Upgrade',
+      description: 'Full-height stone backsplash upgrade.',
+      unit: 'LS',
       icField: 'fullheight_backsplash_ic',
       cpField: 'fullheight_backsplash_cp',
-      icValue: (config as any).fullheight_backsplash_ic ?? 45,
-      cpValue: (config as any).fullheight_backsplash_cp ?? 85,
+      icValue: (config as any).fullheight_backsplash_ic ?? 450,
+      cpValue: (config as any).fullheight_backsplash_cp ?? 850,
     },
     {
       key: 'outlet_cutout',
@@ -2670,13 +2710,13 @@ export default function Pricing() {
     },
     {
       key: 'waterfall_mitered',
-      name: 'Waterfall/Mitered Edge',
+      name: 'Waterfall Edge Upgrade',
       description: 'Waterfall or mitered edge fabrication.',
-      unit: 'per edge',
+      unit: 'LS',
       icField: 'waterfall_mitered_ic',
       cpField: 'waterfall_mitered_cp',
-      icValue: (config as any).waterfall_mitered_ic ?? 350,
-      cpValue: (config as any).waterfall_mitered_cp ?? 650,
+      icValue: (config as any).waterfall_mitered_ic ?? 650,
+      cpValue: (config as any).waterfall_mitered_cp ?? 1200,
     },
   ];
 
@@ -3035,12 +3075,44 @@ export default function Pricing() {
       description: 'Kitchen faucet allowance.',
     },
     {
+      key: 'kitchen_sink',
+      label: 'Kitchen Sink',
+      field: 'kitchen_sink_allowance_cp',
+      value: (config as any).kitchen_sink_allowance_cp ?? 450,
+      unit: 'each',
+      description: 'Kitchen sink allowance.',
+    },
+    {
       key: 'garbage_disposal',
       label: 'Garbage Disposal',
       field: 'garbage_disposal_allowance_cp',
       value: config.garbage_disposal_allowance_cp,
       unit: 'each',
       description: 'Garbage disposal allowance.',
+    },
+    {
+      key: 'garbage_disposal_install',
+      label: 'Garbage Disposal Install',
+      field: 'garbage_disposal_install_cp',
+      value: (config as any).garbage_disposal_install_cp ?? 150,
+      unit: 'each',
+      description: 'Garbage disposal installation labor.',
+    },
+    {
+      key: 'laminate_slab',
+      label: 'Laminate Slab Material',
+      field: 'laminate_slab_allowance_cp',
+      value: (config as any).laminate_slab_allowance_cp ?? 400,
+      unit: 'per slab',
+      description: 'Laminate countertop slab material allowance.',
+    },
+    {
+      key: 'led_mirror',
+      label: 'LED Mirror Material',
+      field: 'led_mirror_allowance_cp',
+      value: (config as any).led_mirror_allowance_cp ?? 350,
+      unit: 'each',
+      description: 'LED/backlit mirror material allowance.',
     },
   ];
 
@@ -3223,15 +3295,6 @@ export default function Pricing() {
               description="Wall removal, relocations, major changes."
               icon={<HardHat className="h-5 w-5" />}
               buckets={structuralBuckets}
-              onChange={handleChange}
-              targetMargin={config.target_margin}
-              pricingMode={pricingMode}
-            />
-            <TradeBucketsCard
-              title="Water Damage & Rot Repair"
-              description="Discovery items found during demo (40% of bath remodels)."
-              icon={<Droplets className="h-5 w-5" />}
-              buckets={waterDamageBuckets}
               onChange={handleChange}
               targetMargin={config.target_margin}
               pricingMode={pricingMode}
