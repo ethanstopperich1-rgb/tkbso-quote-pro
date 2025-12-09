@@ -1533,6 +1533,7 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
 
 /**
  * Format a line item for PDF display with professional description
+ * Note: Quantity/unit suffixes removed per user request - customer quotes show clean descriptions only
  */
 export function formatLineItemForPdf(
   taskDescription: string,
@@ -1542,18 +1543,10 @@ export function formatLineItemForPdf(
   const matched = getLineItemDescription(taskDescription);
   
   if (matched) {
-    // Use the professional description
-    let formatted = matched.description;
-    if (quantity && quantity > 1) {
-      formatted += ` (${quantity} ${matched.unit})`;
-    }
-    return formatted;
+    // Use the professional description (no quantity/unit suffix)
+    return matched.description;
   }
   
-  // Fallback to original with quantity
-  if (quantity && unit) {
-    return `${taskDescription} (${quantity} ${unit})`;
-  }
-  
+  // Fallback to original description (no quantity/unit suffix)
   return taskDescription;
 }
