@@ -76,11 +76,11 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
   },
   'soffit_demolition': {
     description: 'Includes removal of ceiling soffits and disposal of debris.',
-    unit: 'per LF'
+    unit: 'each'
   },
   'soffit_removal': {
     description: 'Includes removal of ceiling soffits and disposal of debris.',
-    unit: 'per LF'
+    unit: 'each'
   },
   'cabinet_deconstruction': {
     description: 'Includes careful removal of cabinetry for reuse or relocation.',
