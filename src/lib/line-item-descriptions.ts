@@ -46,6 +46,10 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
     description: 'Includes removal of existing cabinets, countertops, appliances, backsplash, and associated debris.',
     unit: 'each'
   },
+  'kitchen_demo': {
+    description: 'Includes removal of existing cabinets, countertops, appliances, backsplash, and associated debris.',
+    unit: 'each'
+  },
   'demo_full_kitchen': {
     description: 'Includes removal of existing cabinets, countertops, appliances, backsplash, and associated debris.',
     unit: 'each'
@@ -293,6 +297,28 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
   // ============================================
   // PLUMBING & GAS
   // ============================================
+  
+  // Kitchen Plumbing
+  'plumbing_reconnect': {
+    description: 'Includes disconnection and reconnection of kitchen sink, faucet, and dishwasher plumbing connections.',
+    unit: 'each'
+  },
+  'plumbing_kitchen': {
+    description: 'Includes disconnection and reconnection of kitchen sink, faucet, and dishwasher plumbing connections.',
+    unit: 'each'
+  },
+  'kitchen_sink': {
+    description: 'Includes disconnection and reconnection of kitchen sink, faucet, and dishwasher plumbing connections.',
+    unit: 'each'
+  },
+  'dishwasher_hookup': {
+    description: 'Includes disconnection and reconnection of kitchen sink, faucet, and dishwasher plumbing connections.',
+    unit: 'each'
+  },
+  'sink_faucet_install': {
+    description: 'Includes installation of sink and faucet with supply line and drain connections.',
+    unit: 'each'
+  },
   
   // Standard Plumbing
   'plumbing_shower_standard': {
@@ -746,6 +772,22 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
   },
   'laminate_countertops': {
     description: 'Includes measurement, fabrication, delivery, and installation of laminate countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'laminate_countertop_materials': {
+    description: 'Includes measurement, fabrication, delivery, and installation of laminate countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'laminate_countertop_materials_and_installation': {
+    description: 'Includes measurement, fabrication, delivery, and installation of laminate countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'countertop_materials': {
+    description: 'Includes measurement, fabrication, delivery, and installation of countertop surfaces.',
+    unit: 'per sqft'
+  },
+  'countertop_installation': {
+    description: 'Includes measurement, fabrication, delivery, and installation of countertop surfaces.',
     unit: 'per sqft'
   },
   'granite_countertop': {
