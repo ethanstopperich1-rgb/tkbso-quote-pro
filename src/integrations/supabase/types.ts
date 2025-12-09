@@ -492,6 +492,8 @@ export type Database = {
           bath_refresh_multiplier: number | null
           bath_shower_only_multiplier: number | null
           bathroom_target_margin: number | null
+          breaker_install_cp: number | null
+          breaker_install_ic: number | null
           cabinet_install_only_lf_cp: number | null
           cabinet_install_only_lf_ic: number | null
           cabinet_lf_cp: number | null
@@ -534,6 +536,10 @@ export type Database = {
           demo_tile_mudset_sqft_ic: number | null
           difficult_access_fee_cp: number | null
           difficult_access_fee_ic: number | null
+          dimmer_upgrade_cp: number | null
+          dimmer_upgrade_ic: number | null
+          dishwasher_circuit_cp: number | null
+          dishwasher_circuit_ic: number | null
           door_closure_cp: number | null
           door_closure_ic: number | null
           door_relocation_cp: number | null
@@ -585,8 +591,11 @@ export type Database = {
           furniture_moving_hourly_cp: number | null
           furniture_moving_hourly_ic: number | null
           garbage_disposal_allowance_cp: number | null
+          garbage_disposal_install_cp: number | null
           gc_permit_fee_cp: number | null
           gc_permit_fee_ic: number | null
+          gfci_install_cp: number | null
+          gfci_install_ic: number | null
           glass_90_return_cp: number | null
           glass_90_return_ic: number | null
           glass_panel_only_cp: number | null
@@ -604,7 +613,10 @@ export type Database = {
           kitchen_ic_per_sqft: number | null
           kitchen_partial_multiplier: number | null
           kitchen_refresh_multiplier: number | null
+          kitchen_sink_allowance_cp: number | null
           kitchen_target_margin: number | null
+          laminate_slab_allowance_cp: number | null
+          led_mirror_allowance_cp: number | null
           lighting_fixture_allowance_cp: number | null
           liveload_haul_cp: number | null
           liveload_haul_ic: number | null
@@ -616,8 +628,12 @@ export type Database = {
           min_job_ic: number | null
           mirror_allowance_cp: number | null
           mirror_lighting_allowance_cp: number | null
+          new_line_run_cp: number | null
+          new_line_run_ic: number | null
           niche_cp_each: number | null
           niche_ic_each: number | null
+          outlet_install_cp: number | null
+          outlet_install_ic: number | null
           paint_full_bath_cp: number | null
           paint_full_bath_ic: number | null
           paint_patch_bath_cp: number | null
@@ -664,7 +680,11 @@ export type Database = {
           sink_faucet_allowance_cp: number | null
           soffit_removal_cp: number | null
           soffit_removal_ic: number | null
+          switch_install_cp: number | null
+          switch_install_ic: number | null
           target_margin: number | null
+          tile_backsplash_cp: number | null
+          tile_backsplash_ic: number | null
           tile_floor_cp_per_sqft: number | null
           tile_floor_ic_per_sqft: number | null
           tile_material_allowance_cp_per_sqft: number | null
@@ -701,6 +721,8 @@ export type Database = {
           waterproofing_cp_per_sqft: number | null
           waterproofing_ic_per_sqft: number | null
           waterproofing_margin: number | null
+          wood_look_tile_cp: number | null
+          wood_look_tile_ic: number | null
         }
         Insert: {
           air_scrubber_weekly_cp?: number | null
@@ -719,6 +741,8 @@ export type Database = {
           bath_refresh_multiplier?: number | null
           bath_shower_only_multiplier?: number | null
           bathroom_target_margin?: number | null
+          breaker_install_cp?: number | null
+          breaker_install_ic?: number | null
           cabinet_install_only_lf_cp?: number | null
           cabinet_install_only_lf_ic?: number | null
           cabinet_lf_cp?: number | null
@@ -761,6 +785,10 @@ export type Database = {
           demo_tile_mudset_sqft_ic?: number | null
           difficult_access_fee_cp?: number | null
           difficult_access_fee_ic?: number | null
+          dimmer_upgrade_cp?: number | null
+          dimmer_upgrade_ic?: number | null
+          dishwasher_circuit_cp?: number | null
+          dishwasher_circuit_ic?: number | null
           door_closure_cp?: number | null
           door_closure_ic?: number | null
           door_relocation_cp?: number | null
@@ -812,8 +840,11 @@ export type Database = {
           furniture_moving_hourly_cp?: number | null
           furniture_moving_hourly_ic?: number | null
           garbage_disposal_allowance_cp?: number | null
+          garbage_disposal_install_cp?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
+          gfci_install_cp?: number | null
+          gfci_install_ic?: number | null
           glass_90_return_cp?: number | null
           glass_90_return_ic?: number | null
           glass_panel_only_cp?: number | null
@@ -831,7 +862,10 @@ export type Database = {
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
+          kitchen_sink_allowance_cp?: number | null
           kitchen_target_margin?: number | null
+          laminate_slab_allowance_cp?: number | null
+          led_mirror_allowance_cp?: number | null
           lighting_fixture_allowance_cp?: number | null
           liveload_haul_cp?: number | null
           liveload_haul_ic?: number | null
@@ -843,8 +877,12 @@ export type Database = {
           min_job_ic?: number | null
           mirror_allowance_cp?: number | null
           mirror_lighting_allowance_cp?: number | null
+          new_line_run_cp?: number | null
+          new_line_run_ic?: number | null
           niche_cp_each?: number | null
           niche_ic_each?: number | null
+          outlet_install_cp?: number | null
+          outlet_install_ic?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
           paint_patch_bath_cp?: number | null
@@ -891,7 +929,11 @@ export type Database = {
           sink_faucet_allowance_cp?: number | null
           soffit_removal_cp?: number | null
           soffit_removal_ic?: number | null
+          switch_install_cp?: number | null
+          switch_install_ic?: number | null
           target_margin?: number | null
+          tile_backsplash_cp?: number | null
+          tile_backsplash_ic?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
           tile_material_allowance_cp_per_sqft?: number | null
@@ -928,6 +970,8 @@ export type Database = {
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
           waterproofing_margin?: number | null
+          wood_look_tile_cp?: number | null
+          wood_look_tile_ic?: number | null
         }
         Update: {
           air_scrubber_weekly_cp?: number | null
@@ -946,6 +990,8 @@ export type Database = {
           bath_refresh_multiplier?: number | null
           bath_shower_only_multiplier?: number | null
           bathroom_target_margin?: number | null
+          breaker_install_cp?: number | null
+          breaker_install_ic?: number | null
           cabinet_install_only_lf_cp?: number | null
           cabinet_install_only_lf_ic?: number | null
           cabinet_lf_cp?: number | null
@@ -988,6 +1034,10 @@ export type Database = {
           demo_tile_mudset_sqft_ic?: number | null
           difficult_access_fee_cp?: number | null
           difficult_access_fee_ic?: number | null
+          dimmer_upgrade_cp?: number | null
+          dimmer_upgrade_ic?: number | null
+          dishwasher_circuit_cp?: number | null
+          dishwasher_circuit_ic?: number | null
           door_closure_cp?: number | null
           door_closure_ic?: number | null
           door_relocation_cp?: number | null
@@ -1039,8 +1089,11 @@ export type Database = {
           furniture_moving_hourly_cp?: number | null
           furniture_moving_hourly_ic?: number | null
           garbage_disposal_allowance_cp?: number | null
+          garbage_disposal_install_cp?: number | null
           gc_permit_fee_cp?: number | null
           gc_permit_fee_ic?: number | null
+          gfci_install_cp?: number | null
+          gfci_install_ic?: number | null
           glass_90_return_cp?: number | null
           glass_90_return_ic?: number | null
           glass_panel_only_cp?: number | null
@@ -1058,7 +1111,10 @@ export type Database = {
           kitchen_ic_per_sqft?: number | null
           kitchen_partial_multiplier?: number | null
           kitchen_refresh_multiplier?: number | null
+          kitchen_sink_allowance_cp?: number | null
           kitchen_target_margin?: number | null
+          laminate_slab_allowance_cp?: number | null
+          led_mirror_allowance_cp?: number | null
           lighting_fixture_allowance_cp?: number | null
           liveload_haul_cp?: number | null
           liveload_haul_ic?: number | null
@@ -1070,8 +1126,12 @@ export type Database = {
           min_job_ic?: number | null
           mirror_allowance_cp?: number | null
           mirror_lighting_allowance_cp?: number | null
+          new_line_run_cp?: number | null
+          new_line_run_ic?: number | null
           niche_cp_each?: number | null
           niche_ic_each?: number | null
+          outlet_install_cp?: number | null
+          outlet_install_ic?: number | null
           paint_full_bath_cp?: number | null
           paint_full_bath_ic?: number | null
           paint_patch_bath_cp?: number | null
@@ -1118,7 +1178,11 @@ export type Database = {
           sink_faucet_allowance_cp?: number | null
           soffit_removal_cp?: number | null
           soffit_removal_ic?: number | null
+          switch_install_cp?: number | null
+          switch_install_ic?: number | null
           target_margin?: number | null
+          tile_backsplash_cp?: number | null
+          tile_backsplash_ic?: number | null
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
           tile_material_allowance_cp_per_sqft?: number | null
@@ -1155,6 +1219,8 @@ export type Database = {
           waterproofing_cp_per_sqft?: number | null
           waterproofing_ic_per_sqft?: number | null
           waterproofing_margin?: number | null
+          wood_look_tile_cp?: number | null
+          wood_look_tile_ic?: number | null
         }
         Relationships: [
           {
