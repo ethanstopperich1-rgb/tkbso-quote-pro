@@ -80,17 +80,28 @@ function mapCategoryToPricingField(
     return { ic: config.plumbing_shower_standard_ic, cp: config.plumbing_shower_standard_cp, unit: 'ea' };
   }
 
-  // Tile
+  // Tile - IC = material allowance + labor IC, CP calculated from margin
   if (categoryLower.includes('tile')) {
+    const materialIC = (config as any).tile_material_allowance_ic ?? 5;
+    const targetMargin = config.target_margin ?? 0.38;
+    
     if (taskLower.includes('wall') || taskLower.includes('shower wall')) {
-      return { ic: config.tile_wall_ic_per_sqft, cp: config.tile_wall_cp_per_sqft, unit: 'sqft' };
+      const laborIC = config.tile_wall_ic_per_sqft ?? 20;
+      const totalIC = materialIC + laborIC;
+      return { ic: totalIC, cp: totalIC / (1 - targetMargin), unit: 'sqft' };
     } else if (taskLower.includes('shower floor')) {
-      return { ic: config.tile_shower_floor_ic_per_sqft, cp: config.tile_shower_floor_cp_per_sqft, unit: 'sqft' };
+      const laborIC = config.tile_shower_floor_ic_per_sqft ?? 6;
+      const totalIC = materialIC + laborIC;
+      return { ic: totalIC, cp: totalIC / (1 - targetMargin), unit: 'sqft' };
     } else if (taskLower.includes('floor') || taskLower.includes('main floor')) {
-      return { ic: config.tile_floor_ic_per_sqft, cp: config.tile_floor_cp_per_sqft, unit: 'sqft' };
+      const laborIC = config.tile_floor_ic_per_sqft ?? 5.5;
+      const totalIC = materialIC + laborIC;
+      return { ic: totalIC, cp: totalIC / (1 - targetMargin), unit: 'sqft' };
     }
     // Default to wall tile
-    return { ic: config.tile_wall_ic_per_sqft, cp: config.tile_wall_cp_per_sqft, unit: 'sqft' };
+    const laborIC = config.tile_wall_ic_per_sqft ?? 20;
+    const totalIC = materialIC + laborIC;
+    return { ic: totalIC, cp: totalIC / (1 - targetMargin), unit: 'sqft' };
   }
 
   // Waterproofing
@@ -144,6 +155,23 @@ function mapCategoryToPricingField(
       return { ic: config.paint_full_bath_ic, cp: config.paint_full_bath_cp, unit: 'ea' };
     }
     return { ic: config.paint_patch_bath_ic, cp: config.paint_patch_bath_cp, unit: 'ea' };
+  }
+
+  // Cabinets - IC = material allowance + install IC, CP calculated from margin
+  if (categoryLower.includes('cabinet') && !categoryLower.includes('vanity')) {
+    const targetMargin = config.target_margin ?? 0.38;
+    
+    if (taskLower.includes('install only') || taskLower.includes('labor only')) {
+      // Install only - no material
+      const laborIC = config.cabinet_install_only_lf_ic ?? 50;
+      return { ic: laborIC, cp: laborIC / (1 - targetMargin), unit: 'ea' };
+    }
+    
+    // Full cabinet package (material + install)
+    const materialIC = (config as any).cabinet_material_allowance_ic ?? 150;
+    const laborIC = config.cabinet_install_only_lf_ic ?? 50;
+    const totalIC = materialIC + laborIC;
+    return { ic: totalIC, cp: totalIC / (1 - targetMargin), unit: 'ea' };
   }
 
   // Vanity

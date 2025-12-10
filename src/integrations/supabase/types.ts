@@ -506,6 +506,7 @@ export type Database = {
           cabinet_lf_ic: number | null
           cabinet_markup_multiplier_no_gc: number | null
           cabinet_markup_multiplier_with_gc: number | null
+          cabinet_material_allowance_ic: number | null
           cement_board_cp_per_sqft: number | null
           cement_board_ic_per_sqft: number | null
           closet_cp_per_sqft: number | null
@@ -695,6 +696,7 @@ export type Database = {
           tile_floor_cp_per_sqft: number | null
           tile_floor_ic_per_sqft: number | null
           tile_material_allowance_cp_per_sqft: number | null
+          tile_material_allowance_ic: number | null
           tile_shower_floor_cp_per_sqft: number | null
           tile_shower_floor_ic_per_sqft: number | null
           tile_wall_cp_per_sqft: number | null
@@ -756,6 +758,7 @@ export type Database = {
           cabinet_lf_ic?: number | null
           cabinet_markup_multiplier_no_gc?: number | null
           cabinet_markup_multiplier_with_gc?: number | null
+          cabinet_material_allowance_ic?: number | null
           cement_board_cp_per_sqft?: number | null
           cement_board_ic_per_sqft?: number | null
           closet_cp_per_sqft?: number | null
@@ -945,6 +948,7 @@ export type Database = {
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
           tile_material_allowance_cp_per_sqft?: number | null
+          tile_material_allowance_ic?: number | null
           tile_shower_floor_cp_per_sqft?: number | null
           tile_shower_floor_ic_per_sqft?: number | null
           tile_wall_cp_per_sqft?: number | null
@@ -1006,6 +1010,7 @@ export type Database = {
           cabinet_lf_ic?: number | null
           cabinet_markup_multiplier_no_gc?: number | null
           cabinet_markup_multiplier_with_gc?: number | null
+          cabinet_material_allowance_ic?: number | null
           cement_board_cp_per_sqft?: number | null
           cement_board_ic_per_sqft?: number | null
           closet_cp_per_sqft?: number | null
@@ -1195,6 +1200,7 @@ export type Database = {
           tile_floor_cp_per_sqft?: number | null
           tile_floor_ic_per_sqft?: number | null
           tile_material_allowance_cp_per_sqft?: number | null
+          tile_material_allowance_ic?: number | null
           tile_shower_floor_cp_per_sqft?: number | null
           tile_shower_floor_ic_per_sqft?: number | null
           tile_wall_cp_per_sqft?: number | null
