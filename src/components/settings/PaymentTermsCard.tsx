@@ -70,14 +70,6 @@ export function PaymentTermsCard({ data, onChange }: Props) {
                 onChange={(e) => update('progressPct', parseInt(e.target.value) || 0)}
                 className="h-10 border-0 bg-slate-100 rounded-lg text-center focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
-              <Input
-                type="text"
-                value={data.progressLabel || 'Due at job start'}
-                onChange={(e) => update('progressLabel', e.target.value)}
-                placeholder="Due at job start"
-                maxLength={50}
-                className="h-7 text-[10px] text-slate-500 border-0 bg-transparent text-center focus:ring-1 focus:ring-cyan-400 focus:bg-slate-50 transition-all px-1"
-              />
             </div>
             
             <div className="space-y-2">
@@ -126,6 +118,36 @@ export function PaymentTermsCard({ data, onChange }: Props) {
             className="bg-sky-500 transition-all" 
             style={{ width: `${data.finalPct}%` }}
           />
+        </div>
+
+        {/* Project-Type Progress Labels */}
+        <div className="space-y-3 pt-2">
+          <Label className="text-slate-700 text-sm">Progress Payment Descriptions (by project type)</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-slate-600">Kitchen Projects</span>
+              <Input
+                type="text"
+                value={data.progressLabelKitchen || 'Due at arrival of cabinetry'}
+                onChange={(e) => update('progressLabelKitchen', e.target.value)}
+                placeholder="Due at arrival of cabinetry"
+                maxLength={60}
+                className="h-9 text-sm border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-slate-600">Bathroom Projects</span>
+              <Input
+                type="text"
+                value={data.progressLabelBathroom || 'Due at start of tile installation'}
+                onChange={(e) => update('progressLabelBathroom', e.target.value)}
+                placeholder="Due at start of tile installation"
+                maxLength={60}
+                className="h-9 text-sm border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400">These labels appear on PDF payment schedules based on project type</p>
         </div>
 
         {/* Legal Disclaimer */}

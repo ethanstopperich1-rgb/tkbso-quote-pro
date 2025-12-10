@@ -52,6 +52,8 @@ export interface BusinessDefaults {
   depositLabel: string;
   progressPct: number;
   progressLabel: string;
+  progressLabelKitchen: string;
+  progressLabelBathroom: string;
   finalPct: number;
   finalLabel: string;
   minJobCp: number;
@@ -114,6 +116,8 @@ export const defaultSettings: ContractorSettings = {
     depositLabel: 'Due at signing',
     progressPct: 25,
     progressLabel: 'Due at job start',
+    progressLabelKitchen: 'Due at arrival of cabinetry',
+    progressLabelBathroom: 'Due at start of tile installation',
     finalPct: 10,
     finalLabel: 'Due at completion',
     minJobCp: 15000,
