@@ -112,9 +112,11 @@ export interface TKBSOPricingConfig {
   vanity_84_bundle_ic: number;
   vanity_84_bundle_cp: number;
   
-  // Quartz (per sqft)
-  quartz_ic: number;
-  quartz_cp: number;
+  // Quartz (per sqft) - IC = material + fab, CP = IC / (1 - margin)
+  quartz_material_ic: number;  // Material cost per sqft
+  quartz_fab_ic: number;       // Fabrication/install cost per sqft
+  quartz_ic: number;           // Total IC (calculated: material + fab)
+  quartz_cp: number;           // CP (calculated from IC and margin)
   
   // Material Allowances (CP only - client-facing)
   tile_material_allowance_cp_per_sqft: number;
@@ -253,9 +255,11 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   vanity_84_bundle_ic: 3200,
   vanity_84_bundle_cp: 5000,
   
-  // Quartz (fab + install)
-  quartz_ic: 15,
-  quartz_cp: 50,
+  // Quartz (material + fab = total IC, CP from margin)
+  quartz_material_ic: 25,  // Material cost per sqft
+  quartz_fab_ic: 15,       // Fabrication/install cost per sqft
+  quartz_ic: 40,           // Total IC (material + fab)
+  quartz_cp: 65,           // CP = 40 / (1 - 0.38) ≈ 64.5
   
   // Material Allowances (CP only - client-facing)
   tile_material_allowance_cp_per_sqft: 7.85,  // Tile, grout, thinset, sealer

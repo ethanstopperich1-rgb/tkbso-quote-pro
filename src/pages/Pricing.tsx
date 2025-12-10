@@ -216,8 +216,9 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> & Record<string, any> = {
   vanity_96_bundle_cp: 6000,
   
   // Quartz & Counters
-  quartz_ic_per_sqft: 15,
-  quartz_cp_per_sqft: 50,
+  quartz_material_allowance_ic: 25, // Material cost per sqft (IC)
+  quartz_ic_per_sqft: 15,           // Fabrication/install cost per sqft (IC)
+  quartz_cp_per_sqft: 50,           // Will be calculated from margin
   quartz_slab_level1_allowance_cp: 1000,
   
   // Material Allowances (client-facing)
@@ -1413,14 +1414,24 @@ export default function Pricing() {
       cpValue: (config as any).vanity_96_bundle_cp ?? 6000,
     },
     {
-      key: 'quartz_countertop',
-      name: 'Quartz Countertop',
-      description: 'Quartz fabrication and install.',
+      key: 'quartz_material',
+      name: 'Quartz Material Allowance',
+      description: 'Material cost per sqft (slab, edges, cutouts).',
+      unit: 'per sqft',
+      icField: 'quartz_material_allowance_ic',
+      cpField: null, // IC only - CP is calculated
+      icValue: (config as any).quartz_material_allowance_ic ?? 25,
+      cpValue: null,
+    },
+    {
+      key: 'quartz_fab',
+      name: 'Quartz Fabrication & Install',
+      description: 'Templating, fabrication, and installation labor.',
       unit: 'per sqft',
       icField: 'quartz_ic_per_sqft',
-      cpField: 'quartz_cp_per_sqft',
+      cpField: null, // IC only - CP is calculated
       icValue: config.quartz_ic_per_sqft,
-      cpValue: config.quartz_cp_per_sqft,
+      cpValue: null,
     },
   ];
 

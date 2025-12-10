@@ -672,6 +672,7 @@ export type Database = {
           quartz_cp_per_sqft: number | null
           quartz_faucet_drill_cp: number | null
           quartz_ic_per_sqft: number | null
+          quartz_material_allowance_ic: number | null
           quartz_sink_cutout_cp: number | null
           quartz_slab_level1_allowance_cp: number | null
           quartzite_slab_allowance_cp: number | null
@@ -921,6 +922,7 @@ export type Database = {
           quartz_cp_per_sqft?: number | null
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
+          quartz_material_allowance_ic?: number | null
           quartz_sink_cutout_cp?: number | null
           quartz_slab_level1_allowance_cp?: number | null
           quartzite_slab_allowance_cp?: number | null
@@ -1170,6 +1172,7 @@ export type Database = {
           quartz_cp_per_sqft?: number | null
           quartz_faucet_drill_cp?: number | null
           quartz_ic_per_sqft?: number | null
+          quartz_material_allowance_ic?: number | null
           quartz_sink_cutout_cp?: number | null
           quartz_slab_level1_allowance_cp?: number | null
           quartzite_slab_allowance_cp?: number | null
