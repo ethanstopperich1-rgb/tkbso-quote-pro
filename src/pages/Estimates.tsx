@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/pricing-calculator';
-import { Search, FileText, Plus, Clock, MapPin, Trash2 } from 'lucide-react';
+import { Search, FileText, Plus, Clock, MapPin, Trash2, Archive, RotateCcw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 interface EstimateRow {
@@ -37,6 +38,8 @@ interface EstimateRow {
   num_closets: number;
   status: string;
   created_at: string;
+  is_archived: boolean;
+  archived_at: string | null;
 }
 
 export default function Estimates() {
@@ -47,6 +50,7 @@ export default function Estimates() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [deleteTarget, setDeleteTarget] = useState<EstimateRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
 
   useEffect(() => {
     async function fetchEstimates() {
@@ -54,12 +58,12 @@ export default function Estimates() {
       
       const { data, error } = await supabase
         .from('estimates')
-        .select('id, job_label, client_name, city, state, final_cp_total, low_estimate_cp, high_estimate_cp, has_kitchen, has_bathrooms, has_closets, num_kitchens, num_bathrooms, num_closets, status, created_at')
+        .select('id, job_label, client_name, city, state, final_cp_total, low_estimate_cp, high_estimate_cp, has_kitchen, has_bathrooms, has_closets, num_kitchens, num_bathrooms, num_closets, status, created_at, is_archived, archived_at')
         .eq('contractor_id', contractor.id)
         .order('created_at', { ascending: false });
       
       if (!error && data) {
-        setEstimates(data);
+        setEstimates(data as EstimateRow[]);
       }
       setLoading(false);
     }
@@ -67,26 +71,57 @@ export default function Estimates() {
     fetchEstimates();
   }, [contractor]);
 
-  const handleDelete = async () => {
+  const handleArchive = async () => {
     if (!deleteTarget) return;
     
     setDeleting(true);
     const { error } = await supabase
       .from('estimates')
-      .delete()
+      .update({ 
+        is_archived: true, 
+        archived_at: new Date().toISOString() 
+      })
       .eq('id', deleteTarget.id);
     
     if (error) {
-      toast.error('Failed to delete estimate');
+      toast.error('Failed to archive estimate');
     } else {
-      setEstimates(estimates.filter(e => e.id !== deleteTarget.id));
-      toast.success('Estimate deleted');
+      setEstimates(estimates.map(e => 
+        e.id === deleteTarget.id 
+          ? { ...e, is_archived: true, archived_at: new Date().toISOString() } 
+          : e
+      ));
+      toast.success('Estimate archived');
     }
     setDeleting(false);
     setDeleteTarget(null);
   };
 
-  const filteredEstimates = estimates.filter((estimate) => {
+  const handleRestore = async (estimate: EstimateRow) => {
+    const { error } = await supabase
+      .from('estimates')
+      .update({ 
+        is_archived: false, 
+        archived_at: null 
+      })
+      .eq('id', estimate.id);
+    
+    if (error) {
+      toast.error('Failed to restore estimate');
+    } else {
+      setEstimates(estimates.map(e => 
+        e.id === estimate.id 
+          ? { ...e, is_archived: false, archived_at: null } 
+          : e
+      ));
+      toast.success('Estimate restored');
+    }
+  };
+
+  const activeEstimates = estimates.filter(e => !e.is_archived);
+  const archivedEstimates = estimates.filter(e => e.is_archived);
+
+  const filteredEstimates = (activeTab === 'active' ? activeEstimates : archivedEstimates).filter((estimate) => {
     const matchesSearch = 
       (estimate.job_label?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
       (estimate.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
@@ -115,6 +150,80 @@ export default function Estimates() {
     return parts.join(' + ') || 'No rooms specified';
   };
 
+  const renderEstimateCard = (estimate: EstimateRow) => (
+    <Card key={estimate.id} className="hover:shadow-md transition-shadow">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <Link to={`/estimates/${estimate.id}`} className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+            <div className="p-2 sm:p-3 rounded-lg bg-secondary flex-shrink-0">
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold text-sm sm:text-base truncate">
+                  {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
+                </h3>
+                <Badge className={`${getStatusColor(estimate.status)} text-xs`}>
+                  {estimate.status}
+                </Badge>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                {getProjectSummary(estimate)}
+              </p>
+              {(estimate.city || estimate.state) && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                  <MapPin className="h-3 w-3" />
+                  {[estimate.city, estimate.state].filter(Boolean).join(', ')}
+                </p>
+              )}
+            </div>
+          </Link>
+          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0">
+            <Link to={`/estimates/${estimate.id}`} className="text-left sm:text-right">
+              <p className="text-base sm:text-lg font-bold">{formatCurrency(estimate.final_cp_total)}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatCurrency(estimate.low_estimate_cp)} - {formatCurrency(estimate.high_estimate_cp)}
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 sm:justify-end">
+                <Clock className="h-3 w-3" />
+                {new Date(estimate.created_at).toLocaleDateString()}
+              </p>
+            </Link>
+            {estimate.is_archived ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleRestore(estimate);
+                }}
+                title="Restore estimate"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 flex-shrink-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDeleteTarget(estimate);
+                }}
+                title="Archive estimate"
+              >
+                <Archive className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="p-4 sm:p-6 md:p-8">
       {/* Header */}
@@ -130,6 +239,30 @@ export default function Estimates() {
           </Button>
         </Link>
       </div>
+
+      {/* Tabs for Active/Archived */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'archived')} className="mb-4 sm:mb-6">
+        <TabsList>
+          <TabsTrigger value="active" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Active
+            {activeEstimates.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {activeEstimates.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="archived" className="gap-2">
+            <Archive className="h-4 w-4" />
+            Archived
+            {archivedEstimates.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {archivedEstimates.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Filters */}
       <Card className="mb-4 sm:mb-6">
@@ -190,99 +323,56 @@ export default function Estimates() {
       ) : filteredEstimates.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-base sm:text-lg font-semibold mb-2">No estimates found</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {searchQuery || statusFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Start by creating your first quote'}
-            </p>
-            {!searchQuery && statusFilter === 'all' && (
-              <Link to="/estimator">
-                <Button size="sm">Create Your First Quote</Button>
-              </Link>
+            {activeTab === 'archived' ? (
+              <>
+                <Archive className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold mb-2">No archived estimates</h3>
+                <p className="text-sm text-muted-foreground">
+                  Archived estimates will appear here
+                </p>
+              </>
+            ) : (
+              <>
+                <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold mb-2">No estimates found</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {searchQuery || statusFilter !== 'all'
+                    ? 'Try adjusting your filters'
+                    : 'Start by creating your first quote'}
+                </p>
+                {!searchQuery && statusFilter === 'all' && (
+                  <Link to="/estimator">
+                    <Button size="sm">Create Your First Quote</Button>
+                  </Link>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2 sm:space-y-3">
-          {filteredEstimates.map((estimate) => (
-            <Card key={estimate.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <Link to={`/estimates/${estimate.id}`} className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
-                    <div className="p-2 sm:p-3 rounded-lg bg-secondary flex-shrink-0">
-                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-secondary-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-sm sm:text-base truncate">
-                          {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
-                        </h3>
-                        <Badge className={`${getStatusColor(estimate.status)} text-xs`}>
-                          {estimate.status}
-                        </Badge>
-                      </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        {getProjectSummary(estimate)}
-                      </p>
-                      {(estimate.city || estimate.state) && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <MapPin className="h-3 w-3" />
-                          {[estimate.city, estimate.state].filter(Boolean).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0">
-                    <Link to={`/estimates/${estimate.id}`} className="text-left sm:text-right">
-                      <p className="text-base sm:text-lg font-bold">{formatCurrency(estimate.final_cp_total)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatCurrency(estimate.low_estimate_cp)} - {formatCurrency(estimate.high_estimate_cp)}
-                      </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 sm:justify-end">
-                        <Clock className="h-3 w-3" />
-                        {new Date(estimate.created_at).toLocaleDateString()}
-                      </p>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setDeleteTarget(estimate);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {filteredEstimates.map(renderEstimateCard)}
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Archive Confirmation Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Estimate</AlertDialogTitle>
+            <AlertDialogTitle>Archive Estimate</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteTarget?.job_label || deleteTarget?.client_name || 'this estimate'}"? 
-              This action cannot be undone.
+              Are you sure you want to archive "{deleteTarget?.job_label || deleteTarget?.client_name || 'this estimate'}"? 
+              You can restore it later from the Archived tab.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleArchive}
               disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-amber-600 text-white hover:bg-amber-700"
             >
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Archiving...' : 'Archive'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
