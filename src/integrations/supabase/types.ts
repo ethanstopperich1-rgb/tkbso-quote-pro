@@ -164,6 +164,7 @@ export type Database = {
       }
       estimates: {
         Row: {
+          archived_at: string | null
           bath_countertop_sqft: number | null
           bath_floor_tile_sqft: number | null
           bath_frameless_glass_sqft: number | null
@@ -213,6 +214,7 @@ export type Database = {
           include_plumbing: boolean | null
           include_waterproofing: boolean | null
           internal_json_payload: Json | null
+          is_archived: boolean
           job_label: string | null
           job_notes: string | null
           kitchen_cabinet_supplier_cost_ic: number | null
@@ -262,6 +264,7 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          archived_at?: string | null
           bath_countertop_sqft?: number | null
           bath_floor_tile_sqft?: number | null
           bath_frameless_glass_sqft?: number | null
@@ -311,6 +314,7 @@ export type Database = {
           include_plumbing?: boolean | null
           include_waterproofing?: boolean | null
           internal_json_payload?: Json | null
+          is_archived?: boolean
           job_label?: string | null
           job_notes?: string | null
           kitchen_cabinet_supplier_cost_ic?: number | null
@@ -360,6 +364,7 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          archived_at?: string | null
           bath_countertop_sqft?: number | null
           bath_floor_tile_sqft?: number | null
           bath_frameless_glass_sqft?: number | null
@@ -409,6 +414,7 @@ export type Database = {
           include_plumbing?: boolean | null
           include_waterproofing?: boolean | null
           internal_json_payload?: Json | null
+          is_archived?: boolean
           job_label?: string | null
           job_notes?: string | null
           kitchen_cabinet_supplier_cost_ic?: number | null
