@@ -167,9 +167,14 @@ function mapCategoryToPricingField(
     return { ic: config.vanity_48_bundle_ic, cp: config.vanity_48_bundle_cp, unit: 'ea' };
   }
 
-  // Quartz/Countertops
+  // Quartz/Countertops - IC = material allowance + fabrication IC, CP calculated from margin
   if (categoryLower.includes('quartz') || categoryLower.includes('countertop')) {
-    return { ic: config.quartz_ic_per_sqft, cp: config.quartz_cp_per_sqft, unit: 'sqft' };
+    const materialIC = (config as any).quartz_material_allowance_ic ?? 25;
+    const fabIC = config.quartz_ic_per_sqft ?? 15;
+    const totalIC = materialIC + fabIC;
+    const targetMargin = config.target_margin ?? 0.38;
+    const calculatedCP = totalIC / (1 - targetMargin);
+    return { ic: totalIC, cp: calculatedCP, unit: 'sqft' };
   }
 
   // Flooring (LVP)
