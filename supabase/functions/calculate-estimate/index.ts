@@ -64,9 +64,6 @@ interface PricingResult {
 }
 
 // Map trade bucket categories to pricing_configs fields
-// Returns ic, cp, unit, and whether this is a flat rate (ignore quantity)
-// laborOnly: when true, use install-only rates (no material component)
-// dimensions: optional dimensions for lump sum calculations (waterproofing)
 function mapCategoryToPricing(
   category: string,
   taskDescription: string,
@@ -77,90 +74,57 @@ function mapCategoryToPricing(
   const categoryLower = category.toLowerCase();
   const taskLower = taskDescription.toLowerCase();
 
-  // ============ DEMOLITION & HAUL - GRANULAR CATEGORIES ============
+  // ============ DEMOLITION & HAUL ============
   
-  // Site Protection & Setup
   if (categoryLower.includes('site protection') || categoryLower.includes('protection') || categoryLower.includes('setup')) {
     if (taskLower.includes('ramboard') || taskLower.includes('floor protection')) {
       return { ic: Number((config as any).floor_protection_ramboard_sqft_ic) || 0.5, cp: Number((config as any).floor_protection_ramboard_sqft_cp) || 1.0, unit: 'sqft' };
     } else if (taskLower.includes('dust') || taskLower.includes('zipwall') || taskLower.includes('barrier')) {
       return { ic: Number((config as any).dust_barrier_zipwall_ic) || 150, cp: Number((config as any).dust_barrier_zipwall_cp) || 300, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('air scrubber') || taskLower.includes('hepa')) {
-      return { ic: Number((config as any).air_scrubber_weekly_ic) || 200, cp: Number((config as any).air_scrubber_weekly_cp) || 350, unit: 'ea' };
-    } else if (taskLower.includes('furniture') || taskLower.includes('moving') || taskLower.includes('content')) {
-      return { ic: Number((config as any).furniture_moving_hourly_ic) || 45, cp: Number((config as any).furniture_moving_hourly_cp) || 85, unit: 'ea' };
     }
-    // Default site protection
     return { ic: Number((config as any).dust_barrier_zipwall_ic) || 150, cp: Number((config as any).dust_barrier_zipwall_cp) || 300, unit: 'ea', flatRate: true };
   }
 
-  // Heavy/Difficult Demo (Surcharges) - check before standard demo
-  if (categoryLower.includes('heavy demo') || categoryLower.includes('difficult demo') || categoryLower.includes('surcharge')) {
-    if (taskLower.includes('mud-set') || taskLower.includes('mudset') || taskLower.includes('concrete bed')) {
-      return { ic: Number((config as any).demo_tile_mudset_sqft_ic) || 6, cp: Number((config as any).demo_tile_mudset_sqft_cp) || 12, unit: 'sqft' };
-    } else if (taskLower.includes('cast iron') || taskLower.includes('castiron') || taskLower.includes('smash')) {
-      return { ic: Number((config as any).demo_castiron_tub_ic) || 250, cp: Number((config as any).demo_castiron_tub_cp) || 500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('glued') || taskLower.includes('glue-down') || taskLower.includes('glueddown')) {
-      return { ic: Number((config as any).demo_glueddown_sqft_ic) || 4, cp: Number((config as any).demo_glueddown_sqft_cp) || 8, unit: 'sqft' };
-    } else if (taskLower.includes('popcorn') || taskLower.includes('ceiling')) {
-      return { ic: Number((config as any).demo_popcorn_ceiling_sqft_ic) || 3.5, cp: Number((config as any).demo_popcorn_ceiling_sqft_cp) || 7, unit: 'sqft' };
-    }
-    // Default heavy demo
-    return { ic: Number((config as any).demo_tile_mudset_sqft_ic) || 6, cp: Number((config as any).demo_tile_mudset_sqft_cp) || 12, unit: 'sqft' };
-  }
-
-  // Disposal & Logistics
   if (categoryLower.includes('disposal') || categoryLower.includes('logistics') || categoryLower.includes('haul')) {
-    if (taskLower.includes('dumpster') || taskLower.includes('20 yard') || taskLower.includes('20yd')) {
+    if (taskLower.includes('dumpster')) {
       return { ic: Number((config as any).dumpster_20yd_ic) || 550, cp: Number((config as any).dumpster_20yd_cp) || 750, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('live load') || taskLower.includes('liveload') || taskLower.includes('truck')) {
-      return { ic: Number((config as any).liveload_haul_ic) || 400, cp: Number((config as any).liveload_haul_cp) || 700, unit: 'ea' };
-    } else if (taskLower.includes('difficult access') || taskLower.includes('stair') || taskLower.includes('carry fee')) {
-      return { ic: Number((config as any).difficult_access_fee_ic) || 300, cp: Number((config as any).difficult_access_fee_cp) || 600, unit: 'ea', flatRate: true };
     }
-    // Default disposal (dumpster)
     return { ic: Number((config as any).dumpster_20yd_ic) || 550, cp: Number((config as any).dumpster_20yd_cp) || 750, unit: 'ea', flatRate: true };
   }
 
-  // Standard Demolition - FLAT RATE (always quantity = 1)
+  // Standard Demolition - FLAT RATE
   if (categoryLower.includes('demo')) {
-    // Check for specific granular demo items first
     if (taskLower.includes('soffit')) {
       return { ic: Number((config as any).demo_soffit_lf_ic) || 15, cp: Number((config as any).demo_soffit_lf_cp) || 30, unit: 'lf' };
-    } else if (taskLower.includes('deconstruct') || taskLower.includes('save') || taskLower.includes('reuse')) {
-      return { ic: Number((config as any).demo_cabinet_deconstruct_ic) || 500, cp: Number((config as any).demo_cabinet_deconstruct_cp) || 900, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('shower') && taskLower.includes('only')) {
       return { ic: Number(config.demo_shower_only_ic) || 900, cp: Number(config.demo_shower_only_cp) || 1450, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('small') || taskLower.includes('standard bath')) {
-      return { ic: Number((config as any).demo_bath_standard_ic) || Number(config.demo_small_bath_ic) || 600, cp: Number((config as any).demo_bath_standard_cp) || Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
+      return { ic: Number(config.demo_small_bath_ic) || 600, cp: Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('large') || taskLower.includes('full bath') || taskLower.includes('master')) {
       return { ic: Number(config.demo_large_bath_ic) || 1650, cp: Number(config.demo_large_bath_cp) || 2500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('kitchen') || taskLower.includes('full kitchen') || taskLower.includes('gut kitchen')) {
-      return { ic: Number((config as any).demo_kitchen_standard_ic) || Number(config.demo_kitchen_ic) || 800, cp: Number((config as any).demo_kitchen_standard_cp) || Number(config.demo_kitchen_cp) || 1500, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('kitchen')) {
+      return { ic: Number(config.demo_kitchen_ic) || 800, cp: Number(config.demo_kitchen_cp) || 1500, unit: 'ea', flatRate: true };
     }
-    // Default standard bath demo
-    return { ic: Number((config as any).demo_bath_standard_ic) || Number(config.demo_small_bath_ic) || 600, cp: Number((config as any).demo_bath_standard_cp) || Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
+    return { ic: Number(config.demo_small_bath_ic) || 600, cp: Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
   }
 
-  // Plumbing - FLAT RATE packages
+  // ============ PLUMBING ============
   if (categoryLower.includes('plumb')) {
-    if (taskLower.includes('reconnect') || taskLower.includes('hook up') || taskLower.includes('hookup')) {
-      // Kitchen plumbing reconnect (sink, dishwasher, etc.)
+    if (taskLower.includes('kitchen') && (taskLower.includes('reconnect') || taskLower.includes('hook'))) {
+      return { ic: 800, cp: 1400, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('reconnect') || taskLower.includes('hook up')) {
       return { ic: 800, cp: 1400, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('drain') && taskLower.includes('reloc')) {
-      // Shower drain relocation
       return { ic: 500, cp: 1200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('toilet') && taskLower.includes('reloc')) {
-      // Toilet relocation - expensive due to drain work
       return { ic: 1100, cp: 2200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('toilet')) {
       return { ic: Number(config.plumbing_toilet_ic) || 350, cp: Number(config.plumbing_toilet_cp) || 690, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('tub') && taskLower.includes('reloc')) {
-      // Tub relocation - major plumbing work
       return { ic: 2800, cp: 4800, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('shower') && taskLower.includes('standard')) {
       return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('extra head') || taskLower.includes('additional head')) {
+    } else if (taskLower.includes('extra head')) {
       return { ic: Number(config.plumbing_extra_head_ic) || 625, cp: Number(config.plumbing_extra_head_cp) || 1100, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('freestanding')) {
       return { ic: Number(config.plumbing_tub_freestanding_ic) || 3300, cp: Number(config.plumbing_tub_freestanding_cp) || 4800, unit: 'ea', flatRate: true };
@@ -168,334 +132,195 @@ function mapCategoryToPricing(
       return { ic: Number(config.plumbing_tub_to_shower_ic) || 2550, cp: Number(config.plumbing_tub_to_shower_cp) || 4200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('linear drain')) {
       return { ic: Number(config.plumbing_linear_drain_ic) || 750, cp: Number(config.plumbing_linear_drain_cp) || 1550, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('smart valve')) {
-      return { ic: Number(config.plumbing_smart_valve_ic) || 1350, cp: Number(config.plumbing_smart_valve_cp) || 2450, unit: 'ea', flatRate: true };
     }
     return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea', flatRate: true };
   }
 
-  // Tile
+  // ============ TILE ============
   if (categoryLower.includes('tile')) {
-    if (taskLower.includes('wall') || taskLower.includes('surround')) {
-      return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
-    } else if (taskLower.includes('shower floor')) {
-      return { ic: Number(config.tile_shower_floor_ic_per_sqft) || 6, cp: Number(config.tile_shower_floor_cp_per_sqft) || 14, unit: 'sqft' };
-    } else if (taskLower.includes('floor') || taskLower.includes('main floor')) {
-      return { ic: Number(config.tile_floor_ic_per_sqft) || 5.5, cp: Number(config.tile_floor_cp_per_sqft) || 12, unit: 'sqft' };
-    }
-    return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
+    const materialIc = Number((config as any).tile_material_allowance_ic) || 5;
+    const laborIc = taskLower.includes('wall') ? Number(config.tile_wall_ic_per_sqft) || 20 : 
+                   taskLower.includes('shower floor') ? Number(config.tile_shower_floor_ic_per_sqft) || 6 :
+                   Number(config.tile_floor_ic_per_sqft) || 5.5;
+    const totalIc = materialIc + laborIc;
+    const targetMargin = Number(config.target_margin) || 0.38;
+    const totalCp = totalIc / (1 - targetMargin);
+    return { ic: totalIc, cp: totalCp, unit: 'sqft' };
   }
 
-  // Waterproofing / Support Work - LUMP SUM based on shower dimensions
+  // ============ WATERPROOFING ============
   if (categoryLower.includes('waterproof') || (categoryLower.includes('support') && taskLower.includes('waterproof'))) {
     const icPerSqft = Number(config.waterproofing_ic_per_sqft) || 6;
     const cpPerSqft = Number(config.waterproofing_cp_per_sqft) || 13;
-    
-    // If dimensions are provided, calculate as lump sum based on shower area
     if (dimensions && (dimensions.shower_wall_sqft || dimensions.shower_floor_sqft)) {
       const totalShowerSqft = (dimensions.shower_wall_sqft || 0) + (dimensions.shower_floor_sqft || 0);
       if (totalShowerSqft > 0) {
-        const lumpSumIc = icPerSqft * totalShowerSqft;
-        const lumpSumCp = cpPerSqft * totalShowerSqft;
-        return { ic: lumpSumIc, cp: lumpSumCp, unit: 'ea', flatRate: true };
+        return { ic: icPerSqft * totalShowerSqft, cp: cpPerSqft * totalShowerSqft, unit: 'ea', flatRate: true };
       }
     }
-    
-    // Fallback to per-sqft if no dimensions (shouldn't happen in normal flow)
     return { ic: icPerSqft, cp: cpPerSqft, unit: 'sqft' };
   }
 
-  // Cement Board
+  // ============ CEMENT BOARD ============
   if (categoryLower.includes('cement') || (categoryLower.includes('support') && taskLower.includes('cement'))) {
     return { ic: Number(config.cement_board_ic_per_sqft) || 3, cp: Number(config.cement_board_cp_per_sqft) || 5, unit: 'sqft' };
   }
 
-  // Electrical
+  // ============ ELECTRICAL ============
   if (categoryLower.includes('electric')) {
     if (taskLower.includes('recessed') || taskLower.includes('can')) {
       return { ic: Number(config.recessed_can_ic_each) || 65, cp: Number(config.recessed_can_cp_each) || 110, unit: 'ea' };
     } else if (taskLower.includes('vanity light')) {
       return { ic: Number(config.electrical_vanity_light_ic) || 200, cp: Number(config.electrical_vanity_light_cp) || 350, unit: 'ea' };
     } else if (taskLower.includes('pendant')) {
-      // Pendant light installation (kitchen island, bar, etc.)
       return { ic: 150, cp: 275, unit: 'ea' };
-    } else if (taskLower.includes('under cabinet') || taskLower.includes('undercabinet')) {
-      // Under-cabinet LED lighting package
+    } else if (taskLower.includes('under cabinet')) {
       return { ic: 350, cp: 600, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('kitchen')) {
       return { ic: Number(config.electrical_kitchen_package_ic) || 950, cp: Number(config.electrical_kitchen_package_cp) || 1750, unit: 'ea' };
-    } else if (taskLower.includes('reloc')) {
-      // Switch/outlet relocation
-      return { ic: 150, cp: 300, unit: 'ea' };
     }
     return { ic: Number(config.electrical_small_package_ic) || 250, cp: Number(config.electrical_small_package_cp) || 400, unit: 'ea' };
   }
 
-  // Framing / Structural - CRITICAL FOR COMPLEX JOBS
+  // ============ FRAMING / STRUCTURAL ============
   if (categoryLower.includes('fram') || categoryLower.includes('structural')) {
     if (taskLower.includes('niche')) {
       return { ic: Number(config.niche_ic_each) || 300, cp: Number(config.niche_cp_each) || 550, unit: 'ea' };
     } else if (taskLower.includes('pony wall')) {
       return { ic: Number(config.framing_pony_wall_ic) || 450, cp: Number(config.framing_pony_wall_cp) || 850, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('wall remov') || taskLower.includes('remove wall')) {
-      // Non-load-bearing wall removal
+    } else if (taskLower.includes('wall remov')) {
       return { ic: 1500, cp: 2800, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('wall build') || taskLower.includes('new wall')) {
-      // Build new wall (per linear foot)
+    } else if (taskLower.includes('new wall')) {
       return { ic: 35, cp: 65, unit: 'lf' };
     } else if (taskLower.includes('pocket door')) {
-      // Pocket door framing + hardware
       return { ic: 650, cp: 1200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('doorway') && taskLower.includes('new')) {
-      // Frame new doorway opening
-      return { ic: 500, cp: 950, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('door') && taskLower.includes('reloc')) {
-      // Door relocation - framing new opening + closing old
       return { ic: 1200, cp: 2200, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('door') && taskLower.includes('clos')) {
-      // Close off existing doorway
       return { ic: 600, cp: 1100, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('door') && taskLower.includes('enlarg')) {
-      // Enlarge doorway/entrance
-      return { ic: 900, cp: 1700, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('entrance') && taskLower.includes('enlarg')) {
-      // Enlarge entrance
       return { ic: 900, cp: 1700, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('soffit')) {
-      // Soffit removal - per linear foot if specified, otherwise flat
-      return { ic: 15, cp: 30, unit: 'lf' };
     } else if (taskLower.includes('shower') && taskLower.includes('enlarg')) {
-      // Enlarge shower footprint
       return { ic: 1800, cp: 3200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('alcove') || taskLower.includes('built-in')) {
-      // Build alcove/built-in
-      return { ic: 900, cp: 1650, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('bench')) {
-      // Shower bench framing
       return { ic: 400, cp: 750, unit: 'ea' };
-    } else if (taskLower.includes('closet') && taskLower.includes('build')) {
-      // Closet framing
-      return { ic: 900, cp: 1800, unit: 'ea', flatRate: true };
     }
     return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea', flatRate: true };
   }
 
-  // Closet-specific work
-  if (categoryLower.includes('closet')) {
-    if (taskLower.includes('shelv')) {
-      // Closet shelving system per closet
-      return { ic: 800, cp: 1500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('door')) {
-      // Closet doors per set
-      return { ic: 400, cp: 800, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('build') || taskLower.includes('frame')) {
-      // Closet framing
-      return { ic: 900, cp: 1800, unit: 'ea', flatRate: true };
+  // ============ GLASS ============
+  if (categoryLower.includes('glass')) {
+    if (taskLower.includes('90') || taskLower.includes('return') || taskLower.includes('corner')) {
+      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('panel only') || taskLower.includes('fixed')) {
+      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1375, unit: 'ea', flatRate: true };
     }
-    // Default closet work
-    return { ic: 800, cp: 1500, unit: 'ea', flatRate: true };
+    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2050, unit: 'ea', flatRate: true };
   }
 
-  // Ceiling-specific work
-  if (categoryLower.includes('ceiling')) {
-    if (taskLower.includes('texture')) {
-      return { ic: 2, cp: 5, unit: 'sqft' };
-    } else if (taskLower.includes('paint')) {
-      return { ic: 2, cp: 4, unit: 'sqft' };
-    } else if (taskLower.includes('drywall')) {
-      return { ic: 10, cp: 18, unit: 'sqft' };
-    }
-    // Default ceiling work
-    return { ic: 10, cp: 18, unit: 'sqft' };
-  }
-
-  // Mirrors
-  if (categoryLower.includes('mirror')) {
-    // Custom mirror installation
-    return { ic: 150, cp: 350, unit: 'ea' };
-  }
-
-  // Floating shelves
-  if (categoryLower.includes('shelf') || categoryLower.includes('shelv')) {
-    if (taskLower.includes('float')) {
-      return { ic: 100, cp: 250, unit: 'ea' };
-    }
-    return { ic: 100, cp: 250, unit: 'ea' };
-  }
-
-  // Paint - FLAT RATE packages
-  if (categoryLower.includes('paint')) {
-    if (taskLower.includes('closet')) {
-      // Paint closet interior
-      return { ic: 200, cp: 400, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('ceiling')) {
-      // Ceiling paint
-      return { ic: 2, cp: 4, unit: 'sqft' };
-    } else if (taskLower.includes('full')) {
-      return { ic: Number(config.paint_full_bath_ic) || 1200, cp: Number(config.paint_full_bath_cp) || 1900, unit: 'ea', flatRate: true };
-    }
-    return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1000, unit: 'ea', flatRate: true };
-  }
-
-  // Drywall - for structural work
-  if (categoryLower.includes('drywall')) {
-    if (taskLower.includes('closet')) {
-      // Closet drywall per sqft
-      return { ic: 8, cp: 15, unit: 'sqft' };
-    } else if (taskLower.includes('new wall') || taskLower.includes('full wall')) {
-      return { ic: 8, cp: 15, unit: 'sqft' };
-    } else if (taskLower.includes('patch')) {
-      return { ic: 400, cp: 750, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('ceiling')) {
-      return { ic: 10, cp: 18, unit: 'sqft' };
-    }
-    return { ic: 8, cp: 15, unit: 'sqft' };
-  }
-
-  // Vanity - FLAT RATE bundles (labor-only uses install rates only)
-  if (categoryLower.includes('vanity')) {
-    // Labor-only: vanity installation labor (customer supplies vanity)
-    if (laborOnly) {
-      return { ic: 350, cp: 650, unit: 'ea', flatRate: true }; // Install labor only
-    }
-    // Check for custom/oversized vanity (100"+)
-    if (taskLower.includes('custom') || taskLower.includes('150') || taskLower.includes('120') || taskLower.includes('100')) {
-      // Custom oversized vanity - price as double 72" or more
-      return { ic: 6500, cp: 10500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('30')) {
-      return { ic: Number(config.vanity_30_bundle_ic) || 1100, cp: Number(config.vanity_30_bundle_cp) || 1800, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('36')) {
-      return { ic: Number(config.vanity_36_bundle_ic) || 1300, cp: Number(config.vanity_36_bundle_cp) || 2100, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('48')) {
-      return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('54')) {
-      return { ic: Number(config.vanity_54_bundle_ic) || 1900, cp: Number(config.vanity_54_bundle_cp) || 3000, unit: 'ea', flatRate: true };
+  // ============ VANITY ============
+  if (categoryLower.includes('vanit') && !taskLower.includes('light')) {
+    if (taskLower.includes('72') || taskLower.includes('84')) {
+      return { ic: Number(config.vanity_72_bundle_ic) || 2400, cp: Number(config.vanity_72_bundle_cp) || 3850, unit: 'ea', flatRate: true };
     } else if (taskLower.includes('60')) {
       return { ic: Number(config.vanity_60_bundle_ic) || 2200, cp: Number(config.vanity_60_bundle_cp) || 3500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('72')) {
-      return { ic: Number(config.vanity_72_bundle_ic) || 2600, cp: Number(config.vanity_72_bundle_cp) || 4200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('84')) {
-      return { ic: Number(config.vanity_84_bundle_ic) || 3200, cp: Number(config.vanity_84_bundle_cp) || 5000, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('48')) {
+      return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('36')) {
+      return { ic: Number(config.vanity_36_bundle_ic) || 1300, cp: Number(config.vanity_36_bundle_cp) || 2200, unit: 'ea', flatRate: true };
     }
     return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
   }
 
-  // Quartz/Countertops (labor-only uses fabrication/install labor only)
-  if (categoryLower.includes('quartz') || categoryLower.includes('countertop')) {
-    if (laborOnly) {
-      // Install labor only - template, fabrication, install without slab cost
-      return { ic: 25, cp: 45, unit: 'sqft' };
-    }
-    return { ic: Number(config.quartz_ic_per_sqft) || 15, cp: Number(config.quartz_cp_per_sqft) || 50, unit: 'sqft' };
+  // ============ CABINETS ============
+  if (categoryLower.includes('cabinet') || categoryLower.includes('cabinetry')) {
+    const materialIc = Number((config as any).cabinet_material_allowance_ic) || 150;
+    const laborIc = Number(config.cabinet_install_only_lf_ic) || 50;
+    const totalIc = materialIc + laborIc;
+    const targetMargin = Number(config.target_margin) || 0.38;
+    const totalCp = totalIc / (1 - targetMargin);
+    return { ic: totalIc, cp: totalCp, unit: 'lf' };
   }
 
-  // Cabinets (Kitchen) - Priced per linear foot, NOT per sqft of kitchen floor
-  // Typical kitchen: 15-25 LF base + 10-20 LF wall = material + installation
-  if (categoryLower.includes('cabinet')) {
-    // Labor-only OR explicit install-only task: use install labor rates
-    if (laborOnly || taskLower.includes('labor') || taskLower.includes('install only')) {
-      return { 
-        ic: Number(config.cabinet_install_only_lf_ic) || 50, 
-        cp: Number(config.cabinet_install_only_lf_cp) || 85, 
-        unit: 'lf' 
-      };
-    }
-    // Full cabinet package (material + labor) - use config values
-    return { 
-      ic: Number(config.cabinet_lf_ic) || 250, 
-      cp: Number(config.cabinet_lf_cp) || 400, 
-      unit: 'lf' 
-    };
+  // ============ COUNTERTOPS / QUARTZ ============
+  if (categoryLower.includes('quartz') || categoryLower.includes('countertop') || categoryLower.includes('counter')) {
+    const materialIc = Number((config as any).quartz_material_allowance_ic) || 25;
+    const fabIc = Number(config.quartz_ic_per_sqft) || 15;
+    const totalIc = materialIc + fabIc;
+    const targetMargin = Number(config.target_margin) || 0.38;
+    const totalCp = totalIc / (1 - targetMargin);
+    return { ic: totalIc, cp: totalCp, unit: 'sqft' };
   }
 
-  // Glass (labor-only uses install labor only)
-  if (categoryLower.includes('glass')) {
-    if (laborOnly) {
-      // Glass installation labor only (customer supplies glass)
-      return { ic: 400, cp: 750, unit: 'ea', flatRate: true };
-    }
-    if (taskLower.includes('90') || taskLower.includes('return')) {
-      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('panel only')) {
-      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1450, unit: 'ea', flatRate: true };
-    }
-    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2100, unit: 'ea', flatRate: true };
-  }
-
-  // Backsplash
+  // ============ BACKSPLASH ============
   if (categoryLower.includes('backsplash')) {
-    return { ic: Number(config.tile_wall_ic_per_sqft) || 20, cp: Number(config.tile_wall_cp_per_sqft) || 39, unit: 'sqft' };
+    return { ic: Number(config.tile_backsplash_ic) || 12, cp: Number(config.tile_backsplash_cp) || 25, unit: 'sqft' };
   }
 
-  // Closet work
-  if (categoryLower.includes('closet')) {
-    if (taskLower.includes('system') || taskLower.includes('organizer')) {
-      return { ic: 1800, cp: 3200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('reframe') || taskLower.includes('square off')) {
-      return { ic: 1200, cp: 2200, unit: 'ea', flatRate: true };
+  // ============ FLOORING ============
+  if (categoryLower.includes('floor') && !categoryLower.includes('tile')) {
+    if (taskLower.includes('lvp') || taskLower.includes('vinyl') || taskLower.includes('laminate')) {
+      return { ic: Number(config.lvp_ic_per_sqft) || 2.5, cp: Number(config.lvp_cp_per_sqft) || 6, unit: 'sqft' };
     }
-    // Basic closet work per sqft
-    return { ic: Number(config.closet_ic_per_sqft) || 55, cp: Number(config.closet_cp_per_sqft) || 90, unit: 'sqft' };
+    return { ic: Number(config.tile_floor_ic_per_sqft) || 5.5, cp: Number(config.tile_floor_cp_per_sqft) || 12, unit: 'sqft' };
   }
 
-  // Material line items (separate from labor)
-  if (categoryLower.includes('materials')) {
-    if (categoryLower.includes('tile') || taskLower.includes('tile')) {
-      // Tile material allowance: $7.85/sqft
-      return { ic: 5, cp: Number(config.tile_material_allowance_cp_per_sqft) || 7.85, unit: 'sqft' };
+  // ============ PAINT ============
+  if (categoryLower.includes('paint')) {
+    if (taskLower.includes('full') || taskLower.includes('complete')) {
+      return { ic: Number(config.paint_full_bath_ic) || 1200, cp: Number(config.paint_full_bath_cp) || 1900, unit: 'ea', flatRate: true };
     }
-    if (categoryLower.includes('cabinet') || taskLower.includes('cabinet')) {
-      // Cabinet material per linear foot
-      return { ic: 200, cp: 315, unit: 'lf' };
+    return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1300, unit: 'ea', flatRate: true };
+  }
+
+  // ============ MATERIALS ============
+  if (categoryLower.includes('material')) {
+    if (taskLower.includes('tile')) {
+      return { ic: Number((config as any).tile_material_allowance_ic) || 5, cp: Number(config.tile_material_allowance_cp_per_sqft) || 8, unit: 'sqft' };
+    } else if (taskLower.includes('plumbing') || taskLower.includes('fixture')) {
+      return { ic: 700, cp: Number(config.plumbing_fixture_allowance_cp) || 1400, unit: 'ea', flatRate: true };
+    } else if (taskLower.includes('floor')) {
+      return { ic: 3, cp: 5, unit: 'sqft' };
     }
-    if (categoryLower.includes('countertop') || taskLower.includes('countertop') || taskLower.includes('quartz') || taskLower.includes('granite')) {
-      // Countertop slab material per sqft
-      return { ic: 35, cp: Number(config.quartz_slab_level1_allowance_cp) ? 55 : 55, unit: 'sqft' };
+    return { ic: 500, cp: 1000, unit: 'ea', flatRate: true };
+  }
+
+  // ============ DRYWALL ============
+  if (categoryLower.includes('drywall')) {
+    if (taskLower.includes('patch')) {
+      return { ic: 200, cp: 400, unit: 'ea' };
     }
-    if (categoryLower.includes('plumbing') || taskLower.includes('plumbing') || taskLower.includes('fixture')) {
-      // Plumbing fixtures allowance (faucet, valve, trim)
-      return { ic: 850, cp: Number(config.plumbing_fixture_allowance_cp) || 1350, unit: 'ea', flatRate: true };
+    return { ic: 10, cp: 18, unit: 'sqft' };
+  }
+
+  // ============ ACCESSORIES ============
+  if (categoryLower.includes('accessor') || categoryLower.includes('mirror')) {
+    if (taskLower.includes('mirror')) {
+      return { ic: 200, cp: Number(config.mirror_allowance_cp) || 450, unit: 'ea' };
     }
-    if (categoryLower.includes('glass') || taskLower.includes('glass')) {
-      // Glass material (panels + hardware)
-      return { ic: 600, cp: 1100, unit: 'ea', flatRate: true };
-    }
-    if (categoryLower.includes('flooring') || taskLower.includes('flooring') || taskLower.includes('lvp')) {
-      // Flooring material per sqft
-      return { ic: Number(config.lvp_ic_per_sqft) || 2.5, cp: Number(config.lvp_cp_per_sqft) || 4.5, unit: 'sqft' };
-    }
-    // Generic material allowance
-    return { ic: 500, cp: 850, unit: 'ea', flatRate: true };
+    return { ic: 150, cp: 300, unit: 'ea' };
   }
 
   return null;
 }
 
 interface PricingModeOptions {
-  useMarginMultiplier?: boolean;
-  targetMarginPct?: number;
+  useMarginMultiplier: boolean;
+  targetMarginPct: number;
 }
 
 function calculatePricing(
-  tradeBuckets: EstimateData['trade_buckets'], 
-  config: PricingConfig, 
+  tradeBuckets: EstimateData["trade_buckets"],
+  config: PricingConfig,
+  pricingMode: PricingModeOptions,
   laborOnly: boolean = false,
-  pricingMode?: PricingModeOptions,
-  dimensions?: EstimateData['dimensions']
-) {
+  dimensions?: { shower_wall_sqft?: number | null; shower_floor_sqft?: number | null }
+): { line_items: PricingResult[]; totals: { total_ic: number; total_cp: number; low_estimate: number; high_estimate: number; overall_margin_percent: number }; warnings: string[] } {
   const lineItems: PricingResult[] = [];
   const warnings: string[] = [];
   
-  const useMarginMode = pricingMode?.useMarginMultiplier ?? false;
-  const targetMargin = (pricingMode?.targetMarginPct ?? 38) / 100; // Convert to decimal
-
-  if (laborOnly) {
-    warnings.push("LABOR ONLY: Customer supplies materials - material allowances excluded");
-  }
-  
-  if (useMarginMode) {
-    warnings.push(`Using ${(targetMargin * 100).toFixed(0)}% target margin for all line items`);
-  }
+  const useMarginMode = pricingMode.useMarginMultiplier;
+  const targetMargin = pricingMode.targetMarginPct / 100;
 
   for (const bucket of tradeBuckets) {
     const mapping = mapCategoryToPricing(bucket.category, bucket.task_description, config, laborOnly, dimensions);
@@ -505,17 +330,13 @@ function calculatePricing(
       continue;
     }
 
-    // For flat rate items, force quantity to 1 (these are packages, not per-unit)
     const effectiveQuantity = mapping.flatRate ? 1 : bucket.quantity;
-    
     const icPerUnit = mapping.ic;
     let cpPerUnit: number;
     
     if (useMarginMode) {
-      // Calculate CP from IC using margin formula: CP = IC / (1 - margin)
       cpPerUnit = icPerUnit / (1 - targetMargin);
     } else {
-      // Use the configured CP value
       cpPerUnit = mapping.cp;
     }
     
@@ -538,9 +359,7 @@ function calculatePricing(
 
   const totalIc = lineItems.reduce((sum, item) => sum + item.ic_total, 0);
   const totalCp = lineItems.reduce((sum, item) => sum + item.cp_total, 0);
-  const overallMargin = totalCp > 0 ? ((totalCp - totalIc) / totalCp) * 100 : 0;
 
-  // Apply minimum job pricing
   const minJobCp = Number(config.min_job_cp) || 15000;
   const minJobIc = Number(config.min_job_ic) || 10500;
 
@@ -553,7 +372,6 @@ function calculatePricing(
     warnings.push(`Applied minimum job pricing: $${minJobCp.toLocaleString()}`);
   }
 
-  // Calculate range
   const lowMultiplier = Number(config.low_range_multiplier) || 0.95;
   const highMultiplier = Number(config.high_range_multiplier) || 1.05;
 
@@ -570,17 +388,13 @@ function calculatePricing(
   };
 }
 
-// Calculate management fee and apply to totals
 function applyManagementFee(
   pricing: ReturnType<typeof calculatePricing>,
   includeManagementFee: boolean,
   managementFeePercent: number
 ) {
   if (!includeManagementFee || managementFeePercent <= 0) {
-    return {
-      ...pricing,
-      management_fee: { ic: 0, cp: 0, percent: 0 }
-    };
+    return { ...pricing, management_fee: { ic: 0, cp: 0, percent: 0 } };
   }
 
   const feeIc = Math.round(pricing.totals.total_ic * managementFeePercent);
@@ -599,16 +413,12 @@ function applyManagementFee(
       high_estimate: Math.round(newTotalCp * 1.05),
       overall_margin_percent: newTotalCp > 0 ? ((newTotalCp - newTotalIc) / newTotalCp) * 100 : 0,
     },
-    management_fee: {
-      ic: feeIc,
-      cp: feeCp,
-      percent: managementFeePercent * 100
-    },
+    management_fee: { ic: feeIc, cp: feeCp, percent: managementFeePercent * 100 },
     warnings: [...pricing.warnings, `Management fee (${(managementFeePercent * 100).toFixed(0)}%) applied: $${feeCp.toLocaleString()}`]
   };
 }
 
-// JSON Schema for tool calling
+// JSON Schema for estimate generation
 const estimateJsonSchema = {
   type: "object",
   properties: {
@@ -618,7 +428,7 @@ const estimateJsonSchema = {
         client_name: { type: ["string", "null"] },
         project_type: { type: "string", enum: ["Kitchen", "Bathroom", "Combination", "Other"] },
         overall_size_sqft: { type: ["number", "null"] },
-        labor_only: { type: "boolean", description: "True if labor-only project (customer supplies materials)" }
+        labor_only: { type: "boolean" }
       },
       required: ["project_type"]
     },
@@ -657,7 +467,7 @@ const estimateJsonSchema = {
   required: ["project_header", "dimensions", "trade_buckets"]
 };
 
-// Conversational analysis schema
+// Guided interview analysis schema
 const analysisJsonSchema = {
   type: "object",
   properties: {
@@ -666,74 +476,68 @@ const analysisJsonSchema = {
       enum: ["ask_question", "generate_estimate"],
       description: "Whether to ask a follow-up question or generate the estimate"
     },
-    user_added_scope: {
-      type: "boolean",
-      description: "TRUE if the user's latest message added new scope information (like dimensions, materials, trade items). Set true when user mentions sqft, dimensions, materials, or trade work."
+    conversation_phase: {
+      type: "string",
+      enum: ["project_type", "initial_scope", "trade_confirmation", "dimensions", "client_details", "ready_to_generate"],
+      description: "Current phase of the guided interview"
+    },
+    current_trade: {
+      type: ["string", "null"],
+      enum: ["demo", "plumbing", "electrical", "tile", "cabinets", "countertops", "glass", "vanity", "paint", "flooring", "backsplash", "accessories", "structural", null],
+      description: "Which trade we are currently asking about"
     },
     project_type: { 
       type: ["string", "null"], 
-      enum: ["Kitchen", "Bathroom", "Combination", null],
-      description: "Detected project type, or null if unclear"
+      enum: ["Kitchen", "Bathroom", "Combination", null]
     },
     has_enough_info: { 
       type: "boolean",
-      description: "True if we have enough details AND have confirmed scope trade-by-trade"
-    },
-    current_trade_phase: {
-      type: ["string", "null"],
-      enum: ["demo", "plumbing", "electrical", "tile", "cabinets", "countertops", "glass", "paint", "flooring", "structural", "accessories", "final_review", null],
-      description: "Which trade we are currently confirming scope for"
-    },
-    missing_info: {
-      type: "array",
-      items: { type: "string" },
-      description: "List of missing information needed"
+      description: "True ONLY if ALL required info is captured and confirmed"
     },
     follow_up_question: {
       type: ["string", "null"],
-      description: "The question to ask if action is ask_question. CRITICAL: If user_added_scope is true, this MUST acknowledge the new info first"
+      description: "The targeted question to ask next"
     },
-    parsed_scope: {
-      type: "object",
-      description: "ALL scope items detected from conversation - MUST capture EVERYTHING mentioned INCLUDING EXCLUSIONS",
-      properties: {
-        // Standard trades with INCLUDE/EXCLUDE tracking
-        demo: { type: ["string", "null"], description: "Demo scope including size (small/large bath, kitchen). Use 'KEEP: [item]' prefix for items to keep/exclude from demo." },
-        cabinets: { type: ["string", "null"], description: "Cabinet work. Use 'KEEP EXISTING' if not replacing." },
-        countertops: { type: ["string", "null"], description: "Countertop work. Use 'KEEP EXISTING' if not replacing." },
-        backsplash: { type: ["string", "null"] },
-        flooring: { type: ["string", "null"], description: "Flooring work. Use 'KEEP EXISTING' if not replacing." },
-        tile: { type: ["string", "null"], description: "Wall tile, floor tile, shower tile details" },
-        plumbing: { type: ["string", "null"], description: "Standard plumbing work" },
-        electrical: { type: ["string", "null"] },
-        glass: { type: ["string", "null"] },
-        vanity: { type: ["string", "null"], description: "Vanity size(s) and quantity" },
-        paint: { type: ["string", "null"] },
-        appliances: { type: ["string", "null"], description: "Appliance handling - 'KEEP EXISTING', 'DEMO', 'NEW', or 'CUSTOMER SUPPLIED'. CRITICAL: Pay attention to keep/keep existing/no demo language!" },
-        // CRITICAL - STRUCTURAL WORK (often missed!)
-        structural_walls: { type: ["string", "null"], description: "Wall removal, new walls, wall modifications" },
-        door_work: { type: ["string", "null"], description: "Door relocations, new doorways, door closures, pocket doors" },
-        soffit_work: { type: ["string", "null"], description: "Soffit removal, linear feet if mentioned" },
-        entrance_changes: { type: ["string", "null"], description: "Bathroom/room entrance relocations or enlargements" },
-        // CRITICAL - BUILT-IN CONSTRUCTION (often missed!)
-        closets: { type: ["string", "null"], description: "Built-in closets - capture dimensions and count" },
-        alcoves: { type: ["string", "null"], description: "Built-in alcoves, niches with vanities/shelving" },
-        shelving: { type: ["string", "null"], description: "Built-in shelves, floating shelves" },
-        // CRITICAL - CEILING WORK (often missed!)
-        ceiling_work: { type: ["string", "null"], description: "Ceiling drywall, texture, paint - capture sqft" },
-        // CRITICAL - PLUMBING RELOCATIONS (different from standard!)
-        plumbing_relocations: { type: ["string", "null"], description: "Tub relocation, toilet relocation, drain relocation" },
-        // CRITICAL - ACCESSORIES (often missed!)
-        mirrors: { type: ["string", "null"], description: "Mirrors - capture count" },
-        accessories: { type: ["string", "null"], description: "Towel bars, TP holders, hooks, etc." },
-        // DRYWALL specific
-        drywall: { type: ["string", "null"], description: "Drywall repair, new drywall, patches for old openings" }
-      }
+    items_captured: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          trade: { type: "string" },
+          item: { type: "string" },
+          quantity: { type: ["number", "null"] },
+          unit: { type: ["string", "null"] },
+          confirmed: { type: "boolean" },
+          needs_clarification: { type: ["string", "null"] }
+        },
+        required: ["trade", "item", "confirmed"]
+      },
+      description: "Running list of ALL items captured from conversation"
     },
     exclusions: {
       type: "array",
       items: { type: "string" },
-      description: "CRITICAL: List of items explicitly EXCLUDED by contractor. E.g. 'keep appliances' -> ['appliances'], 'no flooring' -> ['flooring'], 'keep existing cabinets' -> ['cabinets']"
+      description: "Items explicitly EXCLUDED (keep existing, no demo, etc.)"
+    },
+    trades_confirmed: {
+      type: "object",
+      description: "Track which trades have been discussed and confirmed",
+      properties: {
+        demo: { type: "boolean" },
+        plumbing: { type: "boolean" },
+        electrical: { type: "boolean" },
+        tile: { type: "boolean" },
+        cabinets: { type: "boolean" },
+        countertops: { type: "boolean" },
+        glass: { type: "boolean" },
+        vanity: { type: "boolean" },
+        paint: { type: "boolean" },
+        flooring: { type: "boolean" },
+        backsplash: { type: "boolean" },
+        appliances: { type: "boolean" },
+        accessories: { type: "boolean" },
+        structural: { type: "boolean" }
+      }
     },
     parsed_dimensions: {
       type: "object",
@@ -743,12 +547,13 @@ const analysisJsonSchema = {
         room_width: { type: ["number", "null"] },
         shower_length: { type: ["number", "null"] },
         shower_width: { type: ["number", "null"] },
-        countertop_sqft: { type: ["number", "null"] }
+        countertop_sqft: { type: ["number", "null"] },
+        cabinet_lf: { type: ["number", "null"] },
+        backsplash_sqft: { type: ["number", "null"] }
       }
     },
     parsed_client_details: {
       type: "object",
-      description: "Client contact information parsed from conversation",
       properties: {
         client_name: { type: ["string", "null"] },
         client_phone: { type: ["string", "null"] },
@@ -759,210 +564,215 @@ const analysisJsonSchema = {
         zip: { type: ["string", "null"] }
       }
     },
-    client_details_skipped: {
-      type: "boolean",
-      description: "True if user said skip/none for client details"
-    },
-    labor_only: {
-      type: "boolean",
-      description: "True if this is a labor-only project where customer supplies materials"
-    },
-    labor_only_confirmed: {
-      type: "boolean", 
-      description: "True if labor-only status has been confirmed with contractor"
-    },
-    scope_confirmed_by_trade: {
-      type: "object",
-      description: "Track which trades have been explicitly confirmed by the contractor",
-      properties: {
-        demo: { type: "boolean" },
-        plumbing: { type: "boolean" },
-        electrical: { type: "boolean" },
-        tile: { type: "boolean" },
-        cabinets: { type: "boolean" },
-        countertops: { type: "boolean" },
-        glass: { type: "boolean" },
-        paint: { type: "boolean" },
-        flooring: { type: "boolean" },
-        appliances: { type: "boolean" }
-      }
-    }
+    client_details_skipped: { type: "boolean" },
+    labor_only: { type: "boolean" },
+    ready_for_summary: { type: "boolean", description: "True when all trades discussed and ready to show summary" }
   },
-  required: ["action", "has_enough_info", "missing_info", "exclusions"]
+  required: ["action", "conversation_phase", "has_enough_info", "items_captured", "exclusions", "trades_confirmed"]
 };
 
-const conversationalSystemPrompt = `You are a construction estimator assistant helping contractors quickly build quotes. Your job is to:
+// GUIDED INTERVIEW SYSTEM PROMPT
+const guidedInterviewPrompt = `You are an expert estimator conducting a GUIDED INTERVIEW. Your job is to ASK QUESTIONS, not guess.
 
-1. UNDERSTAND the project type (Kitchen or Bathroom)
-2. DETECT if this is LABOR ONLY (customer supplies materials)
-3. GATHER scope details trade-by-trade for ACCURACY
-4. TRACK EXCLUSIONS - Items the contractor explicitly says to KEEP or NOT INCLUDE
-5. CONFIRM scope before generating quote
-6. COLLECT client details before generating quote
-7. ALLOW UPDATES after quote is generated
+## CORE PHILOSOPHY
+- NEVER guess quantities, materials, or details - ALWAYS ASK
+- Ask about ONE trade at a time
+- Confirm understanding before moving to next trade
+- Keep a running list of "Items Captured" 
+- Show the user what you've captured so they can track progress
 
-## CRITICAL RULE #0: TRACK EXCLUSIONS EXPLICITLY
+## KEYWORD → QUESTION MAPPING (CRITICAL)
 
-**EXCLUSION KEYWORDS TO WATCH FOR:**
-- "keep appliances" / "keep existing appliances" → appliances EXCLUDED from demo/scope
-- "keep cabinets" / "keep existing cabinets" → cabinets EXCLUDED
-- "keep flooring" / "no flooring" / "existing flooring" → flooring EXCLUDED
-- "keep countertops" / "existing counters" → countertops EXCLUDED
-- "no demo" / "minimal demo" / "keep [item]" → that item EXCLUDED from demo
-- "customer supplies [item]" / "homeowner provides [item]" → material EXCLUDED (labor only for that item)
+When user says these keywords, you MUST ask the follow-up question:
 
-**When you detect exclusion language:**
-1. Add the item to the exclusions array
-2. Mark the parsed_scope field with "KEEP EXISTING" or similar
-3. NEVER include excluded items in the generated estimate
-4. CONFIRM your understanding: "Got it - keeping existing appliances, won't include appliance demo or reconnect."
+**PLUMBING:**
+- "reconnect" / "hookup" → "Is this reconnect for KITCHEN (sink/dishwasher) or BATHROOM (vanity/shower/tub)?"
+- "relocate sink" → "How far from current location (in feet)?"
+- "move toilet" → "How far from existing location?"
+- "pot filler" → "Above the stove location?"
 
-**EXAMPLES:**
-- User: "full gut kitchen but keep appliances"
-  → exclusions: ["appliances"]
-  → parsed_scope.appliances: "KEEP EXISTING - no demo or reconnect needed"
-  → Demo scope should NOT include appliance demo
-  
-- User: "refresh bathroom, keep existing floor tile"
-  → exclusions: ["flooring"]
-  → parsed_scope.flooring: "KEEP EXISTING"
+**ELECTRICAL:**
+- "lights" / "recessed" → "How many lights total?"
+- "pendant" → "How many pendant lights?"
+- "under cabinet" → "LED strip or puck lights? Approximately how many linear feet?"
+- "outlet" → "How many outlets? New location or upgrade existing?"
 
-## CRITICAL RULE #1: TRADE-BY-TRADE SCOPE CONFIRMATION
+**CABINETRY:**
+- "cabinets" / "new cabinets" → "Do you know the linear footage or number of boxes?"
+- "two-tone" → "Which cabinets are Color A vs Color B?"
 
-**Before generating ANY estimate, you MUST confirm scope for each relevant trade:**
+**TILE:**
+- "tile" → "What size tile? (12x24, subway 3x6, large format, etc.)"
+- "backsplash" → "Full wall height or standard 4-inch? Approximately how many sqft?"
 
-For KITCHENS, confirm these trades in order:
-1. DEMO: "What are we demoing? Full gut, or selective? Are we keeping appliances, cabinets, or flooring?"
-2. CABINETS: "New cabinets, reface existing, or keep existing?"
+**FLOORING:**
+- "flooring" / "new floor" → "What material? (LVP, tile, hardwood?)"
+- "LVP" → "What's the total sqft? Does it need subfloor prep?"
+
+**DEMO:**
+- "demo" / "gut" → "Full demo (everything to studs) or selective demo (specific items)?"
+- "full demo" but kitchen → "Does full demo include: cabinets, countertops, appliances, backsplash, flooring? Which of these are you KEEPING?"
+
+**STRUCTURAL:**
+- "wall removal" → "Is it load-bearing? Will it need an engineer/beam?"
+- "door" → "New door, relocate existing, or close up doorway?"
+
+## EXCLUSION DETECTION (CRITICAL - PREVENTS BUGS!)
+
+Watch for these patterns - they mean EXCLUDE that item:
+- "keep appliances" / "keep existing appliances" → ADD "appliances" to exclusions
+- "keep cabinets" / "keep existing cabinets" → ADD "cabinets" to exclusions  
+- "keep flooring" / "existing floor" / "no flooring" → ADD "flooring" to exclusions
+- "keep countertops" / "existing counters" → ADD "countertops" to exclusions
+- "leave the [item]" / "[item] stays" → ADD that item to exclusions
+
+When you detect exclusion language:
+1. IMMEDIATELY add to exclusions array
+2. CONFIRM: "Got it - keeping existing [item], won't include that in scope."
+3. NEVER add excluded items to estimate later!
+
+## DUPLICATE PREVENTION
+
+Before adding ANY item, check items_captured for similar items:
+- "plumbing reconnect" + later "hook up the sink" = SAME THING, don't add twice
+- If duplicate detected, say: "I already have '[existing item]' which covers that. Did you mean something different?"
+
+## CONVERSATION PHASES
+
+**Phase 1: PROJECT TYPE & SIZE**
+Ask: "What type of project - kitchen or bathroom?"
+Then: "What are the approximate dimensions (length x width)?"
+Confirm: "Got it - [type] remodel, [L]x[W] ([sqft] sqft). Full remodel or partial?"
+
+**Phase 2: TRADE-BY-TRADE QUESTIONING**
+
+FOR KITCHENS, ask in this order:
+1. DEMO: "Let's start with demo. Full gut, or are we keeping anything? (cabinets, flooring, appliances?)"
+2. CABINETS: "New cabinets? If so, do you know linear feet or box count?"
 3. COUNTERTOPS: "New countertops? What material - quartz, granite, laminate?"
-4. BACKSPLASH: "New backsplash? Full height or standard 4 inch?"
-5. FLOORING: "New flooring, or keeping existing?"
-6. APPLIANCES: "Are we demoing/disconnecting appliances, or keeping them in place?"
-7. PLUMBING: "Any plumbing work - new sink, faucet, dishwasher hookup?"
-8. ELECTRICAL: "Any electrical - new outlets, under-cabinet lighting, pendant lights?"
+4. BACKSPLASH: "New backsplash? Full height or 4-inch? Approx sqft?"
+5. FLOORING: "New flooring or keeping existing?"
+6. APPLIANCES: "Are we disconnecting/reconnecting appliances, or keeping in place?"
+7. PLUMBING: "Any plumbing work - new sink location, faucet, dishwasher hookup?"
+8. ELECTRICAL: "Any electrical - outlets, under-cabinet lighting, pendants?"
 
-For BATHROOMS, confirm these trades in order:
-1. DEMO: "What are we demoing? Full gut, shower only, or cosmetic refresh? What size bath?"
-2. PLUMBING: "Shower rough-in, toilet swap, tub-to-shower conversion? Any relocations?"
-3. TILE: "Wall tile sqft and height? Shower floor? Main floor? What type of tile?"
-4. ELECTRICAL: "Recessed cans, vanity lights, exhaust fan?"
+FOR BATHROOMS, ask in this order:
+1. DEMO: "What are we demoing? Full gut, shower only, or selective? What size bath (small/large/master)?"
+2. PLUMBING: "Plumbing scope - new shower rough-in, toilet swap, tub-to-shower conversion? Any relocations?"
+3. TILE: "Wall tile - how many sqft and what height? Shower floor sqft? Main floor sqft?"
+4. ELECTRICAL: "How many recessed cans? Vanity lights? Exhaust fan?"
 5. VANITY: "What size vanity? Single or double sink?"
-6. COUNTERTOPS: "Vanity top material - quartz included in vanity bundle or separate?"
-7. GLASS: "Frameless glass, framed, or shower curtain?"
+6. COUNTERTOPS: "Vanity top - quartz included in bundle or separate slab?"
+7. GLASS: "Shower enclosure - frameless door+panel, panel only, or shower curtain?"
 8. PAINT: "Full room paint or patch only?"
-9. ACCESSORIES: "Mirrors, towel bars, TP holder?"
+9. ACCESSORIES: "Mirrors, towel bars, TP holder included?"
 
-**QUICK CONFIRMATION FORMAT:**
-After gathering initial scope, provide a trade-by-trade summary for confirmation:
+**Phase 3: CONFIRMATION SUMMARY**
 
-"Let me confirm the scope trade-by-trade:
-📦 DEMO: Full gut bathroom (large bath), keeping [any exclusions]
-🔧 PLUMBING: Standard shower rough-in, new toilet
-🧱 TILE: 95 sqft wall tile, 15 sqft shower floor
-💡 ELECTRICAL: 4 recessed cans, 1 vanity light
-🪞 VANITY: 48" single sink
-🚿 GLASS: Frameless door + panel
-🎨 PAINT: Patch and paint only
-🚫 NOT INCLUDED: [list exclusions]
+Before generating, show this summary:
+"Let me confirm what I've captured:
 
-Does this look right, or should I adjust anything?"
+📦 **PROJECT:** [Type] Remodel ([L]x[W], [sqft] sqft)
 
-## CRITICAL RULE #2: NEVER REPEAT THE SAME QUESTION
+**INCLUDED:**
+✓ DEMO: [scope]
+✓ PLUMBING: [scope]  
+✓ TILE: [sqft] wall, [sqft] shower floor
+✓ ELECTRICAL: [count] recessed, [count] vanity lights
+✓ VANITY: [size]
+✓ GLASS: [type]
+✓ PAINT: [scope]
 
-**If you just asked a question and the user responded with ANYTHING other than a direct answer:**
-- They may be providing MORE scope info - ACKNOWLEDGE IT
-- They may be saying "not yet" or "hold on" - WAIT AND LISTEN
-- They may be correcting something - UPDATE YOUR UNDERSTANDING
-- NEVER repeat the exact same question back-to-back
+**NOT INCLUDED / KEEPING EXISTING:**
+🚫 [list exclusions]
 
-## CRITICAL RULE #3: ALWAYS PROCESS NEW SCOPE INFO
+**DIMENSIONS USED:**
+- Room: [L]x[W] = [sqft] sqft
+- Shower: [L]x[W] = [sqft] sqft
 
-**If the user provides additional scope information at ANY point in the conversation, you MUST:**
-1. ACKNOWLEDGE and ADD the new scope item to the project by name
-2. Update your understanding of the project with the new info
-3. Check if it's an EXCLUSION (keep existing, no [item], etc.)
-4. ASK if there's anything else before moving forward
+Does this look right? [Everything looks good] [I need to add something] [Change a detail]"
 
-## CRITICAL: SUPPORT POST-QUOTE UPDATES
-
-**If a quote has already been generated and the user wants to make changes:**
-- "add flooring" → Add flooring to scope, regenerate
-- "remove the glass" → Remove glass, regenerate
-- "actually keep the appliances" → Add to exclusions, remove appliance work, regenerate
-
-When user requests changes after quote, set action to "generate_estimate" to rebuild the quote with updates.
-
-## CRITICAL: LABOR ONLY DETECTION
-
-**DETECT LABOR ONLY projects** when contractor says things like:
-- "labor only", "install only", "installation only"
-- "customer supplied materials", "homeowner provides materials"
-- "just the install", "no materials", "they have the materials"
-
-**When you detect labor-only keywords:**
-1. Acknowledge: "Got it - this is a labor-only project where the customer is supplying the materials."
-2. Confirm: "Just to confirm, you're providing LABOR ONLY and the customer is supplying: [list detected items]?"
-3. Once confirmed, mark labor_only: true in the estimate
-
-## CONVERSATION FLOW
-
-**Step 1 - Identify Project Type**
-If unclear, ask: "Is this a kitchen or bathroom project?"
-
-**Step 2 - Initial Scope Gathering**
-Let the contractor describe the project naturally. Listen for:
-- What's being done (demo, tile, cabinets, etc.)
-- What's being KEPT or EXCLUDED (keep appliances, no flooring, existing cabinets)
-- Size/dimensions mentioned
-
-**Step 3 - Trade-by-Trade Confirmation**
-Go through each relevant trade and confirm:
-- Is this trade INCLUDED or EXCLUDED?
-- If included, what's the scope?
-- If excluded, add to exclusions array
-
-**Step 4 - Get Dimensions**
-Once scope is confirmed, ask for dimensions:
-- Kitchen: total sqft, countertop sqft
-- Bathroom: room size (LxW or sqft), shower size (LxW or sqft)
-
-**Step 5 - Get Client Details**
-Before generating the final quote, ask for client information.
-
-**Step 6 - Generate Quote with Scope Summary**
-When generating, include:
-- INCLUDED trades with scope
-- EXCLUDED items list
-- Dimensions used
-
-## NATURAL LANGUAGE PARSING FOR EXCLUSIONS
-
-Contractors often say exclusions casually. Parse these correctly:
-- "full demo but keep appliances" = full demo MINUS appliance demo
-- "gut kitchen, existing floor is fine" = no flooring work
-- "keep the cabinets just do counters" = no cabinet work, countertops only
-- "no flooring" / "skip flooring" / "existing flooring" = flooring EXCLUDED
-- "they'll handle appliances" / "appliances stay" = appliances EXCLUDED
-- "leave the [item]" = that item EXCLUDED
+**Phase 4: CLIENT DETAILS**
+"Great! Before I generate the final quote, who is this for?"
+- Client name
+- Phone
+- Email  
+- Property address
 
 ## DECISION RULES
 
-**Generate estimate when you have:**
-- Project type + confirmed scope for each trade + dimensions
-- Exclusions list finalized
-- AND (client details provided OR client_details_skipped = true)
+Set action = "generate_estimate" ONLY when:
+- Project type is confirmed
+- ALL relevant trades have been discussed (trades_confirmed shows which)
+- Quantities are confirmed (not guessed!)
+- Dimensions are captured
+- Exclusions are identified
+- User approved the summary OR client details collected
 
-**Ask follow-up when missing:**
-- Any trade scope not yet confirmed
-- Critical dimensions
-- Clarification on keep/replace for major items
+Set action = "ask_question" when:
+- Any trade needs clarification
+- Missing quantities (NEVER guess!)
+- Missing dimensions
+- Need to confirm exclusions
+- Haven't shown summary yet
 
-## RESPONSE STYLE
+## RESPONSE FORMAT
 
-Keep questions SHORT and SPECIFIC. One trade at a time for confirmation.
-Good: "Got it - keeping appliances, so no appliance demo or reconnect. Moving on - new cabinets or keeping existing?"
-Bad: Generating a quote with appliance demo when user said "keep appliances"`;
+Keep responses SHORT and FOCUSED:
+- Ask ONE question at a time
+- Acknowledge what you captured
+- Show running progress periodically
 
+GOOD: "Got it - full gut kitchen, keeping existing flooring and appliances. ✓
+
+Moving to cabinets - are we doing new cabinets? If so, do you know the linear footage?"
+
+BAD: Long paragraphs with multiple questions`;
+
+// Estimate generation system prompt
+const estimateGenerationPrompt = `You are a construction estimator. Convert the CONFIRMED scope into a structured estimate.
+
+## MEASUREMENT RULES
+- Room floor sqft = length × width
+- Shower floor sqft = shower_length × shower_width  
+- Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
+- Default ceiling height: 8ft
+- Kitchen cabinets: estimate LF from kitchen size (small <120sqft: 15-18 LF, medium 120-200sqft: 20-25 LF, large 200+sqft: 28-35 LF)
+
+## CRITICAL: RESPECT EXCLUSIONS
+Items in the exclusions array must NOT appear in trade_buckets.
+- If "appliances" in exclusions → NO appliance demo, NO appliance reconnect
+- If "flooring" in exclusions → NO flooring work
+- If "cabinets" in exclusions → NO cabinet work
+
+## TRADE BUCKET CATEGORIES
+
+**Demo:** "Demo - Shower Only", "Demo - Small Bathroom", "Demo - Large Bathroom", "Demo - Kitchen"
+**Plumbing:** "Plumbing - Shower Standard", "Plumbing - Kitchen Reconnect", "Plumbing - Toilet", "Plumbing - Extra Head"
+**Tile:** "Tile - Wall" (sqft), "Tile - Shower Floor" (sqft), "Tile - Main Floor" (sqft)
+**Waterproofing:** "Waterproofing" (ea, lump sum)
+**Electrical:** "Electrical - Recessed Can" (ea), "Electrical - Vanity Light" (ea), "Electrical - Kitchen Package" (ea)
+**Glass:** "Glass - Shower Standard", "Glass - Panel Only", "Glass - 90 Return" (ea)
+**Vanity:** "Vanity - 30in" through "Vanity - 84in" (ea)
+**Cabinets:** "Cabinets - Kitchen" (lf)
+**Countertops:** "Quartz - Countertop" (sqft)
+**Backsplash:** "Backsplash - Tile" (sqft)
+**Flooring:** "Flooring - LVP" (sqft)
+**Paint:** "Paint - Patch", "Paint - Full Bath" (ea)
+**Framing:** "Framing - Standard", "Framing - Niche" (ea)
+
+## BUNDLES (already include materials - DO NOT add separate material lines)
+- Glass bundles include glass
+- Vanity bundles include cabinet + top
+- Cabinet pricing includes materials + labor
+- Countertop pricing includes slab + fab + install
+- Paint includes paint/primer
+- Electrical includes fixtures
+
+## MATERIALS NEEDED SEPARATELY
+- "Materials - Tile" (sqft) - when tile is in scope
+- "Materials - Plumbing" (ea) - plumbing fixtures allowance
+- "Materials - Flooring" (sqft) - for LVP/flooring material`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -981,7 +791,6 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Step 1: Fetch pricing config for contractor
     console.log("Fetching pricing config for contractor:", contractor_id);
     const { data: pricingConfig, error: configError } = await supabase
       .from('pricing_configs')
@@ -994,14 +803,12 @@ serve(async (req) => {
       throw new Error("Failed to fetch pricing configuration");
     }
 
-    // Use target_margin from pricing_configs (set on Pricing page)
-    // Always use margin multiplier mode with the configured target_margin
     const targetMarginDecimal = Number(pricingConfig.target_margin) || 0.38;
     const pricingModeSettings: PricingModeOptions = {
       useMarginMultiplier: true,
-      targetMarginPct: targetMarginDecimal * 100, // Convert decimal to percentage
+      targetMarginPct: targetMarginDecimal * 100,
     };
-    console.log("Using target margin from pricing_configs:", targetMarginDecimal * 100, "%");
+    console.log("Using target margin:", targetMarginDecimal * 100, "%");
 
     // Build conversation messages
     const conversationMessages = [];
@@ -1015,17 +822,18 @@ serve(async (req) => {
     }
     conversationMessages.push({ role: 'user', content: message });
 
-    // Step 2: First, analyze if we have enough info
-    console.log("Analyzing conversation for completeness...");
-    
-    // Build context including conversation state
+    // Build context with conversation state
     const fullContext = {
       ...context,
       conversation_phase: conversation_state?.phase || 'project_type',
-      project_type: conversation_state?.projectType || context?.projectType,
-      scope_items_gathered: conversation_state?.scopeItems || [],
-      questions_already_asked: conversation_state?.questionsAsked || [],
+      project_type: conversation_state?.projectType,
+      items_captured: conversation_state?.itemsCaptured || [],
+      exclusions: conversation_state?.exclusions || [],
+      trades_confirmed: conversation_state?.tradesConfirmed || {},
+      dimensions: conversation_state?.dimensions || {},
     };
+
+    console.log("Analyzing conversation with guided interview...");
     
     const analysisResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -1036,14 +844,14 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: conversationalSystemPrompt + `\n\nCURRENT CONTEXT: ${JSON.stringify(fullContext)}\n\nIMPORTANT: Questions already asked (DO NOT REPEAT): ${JSON.stringify(fullContext.questions_already_asked)}` },
+          { role: "system", content: guidedInterviewPrompt + `\n\nCURRENT STATE:\n${JSON.stringify(fullContext, null, 2)}` },
           ...conversationMessages
         ],
         tools: [{
           type: "function",
           function: {
             name: "analyze_conversation",
-            description: "Analyze the conversation to determine if we have enough info or need to ask more questions",
+            description: "Analyze conversation to determine next question or if ready to generate",
             parameters: analysisJsonSchema
           }
         }],
@@ -1064,10 +872,9 @@ serve(async (req) => {
         });
       }
       if (status === 503) {
-        console.log("AI service temporarily unavailable (503), returning friendly message");
         return new Response(JSON.stringify({
           needsMoreInfo: true,
-          followUpQuestion: "I'm experiencing a brief hiccup. Please try sending your message again in a moment."
+          followUpQuestion: "I'm experiencing a brief hiccup. Please try again in a moment."
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
@@ -1085,167 +892,36 @@ serve(async (req) => {
     const analysis = JSON.parse(analysisToolCall.function.arguments);
     console.log("Analysis result:", JSON.stringify(analysis, null, 2));
 
-    // If we need more info, return the follow-up question
+    // Return follow-up question if not ready to generate
     if (analysis.action === "ask_question" || !analysis.has_enough_info) {
       return new Response(JSON.stringify({
         needsMoreInfo: true,
-        followUpQuestion: analysis.follow_up_question || "Could you provide more details about the project?",
+        followUpQuestion: analysis.follow_up_question || "Could you tell me more about the project?",
         parsed: {
           project_type: analysis.project_type,
-          scope: analysis.parsed_scope,
+          items_captured: analysis.items_captured,
+          exclusions: analysis.exclusions,
+          trades_confirmed: analysis.trades_confirmed,
           dimensions: analysis.parsed_dimensions,
-          missing: analysis.missing_info
+          conversation_phase: analysis.conversation_phase,
+          current_trade: analysis.current_trade
+        },
+        conversation_state: {
+          phase: analysis.conversation_phase,
+          projectType: analysis.project_type,
+          itemsCaptured: analysis.items_captured,
+          exclusions: analysis.exclusions,
+          tradesConfirmed: analysis.trades_confirmed,
+          dimensions: analysis.parsed_dimensions
         }
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Step 3: We have enough info - generate the estimate
-    console.log("Generating estimate with full context...");
+    // Generate estimate
+    console.log("Generating estimate from confirmed scope...");
     
-    const estimateSystemPrompt = `You are a construction estimator. Convert the conversation into a structured estimate.
-
-MEASUREMENT RULES:
-- Room floor sqft = length × width
-- Shower floor sqft = shower_length × shower_width  
-- Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
-- Default ceiling height: 8ft
-- Cabinet linear feet estimation:
-  - Small kitchen (<120 sqft): ~15-18 LF
-  - Medium kitchen (120-200 sqft): ~20-25 LF
-  - Large kitchen (200+ sqft): ~28-35 LF
-  - This includes base + wall cabinets combined for pricing
-
-TRADE BUCKET MAPPING:
-
-**Demolition:** "Selective Demo - Shower Area", "Full Demo - Standard Bathroom", "Full Demo - Master Bathroom", "Full Demo - Kitchen & Removal"
-
-**Plumbing:** 
-- Plumbing - Shower Standard, Plumbing - Extra Head, Plumbing - Toilet Swap
-- Plumbing - Tub to Shower, Plumbing - Freestanding Tub
-- Plumbing - Reconnect (kitchen sink/dishwasher hookup) - unit: ea
-
-**Tile:** Tile - Wall (sqft), Tile - Shower Floor (sqft), Tile - Main Floor (sqft)
-
-**Support (LUMP SUM - calculated from shower dimensions):** 
-- Waterproofing - LUMP SUM - qty: 1, unit: ea (automatically calculated from shower wall + floor sqft)
-- Cement Board (=total tile sqft)
-
-**Electrical:** 
-- Electrical - Recessed Can (ea), Electrical - Vanity Light (ea)
-- Electrical - Pendant Light (ea) - for kitchen island/bar pendants
-- Electrical - Under Cabinet Lighting (ea) - LED strips/pucks
-- Electrical - Kitchen Package (ea) - for comprehensive kitchen electrical
-
-**Glass (BUNDLES - ALREADY INCLUDES MATERIALS, DO NOT ADD SEPARATE MATERIAL LINE):**
-- Glass - Shower Standard (door + panel) - qty: 1, unit: ea
-- Glass - Panel Only (fixed panel only) - qty: 1, unit: ea  
-- Glass - 90 Return (corner enclosure) - qty: 1, unit: ea
-NOTE: Glass bundles already include materials. Do NOT add "Materials - Glass" separately.
-
-**Vanity (BUNDLES - ALREADY INCLUDES MATERIALS):**
-- Vanity - 30in through Vanity - 84in - qty: 1, unit: ea
-NOTE: Vanity bundles include vanity cabinet, top, and installation. Do NOT add separate material lines.
-
-**Cabinets (PACKAGE - INCLUDES MATERIALS + LABOR, DO NOT SEPARATE):**
-- Cabinets - Kitchen (LF) - estimate linear feet based on kitchen size
-- Example: 12x14 kitchen (168 sqft) ≈ 22-25 LF of cabinets
-- NOTE: Cabinet pricing is ALL-IN (cabinet materials + installation labor). Do NOT add separate "Materials - Cabinets".
-
-**Quartz/Countertop (LUMP SUM BUNDLE - INCLUDES MATERIALS + INSTALLATION):**
-- Quartz - Countertop - qty: countertop sqft, unit: sqft
-NOTE: Countertop pricing is ALL-IN (slab material + fabrication + installation). Do NOT add separate "Materials - Countertop".
-
-**Backsplash:** Backsplash - Tile (sqft) - NOTE: Material included in "Materials - Tile" total
-
-**Framing (LABOR BUNDLE - materials included):** Framing - Standard, Framing - Niche (ea)
-
-**STRUCTURAL WORK ($$$ - CRITICAL FOR COMPLEX JOBS):**
-- Framing - Wall Removal (ea) - removing non-load-bearing walls
-- Framing - New Wall (lf) - building new walls
-- Framing - Door Relocation (ea) - moving doorway to new location
-- Framing - Door Closure (ea) - closing off existing doorway with drywall
-- Framing - New Doorway (ea) - framing new opening
-- Framing - Pocket Door (ea) - pocket door framing + hardware
-- Framing - Soffit Removal (ea or lf) - removing soffits
-- Framing - Entrance Enlargement (ea) - enlarging doorway/entrance
-- Framing - Shower Enlargement (ea) - expanding shower footprint
-- Framing - Alcove/Built-in (ea) - creating alcove or built-in space
-- Framing - Bench (ea) - shower bench framing
-
-**BUILT-IN CLOSETS ($$$ - CAPTURE ALL COMPONENTS):**
-- Framing - Closet Build (ea) - closet framing per closet
-- Drywall - Closet (sqft) - drywall for closet walls
-- Closet Shelving System (ea) - per closet shelving installation
-- Paint - Closet Interior (ea) - painting closet interior
-- Closet Doors (ea) - closet door installation (bifold, sliding, etc.)
-
-**CEILING WORK ($$$ - DON'T FORGET!):**
-- Drywall - Ceiling (sqft) - new ceiling drywall
-- Ceiling Texture (sqft) - ceiling texture application
-- Paint - Ceiling (sqft) - ceiling paint
-
-**DRYWALL WORK:**
-- Drywall - New Wall (sqft) - new wall drywall
-- Drywall - Patch (ea) - patching old openings/holes
-- Drywall - Ceiling (sqft) - ceiling drywall
-
-**PLUMBING RELOCATIONS ($$$ - Different from standard plumbing!):**
-- Plumbing - Tub Relocation (ea) - moving tub to new location
-- Plumbing - Toilet Relocation (ea) - moving toilet (requires new drain)
-- Plumbing - Drain Relocation (ea) - relocating shower drain
-
-**ACCESSORIES:**
-- Mirrors - Custom (ea) - custom mirror installation
-- Floating Shelves (ea) - wooden floating shelf installation
-
-**Paint (LABOR BUNDLE - materials included):** Paint - Patch, Paint - Full Bath
-
-**Electrical (LABOR BUNDLE - fixtures included):** Recessed Can, Vanity Light, Pendant Light, Under Cabinet Lighting, Kitchen Package
-
-## MATERIAL LINE ITEMS - ONLY FOR ITEMS NOT IN BUNDLES:
-
-Add SEPARATE material line items ONLY for these categories where labor and materials are priced separately:
-
-**Materials - Tile:** Add when tile is in scope (wall tile, floor tile, shower tile, OR backsplash)
-- Category: "Materials - Tile"
-- task_description: "Tile material allowance - [type mentioned: porcelain/ceramic/natural stone]"
-- quantity: total tile sqft (wall + floor + backsplash combined)
-- unit: sqft
-
-**Materials - Plumbing:** Add when plumbing fixtures needed
-- Category: "Materials - Plumbing"  
-- task_description: "Plumbing fixtures - faucet, valve, trim kit"
-- quantity: 1
-- unit: ea
-
-**Materials - Flooring:** Add when LVP/flooring mentioned
-- Category: "Materials - Flooring"
-- task_description: "Flooring material - [type: LVP/tile/hardwood]"
-- quantity: floor sqft
-- unit: sqft
-
-## DO NOT ADD MATERIAL LINES FOR THESE (already bundled):
-- Cabinets (Cabinets - Kitchen is all-in: cabinet materials + installation)
-- Countertops (Quartz - Countertop is all-in: slab + fab + install)
-- Glass (Glass - Shower Standard, Panel Only, 90 Return include materials)
-- Vanities (Vanity bundles include cabinet + top)
-- Plumbing packages (labor bundles, fixtures are separate allowance)
-- Framing (lumber/hardware included in labor rate)
-- Paint (paint/primer included in labor rate)
-- Electrical (fixtures included in labor rate)
-
-EXAMPLE: For "bathroom with new shower glass and 48 vanity":
-- Add: Glass - Shower Standard (1 ea) ← NO separate Materials - Glass!
-- Add: Vanity - 48in (1 ea) ← NO separate vanity materials!
-
-LABOR ONLY PROJECTS:
-- If "labor_only" is true in the context or conversation mentions "labor only", "install only", "customer supplies materials"
-- Set project_header.labor_only = true
-- Still include all trade_buckets (labor will be calculated at install-only rates)
-- DO NOT include Materials line items in trade_buckets for labor-only projects`;
-
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -1255,15 +931,32 @@ LABOR ONLY PROJECTS:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: estimateSystemPrompt },
+          { role: "system", content: estimateGenerationPrompt },
           ...conversationMessages,
-          { role: "user", content: `Based on the entire conversation above, generate the structured estimate. Use the parsed data: ${JSON.stringify(analysis.parsed_scope)} and dimensions: ${JSON.stringify(analysis.parsed_dimensions)}. Labor only: ${analysis.labor_only || false}` }
+          { 
+            role: "user", 
+            content: `Generate structured estimate from this CONFIRMED scope:
+
+PROJECT TYPE: ${analysis.project_type}
+LABOR ONLY: ${analysis.labor_only || false}
+
+ITEMS CAPTURED:
+${JSON.stringify(analysis.items_captured, null, 2)}
+
+EXCLUSIONS (DO NOT INCLUDE THESE):
+${JSON.stringify(analysis.exclusions)}
+
+DIMENSIONS:
+${JSON.stringify(analysis.parsed_dimensions, null, 2)}
+
+Generate the trade_buckets array. Remember: items in exclusions must NOT appear in trade_buckets.`
+          }
         ],
         tools: [{
           type: "function",
           function: {
             name: "generate_estimate",
-            description: "Generate a structured construction estimate",
+            description: "Generate structured construction estimate",
             parameters: estimateJsonSchema
           }
         }],
@@ -1274,10 +967,9 @@ LABOR ONLY PROJECTS:
     if (!aiResponse.ok) {
       const status = aiResponse.status;
       if (status === 503) {
-        console.log("AI service temporarily unavailable (503) during estimate generation");
         return new Response(JSON.stringify({
           needsMoreInfo: true,
-          followUpQuestion: "I'm experiencing a brief hiccup while generating your estimate. Please try again in a moment."
+          followUpQuestion: "I'm having trouble generating the estimate. Please try again."
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
@@ -1286,9 +978,6 @@ LABOR ONLY PROJECTS:
     }
 
     const aiData = await aiResponse.json();
-    console.log("Estimate AI response received");
-
-    // Extract tool call
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) throw new Error("No tool call in AI response");
 
@@ -1299,55 +988,82 @@ LABOR ONLY PROJECTS:
     if (!validated.success) {
       console.error("Validation failed:", validated.error.issues);
       return new Response(JSON.stringify({
-        error: "Invalid AI response",
+        error: "Invalid estimate data",
         needsMoreInfo: true,
-        followUpQuestion: "I had trouble generating the estimate. Could you provide the room dimensions again?"
+        followUpQuestion: "I had trouble generating the estimate. Could you confirm the dimensions again?"
       }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
-    // Step 4: Calculate pricing
-    const laborOnly = validated.data.project_header.labor_only || false;
-    console.log("Calculating pricing for", validated.data.trade_buckets.length, "trade buckets", laborOnly ? "(LABOR ONLY)" : "", "with margin mode:", pricingModeSettings);
-    const basePricing = calculatePricing(validated.data.trade_buckets, pricingConfig, laborOnly, pricingModeSettings, validated.data.dimensions);
+    console.log("Estimate validated, calculating pricing...");
+    
+    // Calculate pricing
+    const laborOnly = validated.data.project_header.labor_only;
+    const dimensions = {
+      shower_wall_sqft: validated.data.dimensions.shower_wall_sqft,
+      shower_floor_sqft: validated.data.dimensions.shower_floor_sqft,
+    };
+    
+    let pricing = calculatePricing(
+      validated.data.trade_buckets,
+      pricingConfig,
+      pricingModeSettings,
+      laborOnly,
+      dimensions
+    );
 
-    // Management fee is optional - include config for frontend toggle
-    const managementFeePercent = Number(pricingConfig.management_fee_percent) || 0.15;
+    // Apply management fee if needed
+    const includeManagementFee = context?.includeManagementFee || false;
+    const managementFeePercent = Number(pricingConfig.management_fee_percent) || 0.1;
+    
+    if (includeManagementFee) {
+      pricing = applyManagementFee(pricing, true, managementFeePercent);
+    }
 
-    // Step 5: Combine results (skip material allowances if labor-only)
-    const allowances = laborOnly ? [] : (validated.data.allowances || []);
-    const result = {
-      ...validated.data,
-      allowances,
-      pricing: basePricing,
-      management_fee_config: {
-        default_percent: managementFeePercent,
-        enabled: false // Frontend toggles this
+    // Build response
+    const response = {
+      estimate: validated.data,
+      pricing: {
+        line_items: pricing.line_items,
+        ...pricing.totals,
+        management_fee: (pricing as any).management_fee || { ic: 0, cp: 0, percent: 0 },
       },
-      payment_schedule: {
-        deposit: Math.round(basePricing.totals.total_cp * (Number(pricingConfig.payment_split_deposit) || 0.65)),
-        progress: Math.round(basePricing.totals.total_cp * (Number(pricingConfig.payment_split_progress) || 0.25)),
-        final: Math.round(basePricing.totals.total_cp * (Number(pricingConfig.payment_split_final) || 0.10)),
-      },
-      // Include client details from analysis
-      client_details: analysis.parsed_client_details || {}
+      exclusions: analysis.exclusions || [],
+      items_captured: analysis.items_captured || [],
+      client_details: analysis.parsed_client_details || null,
+      warnings: [...(validated.data.warnings || []), ...pricing.warnings],
+      conversation_state: {
+        phase: 'complete',
+        projectType: analysis.project_type,
+        itemsCaptured: analysis.items_captured,
+        exclusions: analysis.exclusions,
+        tradesConfirmed: analysis.trades_confirmed,
+        dimensions: analysis.parsed_dimensions
+      }
     };
 
-    console.log("Final result - Total CP:", basePricing.totals.total_cp, "Margin:", basePricing.totals.overall_margin_percent.toFixed(1) + "%");
+    console.log("Estimate complete:", {
+      total_ic: pricing.totals.total_ic,
+      total_cp: pricing.totals.total_cp,
+      exclusions: analysis.exclusions,
+      line_items_count: pricing.line_items.length
+    });
 
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
     console.error("Error in calculate-estimate:", error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : "Unknown error",
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
       needsMoreInfo: true,
-      followUpQuestion: "I had trouble processing that. What type of project is this - kitchen or bathroom?"
+      followUpQuestion: "I encountered an error. Please try rephrasing your request."
     }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
