@@ -269,11 +269,15 @@ const TKBSO_DEFAULTS: Partial<PricingConfig> & Record<string, any> = {
   drywall_ic_per_sqft: 9,
   drywall_cp_per_sqft: 15,
   
-  // Cabinet pricing (per linear foot)
-  cabinet_lf_ic: 250,
-  cabinet_lf_cp: 400,
-  cabinet_install_only_lf_ic: 50,
-  cabinet_install_only_lf_cp: 85,
+  // Cabinet pricing (material + install = total IC, CP from margin)
+  cabinet_material_allowance_ic: 150, // Material cost per box (IC)
+  cabinet_install_only_lf_ic: 50,     // Install labor per box (IC)
+  cabinet_lf_ic: 200,                 // Total IC (material + install) - calculated
+  cabinet_lf_cp: 322,                 // CP = 200 / (1 - 0.38)
+  cabinet_install_only_lf_cp: 85,     // Install only CP
+  
+  // Tile pricing (material + labor = total IC, CP from margin)
+  tile_material_allowance_ic: 5,      // Material cost per sqft (IC)
   
   // Site Prep & General Conditions
   floor_protection_ic: 150,
@@ -1260,34 +1264,44 @@ export default function Pricing() {
   // TILE & WATERPROOFING
   const tileBuckets: TradeBucket[] = [
     {
+      key: 'tile_material',
+      name: 'Tile Material Allowance',
+      description: 'Material cost per sqft (tile, grout, thinset, sealer).',
+      unit: 'per sqft',
+      icField: 'tile_material_allowance_ic',
+      cpField: null, // IC only - CP is calculated from margin
+      icValue: (config as any).tile_material_allowance_ic ?? 5,
+      cpValue: null,
+    },
+    {
       key: 'tile_wall',
       name: 'Wall Tile Labor',
-      description: 'Shower walls, vertical tile (excludes material).',
+      description: 'Shower walls, vertical tile labor.',
       unit: 'per sqft',
       icField: 'tile_wall_ic_per_sqft',
-      cpField: 'tile_wall_cp_per_sqft',
+      cpField: null, // IC only - CP is calculated from margin
       icValue: config.tile_wall_ic_per_sqft,
-      cpValue: config.tile_wall_cp_per_sqft,
+      cpValue: null,
     },
     {
       key: 'tile_shower_floor',
       name: 'Shower Floor Tile Labor',
-      description: 'Shower floor tile installation.',
+      description: 'Shower floor tile installation labor.',
       unit: 'per sqft',
       icField: 'tile_shower_floor_ic_per_sqft',
-      cpField: 'tile_shower_floor_cp_per_sqft',
+      cpField: null, // IC only - CP is calculated from margin
       icValue: config.tile_shower_floor_ic_per_sqft,
-      cpValue: config.tile_shower_floor_cp_per_sqft,
+      cpValue: null,
     },
     {
       key: 'tile_floor',
       name: 'Main Floor Tile Labor',
-      description: 'Main floor tile installation.',
+      description: 'Main floor tile installation labor.',
       unit: 'per sqft',
       icField: 'tile_floor_ic_per_sqft',
-      cpField: 'tile_floor_cp_per_sqft',
+      cpField: null, // IC only - CP is calculated from margin
       icValue: config.tile_floor_ic_per_sqft,
-      cpValue: config.tile_floor_cp_per_sqft,
+      cpValue: null,
     },
     {
       key: 'cement_board',
@@ -1324,24 +1338,24 @@ export default function Pricing() {
   // CABINETRY & VANITIES
   const cabinetryBuckets: TradeBucket[] = [
     {
-      key: 'cabinet_box',
-      name: 'Cabinets (Material + Install)',
-      description: 'Stock/semi-custom cabinets with installation.',
+      key: 'cabinet_material',
+      name: 'Cabinet Material Allowance',
+      description: 'Material cost per box (cabinet box, hardware, accessories).',
       unit: 'per box',
-      icField: 'cabinet_lf_ic',
-      cpField: 'cabinet_lf_cp',
-      icValue: config.cabinet_lf_ic ?? 250,
-      cpValue: config.cabinet_lf_cp ?? 400,
+      icField: 'cabinet_material_allowance_ic',
+      cpField: null, // IC only - CP is calculated
+      icValue: (config as any).cabinet_material_allowance_ic ?? 150,
+      cpValue: null,
     },
     {
-      key: 'cabinet_install_only',
-      name: 'Cabinet Install Only',
-      description: 'Labor only for customer-supplied cabinets.',
+      key: 'cabinet_install',
+      name: 'Cabinet Install Labor',
+      description: 'Installation labor per box (leveling, fastening, adjustments).',
       unit: 'per box',
       icField: 'cabinet_install_only_lf_ic',
-      cpField: 'cabinet_install_only_lf_cp',
+      cpField: null, // IC only - CP is calculated
       icValue: config.cabinet_install_only_lf_ic ?? 50,
-      cpValue: config.cabinet_install_only_lf_cp ?? 85,
+      cpValue: null,
     },
     {
       key: 'vanity_30',
