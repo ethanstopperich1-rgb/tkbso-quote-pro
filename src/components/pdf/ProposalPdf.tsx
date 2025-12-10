@@ -523,6 +523,12 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
   const progressSplit = (defaults.progressPct || pricingConfig?.payment_split_progress || 25) / 100;
   const finalSplit = (defaults.finalPct || pricingConfig?.payment_split_final || 10) / 100;
 
+  // Determine project type for milestone label
+  const isKitchenProject = estimate.has_kitchen && !estimate.has_bathrooms;
+  const progressLabel = isKitchenProject
+    ? (defaults.progressLabelKitchen || 'Due at arrival of cabinetry')
+    : (defaults.progressLabelBathroom || 'Due at start of tile installation');
+
   const totalCost = estimate.final_cp_total || 0;
   const depositAmount = Math.round(totalCost * depositSplit);
   const progressAmount = Math.round(totalCost * progressSplit);
@@ -631,7 +637,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Progress – Due at rough-in</Text>
+            <Text style={styles.paymentLabel}>Progress – {progressLabel}</Text>
             <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
           </View>
           <View style={styles.paymentRow}>

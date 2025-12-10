@@ -359,6 +359,8 @@ export interface ProposalPdfProps {
     progress: number;
     final: number;
   };
+  progressLabelKitchen?: string;
+  progressLabelBathroom?: string;
   estimatedDays?: number;
   contractorName?: string;
   contractorPhone?: string;
@@ -382,6 +384,8 @@ export function ProposalPdfDocument({
   totalPrice,
   scopeItems,
   paymentMilestones,
+  progressLabelKitchen = 'Due at arrival of cabinetry',
+  progressLabelBathroom = 'Due at start of tile installation',
   estimatedDays = 14,
   contractorName = 'Your Company Name',
   contractorPhone = '(407) 555-1234',
@@ -532,8 +536,8 @@ export function ProposalPdfDocument({
                 </Text>
                 <Text style={styles.milestoneLabel}>
                   Progress — {projectType?.toLowerCase() === 'kitchen' 
-                    ? 'Due at arrival of cabinetry' 
-                    : 'Due at start of tile installation'}
+                    ? progressLabelKitchen 
+                    : progressLabelBathroom}
                 </Text>
               </View>
               <View style={styles.milestoneRow}>
