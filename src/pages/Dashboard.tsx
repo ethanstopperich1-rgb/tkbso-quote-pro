@@ -34,6 +34,7 @@ export default function Dashboard() {
         .from('estimates')
         .select('id, job_label, client_name, final_cp_total, status, created_at')
         .eq('contractor_id', contractor.id)
+        .eq('is_archived', false)
         .order('created_at', { ascending: false })
         .limit(5);
       
