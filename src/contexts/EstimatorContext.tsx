@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react';
 import { Quote, ClientInfo } from '@/types/estimator';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   calculateTKBSOEstimate, 
   calculateCPFromIC, 
@@ -10,6 +12,8 @@ import {
   TKBSOJobInputs,
   TKBSOPricingResult,
 } from '@/lib/tkbso-pricing';
+
+const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
 
 export type ScopeLevel = 'full_gut' | 'partial' | 'shower_only' | 'refresh';
 export type WorkflowStage = 'collecting' | 'confirming' | 'client_details' | 'generating' | 'complete';
@@ -251,6 +255,11 @@ const initialState: ProjectState = {
 interface EstimatorContextType {
   state: ProjectState;
   
+  // Draft management
+  draftId: string | null;
+  setDraftId: (id: string | null) => void;
+  loadDraft: (id: string) => Promise<boolean>;
+  
   // Stage management
   setStage: (stage: WorkflowStage) => void;
   canProceed: () => boolean;
@@ -300,7 +309,11 @@ interface EstimatorContextType {
 const EstimatorContext = createContext<EstimatorContextType | undefined>(undefined);
 
 export function EstimatorProvider({ children }: { children: ReactNode }) {
+  const { contractor, profile } = useAuth();
   const [state, setState] = useState<ProjectState>(initialState);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const lastSavedRef = useRef<string>('');
+  const savingRef = useRef(false);
   
   /**
    * Calculate prices using TKBSO real trade allowances
@@ -942,6 +955,8 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
   
   const reset = useCallback(() => {
     setState(initialState);
+    setDraftId(null);
+    lastSavedRef.current = '';
   }, []);
   
   const getTotalSqft = useCallback(() => {
@@ -956,10 +971,145 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     const { clientInfo } = state;
     return !!(clientInfo.name && clientInfo.address && clientInfo.city && clientInfo.state);
   }, [state.clientInfo]);
+
+  // Load draft from database
+  const loadDraft = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('estimates')
+        .select('internal_json_payload')
+        .eq('id', id)
+        .single();
+
+      if (error || !data) return false;
+
+      const payload = data.internal_json_payload as any;
+      if (payload?.isDraft && payload?.estimatorState) {
+        const savedState = payload.estimatorState;
+        setState(prev => recalculatePrices({
+          ...initialState,
+          ...savedState,
+          trades: { ...defaultTrades, ...savedState.trades },
+          clientInfo: savedState.clientInfo || {},
+        }));
+        setDraftId(id);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, [recalculatePrices]);
+
+  // Check if there's data worth saving
+  const hasDataToSave = useCallback(() => {
+    return (
+      state.projectType !== null ||
+      state.rooms.length > 0 ||
+      state.clientInfo.name ||
+      state.clientInfo.email ||
+      state.recommendedPrice > 0
+    );
+  }, [state]);
+
+  // Auto-save function
+  const saveProgress = useCallback(async () => {
+    if (!contractor?.id || savingRef.current || !hasDataToSave()) return;
+
+    const projectType = state.projectType || 'bathroom';
+    const clientName = state.clientInfo.name || '';
+    const jobLabel = clientName 
+      ? `${projectType.charAt(0).toUpperCase() + projectType.slice(1)} Remodel - ${clientName}`
+      : `${projectType.charAt(0).toUpperCase() + projectType.slice(1)} Remodel Draft`;
+
+    const payload = {
+      contractor_id: contractor.id,
+      created_by_profile_id: profile?.id,
+      job_label: jobLabel,
+      client_name: clientName || null,
+      client_email: state.clientInfo.email || null,
+      client_phone: state.clientInfo.phone || null,
+      property_address: state.clientInfo.address || null,
+      city: state.clientInfo.city || null,
+      state: state.clientInfo.state || null,
+      zip: state.clientInfo.zip || null,
+      status: 'draft',
+      has_kitchen: state.projectType === 'kitchen' || state.projectType === 'combination',
+      has_bathrooms: state.projectType === 'bathroom' || state.projectType === 'combination',
+      has_closets: state.projectType === 'closet',
+      num_kitchens: state.projectType === 'kitchen' || state.projectType === 'combination' ? 1 : 0,
+      num_bathrooms: state.rooms.filter(r => r.type === 'bathroom').length || (state.projectType === 'bathroom' ? 1 : 0),
+      num_closets: state.projectType === 'closet' ? 1 : 0,
+      final_cp_total: state.recommendedPrice || 0,
+      low_estimate_cp: state.lowEstimate || 0,
+      high_estimate_cp: state.highEstimate || 0,
+      final_ic_total: state.internalCost || 0,
+      include_management_fee: state.includeManagementFee,
+      management_fee_percent: state.managementFeePercent,
+      management_fee_cp: state.managementFeeAmount,
+      needs_gc_partner: state.hasGC,
+      permit_required: state.needsPermit,
+      internal_json_payload: JSON.parse(JSON.stringify({
+        estimatorState: {
+          stage: state.stage,
+          projectType: state.projectType,
+          location: state.location,
+          hasGC: state.hasGC,
+          needsPermit: state.needsPermit,
+          qualityLevel: state.qualityLevel,
+          rooms: state.rooms,
+          trades: state.trades,
+          clientInfo: state.clientInfo,
+          pricingMode: state.pricingMode,
+          overrideValue: state.overrideValue,
+          includeManagementFee: state.includeManagementFee,
+          managementFeePercent: state.managementFeePercent,
+          laborOnly: state.laborOnly,
+        },
+        isDraft: true,
+        lastAutoSave: new Date().toISOString(),
+      })),
+    };
+
+    const payloadHash = JSON.stringify(payload.internal_json_payload);
+    if (payloadHash === lastSavedRef.current) return;
+
+    savingRef.current = true;
+    try {
+      if (draftId) {
+        await supabase.from('estimates').update(payload).eq('id', draftId);
+      } else {
+        const { data } = await supabase.from('estimates').insert(payload).select('id').single();
+        if (data) setDraftId(data.id);
+      }
+      lastSavedRef.current = payloadHash;
+    } catch (e) {
+      console.error('Auto-save failed:', e);
+    } finally {
+      savingRef.current = false;
+    }
+  }, [contractor, profile, state, draftId, hasDataToSave]);
+
+  // Auto-save interval
+  useEffect(() => {
+    if (!contractor?.id) return;
+    const interval = setInterval(saveProgress, AUTO_SAVE_INTERVAL);
+    return () => clearInterval(interval);
+  }, [contractor, saveProgress]);
+
+  // Save on unmount
+  useEffect(() => {
+    return () => {
+      if (hasDataToSave()) saveProgress();
+    };
+  }, []);
   
   return (
     <EstimatorContext.Provider value={{
       state,
+      draftId,
+      setDraftId,
+      loadDraft,
       setStage,
       canProceed,
       setProjectType,
