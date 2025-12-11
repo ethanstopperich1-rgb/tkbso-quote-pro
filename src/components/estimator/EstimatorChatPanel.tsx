@@ -1133,26 +1133,51 @@ export function EstimatorChatPanel() {
   };
 
   // Handle photo confirmation - user confirmed selected items and scope
-  const handlePhotoConfirmation = async (selectedItems: any[], scopeDescription: string) => {
+  const handlePhotoConfirmation = async (selectedItems: any[], scopeDescription: string, layoutChanges?: any) => {
     setShowPhotoConfirmation(false);
     
-    // Build a message with the confirmed items and scope
+    // Build a message with the confirmed items, scope, and layout changes
     const itemsList = selectedItems.map(item => 
       `${item.category}: ${item.item} (${item.quantity} ${item.unit})`
     ).join('\n');
     
-    const confirmationMessage = scopeDescription.trim() 
-      ? `${scopeDescription}\n\nConfirmed items from photo:\n${itemsList}`
-      : `Confirmed items from photo:\n${itemsList}`;
+    // Build layout change summary if present
+    let layoutSummary = '';
+    if (layoutChanges) {
+      const parts: string[] = [];
+      if (layoutChanges.fixtures && layoutChanges.fixtures.length > 0) {
+        const relocations = layoutChanges.fixtures.map((f: any) => 
+          `${f.name} moving ~${f.estimatedDistance}ft to ${f.newLocation || 'new location'}`
+        );
+        parts.push(`Fixture Relocations: ${relocations.join('; ')}`);
+      }
+      if (layoutChanges.structuralChanges && layoutChanges.structuralChanges.length > 0) {
+        parts.push(`Structural Work: ${layoutChanges.structuralChanges.map((c: any) => c.description).join('; ')}`);
+      }
+      if (layoutChanges.demoLevel) {
+        parts.push(`Demo Level: ${layoutChanges.demoLevel === 'full_gut' ? 'Full Gut' : 'Selective'}`);
+      }
+      if (parts.length > 0) {
+        layoutSummary = `\n\n**Layout Changes:**\n${parts.join('\n')}`;
+      }
+    }
+    
+    const userContent = scopeDescription.trim() || 'Looks good, use these items.';
     
     // Add confirmation message to chat
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: scopeDescription.trim() || 'Looks good, use these items.',
+      content: userContent,
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, userMessage]);
+    
+    // Update conversation history with layout changes context
+    const historyContent = layoutChanges 
+      ? `${userContent}${layoutSummary}`
+      : userContent;
+    setConversationHistory(prev => [...prev, { role: 'user', content: historyContent }]);
     
     // Update photo entries to only include selected items
     setPhotoEntries(prev => prev.map(entry => ({
@@ -1165,8 +1190,26 @@ export function EstimatorChatPanel() {
       },
     })));
     
-    // Add assistant confirmation
-    addAssistantMessage(`✓ Got it! Using ${selectedItems.length} items from your photo${scopeDescription.trim() ? ` for: ${scopeDescription.slice(0, 100)}...` : ''}.\n\nNow tell me the room dimensions (e.g., "8x10 bathroom") or describe any additional scope.`);
+    // Build assistant response based on whether layout changes were specified
+    let assistantResponse = `✓ Got it! Using ${selectedItems.length} items from your photo`;
+    if (scopeDescription.trim()) {
+      assistantResponse += ` for: ${scopeDescription.slice(0, 100)}${scopeDescription.length > 100 ? '...' : ''}`;
+    }
+    
+    if (layoutChanges && (layoutChanges.fixtures?.length > 0 || layoutChanges.structuralChanges?.length > 0)) {
+      assistantResponse += `\n\n⚠️ **Complex Layout Changes Included:**`;
+      if (layoutChanges.fixtures?.length > 0) {
+        assistantResponse += `\n• ${layoutChanges.fixtures.length} fixture relocation(s)`;
+      }
+      if (layoutChanges.structuralChanges?.length > 0) {
+        assistantResponse += `\n• ${layoutChanges.structuralChanges.length} structural modification(s)`;
+      }
+      assistantResponse += `\n\nI'll include the appropriate structural, framing, and plumbing relocation costs in the estimate.`;
+    }
+    
+    assistantResponse += `\n\nNow tell me the room dimensions (e.g., "8x10 bathroom") or describe any additional scope.`;
+    
+    addAssistantMessage(assistantResponse);
   };
 
   const handleViewEstimate = () => {
