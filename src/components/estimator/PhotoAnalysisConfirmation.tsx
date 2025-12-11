@@ -1,27 +1,47 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sparkles, AlertCircle, X, Plus, Camera, Ruler } from 'lucide-react';
+import { Sparkles, AlertCircle, X, Plus, Camera, Ruler, Construction, AlertTriangle } from 'lucide-react';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 import { PhotoAnalysisEntry } from './MultiPhotoAnalysisCard';
+import { LayoutChangeConfirmation } from './LayoutChangeConfirmation';
 import { cn } from '@/lib/utils';
 
-interface SelectedItem extends DetectedItem {
+export interface SelectedItem extends DetectedItem {
   entryId: string;
   itemIndex: number;
   selected: boolean;
   analysisConfidence: 'high' | 'medium' | 'low';
 }
 
+export interface LayoutChangeData {
+  fixtures: Array<{
+    id: string;
+    name: string;
+    currentLocation: string;
+    newLocation: string;
+    isMoving: boolean;
+    estimatedDistance: number;
+  }>;
+  structuralChanges: Array<{
+    id: string;
+    description: string;
+    selected: boolean;
+    type: 'remove_wall' | 'remove_door' | 'add_wall' | 'add_door' | 'close_opening' | 'other';
+  }>;
+  demoLevel: 'full_gut' | 'selective';
+  additionalNotes: string;
+}
+
 interface PhotoAnalysisConfirmationProps {
   entries: PhotoAnalysisEntry[];
   onRemovePhoto: (id: string) => void;
   onAddMore: () => void;
-  onConfirm: (selectedItems: SelectedItem[], scopeDescription: string) => void;
+  onConfirm: (selectedItems: SelectedItem[], scopeDescription: string, layoutChanges?: LayoutChangeData) => void;
   onCancel: () => void;
   isAnalyzing?: boolean;
 }
@@ -35,7 +55,7 @@ const categoryDisplayNames: Record<string, string> = {
   'Tile': 'Tile & Waterproofing',
   'Tile & Waterproofing': 'Tile & Waterproofing',
   'Support': 'Tile & Waterproofing',
-  'Waterproofing': 'Tile & Waterproofing',
+  'Waterproofing': 'Waterproofing',
   'Cabinetry': 'Cabinetry',
   'Countertops': 'Countertops',
   'Glass': 'Glass',
@@ -44,6 +64,21 @@ const categoryDisplayNames: Record<string, string> = {
   'Framing/Structural': 'Framing',
   'Accessories': 'Accessories',
 };
+
+// Keywords that indicate layout changes
+const LAYOUT_CHANGE_KEYWORDS = [
+  'moving', 'relocate', 'relocating', 'swap', 'swapping', 'switching',
+  'where the', 'where it was', 'going where',
+  'remove wall', 'take down wall', 'tear down wall',
+  'close up door', 'remove door', 'new door location',
+  'tub to shower', 'shower to tub',
+  'flipping', 'reversing', 'changing layout',
+  'move the toilet', 'move the tub', 'move the vanity',
+  'toilet and tub', 'tub and toilet'
+];
+
+// Fixture types that can be relocated (for bathroom)
+const RELOCATABLE_FIXTURES = ['toilet', 'bathtub', 'tub', 'shower', 'vanity', 'sink'];
 
 // Group items by category
 function groupItemsByCategory(items: SelectedItem[]): Record<string, SelectedItem[]> {
@@ -75,6 +110,32 @@ function getConfidenceBadge(confidence: 'high' | 'medium' | 'low') {
   }
 }
 
+// Detect if scope description suggests layout changes
+function detectLayoutChangeIntent(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  return LAYOUT_CHANGE_KEYWORDS.some(keyword => lowerText.includes(keyword));
+}
+
+// Extract detected fixtures with location info for layout change flow
+function extractFixturesForLayout(entries: PhotoAnalysisEntry[]): Array<{ name: string; location: string; confidence: number }> {
+  const fixtures: Array<{ name: string; location: string; confidence: number }> = [];
+  
+  for (const entry of entries) {
+    for (const item of entry.analysis.detected_items) {
+      const itemLower = item.item.toLowerCase();
+      if (RELOCATABLE_FIXTURES.some(f => itemLower.includes(f))) {
+        fixtures.push({
+          name: item.item,
+          location: item.notes || 'Location not specified',
+          confidence: entry.analysis.confidence === 'high' ? 90 : entry.analysis.confidence === 'medium' ? 70 : 50,
+        });
+      }
+    }
+  }
+  
+  return fixtures;
+}
+
 export function PhotoAnalysisConfirmation({ 
   entries, 
   onRemovePhoto, 
@@ -97,6 +158,8 @@ export function PhotoAnalysisConfirmation({
   });
   
   const [scopeDescription, setScopeDescription] = useState('');
+  const [showLayoutChangeFlow, setShowLayoutChangeFlow] = useState(false);
+  const [layoutChangeData, setLayoutChangeData] = useState<LayoutChangeData | undefined>();
 
   const groupedItems = groupItemsByCategory(items);
   const projectType = getOverallProjectType(entries);
@@ -108,6 +171,13 @@ export function PhotoAnalysisConfirmation({
   const roomSqft = estimatedDimensions?.room_length_ft && estimatedDimensions?.room_width_ft 
     ? estimatedDimensions.room_length_ft * estimatedDimensions.room_width_ft 
     : null;
+
+  // Check if we have relocatable fixtures (bathroom projects)
+  const detectedFixtures = useMemo(() => extractFixturesForLayout(entries), [entries]);
+  const hasRelocatableFixtures = detectedFixtures.length >= 2 && projectType === 'Bathroom';
+
+  // Detect layout change intent from scope description
+  const scopeHasLayoutIntent = useMemo(() => detectLayoutChangeIntent(scopeDescription), [scopeDescription]);
 
   const toggleItem = (entryId: string, itemIndex: number) => {
     setItems(prev => prev.map(item => 
@@ -127,8 +197,71 @@ export function PhotoAnalysisConfirmation({
 
   const handleConfirm = () => {
     const selectedItems = items.filter(i => i.selected);
-    onConfirm(selectedItems, scopeDescription);
+    onConfirm(selectedItems, scopeDescription, layoutChangeData);
   };
+
+  // Handle layout change confirmation
+  const handleLayoutChangeConfirm = (changes: LayoutChangeData) => {
+    setLayoutChangeData(changes);
+    setShowLayoutChangeFlow(false);
+    
+    // Build scope description from layout changes
+    const layoutDescription = buildLayoutDescription(changes);
+    setScopeDescription(prev => prev ? `${prev}\n\n${layoutDescription}` : layoutDescription);
+  };
+
+  // Handle keeping current layout (from layout change flow)
+  const handleKeepLayout = () => {
+    setShowLayoutChangeFlow(false);
+    setLayoutChangeData(undefined);
+  };
+
+  // Build a description from layout changes
+  const buildLayoutDescription = (changes: LayoutChangeData): string => {
+    const parts: string[] = [];
+    
+    if (changes.demoLevel === 'full_gut') {
+      parts.push('Full gut remodel');
+    } else {
+      parts.push('Selective demo');
+    }
+    
+    if (changes.fixtures.length > 0) {
+      const relocations = changes.fixtures.map(f => 
+        `${f.name} moving from ${f.currentLocation} to ${f.newLocation} (~${f.estimatedDistance}ft)`
+      );
+      parts.push('Relocations: ' + relocations.join('; '));
+    }
+    
+    if (changes.structuralChanges.length > 0) {
+      parts.push('Structural: ' + changes.structuralChanges.map(c => c.description).join('; '));
+    }
+    
+    if (changes.additionalNotes) {
+      parts.push(changes.additionalNotes);
+    }
+    
+    return parts.join('. ');
+  };
+
+  // Show layout change flow
+  if (showLayoutChangeFlow && hasRelocatableFixtures) {
+    return (
+      <LayoutChangeConfirmation
+        projectType={projectType as 'Kitchen' | 'Bathroom'}
+        detectedFixtures={detectedFixtures}
+        estimatedRoomSize={estimatedDimensions ? {
+          length: estimatedDimensions.room_length_ft || 8,
+          width: estimatedDimensions.room_width_ft || 10,
+          sqft: roomSqft || 80,
+        } : null}
+        imagePreview={entries[0]?.imagePreview}
+        onConfirmKeepLayout={handleKeepLayout}
+        onConfirmLayoutChange={handleLayoutChangeConfirm}
+        onCancel={() => setShowLayoutChangeFlow(false)}
+      />
+    );
+  }
 
   return (
     <Card className="animate-scale-in border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent shadow-lg overflow-hidden">
@@ -223,6 +356,72 @@ export function PhotoAnalysisConfirmation({
           </div>
         )}
 
+        {/* Layout Change Prompt - Show if bathroom with multiple fixtures */}
+        {hasRelocatableFixtures && !layoutChangeData && (
+          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Construction className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
+                  Are fixtures staying in place?
+                </p>
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+                  I detected {detectedFixtures.length} fixtures that could be relocated. Moving fixtures means structural work and plumbing changes.
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
+                    onClick={() => setShowLayoutChangeFlow(true)}
+                  >
+                    <Construction className="h-4 w-4 mr-1" />
+                    Layout is Changing
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="text-yellow-700"
+                  >
+                    Keeping Current Layout
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Layout Change Summary - If changes were configured */}
+        {layoutChangeData && (
+          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-500/50 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                  ⚠️ Complex Layout Changes Configured
+                </p>
+                <div className="text-sm text-yellow-800 dark:text-yellow-200 space-y-1">
+                  {layoutChangeData.fixtures.map(f => (
+                    <p key={f.id}>• {f.name}: moving ~{f.estimatedDistance}ft</p>
+                  ))}
+                  {layoutChangeData.structuralChanges.map(c => (
+                    <p key={c.id}>• {c.description}</p>
+                  ))}
+                  <p className="text-xs mt-2">Demo level: {layoutChangeData.demoLevel === 'full_gut' ? 'Full Gut' : 'Selective'}</p>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  className="mt-2 text-yellow-700"
+                  onClick={() => setShowLayoutChangeFlow(true)}
+                >
+                  Edit Layout Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Detected items with checkboxes */}
         <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto">
           {Object.entries(groupedItems).map(([category, categoryItems]) => (
@@ -308,6 +507,23 @@ export function PhotoAnalysisConfirmation({
             onChange={(e) => setScopeDescription(e.target.value)}
             className="resize-none"
           />
+          
+          {/* Layout change hint if keywords detected */}
+          {scopeHasLayoutIntent && hasRelocatableFixtures && !layoutChangeData && (
+            <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                💡 It sounds like you're moving fixtures. Would you like to{' '}
+                <button 
+                  onClick={() => setShowLayoutChangeFlow(true)}
+                  className="font-semibold underline hover:no-underline"
+                >
+                  specify layout changes
+                </button>
+                ?
+              </p>
+            </div>
+          )}
+          
           <p className="text-xs text-muted-foreground mt-2">
             💡 Or just say "looks good" and I'll use what's selected above!
           </p>
