@@ -192,15 +192,25 @@ export default function EstimateDetail() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!id || !contractor) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
       
-      const [estimateRes, configRes] = await Promise.all([
-        supabase.from('estimates').select('*').eq('id', id).single(),
-        supabase.from('pricing_configs').select('*').eq('contractor_id', contractor.id).single(),
-      ]);
+      // Wait for contractor to load before attempting fetch
+      if (!contractor) return;
       
-      if (estimateRes.data) setEstimate(estimateRes.data as Estimate);
-      if (configRes.data) setPricingConfig(configRes.data as PricingConfig);
+      try {
+        const [estimateRes, configRes] = await Promise.all([
+          supabase.from('estimates').select('*').eq('id', id).single(),
+          supabase.from('pricing_configs').select('*').eq('contractor_id', contractor.id).single(),
+        ]);
+        
+        if (estimateRes.data) setEstimate(estimateRes.data as Estimate);
+        if (configRes.data) setPricingConfig(configRes.data as PricingConfig);
+      } catch (error) {
+        console.error('Error fetching estimate:', error);
+      }
       setLoading(false);
     }
     
