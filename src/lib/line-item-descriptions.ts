@@ -1629,6 +1629,8 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
 
 /**
  * Format a line item for PDF display with professional description
+ * PRIORITY: Use the actual task_description if it's specific enough (5+ words)
+ * Only fall back to lookup table for very short/generic descriptions
  * Note: Quantity/unit suffixes removed per user request - customer quotes show clean descriptions only
  */
 export function formatLineItemForPdf(
@@ -1636,13 +1638,50 @@ export function formatLineItemForPdf(
   quantity?: number,
   unit?: string
 ): string {
+  const wordCount = taskDescription.split(/\s+/).filter(w => w.length > 1).length;
+  
+  // If task description is already specific (5+ words), use it directly
+  // This preserves the AI-generated descriptions which are job-specific
+  if (wordCount >= 5) {
+    // Just clean up the description formatting
+    return cleanTaskDescription(taskDescription);
+  }
+  
+  // For short descriptions, try to find a professional match
   const matched = getLineItemDescription(taskDescription);
   
   if (matched) {
-    // Use the professional description (no quantity/unit suffix)
     return matched.description;
   }
   
-  // Fallback to original description (no quantity/unit suffix)
-  return taskDescription;
+  // Fallback to cleaned original description
+  return cleanTaskDescription(taskDescription);
+}
+
+/**
+ * Clean up a task description for professional presentation
+ */
+function cleanTaskDescription(description: string): string {
+  let cleaned = description
+    // Capitalize first letter
+    .replace(/^./, c => c.toUpperCase())
+    // Add "Includes" prefix if not present and description is action-oriented
+    .trim();
+  
+  // If description doesn't start with common prefixes, add "Includes"
+  const startsWithPrefix = /^(includes|installation|removal|application|delivery|setup|prep|full|new|relocat|reuse|reinstall)/i.test(cleaned);
+  
+  if (!startsWithPrefix && cleaned.length > 10) {
+    // Check if it's already a complete sentence-like description
+    if (!/^[A-Z][a-z]+ing\b/.test(cleaned) && !cleaned.includes(' - ')) {
+      cleaned = `Includes ${cleaned.charAt(0).toLowerCase()}${cleaned.slice(1)}`;
+    }
+  }
+  
+  // Ensure ends with period
+  if (cleaned.length > 0 && !cleaned.endsWith('.') && !cleaned.endsWith('!')) {
+    cleaned += '.';
+  }
+  
+  return cleaned;
 }

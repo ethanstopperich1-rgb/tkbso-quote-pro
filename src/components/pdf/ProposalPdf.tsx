@@ -570,8 +570,9 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
   const shouldExcludeItem = (taskDescription: string, allItems: typeof lineItems): boolean => {
     const lower = taskDescription.toLowerCase();
     
-    // EXCLUDE ANY shower curtain rod mention - ALWAYS filter out if glass is present
-    if (lower.includes('curtain') || lower.includes('shower rod') || lower.includes('curtain rod')) {
+    // EXCLUDE ANY shower curtain rod or handheld shower mention - ALWAYS filter out if frameless glass is present
+    if (lower.includes('curtain') || lower.includes('shower rod') || lower.includes('curtain rod') ||
+        lower.includes('hand-held') || lower.includes('handheld') || lower.includes('slide bar')) {
       const hasFramelessGlass = allItems?.some(item => {
         const itemLower = item.task_description.toLowerCase();
         return itemLower.includes('frameless') || itemLower.includes('glass enclosure') ||
@@ -594,23 +595,18 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       }
     }
     
-    // EXCLUDE items with wrong category placement (vanity in electrical, toilet in demo, countertop in plumbing)
-    if (lower.includes('vanity cabinet') || lower.includes('vanity countertop') || lower.includes('sink') && lower.includes('plumbing preparation')) {
-      // These should NOT appear in electrical
-      return false; // Let categorization handle placement
-    }
-    
     return false;
   };
 
   // Helper to clean item description (remove auto-added HVAC text and wrong descriptions)
   const cleanDescription = (description: string): string => {
-    // Remove auto-added HVAC phrases
+    // Remove auto-added HVAC phrases and wrong cabinetry descriptions
     let cleaned = description
       .replace(/\s*Includes adjusting or relocating HVAC supply or return vent to fit revised layout\.?\s*/gi, '')
       .replace(/\s*Includes HVAC vent adjustment\.?\s*/gi, '')
       .replace(/\s*Includes installation of shower curtain rod with secure wall mounting\.?\s*/gi, '')
       .replace(/\s*Includes vanity cabinet, countertop, sink, and basic plumbing preparation for installation\.?\s*/gi, '')
+      .replace(/\s*Includes installation of hand-held shower attachment with slide bar or wall mount\.?\s*/gi, '')
       .trim();
     
     // Clean up any double periods or trailing commas
@@ -619,48 +615,106 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     return cleaned;
   };
 
-  // Helper to determine correct category for misplaced items
+  // Helper to determine correct category for misplaced items - COMPREHENSIVE ROUTING
   const getCorrectCategory = (taskDescription: string, originalCategory: string): string => {
     const lower = taskDescription.toLowerCase();
     
-    // Vanity-related items should go to Cabinetry & Countertops, NOT electrical
-    // But vanity LIGHTS should stay in Electrical
-    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light')) || 
-        (lower.includes('cabinet') && !lower.includes('medicine'))) {
-      return 'Cabinetry & Countertops';
-    }
-    
-    // Countertop items should go to Cabinetry & Countertops
-    if (lower.includes('countertop') || lower.includes('quartz') || lower.includes('granite')) {
-      return 'Cabinetry & Countertops';
-    }
-    
-    // Toilet reinstall/installation should go to Plumbing, NOT demolition
-    if ((lower.includes('toilet') && (lower.includes('reinstall') || lower.includes('install'))) ||
-        lower.includes('wax ring') || lower.includes('supply line')) {
-      if (!lower.includes('demo') && !lower.includes('removal')) {
-        return 'Plumbing';
+    // === DEMOLITION - Only gut/demo/removal/dumpster ===
+    if (lower.includes('gut') || lower.includes('demo') || lower.includes('dumpster') ||
+        lower.includes('tearout') || (lower.includes('remove') && !lower.includes('removal'))) {
+      // But NOT toilet installation which sometimes gets categorized here
+      if (lower.includes('install') && !lower.includes('removal')) {
+        // This is an installation, not demo - route elsewhere
+      } else {
+        return 'Demolition';
       }
     }
     
-    // LED mirrors, mirrors, towel bars, accessories should go to Glass & Final Trimout
-    // NOT electrical - the mirror itself is a fixture, wiring is separate
+    // === PLUMBING - All fixture work, drains, supply lines, valves ===
+    if (lower.includes('toilet') && (lower.includes('relocate') || lower.includes('reuse') || 
+        lower.includes('reinstall') || lower.includes('install') || lower.includes('wax ring') ||
+        lower.includes('supply line') || lower.includes('drain'))) {
+      return 'Plumbing';
+    }
+    if (lower.includes('tub') || lower.includes('filler') || lower.includes('shower valve') ||
+        lower.includes('shower curb') || lower.includes('shower liner') || lower.includes('drain') ||
+        (lower.includes('plumb') && !lower.includes('plumb prep'))) {
+      return 'Plumbing';
+    }
+    
+    // === ELECTRICAL - Only lights, wiring, outlets, switches ===
+    if (lower.includes('recessed') || lower.includes('can light') || 
+        lower.includes('vanity light') || (lower.includes('light') && lower.includes('install')) ||
+        lower.includes('outlet') || lower.includes('switch') || lower.includes('wiring') ||
+        lower.includes('electrical')) {
+      // But NOT LED mirrors - those go to Glass
+      if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
+        return 'Glass & Final Trimout';
+      }
+      return 'Electrical';
+    }
+    
+    // === FRAMING & DRYWALL - Walls, niches, framing, drywall ===
+    if (lower.includes('frame') || lower.includes('niche') || lower.includes('drywall') ||
+        lower.includes('wall') && (lower.includes('relocate') || lower.includes('remove') || lower.includes('patch')) ||
+        lower.includes('door closure') || lower.includes('door relocation')) {
+      return 'Framing & Drywall';
+    }
+    
+    // === TILE & WATERPROOFING ===
+    if (lower.includes('tile') || lower.includes('waterproof') || lower.includes('redgard') ||
+        lower.includes('cement board') || lower.includes('backer')) {
+      return 'Tile & Waterproofing';
+    }
+    
+    // === CABINETRY & COUNTERTOPS ===
+    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light')) ||
+        lower.includes('cabinet') || lower.includes('linen') || lower.includes('countertop') ||
+        lower.includes('quartz') || lower.includes('granite')) {
+      return 'Cabinetry & Countertops';
+    }
+    
+    // === PAINT ===
+    if (lower.includes('paint') || lower.includes('primer') || lower.includes('texture')) {
+      return 'Paint';
+    }
+    
+    // === GLASS & FINAL TRIMOUT ===
+    // Frameless glass, LED mirrors, accessories (towel bar, TP holder, etc.)
+    if (lower.includes('frameless') || lower.includes('glass enclosure') || 
+        lower.includes('glass shower') || lower.includes('shower door') ||
+        lower.includes('glass panel') || lower.includes('shower glass')) {
+      return 'Glass & Final Trimout';
+    }
     if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
       return 'Glass & Final Trimout';
     }
-    
-    // Towel bars, TP holders, accessories should also go to Glass & Final Trimout
     if (lower.includes('towel bar') || lower.includes('toilet paper') || 
         lower.includes('tp holder') || lower.includes('robe hook') ||
-        lower.includes('grab bar') || lower.includes('soap dish')) {
+        lower.includes('grab bar') || lower.includes('soap dish') ||
+        lower.includes('accessory') || lower.includes('accessories')) {
       return 'Glass & Final Trimout';
     }
     
     return originalCategory;
   };
 
-  // Track seen descriptions to remove duplicates
+  // Track seen descriptions AND semantic concepts to remove duplicates
   const seenDescriptions = new Set<string>();
+  const seenConcepts = new Set<string>();
+  
+  // Helper to extract key concept from description for better duplicate detection
+  const extractConcept = (desc: string): string | null => {
+    const lower = desc.toLowerCase();
+    // Extract main concepts that shouldn't appear twice
+    if (lower.includes('relocat') && lower.includes('toilet') && lower.includes('drain')) return 'toilet_drain_relocate';
+    if (lower.includes('relocat') && lower.includes('tub') && lower.includes('drain')) return 'tub_drain_relocate';
+    if (lower.includes('toilet') && (lower.includes('install') || lower.includes('reinstall') || lower.includes('reuse'))) return 'toilet_install';
+    if (lower.includes('dumpster')) return 'dumpster';
+    if (lower.includes('frameless') && lower.includes('glass')) return 'frameless_glass';
+    if (lower.includes('led mirror')) return 'led_mirror';
+    return null;
+  };
 
   if (lineItems && lineItems.length > 0) {
     // Group line items by category, filtering out items that shouldn't be included
@@ -688,7 +742,14 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
         continue;
       }
       
-      // Create a normalized key for duplicate detection
+      // Check for semantic duplicates using concept extraction
+      const concept = extractConcept(description);
+      if (concept && seenConcepts.has(concept)) {
+        continue; // Skip semantic duplicate
+      }
+      if (concept) seenConcepts.add(concept);
+      
+      // Create a normalized key for duplicate detection (fallback)
       const normalizedKey = description.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 50);
       if (seenDescriptions.has(normalizedKey)) {
         continue; // Skip duplicate
@@ -743,19 +804,47 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
         });
       }
     } else {
-      // Bathroom-specific material allowances - NEW FORMAT with separate allowances
-      if (grouped['Tile & Waterproofing']) {
-        // Don't add generic allowance - the line items should already have specific allowances
-        // Only add if there are no existing allowance items
-        const hasAllowance = grouped['Tile & Waterproofing'].items.some(i => 
-          i.description.toLowerCase().includes('allowance') || i.description.toLowerCase().includes('product'));
-        if (!hasAllowance && pricingConfig?.tile_material_allowance_cp_per_sqft) {
+      // Bathroom-specific material allowances - Read from payload allowances array
+      const allowances = payload?.allowances as Array<{item: string; notes: string; quantity: number}> | undefined;
+      
+      if (grouped['Tile & Waterproofing'] && allowances) {
+        // Add specific tile allowances from the estimate data
+        const tileAllowances = allowances.filter(a => a.item === 'Materials - Tile');
+        
+        for (const allowance of tileAllowances) {
+          // Parse the notes to extract rate and type (e.g., "Main bathroom floor: porcelain @ $6.50/sqft")
+          const notes = allowance.notes || '';
+          const rateMatch = notes.match(/\$(\d+(?:\.\d+)?)/);
+          const rate = rateMatch ? rateMatch[1] : '6.50';
+          
+          let areaType = 'floor';
+          if (notes.toLowerCase().includes('shower floor')) {
+            areaType = 'shower floor';
+          } else if (notes.toLowerCase().includes('shower wall') || notes.toLowerCase().includes('wall')) {
+            areaType = 'shower walls';
+          } else if (notes.toLowerCase().includes('main') || notes.toLowerCase().includes('bathroom floor')) {
+            areaType = 'main floor';
+          }
+          
           grouped['Tile & Waterproofing'].items.push({
-            description: `Product allowance $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft. Includes thinset, grout, and Schluter trim.`,
+            description: `Product allowance $${rate}/sqft (${areaType}). Includes thinset, grout, and Schluter trim.`,
             isMaterialAllowance: true,
           });
         }
+        
+        // If no tile allowances found, add generic one as fallback
+        if (tileAllowances.length === 0 && pricingConfig?.tile_material_allowance_cp_per_sqft) {
+          const hasAllowance = grouped['Tile & Waterproofing'].items.some(i => 
+            i.description.toLowerCase().includes('allowance'));
+          if (!hasAllowance) {
+            grouped['Tile & Waterproofing'].items.push({
+              description: `Product allowance $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft. Includes thinset, grout, and Schluter trim.`,
+              isMaterialAllowance: true,
+            });
+          }
+        }
       }
+      
       if (grouped['Cabinetry & Countertops'] && pricingConfig?.quartz_slab_level1_allowance_cp) {
         const hasAllowance = grouped['Cabinetry & Countertops'].items.some(i => 
           i.description.toLowerCase().includes('allowance') || i.description.toLowerCase().includes('product'));
