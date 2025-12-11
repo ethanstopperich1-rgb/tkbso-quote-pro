@@ -183,6 +183,7 @@ export default function EstimateDetail() {
   const [clientMode, setClientMode] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [showRange, setShowRange] = useState(false);
+  const [showTileSqft, setShowTileSqft] = useState(true);
   const [customLowPrice, setCustomLowPrice] = useState<string>('');
   const [customHighPrice, setCustomHighPrice] = useState<string>('');
 
@@ -258,6 +259,7 @@ export default function EstimateDetail() {
           estimate={estimateForPdf} 
           pricingConfig={pricingConfig || undefined}
           priceRange={priceRange}
+          showTileSqft={showTileSqft}
         />
       ).toBlob();
       
@@ -546,6 +548,21 @@ export default function EstimateDetail() {
                     </div>
                   </div>
                 )}
+              </div>
+              
+              {/* Show Tile Sqft Toggle */}
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="show-tile-sqft" className="text-sm text-slate-300 cursor-pointer">
+                    Show tile square footage on PDF
+                  </Label>
+                  <Switch
+                    id="show-tile-sqft"
+                    checked={showTileSqft}
+                    onCheckedChange={setShowTileSqft}
+                    className="data-[state=checked]:bg-sky-500"
+                  />
+                </div>
               </div>
               
               <p className="text-[10px] text-slate-500 text-center mt-3">
