@@ -29,23 +29,34 @@ interface TradeBucketsCardProps {
 }
 
 function calculateMargin(ic: number, cp: number): number {
-  if (cp === 0) return 0;
-  return (cp - ic) / cp;
+  // Handle invalid, NaN, null, undefined values - default to 40% margin
+  if (!Number.isFinite(ic) || !Number.isFinite(cp) || ic == null || cp == null) {
+    return 0.40;
+  }
+  if (cp <= 0) return 0.40; // If no sell price, default to target margin
+  if (ic <= 0) return 1; // If no cost, 100% margin
+  const margin = (cp - ic) / cp;
+  // Clamp margin between -1 and 1 to prevent crazy values
+  return Math.max(-1, Math.min(1, margin));
 }
 
 function calculateCpFromMargin(ic: number, margin: number): number {
+  if (!Number.isFinite(ic) || ic <= 0) return 0;
   if (margin >= 1) return ic * 10; // Cap at 90% margin
+  if (margin <= 0) return ic; // No margin means CP = IC
   return ic / (1 - margin);
 }
 
 function MarginIndicator({ margin }: { margin: number }) {
-  const marginPercent = Math.round(margin * 100);
+  // Handle edge cases for display
+  const safeMargin = Number.isFinite(margin) ? margin : 0.40;
+  const marginPercent = Math.round(safeMargin * 100);
   
   // Updated margin pill logic per requirements
   let colorClass = 'bg-amber-100 text-amber-700'; // 30-40%
-  if (margin > 0.40) {
+  if (safeMargin > 0.40) {
     colorClass = 'bg-emerald-100 text-emerald-700';
-  } else if (margin < 0.30) {
+  } else if (safeMargin < 0.30) {
     colorClass = 'bg-rose-100 text-rose-700';
   }
   
