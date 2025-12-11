@@ -566,21 +566,74 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     return description;
   };
 
+  // Helper to check if item should be EXCLUDED (not user-specified scope)
+  const shouldExcludeItem = (taskDescription: string, allItems: typeof lineItems): boolean => {
+    const lower = taskDescription.toLowerCase();
+    
+    // EXCLUDE shower curtain rod if frameless glass is present
+    if (lower.includes('shower curtain') || lower.includes('curtain rod')) {
+      const hasFramelessGlass = allItems?.some(item => {
+        const itemLower = item.task_description.toLowerCase();
+        return itemLower.includes('frameless glass') || itemLower.includes('glass enclosure') ||
+               itemLower.includes('shower door') || itemLower.includes('glass door') ||
+               itemLower.includes('glass panel');
+      });
+      if (hasFramelessGlass) return true;
+    }
+    
+    // EXCLUDE HVAC-related items unless user explicitly mentioned HVAC
+    if (lower.includes('hvac') || lower.includes('supply vent') || lower.includes('return vent') ||
+        lower.includes('air vent') || lower.includes('relocating hvac') || lower.includes('adjusting hvac')) {
+      // Only include if there's a dedicated HVAC line item (not embedded in other descriptions)
+      const hasExplicitHvac = allItems?.some(item => {
+        const itemLower = item.task_description.toLowerCase();
+        return (itemLower.includes('hvac') || itemLower.includes('vent relocat')) &&
+               !itemLower.includes('includes adjusting') && !itemLower.includes('includes relocating hvac');
+      });
+      if (!hasExplicitHvac && (lower.includes('includes adjusting') || lower.includes('includes relocating hvac'))) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  // Helper to clean item description (remove auto-added HVAC text)
+  const cleanDescription = (description: string): string => {
+    // Remove auto-added HVAC phrases
+    let cleaned = description
+      .replace(/\s*Includes adjusting or relocating HVAC supply or return vent to fit revised layout\.?\s*/gi, '')
+      .replace(/\s*Includes HVAC vent adjustment\.?\s*/gi, '')
+      .trim();
+    
+    // Clean up any double periods or trailing commas
+    cleaned = cleaned.replace(/\.\./g, '.').replace(/,\s*$/g, '').replace(/\s+/g, ' ');
+    
+    return cleaned;
+  };
+
   if (lineItems && lineItems.length > 0) {
-    // Group line items by category
+    // Group line items by category, filtering out items that shouldn't be included
     const grouped: Record<string, { items: LineItem[]; total: number }> = {};
     
     for (const item of lineItems) {
+      // Skip items that should be excluded
+      if (shouldExcludeItem(item.task_description, lineItems)) {
+        continue;
+      }
+      
       const category = normalizeCategory(item.category || 'Other', item.task_description);
       
       if (!grouped[category]) {
         grouped[category] = { items: [], total: 0 };
       }
       
+      // Clean and format description
+      let description = cleanDescription(item.task_description);
+      
       // Format tile items with sqft in description
-      let description = item.task_description;
-      if (isTileSqftItem(item.task_description)) {
-        description = formatTileDescription(item.task_description, item.quantity, item.unit);
+      if (isTileSqftItem(description)) {
+        description = formatTileDescription(description, item.quantity, item.unit);
       }
       
       // Add the actual line item description with quantity/unit
@@ -629,7 +682,7 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       // Bathroom-specific material allowances
       if (grouped['Tile & Waterproofing'] && pricingConfig?.tile_material_allowance_cp_per_sqft) {
         grouped['Tile & Waterproofing'].items.push({
-          description: `Material Allowance: $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft`,
+          description: `Tile Material Allowance: $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft`,
           isMaterialAllowance: true,
         });
       }
