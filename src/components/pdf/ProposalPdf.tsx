@@ -370,6 +370,7 @@ function normalizeBathroomCategory(cat: string, taskDescription?: string): strin
   
   // === PRIORITY 4: PLUMBING ===
   // Shower valves, drains, tub fillers, toilet line, freestanding tub, relocate plumbing
+  // NOTE: Do NOT include HVAC here - HVAC goes to separate section
   if (taskLower.includes('valve') || taskLower.includes('shower valve') ||
       taskLower.includes('drain') || taskLower.includes('tub drain') ||
       taskLower.includes('tub filler') || taskLower.includes('freestanding tub') ||
@@ -378,7 +379,6 @@ function normalizeBathroomCategory(cat: string, taskDescription?: string): strin
       taskLower.includes('wax ring') || taskLower.includes('supply line') ||
       taskLower.includes('rough-in') || taskLower.includes('plumb') ||
       taskLower.includes('curb') || taskLower.includes('liner') ||
-      taskLower.includes('hvac') || taskLower.includes('vent relocat') ||
       (taskLower.includes('toilet') && !taskLower.includes('paper') && !taskLower.includes('walls')) ||
       (taskLower.includes('tub') && !taskLower.includes('bathtub tile')) ||
       lower === 'plumbing' || lower.includes('plumbing')) {
@@ -634,8 +634,9 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
         });
       }
       if (grouped['Cabinetry & Countertops'] && pricingConfig?.quartz_slab_level1_allowance_cp) {
+        // Show countertop allowance as total amount, not per sqft
         grouped['Cabinetry & Countertops'].items.push({
-          description: `Countertop Material Allowance: $${pricingConfig.quartz_slab_level1_allowance_cp.toFixed(2)}/sqft`,
+          description: `Countertop Material: Level 1 Quartz`,
           isMaterialAllowance: true,
         });
       }
