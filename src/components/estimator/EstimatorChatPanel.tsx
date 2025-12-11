@@ -630,17 +630,48 @@ export function EstimatorChatPanel() {
         return;
       }
 
-      // We have a complete estimate - validate structure before setting
-      if (!response.pricing?.totals || !response.trade_buckets || !response.payment_schedule) {
-        console.error('Invalid estimate response structure:', response);
+      // We have a complete estimate - transform response to expected structure
+      // The edge function returns { estimate: {...}, pricing: {...} }
+      // But our interface expects flat structure with pricing.totals nested
+      const rawPricing = response.pricing as any;
+      const rawEstimate = (response as any).estimate;
+      
+      // Transform to expected structure
+      const transformedResponse: EstimateResponse = {
+        project_header: rawEstimate?.project_header || response.project_header,
+        dimensions: rawEstimate?.dimensions || response.dimensions || {},
+        trade_buckets: rawEstimate?.trade_buckets || response.trade_buckets || [],
+        pricing: {
+          line_items: rawPricing?.line_items || [],
+          totals: {
+            total_ic: rawPricing?.total_ic || 0,
+            total_cp: rawPricing?.total_cp || 0,
+            low_estimate: rawPricing?.low_estimate || 0,
+            high_estimate: rawPricing?.high_estimate || 0,
+            overall_margin_percent: rawPricing?.overall_margin_percent || 0,
+          },
+          warnings: rawPricing?.warnings || [],
+        },
+        payment_schedule: response.payment_schedule || {
+          deposit: (rawPricing?.total_cp || 0) * 0.65,
+          progress: (rawPricing?.total_cp || 0) * 0.25,
+          final: (rawPricing?.total_cp || 0) * 0.10,
+        },
+        allowances: rawEstimate?.allowances || response.allowances || [],
+        exclusions: rawEstimate?.exclusions || response.exclusions || [],
+        warnings: rawEstimate?.warnings || response.warnings || [],
+      };
+
+      if (!transformedResponse.pricing.totals.total_cp) {
+        console.error('Invalid estimate response - missing pricing:', response);
         addAssistantMessage("I generated the estimate but there was an issue with the data. Let me try again - can you confirm the scope?");
         return;
       }
       
-      setEstimate(response);
+      setEstimate(transformedResponse);
       
       // Update conversation state to complete
-      const projectType = response.project_header?.project_type || 'Bathroom';
+      const projectType = transformedResponse.project_header?.project_type || 'Bathroom';
       setConversationState(prev => ({
         ...prev,
         phase: 'complete' as const,
@@ -653,8 +684,8 @@ export function EstimatorChatPanel() {
         `**${projectType} Quote Ready** ✓`,
       ];
       
-      if (response.project_header?.overall_size_sqft) {
-        summaryParts.push(`${response.project_header.overall_size_sqft} sq ft • ${response.trade_buckets?.length || 0} trade items`);
+      if (transformedResponse.project_header?.overall_size_sqft) {
+        summaryParts.push(`${transformedResponse.project_header.overall_size_sqft} sq ft • ${transformedResponse.trade_buckets?.length || 0} trade items`);
       }
       
       addAssistantMessage(summaryParts.join('\n'));
@@ -804,16 +835,44 @@ export function EstimatorChatPanel() {
         return;
       }
 
-      // Validate response structure before setting
-      if (!response.pricing?.totals || !response.trade_buckets || !response.payment_schedule) {
-        console.error('Invalid estimate response structure:', response);
+      // Transform response to expected structure (same as sendMessage)
+      const rawPricing = response.pricing as any;
+      const rawEstimate = (response as any).estimate;
+      
+      const transformedResponse: EstimateResponse = {
+        project_header: rawEstimate?.project_header || response.project_header,
+        dimensions: rawEstimate?.dimensions || response.dimensions || {},
+        trade_buckets: rawEstimate?.trade_buckets || response.trade_buckets || [],
+        pricing: {
+          line_items: rawPricing?.line_items || [],
+          totals: {
+            total_ic: rawPricing?.total_ic || 0,
+            total_cp: rawPricing?.total_cp || 0,
+            low_estimate: rawPricing?.low_estimate || 0,
+            high_estimate: rawPricing?.high_estimate || 0,
+            overall_margin_percent: rawPricing?.overall_margin_percent || 0,
+          },
+          warnings: rawPricing?.warnings || [],
+        },
+        payment_schedule: response.payment_schedule || {
+          deposit: (rawPricing?.total_cp || 0) * 0.65,
+          progress: (rawPricing?.total_cp || 0) * 0.25,
+          final: (rawPricing?.total_cp || 0) * 0.10,
+        },
+        allowances: rawEstimate?.allowances || response.allowances || [],
+        exclusions: rawEstimate?.exclusions || response.exclusions || [],
+        warnings: rawEstimate?.warnings || response.warnings || [],
+      };
+
+      if (!transformedResponse.pricing.totals.total_cp) {
+        console.error('Invalid estimate response - missing pricing:', response);
         addAssistantMessage("I generated the estimate but there was an issue with the data. Let me try again.");
         return;
       }
 
-      setEstimate(response);
+      setEstimate(transformedResponse);
       
-      const projectType = response.project_header?.project_type || 'Bathroom';
+      const projectType = transformedResponse.project_header?.project_type || 'Bathroom';
       setConversationState(prev => ({
         ...prev,
         phase: 'complete' as const,
@@ -821,7 +880,7 @@ export function EstimatorChatPanel() {
         projectType: (projectType === 'Kitchen' || projectType === 'Bathroom') ? projectType : prev.projectType,
       }));
 
-      addAssistantMessage(`**${projectType} Quote Ready** ✓\n${response.trade_buckets.length} trade items`);
+      addAssistantMessage(`**${projectType} Quote Ready** ✓\n${transformedResponse.trade_buckets.length} trade items`);
       
     } catch (err) {
       console.error('Error generating quote:', err);
