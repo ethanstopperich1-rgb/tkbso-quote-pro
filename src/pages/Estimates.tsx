@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/pricing-calculator';
-import { Search, FileText, Plus, Clock, MapPin, Trash2, Archive, RotateCcw } from 'lucide-react';
+import { Search, FileText, Plus, Clock, MapPin, Archive, RotateCcw, Play } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +44,7 @@ interface EstimateRow {
 
 export default function Estimates() {
   const { contractor } = useAuth();
+  const navigate = useNavigate();
   const [estimates, setEstimates] = useState<EstimateRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +52,11 @@ export default function Estimates() {
   const [deleteTarget, setDeleteTarget] = useState<EstimateRow | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+
+  // Check if estimate is a resumable draft
+  const isDraftWithState = (estimate: EstimateRow) => {
+    return estimate.status === 'draft';
+  };
 
   useEffect(() => {
     async function fetchEstimates() {
@@ -189,35 +195,53 @@ export default function Estimates() {
                 {new Date(estimate.created_at).toLocaleDateString()}
               </p>
             </Link>
-            {estimate.is_archived ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleRestore(estimate);
-                }}
-                title="Restore estimate"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 flex-shrink-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDeleteTarget(estimate);
-                }}
-                title="Archive estimate"
-              >
-                <Archive className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              {/* Resume button for drafts */}
+              {isDraftWithState(estimate) && !estimate.is_archived && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 flex-shrink-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigate(`/estimator?resume=${estimate.id}`);
+                  }}
+                  title="Resume estimate"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              )}
+              {estimate.is_archived ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleRestore(estimate);
+                  }}
+                  title="Restore estimate"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-amber-600 hover:bg-amber-50 flex-shrink-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteTarget(estimate);
+                  }}
+                  title="Archive estimate"
+                >
+                  <Archive className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
