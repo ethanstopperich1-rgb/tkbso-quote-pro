@@ -452,6 +452,24 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       });
     }
     
+    // Add material allowance to Countertop section if pricing config exists
+    if (grouped['Countertop'] && pricingConfig?.quartz_slab_level1_allowance_cp) {
+      const countertopAllowance = pricingConfig.quartz_slab_level1_allowance_cp;
+      grouped['Countertop'].items.push({
+        description: `Material Allowance: $${countertopAllowance.toFixed(2)}/sqft`,
+        isMaterialAllowance: true,
+      });
+    }
+    
+    // Add material allowance to Plumbing section if pricing config exists
+    if (grouped['Plumbing'] && pricingConfig?.plumbing_fixture_allowance_cp) {
+      const plumbingAllowance = pricingConfig.plumbing_fixture_allowance_cp;
+      grouped['Plumbing'].items.push({
+        description: `Fixture Allowance: ${formatCurrency(plumbingAllowance)}`,
+        isMaterialAllowance: true,
+      });
+    }
+    
     // Convert to array
     for (const [trade, data] of Object.entries(grouped)) {
       if (data.total > 0) {
@@ -473,9 +491,19 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     }
 
     if (estimate.include_plumbing !== false && (estimate.plumbing_cp_total || 0) > 0) {
+      const plumbingItems: LineItem[] = [{ description: 'Plumbing rough-in and fixture installation' }];
+      
+      // Add fixture allowance if pricing config exists
+      if (pricingConfig?.plumbing_fixture_allowance_cp) {
+        plumbingItems.push({
+          description: `Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)}`,
+          isMaterialAllowance: true,
+        });
+      }
+      
       groups.push({
         trade: 'Plumbing',
-        items: [{ description: 'Plumbing rough-in and fixture installation' }],
+        items: plumbingItems,
         total: estimate.plumbing_cp_total || 0,
       });
     }
@@ -543,9 +571,19 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     }
 
     if ((estimate.quartz_cp_total || 0) > 0) {
+      const countertopItems: LineItem[] = [{ description: 'Quartz countertop fabrication and installation' }];
+      
+      // Add material allowance if pricing config exists
+      if (pricingConfig?.quartz_slab_level1_allowance_cp) {
+        countertopItems.push({
+          description: `Material Allowance: $${pricingConfig.quartz_slab_level1_allowance_cp.toFixed(2)}/sqft`,
+          isMaterialAllowance: true,
+        });
+      }
+      
       groups.push({
         trade: 'Countertops',
-        items: [{ description: 'Quartz countertop fabrication and installation' }],
+        items: countertopItems,
         total: estimate.quartz_cp_total || 0,
       });
     }
