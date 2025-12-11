@@ -11,9 +11,9 @@ export interface TradeBucket {
   description: string;
   unit: string;
   icField: string;
-  cpField: string;
+  cpField: string | null;
   icValue: number;
-  cpValue: number;
+  cpValue: number | null;
   commonlyForgotten?: boolean;
   isModifier?: boolean;
 }
@@ -81,8 +81,8 @@ export function TradeBucketsCard({
   const handleIcChange = (bucket: TradeBucket, newIc: number) => {
     onChange(bucket.icField, newIc);
     
-    // In margin mode, auto-calculate CP when IC changes
-    if (isMarginMode) {
+    // In margin mode, auto-calculate CP when IC changes (only if cpField exists)
+    if (isMarginMode && bucket.cpField) {
       const newCp = calculateCpFromMargin(newIc, targetMargin);
       onChange(bucket.cpField, Math.round(newCp * 100) / 100);
     }
@@ -132,8 +132,10 @@ export function TradeBucketsCard({
             </thead>
             <tbody>
               {buckets.map((bucket) => {
-                const margin = calculateMargin(bucket.icValue, bucket.cpValue);
-                const hasWarning = bucket.cpValue < bucket.icValue;
+                // Auto-calculate CP if cpValue is null/undefined
+                const effectiveCp = bucket.cpValue ?? (bucket.icValue > 0 ? calculateCpFromMargin(bucket.icValue, targetMargin) : 0);
+                const margin = calculateMargin(bucket.icValue, effectiveCp);
+                const hasWarning = effectiveCp < bucket.icValue && effectiveCp > 0;
                 
                 return (
                   <tr key={bucket.key} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
@@ -180,15 +182,15 @@ export function TradeBucketsCard({
                     <td className="py-3 px-2">
                       <Input
                         type="number"
-                        value={bucket.cpValue}
-                        onChange={(e) => onChange(bucket.cpField, parseFloat(e.target.value) || 0)}
-                        disabled={isMarginMode}
+                        value={Math.round(effectiveCp * 100) / 100}
+                        onChange={(e) => bucket.cpField && onChange(bucket.cpField, parseFloat(e.target.value) || 0)}
+                        disabled={isMarginMode || !bucket.cpField}
                         className={cn(
                           'w-24 text-right h-9 border-0 rounded-lg transition-all',
-                          isMarginMode 
+                          (isMarginMode || !bucket.cpField)
                             ? 'bg-slate-50 text-slate-500 cursor-not-allowed' 
                             : 'bg-slate-100 focus:ring-2 focus:ring-cyan-400 focus:ring-offset-0 focus:bg-white',
-                          hasWarning && !isMarginMode && 'ring-2 ring-rose-300 bg-rose-50'
+                          hasWarning && !isMarginMode && bucket.cpField && 'ring-2 ring-rose-300 bg-rose-50'
                         )}
                         step="0.5"
                       />
