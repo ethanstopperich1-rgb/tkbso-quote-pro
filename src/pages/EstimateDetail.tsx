@@ -182,6 +182,9 @@ export default function EstimateDetail() {
   const [selectedPriceLevel, setSelectedPriceLevel] = useState<'low' | 'recommended' | 'high'>('recommended');
   const [clientMode, setClientMode] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [showRange, setShowRange] = useState(false);
+  const [customLowPrice, setCustomLowPrice] = useState<string>('');
+  const [customHighPrice, setCustomHighPrice] = useState<string>('');
 
   useEffect(() => {
     async function fetchData() {
@@ -229,11 +232,20 @@ export default function EstimateDetail() {
     
     setDownloading(true);
     try {
-      const selectedPrice = selectedPriceLevel === 'low' 
-        ? estimate.low_estimate_cp 
-        : selectedPriceLevel === 'high' 
-          ? estimate.high_estimate_cp 
-          : estimate.final_cp_total;
+      // Determine price range if enabled
+      const priceRange = showRange ? {
+        low: parseFloat(customLowPrice) || estimate.low_estimate_cp || 0,
+        high: parseFloat(customHighPrice) || estimate.high_estimate_cp || 0,
+      } : undefined;
+      
+      // If not showing range, use selected price level
+      const selectedPrice = !showRange ? (
+        selectedPriceLevel === 'low' 
+          ? estimate.low_estimate_cp 
+          : selectedPriceLevel === 'high' 
+            ? estimate.high_estimate_cp 
+            : estimate.final_cp_total
+      ) : estimate.final_cp_total;
       
       const estimateForPdf = {
         ...estimate,
@@ -244,7 +256,8 @@ export default function EstimateDetail() {
         <ProposalPdf 
           contractor={contractor} 
           estimate={estimateForPdf} 
-          pricingConfig={pricingConfig || undefined} 
+          pricingConfig={pricingConfig || undefined}
+          priceRange={priceRange}
         />
       ).toBlob();
       
@@ -483,8 +496,60 @@ export default function EstimateDetail() {
                 </button>
               </div>
               
+              {/* Show Range Toggle */}
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="flex items-center justify-between mb-3">
+                  <Label htmlFor="show-range" className="text-sm text-slate-300 cursor-pointer">
+                    Show price range on PDF
+                  </Label>
+                  <Switch
+                    id="show-range"
+                    checked={showRange}
+                    onCheckedChange={(checked) => {
+                      setShowRange(checked);
+                      if (checked && !customLowPrice && !customHighPrice) {
+                        setCustomLowPrice(String(estimate.low_estimate_cp || estimate.final_cp_total || 0));
+                        setCustomHighPrice(String(estimate.high_estimate_cp || estimate.final_cp_total || 0));
+                      }
+                    }}
+                    className="data-[state=checked]:bg-sky-500"
+                  />
+                </div>
+                
+                {showRange && (
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Low Price</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                        <input
+                          type="number"
+                          value={customLowPrice}
+                          onChange={(e) => setCustomLowPrice(e.target.value)}
+                          placeholder="48880"
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 pl-7 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">High Price</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                        <input
+                          type="number"
+                          value={customHighPrice}
+                          onChange={(e) => setCustomHighPrice(e.target.value)}
+                          placeholder="55600"
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 pl-7 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               <p className="text-[10px] text-slate-500 text-center mt-3">
-                Tap to select price for PDF
+                {showRange ? 'PDF will show range' : 'Tap to select price for PDF'}
               </p>
             </div>
           </Card>

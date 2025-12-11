@@ -269,6 +269,10 @@ interface ProposalPdfProps {
   contractor: Contractor;
   estimate: Estimate;
   pricingConfig?: PricingConfig;
+  priceRange?: {
+    low: number;
+    high: number;
+  };
 }
 
 interface LineItem {
@@ -616,7 +620,7 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
   return groups;
 }
 
-export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdfProps) {
+export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange }: ProposalPdfProps) {
   const settings: ContractorSettings = (contractor.settings as ContractorSettings) || defaultSettings;
   const { companyProfile, branding, defaults } = settings;
 
@@ -630,10 +634,22 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
     ? (defaults.progressLabelKitchen || 'Due at arrival of cabinetry')
     : (defaults.progressLabelBathroom || 'Due at start of tile installation');
 
+  const showRange = priceRange && priceRange.low > 0 && priceRange.high > 0;
   const totalCost = estimate.final_cp_total || 0;
-  const depositAmount = Math.round(totalCost * depositSplit);
-  const progressAmount = Math.round(totalCost * progressSplit);
-  const finalAmount = Math.round(totalCost * finalSplit);
+  
+  // Calculate payment amounts - use midpoint for range display
+  const baseAmount = showRange ? Math.round((priceRange.low + priceRange.high) / 2) : totalCost;
+  const depositAmount = Math.round(baseAmount * depositSplit);
+  const progressAmount = Math.round(baseAmount * progressSplit);
+  const finalAmount = Math.round(baseAmount * finalSplit);
+  
+  // Range amounts for payment milestones
+  const depositAmountLow = showRange ? Math.round(priceRange.low * depositSplit) : depositAmount;
+  const depositAmountHigh = showRange ? Math.round(priceRange.high * depositSplit) : depositAmount;
+  const progressAmountLow = showRange ? Math.round(priceRange.low * progressSplit) : progressAmount;
+  const progressAmountHigh = showRange ? Math.round(priceRange.high * progressSplit) : progressAmount;
+  const finalAmountLow = showRange ? Math.round(priceRange.low * finalSplit) : finalAmount;
+  const finalAmountHigh = showRange ? Math.round(priceRange.high * finalSplit) : finalAmount;
 
   const addressParts = [estimate.property_address, estimate.city, estimate.state, estimate.zip].filter(Boolean);
   const fullAddress = addressParts.join(', ').replace(/,\s*,/g, ',');
@@ -731,7 +747,12 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           {/* Final Total */}
           <View style={styles.finalPriceSection}>
             <Text style={styles.finalPriceLabel}>Total Investment</Text>
-            <Text style={styles.finalPriceAmount}>{formatCurrency(totalCost)}</Text>
+            <Text style={styles.finalPriceAmount}>
+              {showRange 
+                ? `${formatCurrency(priceRange.low)} to ${formatCurrency(priceRange.high)}`
+                : formatCurrency(totalCost)
+              }
+            </Text>
           </View>
         </View>
 
@@ -741,17 +762,32 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
             <Text style={styles.paymentLabel}>Deposit – Due upon signing</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
+            <Text style={styles.paymentAmount}>
+              {showRange 
+                ? `${formatCurrency(depositAmountLow)} to ${formatCurrency(depositAmountHigh)}`
+                : formatCurrency(depositAmount)
+              }
+            </Text>
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
             <Text style={styles.paymentLabel}>Progress – {progressLabel}</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
+            <Text style={styles.paymentAmount}>
+              {showRange 
+                ? `${formatCurrency(progressAmountLow)} to ${formatCurrency(progressAmountHigh)}`
+                : formatCurrency(progressAmount)
+              }
+            </Text>
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
             <Text style={styles.paymentLabel}>Final – Due at completion</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
+            <Text style={styles.paymentAmount}>
+              {showRange 
+                ? `${formatCurrency(finalAmountLow)} to ${formatCurrency(finalAmountHigh)}`
+                : formatCurrency(finalAmount)
+              }
+            </Text>
           </View>
         </View>
 
