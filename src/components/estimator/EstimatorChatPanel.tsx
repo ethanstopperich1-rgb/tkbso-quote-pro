@@ -13,6 +13,7 @@ import { MultiPhotoAnalysisCard, PhotoAnalysisEntry, mergePhotoAnalyses } from '
 import { PhotoAnalysisConfirmation } from './PhotoAnalysisConfirmation';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 import { VideoRecordingModal, VideoAnalysisResult } from './VideoRecordingModal';
+import { VideoAnalysisConfirmation } from './VideoAnalysisConfirmation';
 import { ClientDetailsForm } from './ClientDetailsForm';
 import { ForgottenItemsModal } from './ForgottenItemsModal';
 import { 
@@ -129,6 +130,8 @@ export function EstimatorChatPanel() {
   const [isDragging, setIsDragging] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [isProcessingVideo, setIsProcessingVideo] = useState(false);
+  const [showVideoConfirmation, setShowVideoConfirmation] = useState(false);
+  const [videoAnalysisResult, setVideoAnalysisResult] = useState<VideoAnalysisResult | null>(null);
   const [showClientDetailsForm, setShowClientDetailsForm] = useState(false);
   const [showForgottenItemsModal, setShowForgottenItemsModal] = useState(false);
   const [forgottenItems, setForgottenItems] = useState<string[]>([]);
@@ -686,6 +689,8 @@ export function EstimatorChatPanel() {
     setPhotoEntries([]);
     setShowPhotoConfirmation(false);
     setShowVideoModal(false);
+    setShowVideoConfirmation(false);
+    setVideoAnalysisResult(null);
     setIsProcessingVideo(false);
     setShowClientDetailsForm(false);
     setShowForgottenItemsModal(false);
@@ -824,42 +829,64 @@ export function EstimatorChatPanel() {
     }
   };
 
-  // Handle video analysis result
+  // Handle video analysis result - show confirmation instead of auto-adding
   const handleVideoAnalyzed = async (result: VideoAnalysisResult) => {
     setIsProcessingVideo(false);
     
-    // Add video analysis message to chat
+    // Store the result for confirmation
+    setVideoAnalysisResult(result);
+    setShowVideoConfirmation(true);
+    
+    // Add analysis message to chat
+    const itemCount = result.line_items?.length || 0;
     const videoMessage: Message = {
       id: 'video-' + Date.now(),
       role: 'assistant',
-      content: `🎥 **Video analyzed!** Detected ${result.line_items?.length || 0} trade items.
-
-${result.project_summary || 'Processing complete.'}
-
-${result.transcript ? `**You said:** "${result.transcript.slice(0, 200)}${result.transcript.length > 200 ? '...' : ''}"` : ''}
-
-Add dimensions or confirm to generate your quote.`,
+      content: `🎥 **Video analyzed!** I found ${itemCount} items and transcribed your narration. Please review what I detected below and confirm the scope.`,
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, videoMessage]);
     setConversationHistory(prev => [...prev, { role: 'assistant', content: videoMessage.content }]);
+    
+    toast.success(`Video analyzed! ${itemCount} items detected`);
+  };
 
-    // Convert video line items to photo analysis format for unified handling
-    if (result.line_items && result.line_items.length > 0) {
+  // Handle video confirmation - user confirmed selected items and scope
+  const handleVideoConfirmation = async (selectedItems: any[], scopeDescription: string, understoodScope: string[]) => {
+    setShowVideoConfirmation(false);
+    
+    // Build a message with the confirmed items and scope
+    const itemsList = selectedItems.map(item => 
+      `${item.category}: ${item.item} (${item.quantity} ${item.unit})`
+    ).join('\n');
+    
+    const userContent = scopeDescription.trim() || 'Looks good, use these items.';
+    
+    // Add user confirmation message to chat
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: userContent,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Convert selected video items to photo analysis format for unified handling
+    if (selectedItems.length > 0) {
       const videoEntry: PhotoAnalysisEntry = {
         id: 'video-' + Date.now(),
         analysis: {
-          project_type: result.line_items[0]?.category?.includes('Kitchen') ? 'Kitchen' : 'Bathroom',
+          project_type: selectedItems[0]?.category?.includes('Kitchen') ? 'Kitchen' : 'Bathroom',
           confidence: 'medium',
-          detected_items: result.line_items.map(item => ({
+          detected_items: selectedItems.map(item => ({
             category: item.category,
             item: item.item,
             quantity: item.quantity,
             unit: item.unit,
           })),
-          observations: result.project_summary,
+          observations: videoAnalysisResult?.project_summary || '',
         },
-        imagePreview: undefined, // Video doesn't have a preview image
+        imagePreview: undefined,
       };
       setPhotoEntries(prev => [...prev, videoEntry]);
 
@@ -871,6 +898,19 @@ Add dimensions or confirm to generate your quote.`,
         }));
       }
     }
+    
+    // Clear video result
+    setVideoAnalysisResult(null);
+    
+    // Add assistant confirmation
+    addAssistantMessage(`✓ Got it! Using ${selectedItems.length} items from your video${scopeDescription.trim() ? ` for: ${scopeDescription.slice(0, 100)}...` : ''}.\n\nNow tell me the room dimensions (e.g., "8x10 bathroom") or describe any additional scope.`);
+  };
+
+  // Handle re-recording from video confirmation
+  const handleVideoReRecord = () => {
+    setShowVideoConfirmation(false);
+    setVideoAnalysisResult(null);
+    setShowVideoModal(true);
   };
 
   // Process a single photo file
@@ -1286,6 +1326,19 @@ Add dimensions or confirm to generate your quote.`,
               setPhotoEntries([]);
             }}
             isAnalyzing={isAnalyzingPhoto}
+          />
+        )}
+
+        {/* Video Analysis Confirmation - show after video is analyzed */}
+        {videoAnalysisResult && !estimate && showVideoConfirmation && (
+          <VideoAnalysisConfirmation 
+            result={videoAnalysisResult}
+            onConfirm={handleVideoConfirmation}
+            onCancel={() => {
+              setShowVideoConfirmation(false);
+              setVideoAnalysisResult(null);
+            }}
+            onReRecord={handleVideoReRecord}
           />
         )}
 
