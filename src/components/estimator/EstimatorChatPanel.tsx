@@ -630,11 +630,17 @@ export function EstimatorChatPanel() {
         return;
       }
 
-      // We have a complete estimate!
+      // We have a complete estimate - validate structure before setting
+      if (!response.pricing?.totals || !response.trade_buckets || !response.payment_schedule) {
+        console.error('Invalid estimate response structure:', response);
+        addAssistantMessage("I generated the estimate but there was an issue with the data. Let me try again - can you confirm the scope?");
+        return;
+      }
+      
       setEstimate(response);
       
       // Update conversation state to complete
-      const projectType = response.project_header.project_type;
+      const projectType = response.project_header?.project_type || 'Bathroom';
       setConversationState(prev => ({
         ...prev,
         phase: 'complete' as const,
@@ -644,11 +650,11 @@ export function EstimatorChatPanel() {
 
       // Generate summary message
       const summaryParts = [
-        `**${response.project_header.project_type} Quote Ready** ✓`,
+        `**${projectType} Quote Ready** ✓`,
       ];
       
-      if (response.project_header.overall_size_sqft) {
-        summaryParts.push(`${response.project_header.overall_size_sqft} sq ft • ${response.trade_buckets.length} trade items`);
+      if (response.project_header?.overall_size_sqft) {
+        summaryParts.push(`${response.project_header.overall_size_sqft} sq ft • ${response.trade_buckets?.length || 0} trade items`);
       }
       
       addAssistantMessage(summaryParts.join('\n'));
@@ -798,9 +804,16 @@ export function EstimatorChatPanel() {
         return;
       }
 
+      // Validate response structure before setting
+      if (!response.pricing?.totals || !response.trade_buckets || !response.payment_schedule) {
+        console.error('Invalid estimate response structure:', response);
+        addAssistantMessage("I generated the estimate but there was an issue with the data. Let me try again.");
+        return;
+      }
+
       setEstimate(response);
       
-      const projectType = response.project_header.project_type;
+      const projectType = response.project_header?.project_type || 'Bathroom';
       setConversationState(prev => ({
         ...prev,
         phase: 'complete' as const,
@@ -808,7 +821,7 @@ export function EstimatorChatPanel() {
         projectType: (projectType === 'Kitchen' || projectType === 'Bathroom') ? projectType : prev.projectType,
       }));
 
-      addAssistantMessage(`**${response.project_header.project_type} Quote Ready** ✓\n${response.trade_buckets.length} trade items`);
+      addAssistantMessage(`**${projectType} Quote Ready** ✓\n${response.trade_buckets.length} trade items`);
       
     } catch (err) {
       console.error('Error generating quote:', err);
@@ -1159,13 +1172,14 @@ export function EstimatorChatPanel() {
     }
   };
 
-  // Group line items by category
-  const groupedLineItems = estimate?.pricing.line_items.reduce((acc, item) => {
-    const cat = item.category;
+  // Group line items by category - with defensive null checks
+  const groupedLineItems = (estimate?.pricing?.line_items || []).reduce((acc, item) => {
+    if (!item) return acc;
+    const cat = item.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(item);
     return acc;
-  }, {} as Record<string, PricingLineItem[]>) || {};
+  }, {} as Record<string, PricingLineItem[]>);
 
   return (
     <div 
@@ -1358,7 +1372,7 @@ export function EstimatorChatPanel() {
         )}
 
         {/* Quote Summary Card */}
-        {estimate && (
+        {estimate && estimate.pricing?.totals && estimate.trade_buckets && estimate.payment_schedule && (
           <Card className="animate-scale-in border-primary/20 shadow-lg">
             <CardContent className="p-4 sm:p-6">
               {/* Header with total - stacks on mobile */}
@@ -1366,7 +1380,7 @@ export function EstimatorChatPanel() {
                 <div>
                   <h3 className="font-display font-semibold text-lg sm:text-xl tracking-tight">Quote Ready</h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                    {estimate.trade_buckets.length} items • {estimate.pricing.totals.overall_margin_percent.toFixed(0)}% margin
+                    {estimate.trade_buckets.length} items • {(estimate.pricing.totals.overall_margin_percent || 0).toFixed(0)}% margin
                   </p>
                 </div>
                 <div className="sm:text-right">
