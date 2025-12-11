@@ -1269,9 +1269,9 @@ export default function Pricing() {
       description: 'Material cost per sqft (tile, grout, thinset, sealer).',
       unit: 'per sqft',
       icField: 'tile_material_allowance_ic',
-      cpField: null, // IC only - CP is calculated from margin
+      cpField: 'tile_material_allowance_cp_per_sqft',
       icValue: (config as any).tile_material_allowance_ic ?? 5,
-      cpValue: null,
+      cpValue: config.tile_material_allowance_cp_per_sqft ?? 8,
     },
     {
       key: 'tile_wall',
@@ -1279,9 +1279,9 @@ export default function Pricing() {
       description: 'Shower walls, vertical tile labor.',
       unit: 'per sqft',
       icField: 'tile_wall_ic_per_sqft',
-      cpField: null, // IC only - CP is calculated from margin
-      icValue: config.tile_wall_ic_per_sqft,
-      cpValue: null,
+      cpField: 'tile_wall_cp_per_sqft',
+      icValue: config.tile_wall_ic_per_sqft ?? 21,
+      cpValue: (config as any).tile_wall_cp_per_sqft ?? 34,
     },
     {
       key: 'tile_shower_floor',
@@ -1289,9 +1289,9 @@ export default function Pricing() {
       description: 'Shower floor tile installation labor.',
       unit: 'per sqft',
       icField: 'tile_shower_floor_ic_per_sqft',
-      cpField: null, // IC only - CP is calculated from margin
-      icValue: config.tile_shower_floor_ic_per_sqft,
-      cpValue: null,
+      cpField: 'tile_shower_floor_cp_per_sqft',
+      icValue: config.tile_shower_floor_ic_per_sqft ?? 5,
+      cpValue: (config as any).tile_shower_floor_cp_per_sqft ?? 8,
     },
     {
       key: 'tile_floor',
@@ -1299,9 +1299,9 @@ export default function Pricing() {
       description: 'Main floor tile installation labor.',
       unit: 'per sqft',
       icField: 'tile_floor_ic_per_sqft',
-      cpField: null, // IC only - CP is calculated from margin
-      icValue: config.tile_floor_ic_per_sqft,
-      cpValue: null,
+      cpField: 'tile_floor_cp_per_sqft',
+      icValue: config.tile_floor_ic_per_sqft ?? 4.5,
+      cpValue: (config as any).tile_floor_cp_per_sqft ?? 7,
     },
     {
       key: 'cement_board',
@@ -1310,8 +1310,8 @@ export default function Pricing() {
       unit: 'per sqft',
       icField: 'cement_board_ic_per_sqft',
       cpField: 'cement_board_cp_per_sqft',
-      icValue: config.cement_board_ic_per_sqft,
-      cpValue: config.cement_board_cp_per_sqft,
+      icValue: config.cement_board_ic_per_sqft ?? 3,
+      cpValue: config.cement_board_cp_per_sqft ?? 5,
     },
     {
       key: 'waterproofing',
@@ -1320,8 +1320,8 @@ export default function Pricing() {
       unit: 'per sqft',
       icField: 'waterproofing_ic_per_sqft',
       cpField: 'waterproofing_cp_per_sqft',
-      icValue: config.waterproofing_ic_per_sqft,
-      cpValue: config.waterproofing_cp_per_sqft,
+      icValue: config.waterproofing_ic_per_sqft ?? 6,
+      cpValue: config.waterproofing_cp_per_sqft ?? 10,
     },
     {
       key: 'floor_leveling_ls',
