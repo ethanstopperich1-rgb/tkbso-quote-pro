@@ -18,6 +18,7 @@ import { saveAs } from 'file-saver';
 import { Contractor, Estimate, PricingConfig } from '@/types/database';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
 import { formatLineItemForPdf } from '@/lib/line-item-descriptions';
+import tkbsoLogo from '@/assets/tkbso-logo-full.png';
 
 // Import the buildTradeGroups function logic - we'll replicate key parts
 interface TradeGroup {
@@ -58,6 +59,18 @@ const noBorders: ITableCellBorders = {
   left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
   right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
 };
+
+// Helper to fetch image as ArrayBuffer
+async function fetchImageAsArrayBuffer(url: string): Promise<ArrayBuffer | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return await response.arrayBuffer();
+  } catch (error) {
+    console.error('Failed to fetch image:', error);
+    return null;
+  }
+}
 
 export async function generateProposalWord({
   contractor,
@@ -109,24 +122,48 @@ export async function generateProposalWord({
 
   const notes = estimate.job_notes || defaults.termsText || 'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are excluded unless noted otherwise.';
 
+  // Fetch logo image
+  const logoUrl = contractor.logo_url || tkbsoLogo;
+  const logoData = await fetchImageAsArrayBuffer(logoUrl);
+
   // Build document sections
   const children: Paragraph[] = [];
 
-  // Header with company name
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: companyName,
-          bold: true,
-          size: 36, // 18pt
-          color: '1e3a8a',
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 100 },
-    })
-  );
+  // Logo header (if we have the image)
+  if (logoData) {
+    children.push(
+      new Paragraph({
+        children: [
+          new ImageRun({
+            data: logoData,
+            transformation: {
+              width: 200,
+              height: 60,
+            },
+            type: 'png',
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 150 },
+      })
+    );
+  } else {
+    // Fallback to text header if logo fails to load
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: companyName,
+            bold: true,
+            size: 36, // 18pt
+            color: '1e3a8a',
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 },
+      })
+    );
+  }
 
   // Contact info
   if (companyPhone || companyEmail) {
