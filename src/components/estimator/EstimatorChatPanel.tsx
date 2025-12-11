@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { MultiPhotoAnalysisCard, PhotoAnalysisEntry, mergePhotoAnalyses } from './MultiPhotoAnalysisCard';
+import { PhotoAnalysisConfirmation } from './PhotoAnalysisConfirmation';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 import { VideoRecordingModal, VideoAnalysisResult } from './VideoRecordingModal';
 import { ClientDetailsForm } from './ClientDetailsForm';
@@ -124,6 +125,7 @@ export function EstimatorChatPanel() {
   const [showLineItems, setShowLineItems] = useState(false);
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
   const [photoEntries, setPhotoEntries] = useState<PhotoAnalysisEntry[]>([]);
+  const [showPhotoConfirmation, setShowPhotoConfirmation] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [isProcessingVideo, setIsProcessingVideo] = useState(false);
@@ -682,6 +684,7 @@ export function EstimatorChatPanel() {
     setSavedEstimateId(null);
     setShowLineItems(false);
     setPhotoEntries([]);
+    setShowPhotoConfirmation(false);
     setShowVideoModal(false);
     setIsProcessingVideo(false);
     setShowClientDetailsForm(false);
@@ -1020,22 +1023,14 @@ Add dimensions or confirm to generate your quote.`,
         }));
       }
 
-      // Add confirmation message
-      const newPhotoCount = photoEntries.length + results.length;
+      // Show the photo confirmation UI instead of auto-proceeding
+      setShowPhotoConfirmation(true);
+      
+      // Add a brief message prompting user to confirm
       const confirmMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: results.length === 1 
-          ? newPhotoCount === 1 
-            ? `✨ **Photo analyzed!** I detected ${totalItemsDetected} trade items for a ${lastProjectType || 'remodeling'} project.
-
-📷 Upload more photos to capture different areas, or confirm the items and add dimensions.`
-            : `✨ **Photo added!** Found ${totalItemsDetected} more items. Total: ${photoEntries.reduce((sum, e) => sum + e.analysis.detected_items.length, 0) + totalItemsDetected} items detected.
-
-Add more photos or provide dimensions to generate your quote.`
-          : `✨ **${results.length} photos analyzed!** Detected ${totalItemsDetected} trade items across all images.
-
-📷 Upload more photos or provide dimensions to generate your quote.`,
+        content: `🔍 **Photo analyzed!** I found ${totalItemsDetected} items. Please review what I detected below and tell me what you're actually doing with this space.`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, confirmMessage]);
@@ -1095,6 +1090,43 @@ Add more photos or provide dimensions to generate your quote.`
         },
       };
     }));
+  };
+
+  // Handle photo confirmation - user confirmed selected items and scope
+  const handlePhotoConfirmation = async (selectedItems: any[], scopeDescription: string) => {
+    setShowPhotoConfirmation(false);
+    
+    // Build a message with the confirmed items and scope
+    const itemsList = selectedItems.map(item => 
+      `${item.category}: ${item.item} (${item.quantity} ${item.unit})`
+    ).join('\n');
+    
+    const confirmationMessage = scopeDescription.trim() 
+      ? `${scopeDescription}\n\nConfirmed items from photo:\n${itemsList}`
+      : `Confirmed items from photo:\n${itemsList}`;
+    
+    // Add confirmation message to chat
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: scopeDescription.trim() || 'Looks good, use these items.',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Update photo entries to only include selected items
+    setPhotoEntries(prev => prev.map(entry => ({
+      ...entry,
+      analysis: {
+        ...entry.analysis,
+        detected_items: entry.analysis.detected_items.filter((_, idx) => 
+          selectedItems.some(si => si.entryId === entry.id && si.itemIndex === idx)
+        ),
+      },
+    })));
+    
+    // Add assistant confirmation
+    addAssistantMessage(`✓ Got it! Using ${selectedItems.length} items from your photo${scopeDescription.trim() ? ` for: ${scopeDescription.slice(0, 100)}...` : ''}.\n\nNow tell me the room dimensions (e.g., "8x10 bathroom") or describe any additional scope.`);
   };
 
   const handleViewEstimate = () => {
@@ -1242,8 +1274,23 @@ Add more photos or provide dimensions to generate your quote.`
           </div>
         )}
 
-        {/* Photo Analysis Card - Multi-photo support */}
-        {photoEntries.length > 0 && !estimate && (
+        {/* Photo Analysis Confirmation - show after photos are analyzed */}
+        {photoEntries.length > 0 && !estimate && showPhotoConfirmation && (
+          <PhotoAnalysisConfirmation 
+            entries={photoEntries}
+            onRemovePhoto={handleRemovePhoto}
+            onAddMore={handleAddMorePhotos}
+            onConfirm={handlePhotoConfirmation}
+            onCancel={() => {
+              setShowPhotoConfirmation(false);
+              setPhotoEntries([]);
+            }}
+            isAnalyzing={isAnalyzingPhoto}
+          />
+        )}
+
+        {/* Photo Analysis Card - Multi-photo support (legacy fallback) */}
+        {photoEntries.length > 0 && !estimate && !showPhotoConfirmation && (
           <MultiPhotoAnalysisCard 
             entries={photoEntries}
             onRemovePhoto={handleRemovePhoto}
