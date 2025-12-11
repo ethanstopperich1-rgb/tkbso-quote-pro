@@ -1001,78 +1001,93 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     }
   }, [recalculatePrices]);
 
-  // Check if there's data worth saving
-  const hasDataToSave = useCallback(() => {
-    return (
-      state.projectType !== null ||
-      state.rooms.length > 0 ||
-      state.clientInfo.name ||
-      state.clientInfo.email ||
-      state.recommendedPrice > 0
-    );
+
+  // Auto-save function - uses ref to access latest state to avoid stale closures
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
   }, [state]);
 
-  // Auto-save function
   const saveProgress = useCallback(async () => {
-    if (!contractor?.id || savingRef.current || !hasDataToSave()) return;
+    const currentState = stateRef.current;
+    
+    // Check if there's data worth saving
+    const hasData = (
+      currentState.projectType !== null ||
+      currentState.rooms.length > 0 ||
+      currentState.clientInfo.name ||
+      currentState.clientInfo.email ||
+      currentState.recommendedPrice > 0
+    );
+    
+    if (!contractor?.id || savingRef.current || !hasData) return;
 
-    const projectType = state.projectType || 'bathroom';
-    const clientName = state.clientInfo.name || '';
+    const projectType = currentState.projectType || 'bathroom';
+    const clientName = currentState.clientInfo.name || '';
     const jobLabel = clientName 
       ? `${projectType.charAt(0).toUpperCase() + projectType.slice(1)} Remodel - ${clientName}`
       : `${projectType.charAt(0).toUpperCase() + projectType.slice(1)} Remodel Draft`;
+
+    // Safely serialize state without pricingResult (which may have circular refs)
+    let internalPayload;
+    try {
+      internalPayload = {
+        estimatorState: {
+          stage: currentState.stage,
+          projectType: currentState.projectType,
+          location: currentState.location,
+          hasGC: currentState.hasGC,
+          needsPermit: currentState.needsPermit,
+          qualityLevel: currentState.qualityLevel,
+          rooms: currentState.rooms,
+          trades: currentState.trades,
+          clientInfo: currentState.clientInfo,
+          pricingMode: currentState.pricingMode,
+          overrideValue: currentState.overrideValue,
+          includeManagementFee: currentState.includeManagementFee,
+          managementFeePercent: currentState.managementFeePercent,
+          laborOnly: currentState.laborOnly,
+        },
+        isDraft: true,
+        lastAutoSave: new Date().toISOString(),
+      };
+    } catch (e) {
+      console.error('Failed to serialize state:', e);
+      return;
+    }
+
+    const payloadHash = JSON.stringify(internalPayload);
+    if (payloadHash === lastSavedRef.current) return;
 
     const payload = {
       contractor_id: contractor.id,
       created_by_profile_id: profile?.id,
       job_label: jobLabel,
       client_name: clientName || null,
-      client_email: state.clientInfo.email || null,
-      client_phone: state.clientInfo.phone || null,
-      property_address: state.clientInfo.address || null,
-      city: state.clientInfo.city || null,
-      state: state.clientInfo.state || null,
-      zip: state.clientInfo.zip || null,
+      client_email: currentState.clientInfo.email || null,
+      client_phone: currentState.clientInfo.phone || null,
+      property_address: currentState.clientInfo.address || null,
+      city: currentState.clientInfo.city || null,
+      state: currentState.clientInfo.state || null,
+      zip: currentState.clientInfo.zip || null,
       status: 'draft',
-      has_kitchen: state.projectType === 'kitchen' || state.projectType === 'combination',
-      has_bathrooms: state.projectType === 'bathroom' || state.projectType === 'combination',
-      has_closets: state.projectType === 'closet',
-      num_kitchens: state.projectType === 'kitchen' || state.projectType === 'combination' ? 1 : 0,
-      num_bathrooms: state.rooms.filter(r => r.type === 'bathroom').length || (state.projectType === 'bathroom' ? 1 : 0),
-      num_closets: state.projectType === 'closet' ? 1 : 0,
-      final_cp_total: state.recommendedPrice || 0,
-      low_estimate_cp: state.lowEstimate || 0,
-      high_estimate_cp: state.highEstimate || 0,
-      final_ic_total: state.internalCost || 0,
-      include_management_fee: state.includeManagementFee,
-      management_fee_percent: state.managementFeePercent,
-      management_fee_cp: state.managementFeeAmount,
-      needs_gc_partner: state.hasGC,
-      permit_required: state.needsPermit,
-      internal_json_payload: JSON.parse(JSON.stringify({
-        estimatorState: {
-          stage: state.stage,
-          projectType: state.projectType,
-          location: state.location,
-          hasGC: state.hasGC,
-          needsPermit: state.needsPermit,
-          qualityLevel: state.qualityLevel,
-          rooms: state.rooms,
-          trades: state.trades,
-          clientInfo: state.clientInfo,
-          pricingMode: state.pricingMode,
-          overrideValue: state.overrideValue,
-          includeManagementFee: state.includeManagementFee,
-          managementFeePercent: state.managementFeePercent,
-          laborOnly: state.laborOnly,
-        },
-        isDraft: true,
-        lastAutoSave: new Date().toISOString(),
-      })),
+      has_kitchen: currentState.projectType === 'kitchen' || currentState.projectType === 'combination',
+      has_bathrooms: currentState.projectType === 'bathroom' || currentState.projectType === 'combination',
+      has_closets: currentState.projectType === 'closet',
+      num_kitchens: currentState.projectType === 'kitchen' || currentState.projectType === 'combination' ? 1 : 0,
+      num_bathrooms: currentState.rooms.filter(r => r.type === 'bathroom').length || (currentState.projectType === 'bathroom' ? 1 : 0),
+      num_closets: currentState.projectType === 'closet' ? 1 : 0,
+      final_cp_total: currentState.recommendedPrice || 0,
+      low_estimate_cp: currentState.lowEstimate || 0,
+      high_estimate_cp: currentState.highEstimate || 0,
+      final_ic_total: currentState.internalCost || 0,
+      include_management_fee: currentState.includeManagementFee,
+      management_fee_percent: currentState.managementFeePercent,
+      management_fee_cp: currentState.managementFeeAmount,
+      needs_gc_partner: currentState.hasGC,
+      permit_required: currentState.needsPermit,
+      internal_json_payload: internalPayload,
     };
-
-    const payloadHash = JSON.stringify(payload.internal_json_payload);
-    if (payloadHash === lastSavedRef.current) return;
 
     savingRef.current = true;
     try {
@@ -1088,21 +1103,21 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
     } finally {
       savingRef.current = false;
     }
-  }, [contractor, profile, state, draftId, hasDataToSave]);
+  }, [contractor, profile, draftId]);
 
   // Auto-save interval
   useEffect(() => {
     if (!contractor?.id) return;
     const interval = setInterval(saveProgress, AUTO_SAVE_INTERVAL);
     return () => clearInterval(interval);
-  }, [contractor, saveProgress]);
+  }, [contractor?.id, saveProgress]);
 
-  // Save on unmount
+  // Save on unmount - use ref to get latest state
   useEffect(() => {
     return () => {
-      if (hasDataToSave()) saveProgress();
+      saveProgress();
     };
-  }, []);
+  }, [saveProgress]);
   
   return (
     <EstimatorContext.Provider value={{
