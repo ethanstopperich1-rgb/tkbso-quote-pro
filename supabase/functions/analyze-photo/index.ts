@@ -87,35 +87,121 @@ Output your analysis as a JSON object with this structure:
 
 Be thorough but realistic. Only report items you can actually see or reasonably infer from the image.`;
 
+// System prompt for clarifying vague scope descriptions
+const CLARIFY_SCOPE_PROMPT = `You are a friendly construction estimator assistant having a natural conversation. The user uploaded a photo and described what they want to do. Your job is to determine if you have enough information to generate an accurate estimate, or if you need to ask a follow-up question.
+
+RULES:
+1. Be conversational and friendly - like texting a knowledgeable friend
+2. Ask ONE focused follow-up question at a time
+3. Don't ask about things they already told you
+4. If they give a clear, detailed response, don't ask more - just summarize and proceed
+
+WHAT YOU NEED TO KNOW (in order of importance):
+- Scope of work (full remodel? just specific items?)
+- What's being replaced vs kept
+- Any special features (niches, benches, frameless glass, etc.)
+
+VAGUE RESPONSES that need follow-up:
+- "Full remodel" → Ask what specifically is being replaced
+- "Just updating it" → Ask which items
+- "New shower" → Ask about tile, glass type, fixtures
+- Single word answers
+
+CLEAR RESPONSES that are ready to estimate:
+- Specific items mentioned (e.g., "replacing vanity, re-tiling shower, new toilet")
+- Details about materials or features
+- Multiple scope items listed
+
+Output JSON:
+{
+  "needsMoreInfo": boolean,
+  "followUpQuestion": "natural, conversational question" | null,
+  "summary": "brief summary of what they want" | null
+}`;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Log incoming request details
-    console.log('Received analyze-photo request');
-    console.log('Content-Type:', req.headers.get('content-type'));
-    
-    let body;
-    try {
-      body = await req.json();
-      console.log('Request body keys:', Object.keys(body || {}));
-      console.log('Has image_base64:', !!body?.image_base64);
-      console.log('Has image_url:', !!body?.image_url);
-      console.log('image_base64 length:', body?.image_base64?.length || 0);
-    } catch (parseError) {
-      console.error('Failed to parse request body:', parseError);
+    const body = await req.json();
+    const { mode } = body || {};
+
+    // Handle clarify_scope mode
+    if (mode === 'clarify_scope') {
+      const { projectType, detectedItems, userResponse, previousResponses, roomSize } = body;
+
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) {
+        throw new Error('LOVABLE_API_KEY is not configured');
+      }
+
+      const context = `
+Project type: ${projectType}
+Detected items in photo: ${detectedItems}
+Room size: ${roomSize || 'unknown'}
+Previous responses: ${previousResponses || 'none'}
+Latest response: ${userResponse}
+`;
+
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: CLARIFY_SCOPE_PROMPT },
+            { role: 'user', content: context }
+          ],
+          response_format: { type: 'json_object' }
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI error:', response.status, errorText);
+        // Fallback: proceed without follow-up
+        return new Response(
+          JSON.stringify({ needsMoreInfo: false, summary: userResponse }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      let result;
+      try {
+        let jsonStr = content;
+        if (content.includes('```json')) {
+          jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        } else if (content.includes('```')) {
+          jsonStr = content.replace(/```\n?/g, '').trim();
+        }
+        result = JSON.parse(jsonStr);
+      } catch {
+        result = { needsMoreInfo: false, summary: userResponse };
+      }
+
       return new Response(
-        JSON.stringify({ error: 'Invalid request body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify(result),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Original photo analysis mode
+    console.log('Received analyze-photo request');
+    console.log('Content-Type:', req.headers.get('content-type'));
+    console.log('Request body keys:', Object.keys(body || {}));
 
     const { image_base64, image_url, mime_type } = body || {};
 
     if (!image_base64 && !image_url) {
-      console.error('No image provided in request. Body:', JSON.stringify(body).substring(0, 200));
+      console.error('No image provided in request.');
       return new Response(
         JSON.stringify({ error: 'No image provided' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -129,7 +215,6 @@ serve(async (req) => {
 
     console.log('Analyzing image with Gemini Vision...');
 
-    // Build the image content for Gemini
     const imageContent = image_base64 
       ? { type: 'image_url', image_url: { url: `data:${mime_type || 'image/jpeg'};base64,${image_base64}` } }
       : { type: 'image_url', image_url: { url: image_url } };
@@ -185,10 +270,8 @@ serve(async (req) => {
 
     console.log('Vision analysis complete');
 
-    // Parse the JSON response
     let analysis;
     try {
-      // Handle potential markdown code blocks
       let jsonStr = content;
       if (content.includes('```json')) {
         jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -198,7 +281,6 @@ serve(async (req) => {
       analysis = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error('Failed to parse vision response:', parseError);
-      // Return raw content if parsing fails
       analysis = {
         project_type: 'Unknown',
         confidence: 'low',

@@ -3,10 +3,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Camera, X, Plus, Send, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Camera, X, Plus, Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 import { PhotoAnalysisEntry } from './MultiPhotoAnalysisCard';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SelectedItem extends DetectedItem {
   entryId: string;
@@ -34,6 +35,11 @@ export interface LayoutChangeData {
   additionalNotes: string;
 }
 
+interface ConversationMessage {
+  role: 'assistant' | 'user';
+  content: string;
+}
+
 interface PhotoAnalysisConfirmationProps {
   entries: PhotoAnalysisEntry[];
   onRemovePhoto: (id: string) => void;
@@ -55,11 +61,9 @@ function getOverallProjectType(entries: PhotoAnalysisEntry[]): string {
 // Build a natural summary of detected items
 function buildDetectedSummary(entries: PhotoAnalysisEntry[]): string {
   const allItems: string[] = [];
-  const dimensions = entries.find(e => e.analysis.estimated_dimensions)?.analysis.estimated_dimensions;
   
   for (const entry of entries) {
     for (const item of entry.analysis.detected_items) {
-      // Make items sound more natural
       let itemText = item.item;
       if (item.quantity && item.quantity > 1) {
         itemText = `${item.quantity}x ${item.item}`;
@@ -71,22 +75,16 @@ function buildDetectedSummary(entries: PhotoAnalysisEntry[]): string {
     }
   }
 
-  // Build natural language list
   if (allItems.length === 0) return "I couldn't detect specific items in the photo.";
   
-  let summary = "";
-  
-  // Group similar items
   const uniqueItems = [...new Set(allItems)];
   
   if (uniqueItems.length <= 3) {
-    summary = uniqueItems.join(', ');
+    return uniqueItems.join(', ');
   } else {
     const firstItems = uniqueItems.slice(0, -1).join(', ');
-    summary = `${firstItems}, and ${uniqueItems[uniqueItems.length - 1]}`;
+    return `${firstItems}, and ${uniqueItems[uniqueItems.length - 1]}`;
   }
-
-  return summary;
 }
 
 export function PhotoAnalysisConfirmation({ 
@@ -97,19 +95,19 @@ export function PhotoAnalysisConfirmation({
   onCancel,
   isAnalyzing 
 }: PhotoAnalysisConfirmationProps) {
-  const [scopeDescription, setScopeDescription] = useState('');
-  const [conversationStage, setConversationStage] = useState<'ask' | 'confirm'>('ask');
+  const [inputValue, setInputValue] = useState('');
+  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
+  const [isReadyToGenerate, setIsReadyToGenerate] = useState(false);
 
   const projectType = getOverallProjectType(entries);
   const detectedSummary = useMemo(() => buildDetectedSummary(entries), [entries]);
   
-  // Get estimated room size from first entry with dimensions
   const estimatedDimensions = entries.find(e => e.analysis.estimated_dimensions)?.analysis.estimated_dimensions;
   const roomSqft = estimatedDimensions?.room_length_ft && estimatedDimensions?.room_width_ft 
     ? Math.round(estimatedDimensions.room_length_ft * estimatedDimensions.room_width_ft)
     : null;
 
-  // Create selected items for confirmation
   const selectedItems = useMemo<SelectedItem[]>(() => {
     return entries.flatMap(entry => 
       entry.analysis.detected_items.map((item, idx) => ({
@@ -122,23 +120,77 @@ export function PhotoAnalysisConfirmation({
     );
   }, [entries]);
 
-  const handleSendScope = () => {
-    if (scopeDescription.trim()) {
-      setConversationStage('confirm');
+  // Get full scope description from conversation
+  const getFullScopeDescription = () => {
+    return conversation
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .join('. ');
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isThinking) return;
+    
+    const userMessage = inputValue.trim();
+    setInputValue('');
+    setConversation(prev => [...prev, { role: 'user', content: userMessage }]);
+    setIsThinking(true);
+
+    try {
+      // Build context for AI to determine if response is clear enough
+      const detectedItems = entries.flatMap(e => e.analysis.detected_items.map(i => i.item)).join(', ');
+      const previousResponses = conversation.filter(m => m.role === 'user').map(m => m.content).join('. ');
+      
+      const { data, error } = await supabase.functions.invoke('analyze-photo', {
+        body: {
+          mode: 'clarify_scope',
+          projectType,
+          detectedItems,
+          userResponse: userMessage,
+          previousResponses,
+          roomSize: roomSqft ? `${estimatedDimensions?.room_length_ft}x${estimatedDimensions?.room_width_ft}` : null,
+        }
+      });
+
+      if (error) throw error;
+
+      const response = data as { needsMoreInfo: boolean; followUpQuestion?: string; summary?: string };
+      
+      if (response.needsMoreInfo && response.followUpQuestion) {
+        setConversation(prev => [...prev, { role: 'assistant', content: response.followUpQuestion }]);
+        setIsReadyToGenerate(false);
+      } else {
+        // Response is clear enough
+        const confirmMessage = response.summary 
+          ? `Got it! ${response.summary} Ready to generate your estimate.`
+          : "Perfect, I have everything I need. Ready to generate your estimate.";
+        setConversation(prev => [...prev, { role: 'assistant', content: confirmMessage }]);
+        setIsReadyToGenerate(true);
+      }
+    } catch (err) {
+      console.error('Error getting follow-up:', err);
+      // Fallback: just proceed if AI call fails
+      setConversation(prev => [...prev, { 
+        role: 'assistant', 
+        content: "Got it! Ready to generate your estimate." 
+      }]);
+      setIsReadyToGenerate(true);
+    } finally {
+      setIsThinking(false);
     }
   };
 
   const handleConfirm = () => {
-    onConfirm(selectedItems, scopeDescription);
+    onConfirm(selectedItems, getFullScopeDescription());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (conversationStage === 'ask' && scopeDescription.trim()) {
-        handleSendScope();
-      } else if (conversationStage === 'confirm') {
+      if (isReadyToGenerate) {
         handleConfirm();
+      } else if (inputValue.trim()) {
+        handleSendMessage();
       }
     }
   };
@@ -172,7 +224,6 @@ export function PhotoAnalysisConfirmation({
             </div>
           ))}
           
-          {/* Add more button */}
           <button
             onClick={onAddMore}
             disabled={isAnalyzing}
@@ -192,8 +243,8 @@ export function PhotoAnalysisConfirmation({
           </Badge>
         </div>
 
-        {/* Conversational AI Message */}
-        <div className="space-y-4">
+        {/* Conversation */}
+        <div className="space-y-3 max-h-[350px] overflow-y-auto">
           {/* AI's opening message */}
           <div className="bg-muted/50 rounded-2xl rounded-tl-sm p-4">
             <p className="text-sm leading-relaxed">
@@ -201,7 +252,6 @@ export function PhotoAnalysisConfirmation({
               <span className="font-medium text-foreground"> What are you looking to do with this space?</span>
             </p>
             
-            {/* Show detected items naturally */}
             <div className="mt-3 pt-3 border-t border-border/50">
               <p className="text-xs text-muted-foreground mb-2">Here's what I see:</p>
               <p className="text-sm text-foreground/80">{detectedSummary}</p>
@@ -214,64 +264,76 @@ export function PhotoAnalysisConfirmation({
             </div>
           </div>
 
-          {/* User's response (if in confirm stage) */}
-          {conversationStage === 'confirm' && scopeDescription && (
-            <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm p-4 ml-8">
-              <p className="text-sm">{scopeDescription}</p>
+          {/* Conversation history */}
+          {conversation.map((msg, idx) => (
+            <div 
+              key={idx}
+              className={cn(
+                "rounded-2xl p-4",
+                msg.role === 'user' 
+                  ? "bg-primary text-primary-foreground ml-8 rounded-tr-sm"
+                  : "bg-muted/50 rounded-tl-sm"
+              )}
+            >
+              <p className="text-sm">{msg.content}</p>
             </div>
-          )}
+          ))}
 
-          {/* AI confirmation message */}
-          {conversationStage === 'confirm' && (
-            <div className="bg-muted/50 rounded-2xl rounded-tl-sm p-4">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm leading-relaxed">
-                    Got it! I'll use your description to generate the estimate. 
-                    <span className="font-medium"> Ready to continue?</span>
-                  </p>
-                </div>
-              </div>
+          {/* Thinking indicator */}
+          {isThinking && (
+            <div className="bg-muted/50 rounded-2xl rounded-tl-sm p-4 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Thinking...</span>
             </div>
           )}
         </div>
 
         {/* Input area */}
         <div className="mt-4">
-          {conversationStage === 'ask' ? (
-            <div className="relative">
-              <Textarea
-                value={scopeDescription}
-                onChange={(e) => setScopeDescription(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Tell me what you're planning... (e.g., 'Full remodel - new vanity, tile the shower, replace toilet')"
-                className="min-h-[80px] pr-12 resize-none rounded-xl"
-                autoFocus
-              />
-              <Button
-                size="icon"
-                className="absolute bottom-2 right-2 h-8 w-8 rounded-full"
-                onClick={handleSendScope}
-                disabled={!scopeDescription.trim()}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
+          {isReadyToGenerate ? (
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setConversationStage('ask')}
+                onClick={() => {
+                  setIsReadyToGenerate(false);
+                  setInputValue('');
+                }}
                 className="flex-1"
               >
-                Edit Response
+                Add More Details
               </Button>
               <Button
                 onClick={handleConfirm}
                 className="flex-1 bg-cyan-600 hover:bg-cyan-700"
               >
                 Generate Estimate →
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <Textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={conversation.length === 0 
+                  ? "Tell me what you're planning... (e.g., 'Full remodel - new vanity, tile the shower')"
+                  : "Type your response..."
+                }
+                className="min-h-[80px] pr-12 resize-none rounded-xl"
+                autoFocus
+                disabled={isThinking}
+              />
+              <Button
+                size="icon"
+                className="absolute bottom-2 right-2 h-8 w-8 rounded-full"
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isThinking}
+              >
+                {isThinking ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
           )}
