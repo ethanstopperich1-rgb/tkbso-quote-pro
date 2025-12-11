@@ -1507,9 +1507,25 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
     .replace(/\s+/g, '_')
     .trim();
   
+  const taskLower = taskDescription.toLowerCase();
+  
+  // === EXCLUSION RULES - Prevent false positive matches ===
+  // NEVER match shower_rod or curtain_rod for glass enclosures or tile work
+  const isGlassOrTileItem = taskLower.includes('glass') || taskLower.includes('enclosure') ||
+                            taskLower.includes('tile') || taskLower.includes('floor') ||
+                            taskLower.includes('wall') || taskLower.includes('waterproof') ||
+                            taskLower.includes('valve') || taskLower.includes('drain') ||
+                            taskLower.includes('frameless');
+  
   // Direct lookup
   if (LINE_ITEM_DESCRIPTIONS[normalizedTask]) {
-    return LINE_ITEM_DESCRIPTIONS[normalizedTask];
+    const entry = LINE_ITEM_DESCRIPTIONS[normalizedTask];
+    // Skip shower_rod/curtain entries for glass/tile items
+    if (isGlassOrTileItem && entry.description.toLowerCase().includes('curtain')) {
+      // Don't return this match, continue to find a better one
+    } else {
+      return entry;
+    }
   }
   
   // Try partial matches - prioritize EXACT word matches over longer keys with extra words
@@ -1517,6 +1533,12 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
   const partialMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
   
   for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
+    // Skip shower_rod/curtain entries for glass/tile items
+    if (isGlassOrTileItem && (key.includes('rod') || key.includes('curtain') || 
+        value.description.toLowerCase().includes('curtain'))) {
+      continue;
+    }
+    
     const keyWords = key.split('_');
     
     // Check if task contains the key
@@ -1557,6 +1579,12 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
   for (const keyword of specificKeywords) {
     const keywordMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
     for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
+      // Skip shower_rod/curtain entries for glass/tile items
+      if (isGlassOrTileItem && (key.includes('rod') || key.includes('curtain') ||
+          value.description.toLowerCase().includes('curtain'))) {
+        continue;
+      }
+      
       if (key.includes(keyword)) {
         // Split key into parts to check for extra unrelated words
         const keyParts = key.split('_');
