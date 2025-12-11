@@ -2,13 +2,10 @@ import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Sparkles, AlertCircle, X, Plus, Camera, Ruler, Construction, AlertTriangle } from 'lucide-react';
+import { Sparkles, Camera, X, Plus, Send, CheckCircle2 } from 'lucide-react';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
 import { PhotoAnalysisEntry } from './MultiPhotoAnalysisCard';
-import { LayoutChangeConfirmation } from './LayoutChangeConfirmation';
 import { cn } from '@/lib/utils';
 
 export interface SelectedItem extends DetectedItem {
@@ -46,94 +43,50 @@ interface PhotoAnalysisConfirmationProps {
   isAnalyzing?: boolean;
 }
 
-// Map vision categories to trade bucket display names
-const categoryDisplayNames: Record<string, string> = {
-  'Demo': 'Demolition',
-  'Demolition': 'Demolition',
-  'Plumbing': 'Plumbing',
-  'Electrical': 'Electrical',
-  'Tile': 'Tile & Waterproofing',
-  'Tile & Waterproofing': 'Tile & Waterproofing',
-  'Support': 'Tile & Waterproofing',
-  'Waterproofing': 'Waterproofing',
-  'Cabinetry': 'Cabinetry',
-  'Countertops': 'Countertops',
-  'Glass': 'Glass',
-  'Flooring': 'Flooring',
-  'Framing': 'Framing',
-  'Framing/Structural': 'Framing',
-  'Accessories': 'Accessories',
-};
-
-// Keywords that indicate layout changes
-const LAYOUT_CHANGE_KEYWORDS = [
-  'moving', 'relocate', 'relocating', 'swap', 'swapping', 'switching',
-  'where the', 'where it was', 'going where',
-  'remove wall', 'take down wall', 'tear down wall',
-  'close up door', 'remove door', 'new door location',
-  'tub to shower', 'shower to tub',
-  'flipping', 'reversing', 'changing layout',
-  'move the toilet', 'move the tub', 'move the vanity',
-  'toilet and tub', 'tub and toilet'
-];
-
-// Fixture types that can be relocated (for bathroom)
-const RELOCATABLE_FIXTURES = ['toilet', 'bathtub', 'tub', 'shower', 'vanity', 'sink'];
-
-// Group items by category
-function groupItemsByCategory(items: SelectedItem[]): Record<string, SelectedItem[]> {
-  return items.reduce((acc, item) => {
-    const category = categoryDisplayNames[item.category] || item.category;
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, SelectedItem[]>);
-}
-
 // Determine overall project type
 function getOverallProjectType(entries: PhotoAnalysisEntry[]): string {
   const types = entries.map(e => e.analysis.project_type).filter(t => t !== 'Unknown');
-  if (types.length === 0) return 'Unknown';
+  if (types.length === 0) return 'space';
   const counts: Record<string, number> = {};
   types.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
-  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0].toLowerCase();
 }
 
-// Get confidence badge styling
-function getConfidenceBadge(confidence: 'high' | 'medium' | 'low') {
-  if (confidence === 'high') {
-    return { className: 'bg-green-500/20 text-green-700 border-green-500/30', label: 'high' };
-  } else if (confidence === 'medium') {
-    return { className: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30', label: 'medium' };
-  } else {
-    return { className: 'bg-red-500/20 text-red-700 border-red-500/30', label: 'low ⚠️' };
-  }
-}
-
-// Detect if scope description suggests layout changes
-function detectLayoutChangeIntent(text: string): boolean {
-  const lowerText = text.toLowerCase();
-  return LAYOUT_CHANGE_KEYWORDS.some(keyword => lowerText.includes(keyword));
-}
-
-// Extract detected fixtures with location info for layout change flow
-function extractFixturesForLayout(entries: PhotoAnalysisEntry[]): Array<{ name: string; location: string; confidence: number }> {
-  const fixtures: Array<{ name: string; location: string; confidence: number }> = [];
+// Build a natural summary of detected items
+function buildDetectedSummary(entries: PhotoAnalysisEntry[]): string {
+  const allItems: string[] = [];
+  const dimensions = entries.find(e => e.analysis.estimated_dimensions)?.analysis.estimated_dimensions;
   
   for (const entry of entries) {
     for (const item of entry.analysis.detected_items) {
-      const itemLower = item.item.toLowerCase();
-      if (RELOCATABLE_FIXTURES.some(f => itemLower.includes(f))) {
-        fixtures.push({
-          name: item.item,
-          location: item.notes || 'Location not specified',
-          confidence: entry.analysis.confidence === 'high' ? 90 : entry.analysis.confidence === 'medium' ? 70 : 50,
-        });
+      // Make items sound more natural
+      let itemText = item.item;
+      if (item.quantity && item.quantity > 1) {
+        itemText = `${item.quantity}x ${item.item}`;
       }
+      if (item.notes && !itemText.includes(item.notes)) {
+        itemText += ` (${item.notes})`;
+      }
+      allItems.push(itemText);
     }
   }
+
+  // Build natural language list
+  if (allItems.length === 0) return "I couldn't detect specific items in the photo.";
   
-  return fixtures;
+  let summary = "";
+  
+  // Group similar items
+  const uniqueItems = [...new Set(allItems)];
+  
+  if (uniqueItems.length <= 3) {
+    summary = uniqueItems.join(', ');
+  } else {
+    const firstItems = uniqueItems.slice(0, -1).join(', ');
+    summary = `${firstItems}, and ${uniqueItems[uniqueItems.length - 1]}`;
+  }
+
+  return summary;
 }
 
 export function PhotoAnalysisConfirmation({ 
@@ -144,148 +97,61 @@ export function PhotoAnalysisConfirmation({
   onCancel,
   isAnalyzing 
 }: PhotoAnalysisConfirmationProps) {
-  // Initialize items with selection state
-  const [items, setItems] = useState<SelectedItem[]>(() => {
+  const [scopeDescription, setScopeDescription] = useState('');
+  const [conversationStage, setConversationStage] = useState<'ask' | 'confirm'>('ask');
+
+  const projectType = getOverallProjectType(entries);
+  const detectedSummary = useMemo(() => buildDetectedSummary(entries), [entries]);
+  
+  // Get estimated room size from first entry with dimensions
+  const estimatedDimensions = entries.find(e => e.analysis.estimated_dimensions)?.analysis.estimated_dimensions;
+  const roomSqft = estimatedDimensions?.room_length_ft && estimatedDimensions?.room_width_ft 
+    ? Math.round(estimatedDimensions.room_length_ft * estimatedDimensions.room_width_ft)
+    : null;
+
+  // Create selected items for confirmation
+  const selectedItems = useMemo<SelectedItem[]>(() => {
     return entries.flatMap(entry => 
       entry.analysis.detected_items.map((item, idx) => ({
         ...item,
         entryId: entry.id,
         itemIndex: idx,
-        selected: true, // Default to selected
+        selected: true,
         analysisConfidence: entry.analysis.confidence,
       }))
     );
-  });
-  
-  const [scopeDescription, setScopeDescription] = useState('');
-  const [showLayoutChangeFlow, setShowLayoutChangeFlow] = useState(false);
-  const [layoutChangeData, setLayoutChangeData] = useState<LayoutChangeData | undefined>();
+  }, [entries]);
 
-  const groupedItems = groupItemsByCategory(items);
-  const projectType = getOverallProjectType(entries);
-  const selectedCount = items.filter(i => i.selected).length;
-  const totalCount = items.length;
-
-  // Get estimated room size from first entry with dimensions
-  const estimatedDimensions = entries.find(e => e.analysis.estimated_dimensions)?.analysis.estimated_dimensions;
-  const roomSqft = estimatedDimensions?.room_length_ft && estimatedDimensions?.room_width_ft 
-    ? estimatedDimensions.room_length_ft * estimatedDimensions.room_width_ft 
-    : null;
-
-  // Check if we have relocatable fixtures (bathroom projects)
-  const detectedFixtures = useMemo(() => extractFixturesForLayout(entries), [entries]);
-  const hasRelocatableFixtures = detectedFixtures.length >= 2 && projectType === 'Bathroom';
-
-  // Detect layout change intent from scope description
-  const scopeHasLayoutIntent = useMemo(() => detectLayoutChangeIntent(scopeDescription), [scopeDescription]);
-
-  const toggleItem = (entryId: string, itemIndex: number) => {
-    setItems(prev => prev.map(item => 
-      item.entryId === entryId && item.itemIndex === itemIndex
-        ? { ...item, selected: !item.selected }
-        : item
-    ));
-  };
-
-  const updateQuantity = (entryId: string, itemIndex: number, newQuantity: number) => {
-    setItems(prev => prev.map(item => 
-      item.entryId === entryId && item.itemIndex === itemIndex
-        ? { ...item, quantity: newQuantity }
-        : item
-    ));
+  const handleSendScope = () => {
+    if (scopeDescription.trim()) {
+      setConversationStage('confirm');
+    }
   };
 
   const handleConfirm = () => {
-    const selectedItems = items.filter(i => i.selected);
-    onConfirm(selectedItems, scopeDescription, layoutChangeData);
+    onConfirm(selectedItems, scopeDescription);
   };
 
-  // Handle layout change confirmation
-  const handleLayoutChangeConfirm = (changes: LayoutChangeData) => {
-    setLayoutChangeData(changes);
-    setShowLayoutChangeFlow(false);
-    
-    // Build scope description from layout changes
-    const layoutDescription = buildLayoutDescription(changes);
-    setScopeDescription(prev => prev ? `${prev}\n\n${layoutDescription}` : layoutDescription);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (conversationStage === 'ask' && scopeDescription.trim()) {
+        handleSendScope();
+      } else if (conversationStage === 'confirm') {
+        handleConfirm();
+      }
+    }
   };
-
-  // Handle keeping current layout (from layout change flow)
-  const handleKeepLayout = () => {
-    setShowLayoutChangeFlow(false);
-    setLayoutChangeData(undefined);
-  };
-
-  // Build a description from layout changes
-  const buildLayoutDescription = (changes: LayoutChangeData): string => {
-    const parts: string[] = [];
-    
-    if (changes.demoLevel === 'full_gut') {
-      parts.push('Full gut remodel');
-    } else {
-      parts.push('Selective demo');
-    }
-    
-    if (changes.fixtures.length > 0) {
-      const relocations = changes.fixtures.map(f => 
-        `${f.name} moving from ${f.currentLocation} to ${f.newLocation} (~${f.estimatedDistance}ft)`
-      );
-      parts.push('Relocations: ' + relocations.join('; '));
-    }
-    
-    if (changes.structuralChanges.length > 0) {
-      parts.push('Structural: ' + changes.structuralChanges.map(c => c.description).join('; '));
-    }
-    
-    if (changes.additionalNotes) {
-      parts.push(changes.additionalNotes);
-    }
-    
-    return parts.join('. ');
-  };
-
-  // Show layout change flow
-  if (showLayoutChangeFlow && hasRelocatableFixtures) {
-    return (
-      <LayoutChangeConfirmation
-        projectType={projectType as 'Kitchen' | 'Bathroom'}
-        detectedFixtures={detectedFixtures}
-        estimatedRoomSize={estimatedDimensions ? {
-          length: estimatedDimensions.room_length_ft || 8,
-          width: estimatedDimensions.room_width_ft || 10,
-          sqft: roomSqft || 80,
-        } : null}
-        imagePreview={entries[0]?.imagePreview}
-        onConfirmKeepLayout={handleKeepLayout}
-        onConfirmLayoutChange={handleLayoutChangeConfirm}
-        onCancel={() => setShowLayoutChangeFlow(false)}
-      />
-    );
-  }
 
   return (
-    <Card className="animate-scale-in border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent shadow-lg overflow-hidden">
+    <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent shadow-lg overflow-hidden">
       <CardContent className="p-4 sm:p-6">
-        {/* Header */}
-        <div className="flex items-center gap-2 flex-wrap mb-4">
-          <Badge 
-            variant="secondary" 
-            className="bg-cyan-500/20 text-cyan-700 border border-cyan-500/30 gap-1"
-          >
-            <Sparkles className="h-3 w-3" />
-            🔍 What I Detected
-          </Badge>
-          <Badge variant="outline" className="text-xs">
-            {entries.length} {entries.length === 1 ? 'photo' : 'photos'}
-          </Badge>
-        </div>
-
-        {/* Photo thumbnails */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4">
+        {/* Photo thumbnails - compact */}
+        <div className="flex items-center gap-2 mb-4">
           {entries.map((entry, idx) => (
             <div key={entry.id} className="relative flex-shrink-0 group">
               {entry.imagePreview ? (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-border">
+                <div className="w-12 h-12 rounded-lg overflow-hidden border border-border">
                   <img 
                     src={entry.imagePreview} 
                     alt={`Photo ${idx + 1}`} 
@@ -293,8 +159,8 @@ export function PhotoAnalysisConfirmation({
                   />
                 </div>
               ) : (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg border border-border bg-muted flex items-center justify-center">
-                  <Camera className="h-5 w-5 text-muted-foreground" />
+                <div className="w-12 h-12 rounded-lg border border-border bg-muted flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
                 </div>
               )}
               <button
@@ -303,9 +169,6 @@ export function PhotoAnalysisConfirmation({
               >
                 <X className="h-3 w-3" />
               </button>
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5 rounded-b-lg">
-                {entry.analysis.detected_items.length} items
-              </div>
             </div>
           ))}
           
@@ -314,237 +177,113 @@ export function PhotoAnalysisConfirmation({
             onClick={onAddMore}
             disabled={isAnalyzing}
             className={cn(
-              "w-14 h-14 sm:w-16 sm:h-16 rounded-lg border-2 border-dashed border-cyan-500/50 flex flex-col items-center justify-center gap-1 flex-shrink-0 transition-colors",
+              "w-12 h-12 rounded-lg border-2 border-dashed border-cyan-500/50 flex flex-col items-center justify-center gap-0.5 flex-shrink-0 transition-colors",
               isAnalyzing 
                 ? "opacity-50 cursor-not-allowed" 
                 : "hover:border-cyan-500 hover:bg-cyan-500/10 cursor-pointer"
             )}
           >
-            {isAnalyzing ? (
-              <Camera className="h-4 w-4 text-cyan-500 animate-pulse" />
-            ) : (
-              <>
-                <Plus className="h-4 w-4 text-cyan-500" />
-                <span className="text-[10px] text-cyan-600">Add</span>
-              </>
-            )}
+            <Plus className="h-4 w-4 text-cyan-500" />
           </button>
-        </div>
-
-        {/* Project type and summary */}
-        <div className="mb-4">
-          <h3 className="font-semibold text-lg">
-            {projectType} Project
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {selectedCount} of {totalCount} items selected
-          </p>
-        </div>
-
-        {/* Room size estimate */}
-        {roomSqft && (
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Ruler className="h-4 w-4 text-blue-600" />
-              <p className="font-semibold text-blue-900 dark:text-blue-100">
-                Estimated Room Size
-              </p>
-            </div>
-            <p className="text-blue-800 dark:text-blue-200 text-sm mt-1">
-              ~{estimatedDimensions?.room_length_ft}' × {estimatedDimensions?.room_width_ft}' ({roomSqft} sqft)
-            </p>
-          </div>
-        )}
-
-        {/* Layout Change Prompt - Show if bathroom with multiple fixtures */}
-        {hasRelocatableFixtures && !layoutChangeData && (
-          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Construction className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">
-                  Are fixtures staying in place?
-                </p>
-                <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
-                  I detected {detectedFixtures.length} fixtures that could be relocated. Moving fixtures means structural work and plumbing changes.
-                </p>
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="border-yellow-500 text-yellow-700 hover:bg-yellow-100"
-                    onClick={() => setShowLayoutChangeFlow(true)}
-                  >
-                    <Construction className="h-4 w-4 mr-1" />
-                    Layout is Changing
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    className="text-yellow-700"
-                  >
-                    Keeping Current Layout
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Layout Change Summary - If changes were configured */}
-        {layoutChangeData && (
-          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-500/50 rounded-lg">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-                  ⚠️ Complex Layout Changes Configured
-                </p>
-                <div className="text-sm text-yellow-800 dark:text-yellow-200 space-y-1">
-                  {layoutChangeData.fixtures.map(f => (
-                    <p key={f.id}>• {f.name}: moving ~{f.estimatedDistance}ft</p>
-                  ))}
-                  {layoutChangeData.structuralChanges.map(c => (
-                    <p key={c.id}>• {c.description}</p>
-                  ))}
-                  <p className="text-xs mt-2">Demo level: {layoutChangeData.demoLevel === 'full_gut' ? 'Full Gut' : 'Selective'}</p>
-                </div>
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  className="mt-2 text-yellow-700"
-                  onClick={() => setShowLayoutChangeFlow(true)}
-                >
-                  Edit Layout Changes
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Detected items with checkboxes */}
-        <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto">
-          {Object.entries(groupedItems).map(([category, categoryItems]) => (
-            <div key={category} className="border-l-2 border-cyan-500/50 pl-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                {category}
-              </h4>
-              <div className="space-y-2">
-                {categoryItems.map((item) => {
-                  const confidenceBadge = getConfidenceBadge(item.analysisConfidence);
-                  return (
-                    <div 
-                      key={`${item.entryId}-${item.itemIndex}`} 
-                      className={cn(
-                        "flex items-start gap-3 p-3 rounded-lg border transition-colors",
-                        item.selected 
-                          ? "bg-white dark:bg-background border-border" 
-                          : "bg-muted/50 border-transparent opacity-60"
-                      )}
-                    >
-                      <Checkbox
-                        checked={item.selected}
-                        onCheckedChange={() => toggleItem(item.entryId, item.itemIndex)}
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <p className="font-medium text-sm">{item.item}</p>
-                          <Badge 
-                            variant="outline" 
-                            className={cn('text-[10px] px-1.5 py-0', confidenceBadge.className)}
-                          >
-                            {confidenceBadge.label}
-                          </Badge>
-                        </div>
-                        {item.notes && (
-                          <p className="text-xs text-muted-foreground mb-2">{item.notes}</p>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.entryId, item.itemIndex, parseInt(e.target.value) || 0)}
-                            className="w-16 h-7 text-xs text-center px-1"
-                            min={0}
-                            disabled={!item.selected}
-                          />
-                          <span className="text-muted-foreground text-xs">{item.unit}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Observations */}
-        {entries.some(e => e.analysis.observations) && (
-          <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-            {entries.filter(e => e.analysis.observations).map((entry, idx) => (
-              <div key={entry.id} className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  {entries.length > 1 && <span className="font-medium">Photo {idx + 1}:</span>} {entry.analysis.observations}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Critical: Scope description question */}
-        <div className="border-t border-border pt-4 mb-4">
-          <p className="font-bold text-base mb-2">Now tell me — what's the actual scope?</p>
-          <p className="text-sm text-muted-foreground mb-3">
-            I detected items in your photo, but tell me what you're actually doing with this space.
-          </p>
-          <Textarea
-            rows={3}
-            placeholder="Example: Full bathroom remodel, or just replacing vanity and painting walls, or keeping the tub and just updating the shower..."
-            value={scopeDescription}
-            onChange={(e) => setScopeDescription(e.target.value)}
-            className="resize-none"
-          />
           
-          {/* Layout change hint if keywords detected */}
-          {scopeHasLayoutIntent && hasRelocatableFixtures && !layoutChangeData && (
-            <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-              <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                💡 It sounds like you're moving fixtures. Would you like to{' '}
-                <button 
-                  onClick={() => setShowLayoutChangeFlow(true)}
-                  className="font-semibold underline hover:no-underline"
-                >
-                  specify layout changes
-                </button>
-                ?
-              </p>
+          <Badge variant="secondary" className="bg-cyan-500/20 text-cyan-700 border border-cyan-500/30 gap-1 ml-auto">
+            <Sparkles className="h-3 w-3" />
+            AI Analysis
+          </Badge>
+        </div>
+
+        {/* Conversational AI Message */}
+        <div className="space-y-4">
+          {/* AI's opening message */}
+          <div className="bg-muted/50 rounded-2xl rounded-tl-sm p-4">
+            <p className="text-sm leading-relaxed">
+              I analyzed your {projectType} photo{entries.length > 1 ? 's' : ''} and spotted some items. 
+              <span className="font-medium text-foreground"> What are you looking to do with this space?</span>
+            </p>
+            
+            {/* Show detected items naturally */}
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <p className="text-xs text-muted-foreground mb-2">Here's what I see:</p>
+              <p className="text-sm text-foreground/80">{detectedSummary}</p>
+              
+              {roomSqft && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Estimated size: ~{estimatedDimensions?.room_length_ft}' × {estimatedDimensions?.room_width_ft}' ({roomSqft} sqft)
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* User's response (if in confirm stage) */}
+          {conversationStage === 'confirm' && scopeDescription && (
+            <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm p-4 ml-8">
+              <p className="text-sm">{scopeDescription}</p>
             </div>
           )}
-          
-          <p className="text-xs text-muted-foreground mt-2">
-            💡 Or just say "looks good" and I'll use what's selected above!
-          </p>
+
+          {/* AI confirmation message */}
+          {conversationStage === 'confirm' && (
+            <div className="bg-muted/50 rounded-2xl rounded-tl-sm p-4">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm leading-relaxed">
+                    Got it! I'll use your description to generate the estimate. 
+                    <span className="font-medium"> Ready to continue?</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          <Button 
-            onClick={handleConfirm}
-            className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
-            disabled={selectedCount === 0}
-          >
-            Use Selected Items →
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
+        {/* Input area */}
+        <div className="mt-4">
+          {conversationStage === 'ask' ? (
+            <div className="relative">
+              <Textarea
+                value={scopeDescription}
+                onChange={(e) => setScopeDescription(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Tell me what you're planning... (e.g., 'Full remodel - new vanity, tile the shower, replace toilet')"
+                className="min-h-[80px] pr-12 resize-none rounded-xl"
+                autoFocus
+              />
+              <Button
+                size="icon"
+                className="absolute bottom-2 right-2 h-8 w-8 rounded-full"
+                onClick={handleSendScope}
+                disabled={!scopeDescription.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setConversationStage('ask')}
+                className="flex-1"
+              >
+                Edit Response
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+              >
+                Generate Estimate →
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Cancel link */}
+        <button
+          onClick={onCancel}
+          className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center"
+        >
+          Cancel and start over
+        </button>
       </CardContent>
     </Card>
   );
