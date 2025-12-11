@@ -641,12 +641,6 @@ export function EstimatorChatPanel() {
         readyForQuote: true,
         projectType: (projectType === 'Kitchen' || projectType === 'Bathroom') ? projectType : prev.projectType,
       }));
-      
-      // Save to database with conversation history
-      const estimateId = await saveEstimateToDatabase(response, updatedHistory);
-      if (estimateId) {
-        setSavedEstimateId(estimateId);
-      }
 
       // Generate summary message
       const summaryParts = [
@@ -813,11 +807,6 @@ export function EstimatorChatPanel() {
         readyForQuote: true,
         projectType: (projectType === 'Kitchen' || projectType === 'Bathroom') ? projectType : prev.projectType,
       }));
-      
-      const estimateId = await saveEstimateToDatabase(response, updatedHistory);
-      if (estimateId) {
-        setSavedEstimateId(estimateId);
-      }
 
       addAssistantMessage(`**${response.project_header.project_type} Quote Ready** ✓\n${response.trade_buckets.length} trade items`);
       
@@ -1154,9 +1143,19 @@ export function EstimatorChatPanel() {
     addAssistantMessage(assistantResponse);
   };
 
-  const handleViewEstimate = () => {
+  const handleViewEstimate = async () => {
     if (savedEstimateId) {
       navigate(`/estimates/${savedEstimateId}`);
+      return;
+    }
+    
+    // Save first if not yet saved
+    if (estimate) {
+      const estimateId = await saveEstimateToDatabase(estimate, conversationHistory);
+      if (estimateId) {
+        setSavedEstimateId(estimateId);
+        navigate(`/estimates/${estimateId}`);
+      }
     }
   };
 
@@ -1461,15 +1460,15 @@ export function EstimatorChatPanel() {
                 <Button 
                   onClick={handleViewEstimate}
                   className="flex-1 h-10 sm:h-11 text-sm sm:text-base"
-                  disabled={!savedEstimateId}
+                  disabled={isLoading}
                 >
-                  View Details
+                  {savedEstimateId ? 'View Details' : 'Save & View Details'}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
                 <Button 
                   variant="outline"
                   onClick={handleViewEstimate}
-                  disabled={!savedEstimateId}
+                  disabled={isLoading}
                   className="h-10 sm:h-11 text-sm sm:text-base"
                 >
                   <FileDown className="h-4 w-4 mr-2" />
