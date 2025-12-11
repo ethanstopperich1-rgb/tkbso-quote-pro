@@ -624,8 +624,9 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     const lower = taskDescription.toLowerCase();
     
     // Vanity-related items should go to Cabinetry & Countertops, NOT electrical
-    if ((lower.includes('vanity') && !lower.includes('vanity light')) || 
-        lower.includes('cabinet') && !lower.includes('medicine')) {
+    // But vanity LIGHTS should stay in Electrical
+    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light')) || 
+        (lower.includes('cabinet') && !lower.includes('medicine'))) {
       return 'Cabinetry & Countertops';
     }
     
@@ -642,9 +643,17 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       }
     }
     
-    // LED mirrors should go to Electrical
-    if (lower.includes('led mirror') || lower.includes('mirror') && lower.includes('wiring')) {
-      return 'Electrical';
+    // LED mirrors, mirrors, towel bars, accessories should go to Glass & Final Trimout
+    // NOT electrical - the mirror itself is a fixture, wiring is separate
+    if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
+      return 'Glass & Final Trimout';
+    }
+    
+    // Towel bars, TP holders, accessories should also go to Glass & Final Trimout
+    if (lower.includes('towel bar') || lower.includes('toilet paper') || 
+        lower.includes('tp holder') || lower.includes('robe hook') ||
+        lower.includes('grab bar') || lower.includes('soap dish')) {
+      return 'Glass & Final Trimout';
     }
     
     return originalCategory;
