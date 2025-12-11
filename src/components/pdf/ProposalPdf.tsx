@@ -322,98 +322,118 @@ const KITCHEN_TRADE_ORDER = [
   'Paint',
 ];
 
-// Normalize category for BATHROOM estimates
+// Normalize category for BATHROOM estimates - PRIORITY ORDER MATTERS
 function normalizeBathroomCategory(cat: string, taskDescription?: string): string {
   const lower = cat.toLowerCase();
   const taskLower = (taskDescription || '').toLowerCase();
   
-  // === DEMOLITION ===
-  if (lower === 'demo' || lower === 'demolition' || lower.includes('haul') ||
-      lower.includes('dumpster') || lower.includes('tearout') || lower.includes('removal') ||
-      taskLower.includes('demo') || taskLower.includes('gut') || taskLower.includes('remove') ||
-      taskLower.includes('dumpster') || taskLower.includes('haul') || taskLower.includes('debris')) {
-    return 'Demolition';
-  }
-  
-  // === PLUMBING ===
-  if (lower === 'plumbing' || lower.includes('plumbing') ||
-      taskLower.includes('plumb') || taskLower.includes('valve') || 
-      taskLower.includes('tub filler') || taskLower.includes('drain') ||
-      taskLower.includes('supply line') || taskLower.includes('rough-in') ||
-      (taskLower.includes('toilet') && !taskLower.includes('paper')) ||
-      taskLower.includes('hvac') || taskLower.includes('vent relocat')) {
-    return 'Plumbing';
-  }
-  
-  // === ELECTRICAL ===
-  if (lower === 'electrical' || lower.includes('electric') || lower.includes('lighting') ||
-      taskLower.includes('led mirror') || taskLower.includes('backlit mirror') || 
-      taskLower.includes('vanity light') || taskLower.includes('light fixture') ||
+  // === PRIORITY 1: ELECTRICAL (check specific electrical items FIRST) ===
+  // Vanity lights, recessed cans, exhaust fans, outlets, switches
+  if (taskLower.includes('vanity light') || taskLower.includes('light fixture') ||
       taskLower.includes('recessed') || taskLower.includes('can light') ||
       taskLower.includes('exhaust fan') || taskLower.includes('bath fan') || 
       taskLower.includes('vent fan') || taskLower.includes('outlet') ||
       taskLower.includes('switch') || taskLower.includes('under-cabinet') ||
-      taskLower.includes('electrical')) {
+      taskLower.includes('gfci') ||
+      lower === 'electrical' || lower.includes('electric') || lower.includes('lighting')) {
     return 'Electrical';
   }
   
-  // === FRAMING & DRYWALL ===
-  if (lower === 'framing' || lower === 'structural' || lower === 'drywall' ||
-      lower.includes('framing') || lower.includes('drywall') ||
-      taskLower.includes('fram') || taskLower.includes('blocking') ||
-      taskLower.includes('niche') || taskLower.includes('door') ||
-      taskLower.includes('wall removal') || taskLower.includes('new wall') ||
-      taskLower.includes('drywall') || taskLower.includes('tape') ||
-      taskLower.includes('mud') || taskLower.includes('finish')) {
-    return 'Framing & Drywall';
-  }
-  
-  // === TILE & WATERPROOFING ===
-  if (lower === 'tile' || lower === 'support' || lower === 'waterproofing' || 
-      lower === 'cement board' || lower === 'tile & waterproofing' || 
-      lower === 'tile & support' || lower.includes('backer board') ||
-      lower.includes('floor tile') || lower.includes('wall tile') ||
-      lower.includes('shower floor') || lower.includes('shower wall') ||
-      lower.includes('materials') && lower.includes('tile') ||
-      taskLower.includes('tile') || taskLower.includes('waterproof') ||
-      taskLower.includes('cement board') || taskLower.includes('curb') ||
-      taskLower.includes('liner') || taskLower.includes('grout') ||
-      taskLower.includes('seal')) {
-    return 'Tile & Waterproofing';
-  }
-  
-  // === CABINETRY & COUNTERTOPS ===
-  if (lower === 'vanity' || lower === 'countertop' || lower === 'quartz' || 
-      lower === 'cabinet' || lower === 'cabinetry' ||
-      lower.includes('vanity') || lower.includes('countertop') || 
-      lower.includes('cabinet') || lower.includes('quartz') ||
-      taskLower.includes('vanity') || taskLower.includes('cabinet') ||
-      taskLower.includes('countertop') || taskLower.includes('quartz') ||
-      taskLower.includes('hardware')) {
-    return 'Cabinetry & Countertops';
-  }
-  
-  // === PAINT ===
-  if (lower === 'paint' || lower === 'painting' || lower === 'paint & drywall' ||
-      taskLower.includes('paint') || taskLower.includes('primer') ||
-      taskLower.includes('ceiling') && !taskLower.includes('tile')) {
-    return 'Paint';
-  }
-  
-  // === GLASS & FINAL TRIMOUT ===
-  if (lower === 'glass' || lower === 'accessories' || lower.includes('glass') ||
-      lower.includes('trimout') || lower.includes('final') ||
-      taskLower.includes('shower door') || taskLower.includes('glass door') ||
-      taskLower.includes('frameless glass') || taskLower.includes('glass panel') ||
-      taskLower.includes('glass enclosure') ||
-      taskLower.includes('mirror') || 
+  // === PRIORITY 2: GLASS & FINAL TRIMOUT ===
+  // Glass, mirrors (including LED mirrors), towel bars, toilet paper holders, accessories
+  if (taskLower.includes('frameless glass') || taskLower.includes('glass panel') ||
+      taskLower.includes('glass enclosure') || taskLower.includes('shower door') ||
+      taskLower.includes('glass door') ||
+      taskLower.includes('mirror') || taskLower.includes('led mirror') || 
+      taskLower.includes('backlit mirror') ||
       taskLower.includes('towel bar') || taskLower.includes('towel ring') || 
       taskLower.includes('towel rack') || taskLower.includes('toilet paper') ||
       taskLower.includes('tp holder') || taskLower.includes('robe hook') ||
       taskLower.includes('shower shelf') || taskLower.includes('soap dish') ||
       taskLower.includes('grab bar') || taskLower.includes('accessories') ||
-      taskLower.includes('touch-up') || taskLower.includes('final')) {
+      taskLower.includes('touch-up') || taskLower.includes('final') ||
+      lower === 'glass' || lower === 'accessories' || lower.includes('glass') ||
+      lower.includes('trimout') || lower.includes('final')) {
     return 'Glass & Final Trimout';
+  }
+  
+  // === PRIORITY 3: DEMOLITION ===
+  // Demo, gut, dumpster, haul, debris removal
+  if (taskLower.includes('demo') || taskLower.includes('gut') || 
+      taskLower.includes('dumpster') || taskLower.includes('haul') || 
+      taskLower.includes('debris') || taskLower.includes('tearout') ||
+      (taskLower.includes('remove') && !taskLower.includes('removal of tile')) ||
+      lower === 'demo' || lower === 'demolition' || lower.includes('haul') ||
+      lower.includes('dumpster') || lower.includes('tearout') || lower.includes('removal')) {
+    return 'Demolition';
+  }
+  
+  // === PRIORITY 4: PLUMBING ===
+  // Shower valves, drains, tub fillers, toilet line, freestanding tub, relocate plumbing
+  if (taskLower.includes('valve') || taskLower.includes('shower valve') ||
+      taskLower.includes('drain') || taskLower.includes('tub drain') ||
+      taskLower.includes('tub filler') || taskLower.includes('freestanding tub') ||
+      taskLower.includes('toilet line') || taskLower.includes('relocate toilet') ||
+      taskLower.includes('toilet install') || taskLower.includes('toilet reconnect') ||
+      taskLower.includes('wax ring') || taskLower.includes('supply line') ||
+      taskLower.includes('rough-in') || taskLower.includes('plumb') ||
+      taskLower.includes('curb') || taskLower.includes('liner') ||
+      taskLower.includes('hvac') || taskLower.includes('vent relocat') ||
+      (taskLower.includes('toilet') && !taskLower.includes('paper') && !taskLower.includes('walls')) ||
+      (taskLower.includes('tub') && !taskLower.includes('bathtub tile')) ||
+      lower === 'plumbing' || lower.includes('plumbing')) {
+    return 'Plumbing';
+  }
+  
+  // === PRIORITY 5: FRAMING & DRYWALL ===
+  // Wall framing, niche, drywall, door work, wall removal, relocate walls
+  if (taskLower.includes('niche') || taskLower.includes('blocking') ||
+      taskLower.includes('fram') || taskLower.includes('framing') ||
+      taskLower.includes('drywall') || taskLower.includes('tape') ||
+      taskLower.includes('mud') || taskLower.includes('finish drywall') ||
+      taskLower.includes('wall removal') || taskLower.includes('new wall') ||
+      taskLower.includes('relocate') && taskLower.includes('wall') ||
+      taskLower.includes('toilet walls') || taskLower.includes('toilet room') ||
+      taskLower.includes('halfwall') || taskLower.includes('half wall') ||
+      taskLower.includes('door') ||
+      lower === 'framing' || lower === 'structural' || lower === 'drywall' ||
+      lower.includes('framing') || lower.includes('drywall')) {
+    return 'Framing & Drywall';
+  }
+  
+  // === PRIORITY 6: TILE & WATERPROOFING ===
+  // Tile installation, waterproofing, cement board, grout, seal
+  if (taskLower.includes('tile') || taskLower.includes('waterproof') ||
+      taskLower.includes('redgard') || taskLower.includes('cement board') ||
+      taskLower.includes('backer board') || taskLower.includes('grout') ||
+      taskLower.includes('seal') ||
+      lower === 'tile' || lower === 'support' || lower === 'waterproofing' || 
+      lower === 'cement board' || lower === 'tile & waterproofing' || 
+      lower === 'tile & support' || lower.includes('backer board') ||
+      lower.includes('floor tile') || lower.includes('wall tile') ||
+      lower.includes('shower floor') || lower.includes('shower wall')) {
+    return 'Tile & Waterproofing';
+  }
+  
+  // === PRIORITY 7: CABINETRY & COUNTERTOPS ===
+  // Vanity cabinet, linen cabinet, countertops, quartz (but NOT vanity light)
+  if ((taskLower.includes('vanity') && !taskLower.includes('light')) ||
+      taskLower.includes('cabinet') || taskLower.includes('linen') ||
+      taskLower.includes('countertop') || taskLower.includes('quartz') ||
+      taskLower.includes('hardware') ||
+      lower === 'vanity' || lower === 'countertop' || lower === 'quartz' || 
+      lower === 'cabinet' || lower === 'cabinetry' ||
+      lower.includes('vanity') || lower.includes('countertop') || 
+      lower.includes('cabinet') || lower.includes('quartz')) {
+    return 'Cabinetry & Countertops';
+  }
+  
+  // === PRIORITY 8: PAINT ===
+  // Paint, primer, ceiling paint
+  if (taskLower.includes('paint') || taskLower.includes('primer') ||
+      (taskLower.includes('ceiling') && !taskLower.includes('tile')) ||
+      lower === 'paint' || lower === 'painting' || lower === 'paint & drywall') {
+    return 'Paint';
   }
   
   return 'Other';
