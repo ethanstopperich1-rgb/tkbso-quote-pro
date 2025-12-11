@@ -329,13 +329,19 @@ function normalizeBathroomCategory(cat: string, taskDescription?: string): strin
   
   // === PRIORITY 1: ELECTRICAL (check specific electrical items FIRST) ===
   // Vanity lights, recessed cans, exhaust fans, outlets, switches
-  if (taskLower.includes('vanity light') || taskLower.includes('light fixture') ||
+  // But NOT vanity cabinets or LED mirrors - those go elsewhere
+  const isVanityOrCabinetItem = (taskLower.includes('vanity') || taskLower.includes('cabinet') || taskLower.includes('linen')) && 
+                                 !taskLower.includes('vanity light') && !taskLower.includes('light');
+  const isLedMirrorItem = taskLower.includes('led mirror') || taskLower.includes('mirror');
+  
+  if (!isVanityOrCabinetItem && !isLedMirrorItem && (
+      taskLower.includes('vanity light') || taskLower.includes('light fixture') ||
       taskLower.includes('recessed') || taskLower.includes('can light') ||
       taskLower.includes('exhaust fan') || taskLower.includes('bath fan') || 
       taskLower.includes('vent fan') || taskLower.includes('outlet') ||
       taskLower.includes('switch') || taskLower.includes('under-cabinet') ||
       taskLower.includes('gfci') ||
-      lower === 'electrical' || lower.includes('electric') || lower.includes('lighting')) {
+      lower === 'electrical' || lower.includes('electric') || lower.includes('lighting'))) {
     return 'Electrical';
   }
   
@@ -357,19 +363,8 @@ function normalizeBathroomCategory(cat: string, taskDescription?: string): strin
     return 'Glass & Final Trimout';
   }
   
-  // === PRIORITY 3: DEMOLITION ===
-  // Demo, gut, dumpster, haul, debris removal
-  if (taskLower.includes('demo') || taskLower.includes('gut') || 
-      taskLower.includes('dumpster') || taskLower.includes('haul') || 
-      taskLower.includes('debris') || taskLower.includes('tearout') ||
-      (taskLower.includes('remove') && !taskLower.includes('removal of tile')) ||
-      lower === 'demo' || lower === 'demolition' || lower.includes('haul') ||
-      lower.includes('dumpster') || lower.includes('tearout') || lower.includes('removal')) {
-    return 'Demolition';
-  }
-  
-  // === PRIORITY 4: PLUMBING ===
-  // Shower valves, drains, tub fillers, toilet line, freestanding tub, relocate plumbing
+  // === PRIORITY 3: PLUMBING (check BEFORE demo to catch toilet installations) ===
+  // Shower valves, drains, tub fillers, toilet work, freestanding tub, relocate plumbing
   // NOTE: Do NOT include HVAC here - HVAC goes to separate section
   if (taskLower.includes('valve') || taskLower.includes('shower valve') ||
       taskLower.includes('drain') || taskLower.includes('tub drain') ||
@@ -379,10 +374,23 @@ function normalizeBathroomCategory(cat: string, taskDescription?: string): strin
       taskLower.includes('wax ring') || taskLower.includes('supply line') ||
       taskLower.includes('rough-in') || taskLower.includes('plumb') ||
       taskLower.includes('curb') || taskLower.includes('liner') ||
-      (taskLower.includes('toilet') && !taskLower.includes('paper') && !taskLower.includes('walls')) ||
+      (taskLower.includes('toilet') && !taskLower.includes('paper') && !taskLower.includes('walls') && !taskLower.includes('toilet room')) ||
       (taskLower.includes('tub') && !taskLower.includes('bathtub tile')) ||
       lower === 'plumbing' || lower.includes('plumbing')) {
     return 'Plumbing';
+  }
+  
+  // === PRIORITY 4: DEMOLITION ===
+  // Demo, gut, dumpster, haul, debris removal - but NOT installations
+  const isInstallation = taskLower.includes('install') && !taskLower.includes('uninstall');
+  if (!isInstallation && (
+      taskLower.includes('demo') || taskLower.includes('gut') || 
+      taskLower.includes('dumpster') || taskLower.includes('haul') || 
+      taskLower.includes('debris') || taskLower.includes('tearout') ||
+      (taskLower.includes('remove') && !taskLower.includes('removal of tile')) ||
+      lower === 'demo' || lower === 'demolition' || lower.includes('haul') ||
+      lower.includes('dumpster') || lower.includes('tearout') || lower.includes('removal'))) {
+    return 'Demolition';
   }
   
   // === PRIORITY 5: FRAMING & DRYWALL ===
@@ -619,18 +627,7 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
   const getCorrectCategory = (taskDescription: string, originalCategory: string): string => {
     const lower = taskDescription.toLowerCase();
     
-    // === DEMOLITION - Only gut/demo/removal/dumpster ===
-    if (lower.includes('gut') || lower.includes('demo') || lower.includes('dumpster') ||
-        lower.includes('tearout') || (lower.includes('remove') && !lower.includes('removal'))) {
-      // But NOT toilet installation which sometimes gets categorized here
-      if (lower.includes('install') && !lower.includes('removal')) {
-        // This is an installation, not demo - route elsewhere
-      } else {
-        return 'Demolition';
-      }
-    }
-    
-    // === PLUMBING - All fixture work, drains, supply lines, valves ===
+    // === PLUMBING FIRST - Catch toilet installations that may be mis-categorized ===
     if (lower.includes('toilet') && (lower.includes('relocate') || lower.includes('reuse') || 
         lower.includes('reinstall') || lower.includes('install') || lower.includes('wax ring') ||
         lower.includes('supply line') || lower.includes('drain'))) {
@@ -642,11 +639,26 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       return 'Plumbing';
     }
     
+    // === DEMOLITION - Only gut/demo/removal/dumpster (NOT installations) ===
+    const isInstallation = lower.includes('install') && !lower.includes('uninstall');
+    if (!isInstallation && (lower.includes('gut') || lower.includes('demo') || lower.includes('dumpster') ||
+        lower.includes('tearout') || (lower.includes('remove') && !lower.includes('removal')))) {
+      return 'Demolition';
+    }
+    
+    // === CABINETRY & COUNTERTOPS - Check BEFORE Electrical to catch mis-categorized vanity items ===
+    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light')) ||
+        lower.includes('cabinet') || lower.includes('linen') || lower.includes('countertop') ||
+        lower.includes('quartz') || lower.includes('granite') || lower.includes('bundle')) {
+      return 'Cabinetry & Countertops';
+    }
+    
     // === ELECTRICAL - Only lights, wiring, outlets, switches ===
+    // But NOT vanity cabinets or LED mirrors - those go elsewhere
     if (lower.includes('recessed') || lower.includes('can light') || 
-        lower.includes('vanity light') || (lower.includes('light') && lower.includes('install')) ||
+        lower.includes('vanity light') || (lower.includes('light') && lower.includes('install') && !lower.includes('vanity')) ||
         lower.includes('outlet') || lower.includes('switch') || lower.includes('wiring') ||
-        lower.includes('electrical')) {
+        (lower.includes('electrical') && !lower.includes('vanity') && !lower.includes('cabinet'))) {
       // But NOT LED mirrors - those go to Glass
       if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
         return 'Glass & Final Trimout';
@@ -665,13 +677,6 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     if (lower.includes('tile') || lower.includes('waterproof') || lower.includes('redgard') ||
         lower.includes('cement board') || lower.includes('backer')) {
       return 'Tile & Waterproofing';
-    }
-    
-    // === CABINETRY & COUNTERTOPS ===
-    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light')) ||
-        lower.includes('cabinet') || lower.includes('linen') || lower.includes('countertop') ||
-        lower.includes('quartz') || lower.includes('granite')) {
-      return 'Cabinetry & Countertops';
     }
     
     // === PAINT ===
