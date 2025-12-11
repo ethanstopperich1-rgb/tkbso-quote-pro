@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
-import { ProposalPdf } from '@/components/pdf/ProposalPdf';
+import { ProposalPdf, buildTradeGroups } from '@/components/pdf/ProposalPdf';
+import { generateProposalWord } from '@/components/word/ProposalWord';
 import { ClientInfoEditCard } from '@/components/estimates/ClientInfoEditCard';
 import { ConversationHistoryCard } from '@/components/estimates/ConversationHistoryCard';
 import { PricingEditCard } from '@/components/estimates/PricingEditCard';
@@ -31,6 +32,7 @@ import {
   Edit2,
   FileText,
   Send,
+  FileIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -179,6 +181,7 @@ export default function EstimateDetail() {
   const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingWord, setDownloadingWord] = useState(false);
   const [selectedPriceLevel, setSelectedPriceLevel] = useState<'low' | 'recommended' | 'high'>('recommended');
   const [clientMode, setClientMode] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
@@ -288,6 +291,49 @@ export default function EstimateDetail() {
     }
   };
 
+  const handleDownloadWord = async () => {
+    if (!estimate || !contractor) return;
+    
+    setDownloadingWord(true);
+    try {
+      const priceRange = showRange && customLowPrice && customHighPrice ? {
+        low: parseFloat(customLowPrice.replace(/[^0-9.]/g, '')),
+        high: parseFloat(customHighPrice.replace(/[^0-9.]/g, '')),
+      } : undefined;
+      
+      const selectedPrice = !showRange ? (
+        selectedPriceLevel === 'low' 
+          ? estimate.low_estimate_cp 
+          : selectedPriceLevel === 'high' 
+            ? estimate.high_estimate_cp 
+            : estimate.final_cp_total
+      ) : estimate.final_cp_total;
+      
+      const estimateForWord = {
+        ...estimate,
+        final_cp_total: selectedPrice,
+      };
+      
+      const tradeGroups = buildTradeGroups(estimateForWord, pricingConfig || undefined, showTileSqft);
+      
+      await generateProposalWord({
+        contractor,
+        estimate: estimateForWord,
+        pricingConfig: pricingConfig || undefined,
+        priceRange,
+        tradeGroups,
+        showTileSqft,
+      });
+      
+      toast.success('Word document downloaded successfully!');
+    } catch (error) {
+      console.error('Word generation error:', error);
+      toast.error('Failed to generate Word document. Please try again.');
+    } finally {
+      setDownloadingWord(false);
+    }
+  };
+
   const getCurrentStageIndex = () => {
     const status = estimate?.status || 'draft';
     const index = DEAL_STAGES.findIndex(s => s.id === status);
@@ -387,7 +433,22 @@ export default function EstimateDetail() {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Download PDF
+            PDF
+          </Button>
+          
+          <Button 
+            onClick={handleDownloadWord} 
+            disabled={downloadingWord || !estimate.final_cp_total}
+            className="gap-2"
+            size="sm"
+            variant="outline"
+          >
+            {downloadingWord ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileIcon className="h-4 w-4" />
+            )}
+            Word
           </Button>
         </div>
       </div>

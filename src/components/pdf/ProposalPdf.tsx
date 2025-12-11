@@ -276,14 +276,14 @@ interface ProposalPdfProps {
   showTileSqft?: boolean;
 }
 
-interface LineItem {
+export interface LineItem {
   description: string;
   quantity?: number;
   unit?: string;
   isMaterialAllowance?: boolean;
 }
 
-interface TradeGroup {
+export interface TradeGroup {
   trade: string;
   items: LineItem[];
   total: number;
@@ -537,7 +537,7 @@ function normalizeKitchenCategory(cat: string, taskDescription?: string): string
   return 'Other';
 }
 
-function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig, showTileSqft: boolean = true): TradeGroup[] {
+export function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig, showTileSqft: boolean = true): TradeGroup[] {
   const groups: TradeGroup[] = [];
 
   const payload = estimate.internal_json_payload as Record<string, unknown> | null;
