@@ -329,44 +329,96 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
     description: 'Includes installation of shower valve, drain, supply lines, waterproofing tie-ins, and final trim.',
     unit: 'each'
   },
+  'new_shower_valve': {
+    description: 'Includes installation of shower valve, drain, and supply line connections.',
+    unit: 'each'
+  },
+  'shower_valve': {
+    description: 'Includes installation of shower valve, drain, and supply line connections.',
+    unit: 'each'
+  },
   'plumbing_extra_head': {
-    description: 'Includes rough-in and connection for additional shower outlet components.',
+    description: 'Includes rough-in and connection for additional shower outlet.',
     unit: 'each'
   },
   'extra_shower_head': {
-    description: 'Includes rough-in and connection for additional shower outlet components.',
+    description: 'Includes rough-in and connection for additional shower outlet.',
     unit: 'each'
   },
   'diverter': {
-    description: 'Includes rough-in and connection for additional shower outlet components.',
+    description: 'Includes rough-in and connection for additional shower outlet.',
     unit: 'each'
   },
   'plumbing_tub_to_shower': {
-    description: 'Includes removal of tub plumbing and installation of complete shower rough-in connections.',
+    description: 'Includes removal of tub plumbing and installation of shower rough-in connections.',
     unit: 'each'
   },
   'tub_to_shower': {
-    description: 'Includes removal of tub plumbing and installation of complete shower rough-in connections.',
+    description: 'Includes removal of tub plumbing and installation of shower rough-in connections.',
     unit: 'each'
   },
   'plumbing_tub_freestanding': {
-    description: 'Includes drain connection, water supply tie-in, and leveling/placement of freestanding tub.',
+    description: 'Includes drain connection, water supply tie-in, and placement of freestanding tub.',
     unit: 'each'
   },
   'freestanding_tub_install': {
-    description: 'Includes drain connection, water supply tie-in, and leveling/placement of freestanding tub.',
+    description: 'Includes drain connection, water supply tie-in, and placement of freestanding tub.',
+    unit: 'each'
+  },
+  'freestanding_tub': {
+    description: 'Includes drain connection, water supply tie-in, and placement of freestanding tub.',
+    unit: 'each'
+  },
+  'tub_filler': {
+    description: 'Includes installation of tub filler fixture with water supply connections.',
+    unit: 'each'
+  },
+  'tub_filler_install': {
+    description: 'Includes installation of tub filler fixture with water supply connections.',
+    unit: 'each'
+  },
+  'relocate_toilet_line': {
+    description: 'Includes relocating toilet drain and water supply lines to new location.',
+    unit: 'each'
+  },
+  'toilet_line_relocation': {
+    description: 'Includes relocating toilet drain and water supply lines to new location.',
+    unit: 'each'
+  },
+  'relocate_tub_drain': {
+    description: 'Includes relocating existing tub drain to new position.',
+    unit: 'each'
+  },
+  'tub_drain_relocation': {
+    description: 'Includes relocating existing tub drain to new position.',
     unit: 'each'
   },
   'plumbing_toilet': {
-    description: 'Includes removal of old toilet and installation of new customer-supplied fixture.',
+    description: 'Includes toilet installation with wax ring and supply line connections.',
     unit: 'each'
   },
   'toilet_replacement': {
-    description: 'Includes removal of old toilet and installation of new customer-supplied fixture.',
+    description: 'Includes toilet installation with wax ring and supply line connections.',
     unit: 'each'
   },
   'toilet_swap': {
-    description: 'Includes removal of old toilet and installation of new customer-supplied fixture.',
+    description: 'Includes toilet installation with wax ring and supply line connections.',
+    unit: 'each'
+  },
+  'toilet_reinstall': {
+    description: 'Includes reinstallation of existing toilet with new wax ring and supply lines.',
+    unit: 'each'
+  },
+  'toilet_reconnect': {
+    description: 'Includes reinstallation of existing toilet with new wax ring and supply lines.',
+    unit: 'each'
+  },
+  'reuse_toilet': {
+    description: 'Includes reinstallation of existing toilet with new wax ring and supply lines.',
+    unit: 'each'
+  },
+  'existing_toilet': {
+    description: 'Includes reinstallation of existing toilet with new wax ring and supply lines.',
     unit: 'each'
   },
   'plumbing_smart_valve': {
@@ -1149,7 +1201,11 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
   // ============================================
   
   'hvac_vent_relocate': {
-    description: 'Includes adjusting or relocating HVAC supply or return vent to fit revised layout.',
+    description: 'Includes relocating HVAC vent to new location.',
+    unit: 'each'
+  },
+  'hvac_vent': {
+    description: 'Includes relocating HVAC vent to new location.',
     unit: 'each'
   },
   'range_hood_ducting': {
