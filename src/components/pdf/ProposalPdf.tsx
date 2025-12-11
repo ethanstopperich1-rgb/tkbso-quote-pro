@@ -273,6 +273,7 @@ interface ProposalPdfProps {
     low: number;
     high: number;
   };
+  showTileSqft?: boolean;
 }
 
 interface LineItem {
@@ -536,7 +537,7 @@ function normalizeKitchenCategory(cat: string, taskDescription?: string): string
   return 'Other';
 }
 
-function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): TradeGroup[] {
+function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig, showTileSqft: boolean = true): TradeGroup[] {
   const groups: TradeGroup[] = [];
 
   const payload = estimate.internal_json_payload as Record<string, unknown> | null;
@@ -760,8 +761,8 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       }
       seenDescriptions.add(normalizedKey);
       
-      // Format tile items with sqft in description
-      if (isTileSqftItem(description)) {
+      // Format tile items with sqft in description (only if showTileSqft is true)
+      if (showTileSqft && isTileSqftItem(description)) {
         description = formatTileDescription(description, item.quantity, item.unit);
       }
       
@@ -1030,7 +1031,7 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
   return groups;
 }
 
-export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange }: ProposalPdfProps) {
+export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, showTileSqft = true }: ProposalPdfProps) {
   const settings: ContractorSettings = (contractor.settings as ContractorSettings) || defaultSettings;
   const { companyProfile, branding, defaults } = settings;
 
@@ -1069,7 +1070,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange }:
   const companyPhone = companyProfile.phone || '';
   const companyEmail = companyProfile.email || '';
 
-  const tradeGroups = buildTradeGroups(estimate, pricingConfig);
+  const tradeGroups = buildTradeGroups(estimate, pricingConfig, showTileSqft);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
