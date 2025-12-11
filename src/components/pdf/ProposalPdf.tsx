@@ -570,13 +570,13 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
   const shouldExcludeItem = (taskDescription: string, allItems: typeof lineItems): boolean => {
     const lower = taskDescription.toLowerCase();
     
-    // EXCLUDE shower curtain rod if frameless glass is present
-    if (lower.includes('shower curtain') || lower.includes('curtain rod')) {
+    // EXCLUDE ANY shower curtain rod mention - ALWAYS filter out if glass is present
+    if (lower.includes('curtain') || lower.includes('shower rod') || lower.includes('curtain rod')) {
       const hasFramelessGlass = allItems?.some(item => {
         const itemLower = item.task_description.toLowerCase();
-        return itemLower.includes('frameless glass') || itemLower.includes('glass enclosure') ||
+        return itemLower.includes('frameless') || itemLower.includes('glass enclosure') ||
                itemLower.includes('shower door') || itemLower.includes('glass door') ||
-               itemLower.includes('glass panel');
+               itemLower.includes('glass panel') || itemLower.includes('glass shower');
       });
       if (hasFramelessGlass) return true;
     }
@@ -584,7 +584,6 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     // EXCLUDE HVAC-related items unless user explicitly mentioned HVAC
     if (lower.includes('hvac') || lower.includes('supply vent') || lower.includes('return vent') ||
         lower.includes('air vent') || lower.includes('relocating hvac') || lower.includes('adjusting hvac')) {
-      // Only include if there's a dedicated HVAC line item (not embedded in other descriptions)
       const hasExplicitHvac = allItems?.some(item => {
         const itemLower = item.task_description.toLowerCase();
         return (itemLower.includes('hvac') || itemLower.includes('vent relocat')) &&
@@ -595,15 +594,23 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       }
     }
     
+    // EXCLUDE items with wrong category placement (vanity in electrical, toilet in demo, countertop in plumbing)
+    if (lower.includes('vanity cabinet') || lower.includes('vanity countertop') || lower.includes('sink') && lower.includes('plumbing preparation')) {
+      // These should NOT appear in electrical
+      return false; // Let categorization handle placement
+    }
+    
     return false;
   };
 
-  // Helper to clean item description (remove auto-added HVAC text)
+  // Helper to clean item description (remove auto-added HVAC text and wrong descriptions)
   const cleanDescription = (description: string): string => {
     // Remove auto-added HVAC phrases
     let cleaned = description
       .replace(/\s*Includes adjusting or relocating HVAC supply or return vent to fit revised layout\.?\s*/gi, '')
       .replace(/\s*Includes HVAC vent adjustment\.?\s*/gi, '')
+      .replace(/\s*Includes installation of shower curtain rod with secure wall mounting\.?\s*/gi, '')
+      .replace(/\s*Includes vanity cabinet, countertop, sink, and basic plumbing preparation for installation\.?\s*/gi, '')
       .trim();
     
     // Clean up any double periods or trailing commas
@@ -611,6 +618,40 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     
     return cleaned;
   };
+
+  // Helper to determine correct category for misplaced items
+  const getCorrectCategory = (taskDescription: string, originalCategory: string): string => {
+    const lower = taskDescription.toLowerCase();
+    
+    // Vanity-related items should go to Cabinetry & Countertops, NOT electrical
+    if ((lower.includes('vanity') && !lower.includes('vanity light')) || 
+        lower.includes('cabinet') && !lower.includes('medicine')) {
+      return 'Cabinetry & Countertops';
+    }
+    
+    // Countertop items should go to Cabinetry & Countertops
+    if (lower.includes('countertop') || lower.includes('quartz') || lower.includes('granite')) {
+      return 'Cabinetry & Countertops';
+    }
+    
+    // Toilet reinstall/installation should go to Plumbing, NOT demolition
+    if ((lower.includes('toilet') && (lower.includes('reinstall') || lower.includes('install'))) ||
+        lower.includes('wax ring') || lower.includes('supply line')) {
+      if (!lower.includes('demo') && !lower.includes('removal')) {
+        return 'Plumbing';
+      }
+    }
+    
+    // LED mirrors should go to Electrical
+    if (lower.includes('led mirror') || lower.includes('mirror') && lower.includes('wiring')) {
+      return 'Electrical';
+    }
+    
+    return originalCategory;
+  };
+
+  // Track seen descriptions to remove duplicates
+  const seenDescriptions = new Set<string>();
 
   if (lineItems && lineItems.length > 0) {
     // Group line items by category, filtering out items that shouldn't be included
@@ -622,7 +663,9 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
         continue;
       }
       
-      const category = normalizeCategory(item.category || 'Other', item.task_description);
+      // Get normalized category first, then check for corrections
+      let category = normalizeCategory(item.category || 'Other', item.task_description);
+      category = getCorrectCategory(item.task_description, category);
       
       if (!grouped[category]) {
         grouped[category] = { items: [], total: 0 };
@@ -630,6 +673,18 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       
       // Clean and format description
       let description = cleanDescription(item.task_description);
+      
+      // Skip if description is empty after cleaning
+      if (!description || description.length < 3) {
+        continue;
+      }
+      
+      // Create a normalized key for duplicate detection
+      const normalizedKey = description.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 50);
+      if (seenDescriptions.has(normalizedKey)) {
+        continue; // Skip duplicate
+      }
+      seenDescriptions.add(normalizedKey);
       
       // Format tile items with sqft in description
       if (isTileSqftItem(description)) {
@@ -645,12 +700,12 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       grouped[category].total += item.cp_total || 0;
     }
     
-    // Add material allowances based on project type
+    // Add material allowances based on project type with NEW FORMAT
     if (isKitchen) {
       // Kitchen-specific material allowances
       if (grouped['Countertops'] && pricingConfig?.quartz_slab_level1_allowance_cp) {
         grouped['Countertops'].items.push({
-          description: `Countertop Material: Level 1 Quartz`,
+          description: `Product allowance $${pricingConfig.quartz_slab_level1_allowance_cp.toLocaleString()} per slab (Level 1 Quartz). Includes fabrication and installation.`,
           isMaterialAllowance: true,
         });
       }
@@ -662,42 +717,55 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
       }
       if (grouped['Plumbing'] && pricingConfig?.plumbing_fixture_allowance_cp) {
         grouped['Plumbing'].items.push({
-          description: `Plumbing Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)} (faucet, disposal, accessories)`,
+          description: `Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)}`,
           isMaterialAllowance: true,
         });
       }
       if (grouped['Backsplash'] && pricingConfig?.tile_material_allowance_cp_per_sqft) {
         grouped['Backsplash'].items.push({
-          description: `Tile Material Allowance: $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft`,
+          description: `Product allowance $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft. Includes thinset, grout, and Schluter trim.`,
           isMaterialAllowance: true,
         });
       }
       if (grouped['Flooring'] && pricingConfig?.lvp_cp_per_sqft) {
         grouped['Flooring'].items.push({
-          description: `Flooring Material Allowance: LVP/Tile - $${pricingConfig.lvp_cp_per_sqft.toFixed(2)}/sqft`,
+          description: `Product allowance $${pricingConfig.lvp_cp_per_sqft.toFixed(2)}/sqft (LVP/Tile). Includes underlayment and transitions.`,
           isMaterialAllowance: true,
         });
       }
     } else {
-      // Bathroom-specific material allowances
-      if (grouped['Tile & Waterproofing'] && pricingConfig?.tile_material_allowance_cp_per_sqft) {
-        grouped['Tile & Waterproofing'].items.push({
-          description: `Tile Material Allowance: $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft`,
-          isMaterialAllowance: true,
-        });
+      // Bathroom-specific material allowances - NEW FORMAT with separate allowances
+      if (grouped['Tile & Waterproofing']) {
+        // Don't add generic allowance - the line items should already have specific allowances
+        // Only add if there are no existing allowance items
+        const hasAllowance = grouped['Tile & Waterproofing'].items.some(i => 
+          i.description.toLowerCase().includes('allowance') || i.description.toLowerCase().includes('product'));
+        if (!hasAllowance && pricingConfig?.tile_material_allowance_cp_per_sqft) {
+          grouped['Tile & Waterproofing'].items.push({
+            description: `Product allowance $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft. Includes thinset, grout, and Schluter trim.`,
+            isMaterialAllowance: true,
+          });
+        }
       }
       if (grouped['Cabinetry & Countertops'] && pricingConfig?.quartz_slab_level1_allowance_cp) {
-        // Show countertop allowance as total amount, not per sqft
-        grouped['Cabinetry & Countertops'].items.push({
-          description: `Countertop Material: Level 1 Quartz`,
-          isMaterialAllowance: true,
-        });
+        const hasAllowance = grouped['Cabinetry & Countertops'].items.some(i => 
+          i.description.toLowerCase().includes('allowance') || i.description.toLowerCase().includes('product'));
+        if (!hasAllowance) {
+          grouped['Cabinetry & Countertops'].items.push({
+            description: `Product allowance $${pricingConfig.quartz_slab_level1_allowance_cp.toLocaleString()} per slab (Level 1 Quartz). Includes fabrication and installation.`,
+            isMaterialAllowance: true,
+          });
+        }
       }
       if (grouped['Plumbing'] && pricingConfig?.plumbing_fixture_allowance_cp) {
-        grouped['Plumbing'].items.push({
-          description: `Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)}`,
-          isMaterialAllowance: true,
-        });
+        const hasAllowance = grouped['Plumbing'].items.some(i => 
+          i.description.toLowerCase().includes('fixture allowance'));
+        if (!hasAllowance) {
+          grouped['Plumbing'].items.push({
+            description: `Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)}`,
+            isMaterialAllowance: true,
+          });
+        }
       }
     }
     

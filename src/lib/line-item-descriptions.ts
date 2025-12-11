@@ -1510,18 +1510,30 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
   const taskLower = taskDescription.toLowerCase();
   
   // === EXCLUSION RULES - Prevent false positive matches ===
-  // NEVER match shower_rod or curtain_rod for glass enclosures or tile work
-  const isGlassOrTileItem = taskLower.includes('glass') || taskLower.includes('enclosure') ||
+  // NEVER match shower_rod or curtain_rod for glass enclosures, tile work, or ANY plumbing/shower items
+  const isNonCurtainShowerItem = taskLower.includes('glass') || taskLower.includes('enclosure') ||
                             taskLower.includes('tile') || taskLower.includes('floor') ||
                             taskLower.includes('wall') || taskLower.includes('waterproof') ||
                             taskLower.includes('valve') || taskLower.includes('drain') ||
-                            taskLower.includes('frameless');
+                            taskLower.includes('frameless') || taskLower.includes('shower door') ||
+                            taskLower.includes('shower pan') || taskLower.includes('shower bench') ||
+                            taskLower.includes('shower niche') || taskLower.includes('shower curb') ||
+                            taskLower.includes('shower liner') || taskLower.includes('shower membrane') ||
+                            taskLower.includes('shower floor') || taskLower.includes('shower wall') ||
+                            taskLower.includes('tub') || taskLower.includes('vanity') ||
+                            taskLower.includes('toilet') || taskLower.includes('faucet') ||
+                            taskLower.includes('plumbing') || taskLower.includes('rough-in') ||
+                            taskLower.includes('supply line') || taskLower.includes('mirror') ||
+                            taskLower.includes('led mirror') || taskLower.includes('countertop');
+  
+  // Also check if description explicitly says "curtain" - if not, don't return curtain matches
+  const mentionsCurtain = taskLower.includes('curtain');
   
   // Direct lookup
   if (LINE_ITEM_DESCRIPTIONS[normalizedTask]) {
     const entry = LINE_ITEM_DESCRIPTIONS[normalizedTask];
-    // Skip shower_rod/curtain entries for glass/tile items
-    if (isGlassOrTileItem && entry.description.toLowerCase().includes('curtain')) {
+    // Skip shower_rod/curtain entries for non-curtain shower items
+    if ((isNonCurtainShowerItem || !mentionsCurtain) && entry.description.toLowerCase().includes('curtain')) {
       // Don't return this match, continue to find a better one
     } else {
       return entry;
@@ -1533,8 +1545,8 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
   const partialMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
   
   for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
-    // Skip shower_rod/curtain entries for glass/tile items
-    if (isGlassOrTileItem && (key.includes('rod') || key.includes('curtain') || 
+    // Skip shower_rod/curtain entries for non-curtain shower items
+    if ((isNonCurtainShowerItem || !mentionsCurtain) && (key.includes('rod') || key.includes('curtain') || 
         value.description.toLowerCase().includes('curtain'))) {
       continue;
     }
@@ -1579,8 +1591,8 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
   for (const keyword of specificKeywords) {
     const keywordMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
     for (const [key, value] of Object.entries(LINE_ITEM_DESCRIPTIONS)) {
-      // Skip shower_rod/curtain entries for glass/tile items
-      if (isGlassOrTileItem && (key.includes('rod') || key.includes('curtain') ||
+      // Skip shower_rod/curtain entries for non-curtain shower items
+      if ((isNonCurtainShowerItem || !mentionsCurtain) && (key.includes('rod') || key.includes('curtain') ||
           value.description.toLowerCase().includes('curtain'))) {
         continue;
       }
