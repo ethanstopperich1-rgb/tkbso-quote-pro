@@ -766,16 +766,7 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
           });
         }
       }
-      if (grouped['Plumbing'] && pricingConfig?.plumbing_fixture_allowance_cp) {
-        const hasAllowance = grouped['Plumbing'].items.some(i => 
-          i.description.toLowerCase().includes('fixture allowance'));
-        if (!hasAllowance) {
-          grouped['Plumbing'].items.push({
-            description: `Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)}`,
-            isMaterialAllowance: true,
-          });
-        }
-      }
+      // REMOVED: Fixture allowance for plumbing - user requested this not appear on PDF
     }
     
     // Convert to array with proper ordering
