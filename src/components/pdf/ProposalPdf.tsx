@@ -275,6 +275,7 @@ interface LineItem {
   description: string;
   quantity?: number;
   unit?: string;
+  isMaterialAllowance?: boolean;
 }
 
 interface TradeGroup {
@@ -292,7 +293,7 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-function buildTradeGroups(estimate: Estimate): TradeGroup[] {
+function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): TradeGroup[] {
   const groups: TradeGroup[] = [];
 
   const payload = estimate.internal_json_payload as Record<string, unknown> | null;
@@ -395,6 +396,27 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
     return cat;
   };
 
+  // Helper to check if a line item is a tile sqft item
+  const isTileSqftItem = (taskDescription: string): boolean => {
+    const lower = taskDescription.toLowerCase();
+    return (lower.includes('floor tile') || lower.includes('wall tile') || 
+            lower.includes('shower floor') || lower.includes('shower wall') ||
+            lower.includes('main floor') || lower.includes('bathroom floor')) &&
+           !lower.includes('material');
+  };
+
+  // Helper to format tile description with sqft
+  const formatTileDescription = (description: string, quantity?: number, unit?: string): string => {
+    if (quantity && unit?.toLowerCase() === 'sqft' && quantity > 0) {
+      const sqft = Math.round(quantity);
+      // Check if description already has sqft in parentheses
+      if (!description.includes('sqft') && !description.includes('sq ft')) {
+        return `${description} (${sqft} sqft)`;
+      }
+    }
+    return description;
+  };
+
   if (lineItems && lineItems.length > 0) {
     // Group line items by category
     const grouped: Record<string, { items: LineItem[]; total: number }> = {};
@@ -406,13 +428,28 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
         grouped[category] = { items: [], total: 0 };
       }
       
+      // Format tile items with sqft in description
+      let description = item.task_description;
+      if (isTileSqftItem(item.task_description)) {
+        description = formatTileDescription(item.task_description, item.quantity, item.unit);
+      }
+      
       // Add the actual line item description with quantity/unit
       grouped[category].items.push({
-        description: item.task_description,
+        description,
         quantity: item.quantity,
         unit: item.unit,
       });
       grouped[category].total += item.cp_total || 0;
+    }
+    
+    // Add material allowance to Tile & Support section if pricing config exists
+    if (grouped['Tile & Support'] && pricingConfig?.tile_material_allowance_cp_per_sqft) {
+      const materialAllowance = pricingConfig.tile_material_allowance_cp_per_sqft;
+      grouped['Tile & Support'].items.push({
+        description: `Material Allowance: $${materialAllowance.toFixed(2)}/sqft`,
+        isMaterialAllowance: true,
+      });
     }
     
     // Convert to array
@@ -445,12 +482,38 @@ function buildTradeGroups(estimate: Estimate): TradeGroup[] {
 
     if ((estimate.tile_cp_total || 0) > 0 || (estimate.waterproofing_cp_total || 0) > 0) {
       const tileTotal = (estimate.tile_cp_total || 0) + (estimate.waterproofing_cp_total || 0);
+      const tileItems: LineItem[] = [];
+      
+      // Add wall tile with sqft if available
+      if (estimate.bath_wall_tile_sqft && estimate.bath_wall_tile_sqft > 0) {
+        tileItems.push({ description: `Wall tile installation (${Math.round(estimate.bath_wall_tile_sqft)} sqft)` });
+      } else {
+        tileItems.push({ description: 'Tile installation (wall and floor)' });
+      }
+      
+      // Add floor tile with sqft if available
+      if (estimate.bath_floor_tile_sqft && estimate.bath_floor_tile_sqft > 0) {
+        tileItems.push({ description: `Main floor tile installation (${Math.round(estimate.bath_floor_tile_sqft)} sqft)` });
+      }
+      
+      // Add shower floor tile with sqft if available
+      if (estimate.bath_shower_floor_tile_sqft && estimate.bath_shower_floor_tile_sqft > 0) {
+        tileItems.push({ description: `Shower floor tile installation (${Math.round(estimate.bath_shower_floor_tile_sqft)} sqft)` });
+      }
+      
+      tileItems.push({ description: 'Waterproofing system' });
+      
+      // Add material allowance if pricing config exists
+      if (pricingConfig?.tile_material_allowance_cp_per_sqft) {
+        tileItems.push({ 
+          description: `Material Allowance: $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft`,
+          isMaterialAllowance: true,
+        });
+      }
+      
       groups.push({
         trade: 'Tile & Waterproofing',
-        items: [
-          { description: 'Tile installation (wall and floor)' },
-          { description: 'Waterproofing system' },
-        ],
+        items: tileItems,
         total: tileTotal,
       });
     }
@@ -542,7 +605,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
   const companyPhone = companyProfile.phone || '';
   const companyEmail = companyProfile.email || '';
 
-  const tradeGroups = buildTradeGroups(estimate);
+  const tradeGroups = buildTradeGroups(estimate, pricingConfig);
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -597,8 +660,15 @@ export function ProposalPdf({ contractor, estimate, pricingConfig }: ProposalPdf
           <View key={idx} style={styles.tradeSection} wrap={false}>
             <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a', borderBottomWidth: 1, borderBottomColor: '#1e3a8a', paddingBottom: 2, marginBottom: 4 }}>{group.trade}</Text>
             {group.items.map((item, itemIdx) => (
-              <Text key={itemIdx} style={{ fontSize: 9, color: '#475569', paddingLeft: 4, lineHeight: 1.4, marginBottom: 2 }}>
-                • {formatLineItemForPdf(item.description, item.quantity, item.unit)}
+              <Text key={itemIdx} style={{ 
+                fontSize: 9, 
+                color: item.isMaterialAllowance ? '#64748b' : '#475569', 
+                paddingLeft: 4, 
+                lineHeight: 1.4, 
+                marginBottom: 2,
+                fontStyle: item.isMaterialAllowance ? 'italic' : 'normal',
+              }}>
+                • {item.isMaterialAllowance ? item.description : formatLineItemForPdf(item.description, item.quantity, item.unit)}
               </Text>
             ))}
           </View>
