@@ -624,19 +624,55 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
   };
 
   // Helper to determine correct category for misplaced items - COMPREHENSIVE ROUTING
+  // PRIORITY ORDER IS CRITICAL - Plumbing must be checked before Electrical!
   const getCorrectCategory = (taskDescription: string, originalCategory: string): string => {
     const lower = taskDescription.toLowerCase();
     
-    // === PLUMBING FIRST - Catch toilet installations that may be mis-categorized ===
-    if (lower.includes('toilet') && (lower.includes('relocate') || lower.includes('reuse') || 
-        lower.includes('reinstall') || lower.includes('install') || lower.includes('wax ring') ||
-        lower.includes('supply line') || lower.includes('drain'))) {
-      return 'Plumbing';
-    }
+    // === PLUMBING FIRST (HIGHEST PRIORITY) - Catch ALL plumbing items before other checks ===
+    // This MUST run before Electrical to prevent tub fillers, drains, valves from going to wrong category
     if (lower.includes('tub') || lower.includes('filler') || lower.includes('shower valve') ||
         lower.includes('shower curb') || lower.includes('shower liner') || lower.includes('drain') ||
+        lower.includes('valve') || lower.includes('rough-in') || lower.includes('supply line') ||
         (lower.includes('plumb') && !lower.includes('plumb prep'))) {
       return 'Plumbing';
+    }
+    if (lower.includes('toilet') && (lower.includes('relocate') || lower.includes('reuse') || 
+        lower.includes('reinstall') || lower.includes('install') || lower.includes('wax ring') ||
+        lower.includes('supply') || lower.includes('line'))) {
+      return 'Plumbing';
+    }
+    
+    // === CABINETRY & COUNTERTOPS - Check BEFORE Electrical to catch mis-categorized vanity items ===
+    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light fixture')) ||
+        lower.includes('cabinet') || lower.includes('linen') || lower.includes('countertop') ||
+        lower.includes('quartz') || lower.includes('granite') || lower.includes('bundle')) {
+      return 'Cabinetry & Countertops';
+    }
+    
+    // === GLASS & FINAL TRIMOUT - Check before Electrical to catch LED mirrors ===
+    if (lower.includes('frameless') || lower.includes('glass enclosure') || 
+        lower.includes('glass shower') || lower.includes('shower door') ||
+        lower.includes('glass panel') || lower.includes('shower glass')) {
+      return 'Glass & Final Trimout';
+    }
+    if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
+      return 'Glass & Final Trimout';
+    }
+    if (lower.includes('towel bar') || lower.includes('toilet paper') || 
+        lower.includes('tp holder') || lower.includes('robe hook') ||
+        lower.includes('grab bar') || lower.includes('soap dish') ||
+        lower.includes('accessory') || lower.includes('accessories')) {
+      return 'Glass & Final Trimout';
+    }
+    
+    // === ELECTRICAL - Only lights, wiring, outlets, switches ===
+    // Plumbing and Cabinetry already filtered out above
+    if (lower.includes('recessed') || lower.includes('can light') || 
+        lower.includes('vanity light') || lower.includes('light fixture') ||
+        lower.includes('outlet') || lower.includes('switch') || lower.includes('wiring') ||
+        lower.includes('exhaust fan') || lower.includes('vent fan') ||
+        (lower.includes('light') && lower.includes('install'))) {
+      return 'Electrical';
     }
     
     // === DEMOLITION - Only gut/demo/removal/dumpster (NOT installations) ===
@@ -644,26 +680,6 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     if (!isInstallation && (lower.includes('gut') || lower.includes('demo') || lower.includes('dumpster') ||
         lower.includes('tearout') || (lower.includes('remove') && !lower.includes('removal')))) {
       return 'Demolition';
-    }
-    
-    // === CABINETRY & COUNTERTOPS - Check BEFORE Electrical to catch mis-categorized vanity items ===
-    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light')) ||
-        lower.includes('cabinet') || lower.includes('linen') || lower.includes('countertop') ||
-        lower.includes('quartz') || lower.includes('granite') || lower.includes('bundle')) {
-      return 'Cabinetry & Countertops';
-    }
-    
-    // === ELECTRICAL - Only lights, wiring, outlets, switches ===
-    // But NOT vanity cabinets or LED mirrors - those go elsewhere
-    if (lower.includes('recessed') || lower.includes('can light') || 
-        lower.includes('vanity light') || (lower.includes('light') && lower.includes('install') && !lower.includes('vanity')) ||
-        lower.includes('outlet') || lower.includes('switch') || lower.includes('wiring') ||
-        (lower.includes('electrical') && !lower.includes('vanity') && !lower.includes('cabinet'))) {
-      // But NOT LED mirrors - those go to Glass
-      if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
-        return 'Glass & Final Trimout';
-      }
-      return 'Electrical';
     }
     
     // === FRAMING & DRYWALL - Walls, niches, framing, drywall ===
@@ -682,23 +698,6 @@ function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig): Tr
     // === PAINT ===
     if (lower.includes('paint') || lower.includes('primer') || lower.includes('texture')) {
       return 'Paint';
-    }
-    
-    // === GLASS & FINAL TRIMOUT ===
-    // Frameless glass, LED mirrors, accessories (towel bar, TP holder, etc.)
-    if (lower.includes('frameless') || lower.includes('glass enclosure') || 
-        lower.includes('glass shower') || lower.includes('shower door') ||
-        lower.includes('glass panel') || lower.includes('shower glass')) {
-      return 'Glass & Final Trimout';
-    }
-    if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
-      return 'Glass & Final Trimout';
-    }
-    if (lower.includes('towel bar') || lower.includes('toilet paper') || 
-        lower.includes('tp holder') || lower.includes('robe hook') ||
-        lower.includes('grab bar') || lower.includes('soap dish') ||
-        lower.includes('accessory') || lower.includes('accessories')) {
-      return 'Glass & Final Trimout';
     }
     
     return originalCategory;
