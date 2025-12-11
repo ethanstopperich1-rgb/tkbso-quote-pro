@@ -63,6 +63,11 @@ interface PricingResult {
   margin_percent: number;
 }
 
+// ============================================================
+// COMPREHENSIVE PRICING DATABASE - Updated 2025-06-11
+// IC = Internal Cost, CP = Client Price (42% margin: CP = IC * 1.724)
+// ============================================================
+
 // Map trade bucket categories to pricing_configs fields
 function mapCategoryToPricing(
   category: string,
@@ -74,231 +79,358 @@ function mapCategoryToPricing(
   const categoryLower = category.toLowerCase();
   const taskLower = taskDescription.toLowerCase();
 
-  // ============ DEMOLITION & HAUL ============
-  
+  // ============ DEMOLITION ============
+  if (categoryLower.includes('demo')) {
+    if (taskLower.includes('full') && taskLower.includes('gut') && taskLower.includes('bath')) {
+      return { ic: 1360, cp: 2344.83, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('full') && taskLower.includes('gut') && taskLower.includes('kitchen')) {
+      return { ic: 1360, cp: 2344.83, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('cast iron') || taskLower.includes('castiron') || taskLower.includes('iron tub')) {
+      return { ic: 250, cp: 431.03, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('soffit')) {
+      return { ic: 15, cp: 25.86, unit: 'lf' };
+    }
+    if (taskLower.includes('shower') && taskLower.includes('only')) {
+      return { ic: 900, cp: 1551.72, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('small') || taskLower.includes('standard bath')) {
+      return { ic: 1300, cp: 2241.38, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('large') || taskLower.includes('full bath') || taskLower.includes('master')) {
+      return { ic: 1650, cp: 2844.83, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('kitchen')) {
+      return { ic: 1750, cp: 3017.24, unit: 'ea', flatRate: true };
+    }
+    // Default demo
+    return { ic: 1360, cp: 2344.83, unit: 'ea', flatRate: true };
+  }
+
+  // ============ DUMPSTER & HAUL ============
+  if (categoryLower.includes('disposal') || categoryLower.includes('logistics') || categoryLower.includes('haul') || categoryLower.includes('dumpster')) {
+    if (taskLower.includes('dumpster') || taskLower.includes('20 yard') || taskLower.includes('20yd')) {
+      return { ic: 550, cp: 948.28, unit: 'ea', flatRate: true };
+    }
+    return { ic: 550, cp: 948.28, unit: 'ea', flatRate: true };
+  }
+
+  // ============ SITE PROTECTION ============
   if (categoryLower.includes('site protection') || categoryLower.includes('protection') || categoryLower.includes('setup')) {
     if (taskLower.includes('ramboard') || taskLower.includes('floor protection')) {
-      return { ic: Number((config as any).floor_protection_ramboard_sqft_ic) || 0.5, cp: Number((config as any).floor_protection_ramboard_sqft_cp) || 1.0, unit: 'sqft' };
-    } else if (taskLower.includes('dust') || taskLower.includes('zipwall') || taskLower.includes('barrier')) {
-      return { ic: Number((config as any).dust_barrier_zipwall_ic) || 150, cp: Number((config as any).dust_barrier_zipwall_cp) || 300, unit: 'ea', flatRate: true };
+      return { ic: 0.5, cp: 0.86, unit: 'sqft' };
     }
-    return { ic: Number((config as any).dust_barrier_zipwall_ic) || 150, cp: Number((config as any).dust_barrier_zipwall_cp) || 300, unit: 'ea', flatRate: true };
+    if (taskLower.includes('dust') || taskLower.includes('zipwall') || taskLower.includes('barrier')) {
+      return { ic: 150, cp: 258.62, unit: 'ea', flatRate: true };
+    }
+    return { ic: 150, cp: 258.62, unit: 'ea', flatRate: true };
   }
 
-  if (categoryLower.includes('disposal') || categoryLower.includes('logistics') || categoryLower.includes('haul')) {
-    if (taskLower.includes('dumpster')) {
-      return { ic: Number((config as any).dumpster_20yd_ic) || 550, cp: Number((config as any).dumpster_20yd_cp) || 750, unit: 'ea', flatRate: true };
-    }
-    return { ic: Number((config as any).dumpster_20yd_ic) || 550, cp: Number((config as any).dumpster_20yd_cp) || 750, unit: 'ea', flatRate: true };
-  }
-
-  // Standard Demolition - FLAT RATE
-  if (categoryLower.includes('demo')) {
-    if (taskLower.includes('soffit')) {
-      return { ic: Number((config as any).demo_soffit_lf_ic) || 15, cp: Number((config as any).demo_soffit_lf_cp) || 30, unit: 'lf' };
-    } else if (taskLower.includes('shower') && taskLower.includes('only')) {
-      return { ic: Number(config.demo_shower_only_ic) || 900, cp: Number(config.demo_shower_only_cp) || 1450, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('small') || taskLower.includes('standard bath')) {
-      return { ic: Number(config.demo_small_bath_ic) || 600, cp: Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('large') || taskLower.includes('full bath') || taskLower.includes('master')) {
-      return { ic: Number(config.demo_large_bath_ic) || 1650, cp: Number(config.demo_large_bath_cp) || 2500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('kitchen')) {
-      return { ic: Number(config.demo_kitchen_ic) || 800, cp: Number(config.demo_kitchen_cp) || 1500, unit: 'ea', flatRate: true };
-    }
-    return { ic: Number(config.demo_small_bath_ic) || 600, cp: Number(config.demo_small_bath_cp) || 1200, unit: 'ea', flatRate: true };
-  }
-
-  // ============ PLUMBING ============
+  // ============ PLUMBING (COMPREHENSIVE) ============
   if (categoryLower.includes('plumb')) {
-    if (taskLower.includes('kitchen') && (taskLower.includes('reconnect') || taskLower.includes('hook'))) {
-      return { ic: 800, cp: 1400, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('reconnect') || taskLower.includes('hook up')) {
-      return { ic: 800, cp: 1400, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('drain') && taskLower.includes('reloc')) {
-      return { ic: 500, cp: 1200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('toilet') && taskLower.includes('reloc')) {
-      return { ic: 1100, cp: 2200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('toilet')) {
-      return { ic: Number(config.plumbing_toilet_ic) || 350, cp: Number(config.plumbing_toilet_cp) || 690, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('tub') && taskLower.includes('reloc')) {
-      return { ic: 2800, cp: 4800, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('shower') && taskLower.includes('standard')) {
-      return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('extra head')) {
-      return { ic: Number(config.plumbing_extra_head_ic) || 625, cp: Number(config.plumbing_extra_head_cp) || 1100, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('freestanding')) {
-      return { ic: Number(config.plumbing_tub_freestanding_ic) || 3300, cp: Number(config.plumbing_tub_freestanding_cp) || 4800, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('tub to shower') || taskLower.includes('conversion')) {
-      return { ic: Number(config.plumbing_tub_to_shower_ic) || 2550, cp: Number(config.plumbing_tub_to_shower_cp) || 4200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('linear drain')) {
-      return { ic: Number(config.plumbing_linear_drain_ic) || 750, cp: Number(config.plumbing_linear_drain_cp) || 1550, unit: 'ea', flatRate: true };
+    // Toilet relocations - MOST EXPENSIVE
+    if (taskLower.includes('toilet') && (taskLower.includes('line') || taskLower.includes('reloc') || taskLower.includes('move'))) {
+      return { ic: 4000, cp: 6896.55, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.plumbing_shower_standard_ic) || 2225, cp: Number(config.plumbing_shower_standard_cp) || 3425, unit: 'ea', flatRate: true };
-  }
-
-  // ============ TILE ============
-  if (categoryLower.includes('tile')) {
-    const materialIc = Number((config as any).tile_material_allowance_ic) || 5;
-    const laborIc = taskLower.includes('wall') ? Number(config.tile_wall_ic_per_sqft) || 20 : 
-                   taskLower.includes('shower floor') ? Number(config.tile_shower_floor_ic_per_sqft) || 6 :
-                   Number(config.tile_floor_ic_per_sqft) || 5.5;
-    const totalIc = materialIc + laborIc;
-    const targetMargin = Number(config.target_margin) || 0.38;
-    const totalCp = totalIc / (1 - targetMargin);
-    return { ic: totalIc, cp: totalCp, unit: 'sqft' };
-  }
-
-  // ============ WATERPROOFING ============
-  if (categoryLower.includes('waterproof') || (categoryLower.includes('support') && taskLower.includes('waterproof'))) {
-    const icPerSqft = Number(config.waterproofing_ic_per_sqft) || 6;
-    const cpPerSqft = Number(config.waterproofing_cp_per_sqft) || 13;
-    if (dimensions && (dimensions.shower_wall_sqft || dimensions.shower_floor_sqft)) {
-      const totalShowerSqft = (dimensions.shower_wall_sqft || 0) + (dimensions.shower_floor_sqft || 0);
-      if (totalShowerSqft > 0) {
-        return { ic: icPerSqft * totalShowerSqft, cp: cpPerSqft * totalShowerSqft, unit: 'ea', flatRate: true };
+    // Tub drain relocation
+    if (taskLower.includes('tub') && (taskLower.includes('drain') || taskLower.includes('reloc'))) {
+      return { ic: 2800, cp: 4827.59, unit: 'ea', flatRate: true };
+    }
+    // Shower valve install
+    if (taskLower.includes('shower') && taskLower.includes('valve')) {
+      return { ic: 1800, cp: 3103.45, unit: 'ea', flatRate: true };
+    }
+    // Shower curb and liner
+    if (taskLower.includes('curb') || taskLower.includes('liner')) {
+      return { ic: 500, cp: 862.07, unit: 'ea', flatRate: true };
+    }
+    // Toilet reinstall (existing)
+    if (taskLower.includes('toilet') && (taskLower.includes('reinstall') || taskLower.includes('reuse') || taskLower.includes('existing'))) {
+      return { ic: 150, cp: 258.62, unit: 'ea', flatRate: true };
+    }
+    // Freestanding tub (material + install combined)
+    if (taskLower.includes('freestanding')) {
+      if (taskLower.includes('material')) {
+        return { ic: 2250, cp: 3879.31, unit: 'ea', flatRate: true };
       }
+      if (taskLower.includes('install')) {
+        return { ic: 2250, cp: 3879.31, unit: 'ea', flatRate: true };
+      }
+      // Combined
+      return { ic: 4500, cp: 7758.62, unit: 'ea', flatRate: true };
     }
-    return { ic: icPerSqft, cp: cpPerSqft, unit: 'sqft' };
-  }
-
-  // ============ CEMENT BOARD ============
-  if (categoryLower.includes('cement') || (categoryLower.includes('support') && taskLower.includes('cement'))) {
-    return { ic: Number(config.cement_board_ic_per_sqft) || 3, cp: Number(config.cement_board_cp_per_sqft) || 5, unit: 'sqft' };
+    // Tub filler
+    if (taskLower.includes('tub filler') || taskLower.includes('tub fill')) {
+      return { ic: 500, cp: 862.07, unit: 'ea', flatRate: true };
+    }
+    // Standard shower rough-in
+    if (taskLower.includes('shower') && taskLower.includes('standard')) {
+      return { ic: 2225, cp: 3836.21, unit: 'ea', flatRate: true };
+    }
+    // Extra head
+    if (taskLower.includes('extra head') || taskLower.includes('additional head')) {
+      return { ic: 625, cp: 1077.59, unit: 'ea', flatRate: true };
+    }
+    // Tub to shower conversion
+    if (taskLower.includes('tub to shower') || taskLower.includes('conversion')) {
+      return { ic: 2550, cp: 4396.55, unit: 'ea', flatRate: true };
+    }
+    // Linear drain
+    if (taskLower.includes('linear drain')) {
+      return { ic: 750, cp: 1293.10, unit: 'ea', flatRate: true };
+    }
+    // Smart valve
+    if (taskLower.includes('smart') && taskLower.includes('valve')) {
+      return { ic: 1350, cp: 2327.59, unit: 'ea', flatRate: true };
+    }
+    // Toilet swap (same location)
+    if (taskLower.includes('toilet') && !taskLower.includes('reloc')) {
+      return { ic: 350, cp: 603.45, unit: 'ea', flatRate: true };
+    }
+    // Kitchen reconnect
+    if (taskLower.includes('kitchen') && (taskLower.includes('reconnect') || taskLower.includes('hook'))) {
+      return { ic: 800, cp: 1379.31, unit: 'ea', flatRate: true };
+    }
+    // Default plumbing
+    return { ic: 2225, cp: 3836.21, unit: 'ea', flatRate: true };
   }
 
   // ============ ELECTRICAL ============
   if (categoryLower.includes('electric')) {
     if (taskLower.includes('recessed') || taskLower.includes('can')) {
-      return { ic: Number(config.recessed_can_ic_each) || 65, cp: Number(config.recessed_can_cp_each) || 110, unit: 'ea' };
-    } else if (taskLower.includes('vanity light')) {
-      return { ic: Number(config.electrical_vanity_light_ic) || 200, cp: Number(config.electrical_vanity_light_cp) || 350, unit: 'ea' };
-    } else if (taskLower.includes('pendant')) {
-      return { ic: 150, cp: 275, unit: 'ea' };
-    } else if (taskLower.includes('under cabinet')) {
-      return { ic: 350, cp: 600, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('kitchen')) {
-      return { ic: Number(config.electrical_kitchen_package_ic) || 950, cp: Number(config.electrical_kitchen_package_cp) || 1750, unit: 'ea' };
+      return { ic: 65, cp: 112.07, unit: 'ea' };
     }
-    return { ic: Number(config.electrical_small_package_ic) || 250, cp: Number(config.electrical_small_package_cp) || 400, unit: 'ea' };
+    if (taskLower.includes('vanity light') || taskLower.includes('vanity lights')) {
+      return { ic: 300, cp: 517.24, unit: 'ea' };
+    }
+    if (taskLower.includes('pendant')) {
+      return { ic: 150, cp: 258.62, unit: 'ea' };
+    }
+    if (taskLower.includes('under cabinet')) {
+      return { ic: 350, cp: 603.45, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('kitchen')) {
+      return { ic: 950, cp: 1637.93, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('led') && taskLower.includes('mirror')) {
+      return { ic: 100, cp: 172.41, unit: 'ea' }; // Just electrical for LED mirror
+    }
+    return { ic: 250, cp: 431.03, unit: 'ea', flatRate: true };
   }
 
-  // ============ FRAMING / STRUCTURAL ============
+  // ============ FRAMING & DRYWALL ============
   if (categoryLower.includes('fram') || categoryLower.includes('structural')) {
-    if (taskLower.includes('niche')) {
-      return { ic: Number(config.niche_ic_each) || 300, cp: Number(config.niche_cp_each) || 550, unit: 'ea' };
-    } else if (taskLower.includes('pony wall')) {
-      return { ic: Number(config.framing_pony_wall_ic) || 450, cp: Number(config.framing_pony_wall_cp) || 850, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('wall remov')) {
-      return { ic: 1500, cp: 2800, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('new wall')) {
-      return { ic: 35, cp: 65, unit: 'lf' };
-    } else if (taskLower.includes('pocket door')) {
-      return { ic: 650, cp: 1200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('door') && taskLower.includes('reloc')) {
-      return { ic: 1200, cp: 2200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('door') && taskLower.includes('clos')) {
-      return { ic: 600, cp: 1100, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('entrance') && taskLower.includes('enlarg')) {
-      return { ic: 900, cp: 1700, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('shower') && taskLower.includes('enlarg')) {
-      return { ic: 1800, cp: 3200, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('bench')) {
-      return { ic: 400, cp: 750, unit: 'ea' };
+    if (taskLower.includes('wall remov') || taskLower.includes('remove wall')) {
+      return { ic: 1200, cp: 2068.97, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.framing_standard_ic) || 550, cp: Number(config.framing_standard_cp) || 1200, unit: 'ea', flatRate: true };
+    if (taskLower.includes('new wall') || taskLower.includes('build wall') || taskLower.includes('frame new')) {
+      return { ic: 1200, cp: 2068.97, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('niche')) {
+      return { ic: 150, cp: 258.62, unit: 'ea' };
+    }
+    if (taskLower.includes('pony wall')) {
+      return { ic: 450, cp: 775.86, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('pocket door')) {
+      return { ic: 650, cp: 1120.69, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('door') && taskLower.includes('reloc')) {
+      return { ic: 1200, cp: 2068.97, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('door') && taskLower.includes('clos')) {
+      return { ic: 600, cp: 1034.48, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('shower') && taskLower.includes('enlarg')) {
+      return { ic: 1800, cp: 3103.45, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('bench')) {
+      return { ic: 400, cp: 689.66, unit: 'ea' };
+    }
+    // Standard framing
+    return { ic: 550, cp: 948.28, unit: 'ea', flatRate: true };
+  }
+
+  // ============ DRYWALL ============
+  if (categoryLower.includes('drywall')) {
+    if (taskLower.includes('patch') || taskLower.includes('texture')) {
+      return { ic: 330, cp: 568.97, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('large')) {
+      return { ic: 13, cp: 22.41, unit: 'sqft' };
+    }
+    return { ic: 330, cp: 568.97, unit: 'ea', flatRate: true };
+  }
+
+  // ============ TILE & WATERPROOFING ============
+  if (categoryLower.includes('tile')) {
+    // Wall tile
+    if (taskLower.includes('wall')) {
+      return { ic: 18, cp: 31.03, unit: 'sqft' };
+    }
+    // Shower floor tile
+    if (taskLower.includes('shower') && taskLower.includes('floor')) {
+      return { ic: 5, cp: 8.62, unit: 'sqft' };
+    }
+    // Main floor tile
+    if (taskLower.includes('main') || taskLower.includes('floor')) {
+      return { ic: 4.5, cp: 7.76, unit: 'sqft' };
+    }
+    // Default to wall tile
+    return { ic: 18, cp: 31.03, unit: 'sqft' };
+  }
+
+  // ============ WATERPROOFING ============
+  if (categoryLower.includes('waterproof') || (categoryLower.includes('support') && taskLower.includes('waterproof'))) {
+    return { ic: 2, cp: 3.45, unit: 'sqft' };
+  }
+
+  // ============ CEMENT BOARD ============
+  if (categoryLower.includes('cement') || (categoryLower.includes('support') && taskLower.includes('cement'))) {
+    return { ic: 3, cp: 5.17, unit: 'sqft' };
+  }
+
+  // ============ SCHLUTER PROFILE ============
+  if (taskLower.includes('schluter') || taskLower.includes('profile') || taskLower.includes('edge')) {
+    return { ic: 15, cp: 25.86, unit: 'lf' };
+  }
+
+  // ============ CABINETRY & VANITIES ============
+  if (categoryLower.includes('vanit') && !taskLower.includes('light')) {
+    if (taskLower.includes('96') || taskLower.includes('90')) {
+      return { ic: 3800, cp: 6551.72, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('84')) {
+      return { ic: 3200, cp: 5517.24, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('72')) {
+      return { ic: 2600, cp: 4482.76, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('60')) {
+      return { ic: 2200, cp: 3793.10, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('48')) {
+      return { ic: 2500, cp: 4310.34, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('36')) {
+      return { ic: 1300, cp: 2241.38, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('30')) {
+      return { ic: 1100, cp: 1896.55, unit: 'ea', flatRate: true };
+    }
+    // Linen cabinet
+    if (taskLower.includes('linen')) {
+      return { ic: 300, cp: 517.24, unit: 'ea', flatRate: true };
+    }
+    // Default 48" vanity
+    return { ic: 2500, cp: 4310.34, unit: 'ea', flatRate: true };
+  }
+
+  // ============ CABINETS (Kitchen) ============
+  if (categoryLower.includes('cabinet') || categoryLower.includes('cabinetry')) {
+    const materialIc = 150;
+    const laborIc = 50;
+    const totalIc = materialIc + laborIc;
+    return { ic: totalIc, cp: totalIc * 1.724, unit: 'lf' };
+  }
+
+  // ============ COUNTERTOPS / QUARTZ ============
+  if (categoryLower.includes('quartz') || categoryLower.includes('countertop') || categoryLower.includes('counter')) {
+    // Quartz fabrication & install
+    if (taskLower.includes('fab') || taskLower.includes('install') || taskLower.includes('labor')) {
+      return { ic: 22, cp: 37.93, unit: 'sqft' };
+    }
+    // Quartz material allowance (slab)
+    if (taskLower.includes('material') || taskLower.includes('slab') || taskLower.includes('allowance')) {
+      return { ic: 1200, cp: 1200, unit: 'ea', flatRate: true }; // Material allowance = pass-through
+    }
+    // Combined quartz
+    return { ic: 22, cp: 37.93, unit: 'sqft' };
+  }
+
+  // ============ BACKSPLASH ============
+  if (categoryLower.includes('backsplash')) {
+    return { ic: 25, cp: 43.10, unit: 'sqft' };
+  }
+
+  // ============ FLOORING (non-tile) ============
+  if (categoryLower.includes('floor') && !categoryLower.includes('tile')) {
+    if (taskLower.includes('lvp') || taskLower.includes('vinyl') || taskLower.includes('laminate')) {
+      return { ic: 2.5, cp: 4.31, unit: 'sqft' };
+    }
+    return { ic: 4.5, cp: 7.76, unit: 'sqft' };
+  }
+
+  // ============ PAINT ============
+  if (categoryLower.includes('paint')) {
+    if (taskLower.includes('ceiling')) {
+      return { ic: 250, cp: 431.03, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('full') || taskLower.includes('complete') || taskLower.includes('bathroom')) {
+      return { ic: 1000, cp: 1724.14, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('kitchen')) {
+      return { ic: 1200, cp: 2068.97, unit: 'ea', flatRate: true };
+    }
+    if (taskLower.includes('trim') || taskLower.includes('baseboard')) {
+      return { ic: 2, cp: 3.45, unit: 'lf' };
+    }
+    // Patch & repair
+    return { ic: 500, cp: 862.07, unit: 'ea', flatRate: true };
   }
 
   // ============ GLASS ============
   if (categoryLower.includes('glass')) {
     if (taskLower.includes('90') || taskLower.includes('return') || taskLower.includes('corner')) {
-      return { ic: Number(config.glass_90_return_ic) || 1425, cp: Number(config.glass_90_return_cp) || 2775, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('panel only') || taskLower.includes('fixed')) {
-      return { ic: Number(config.glass_panel_only_ic) || 800, cp: Number(config.glass_panel_only_cp) || 1375, unit: 'ea', flatRate: true };
+      return { ic: 1425, cp: 2456.90, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.glass_shower_standard_ic) || 1200, cp: Number(config.glass_shower_standard_cp) || 2050, unit: 'ea', flatRate: true };
-  }
-
-  // ============ VANITY ============
-  if (categoryLower.includes('vanit') && !taskLower.includes('light')) {
-    if (taskLower.includes('72') || taskLower.includes('84')) {
-      return { ic: Number(config.vanity_72_bundle_ic) || 2400, cp: Number(config.vanity_72_bundle_cp) || 3850, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('60')) {
-      return { ic: Number(config.vanity_60_bundle_ic) || 2200, cp: Number(config.vanity_60_bundle_cp) || 3500, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('48')) {
-      return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('36')) {
-      return { ic: Number(config.vanity_36_bundle_ic) || 1300, cp: Number(config.vanity_36_bundle_cp) || 2200, unit: 'ea', flatRate: true };
+    if (taskLower.includes('panel only') || taskLower.includes('fixed')) {
+      return { ic: 800, cp: 1379.31, unit: 'ea', flatRate: true };
     }
-    return { ic: Number(config.vanity_48_bundle_ic) || 1600, cp: Number(config.vanity_48_bundle_cp) || 2600, unit: 'ea', flatRate: true };
+    // Door + panel (standard)
+    return { ic: 1350, cp: 2327.59, unit: 'ea', flatRate: true };
   }
 
-  // ============ CABINETS ============
-  if (categoryLower.includes('cabinet') || categoryLower.includes('cabinetry')) {
-    const materialIc = Number((config as any).cabinet_material_allowance_ic) || 150;
-    const laborIc = Number(config.cabinet_install_only_lf_ic) || 50;
-    const totalIc = materialIc + laborIc;
-    const targetMargin = Number(config.target_margin) || 0.38;
-    const totalCp = totalIc / (1 - targetMargin);
-    return { ic: totalIc, cp: totalCp, unit: 'lf' };
-  }
-
-  // ============ COUNTERTOPS / QUARTZ ============
-  if (categoryLower.includes('quartz') || categoryLower.includes('countertop') || categoryLower.includes('counter')) {
-    const materialIc = Number((config as any).quartz_material_allowance_ic) || 25;
-    const fabIc = Number(config.quartz_ic_per_sqft) || 15;
-    const totalIc = materialIc + fabIc;
-    const targetMargin = Number(config.target_margin) || 0.38;
-    const totalCp = totalIc / (1 - targetMargin);
-    return { ic: totalIc, cp: totalCp, unit: 'sqft' };
-  }
-
-  // ============ BACKSPLASH ============
-  if (categoryLower.includes('backsplash')) {
-    return { ic: Number(config.tile_backsplash_ic) || 12, cp: Number(config.tile_backsplash_cp) || 25, unit: 'sqft' };
-  }
-
-  // ============ FLOORING ============
-  if (categoryLower.includes('floor') && !categoryLower.includes('tile')) {
-    if (taskLower.includes('lvp') || taskLower.includes('vinyl') || taskLower.includes('laminate')) {
-      return { ic: Number(config.lvp_ic_per_sqft) || 2.5, cp: Number(config.lvp_cp_per_sqft) || 6, unit: 'sqft' };
+  // ============ MATERIALS / ALLOWANCES ============
+  if (categoryLower.includes('material') || categoryLower.includes('allowance')) {
+    // Tile material allowances
+    if (taskLower.includes('tile') && taskLower.includes('main')) {
+      return { ic: 6.50, cp: 6.50, unit: 'sqft' }; // Pass-through allowance
     }
-    return { ic: Number(config.tile_floor_ic_per_sqft) || 5.5, cp: Number(config.tile_floor_cp_per_sqft) || 12, unit: 'sqft' };
-  }
-
-  // ============ PAINT ============
-  if (categoryLower.includes('paint')) {
-    if (taskLower.includes('full') || taskLower.includes('complete')) {
-      return { ic: Number(config.paint_full_bath_ic) || 1200, cp: Number(config.paint_full_bath_cp) || 1900, unit: 'ea', flatRate: true };
+    if (taskLower.includes('tile') && taskLower.includes('shower') && taskLower.includes('floor')) {
+      return { ic: 12, cp: 12, unit: 'sqft' }; // Pass-through allowance
     }
-    return { ic: Number(config.paint_patch_bath_ic) || 800, cp: Number(config.paint_patch_bath_cp) || 1300, unit: 'ea', flatRate: true };
-  }
-
-  // ============ MATERIALS ============
-  if (categoryLower.includes('material')) {
-    if (taskLower.includes('tile')) {
-      return { ic: Number((config as any).tile_material_allowance_ic) || 5, cp: Number(config.tile_material_allowance_cp_per_sqft) || 8, unit: 'sqft' };
-    } else if (taskLower.includes('plumbing') || taskLower.includes('fixture')) {
-      return { ic: 700, cp: Number(config.plumbing_fixture_allowance_cp) || 1400, unit: 'ea', flatRate: true };
-    } else if (taskLower.includes('floor')) {
-      return { ic: 3, cp: 5, unit: 'sqft' };
+    if (taskLower.includes('tile') && (taskLower.includes('wall') || !taskLower.includes('floor'))) {
+      return { ic: 6.50, cp: 6.50, unit: 'sqft' }; // Pass-through allowance
     }
-    return { ic: 500, cp: 1000, unit: 'ea', flatRate: true };
-  }
-
-  // ============ DRYWALL ============
-  if (categoryLower.includes('drywall')) {
-    if (taskLower.includes('patch')) {
-      return { ic: 200, cp: 400, unit: 'ea' };
+    // Plumbing fixtures
+    if (taskLower.includes('plumbing') || taskLower.includes('fixture')) {
+      return { ic: 1350, cp: 1350, unit: 'ea', flatRate: true };
     }
-    return { ic: 10, cp: 18, unit: 'sqft' };
+    // LED Mirror material
+    if (taskLower.includes('led') && taskLower.includes('mirror')) {
+      return { ic: 550, cp: 550, unit: 'ea' };
+    }
+    return { ic: 500, cp: 862.07, unit: 'ea', flatRate: true };
   }
 
-  // ============ ACCESSORIES ============
-  if (categoryLower.includes('accessor') || categoryLower.includes('mirror')) {
+  // ============ ACCESSORIES / TRIMOUT ============
+  if (categoryLower.includes('accessor') || categoryLower.includes('trimout') || categoryLower.includes('final')) {
+    if (taskLower.includes('led') && taskLower.includes('mirror')) {
+      return { ic: 550, cp: 550, unit: 'ea' }; // Material allowance
+    }
     if (taskLower.includes('mirror')) {
-      return { ic: 200, cp: Number(config.mirror_allowance_cp) || 450, unit: 'ea' };
+      return { ic: 200, cp: 344.83, unit: 'ea' };
     }
-    return { ic: 150, cp: 300, unit: 'ea' };
+    if (taskLower.includes('towel') && taskLower.includes('bar')) {
+      return { ic: 45, cp: 77.59, unit: 'ea' };
+    }
+    if (taskLower.includes('tp') || taskLower.includes('toilet paper')) {
+      return { ic: 12, cp: 20.69, unit: 'ea' };
+    }
+    return { ic: 150, cp: 258.62, unit: 'ea' };
   }
 
   return null;
