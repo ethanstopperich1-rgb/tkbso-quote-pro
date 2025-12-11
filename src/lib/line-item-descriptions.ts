@@ -1540,7 +1540,7 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
     }
   }
   
-  // Try partial matches - prioritize EXACT word matches over longer keys with extra words
+  // Try partial matches - prioritize MORE SPECIFIC matches (longer keys with all words present)
   const taskWords = normalizedTask.split('_').filter(w => w.length > 1);
   const partialMatches: Array<{ key: string; value: LineItemDescription; score: number }> = [];
   
@@ -1553,28 +1553,41 @@ export function getLineItemDescription(taskDescription: string): LineItemDescrip
     
     const keyWords = key.split('_');
     
-    // Check if task contains the key
+    // Check if task contains the key (as substring)
     if (normalizedTask.includes(key)) {
-      // Bonus for exact match
-      const isExact = normalizedTask === key || taskWords.includes(key);
-      partialMatches.push({ key, value, score: isExact ? key.length + 100 : key.length });
+      // Check if ALL key words are present in task words - this makes "vanity_light" match better than "vanity" for "vanity_light_install"
+      const allKeyWordsPresent = keyWords.every(kw => taskWords.some(tw => tw === kw || tw.includes(kw)));
+      
+      // Score based on: key length (longer = more specific) + bonus for all words matching
+      let score = key.length;
+      if (allKeyWordsPresent) {
+        score += keyWords.length * 50; // Big bonus for each matching word
+      }
+      // Exact match bonus
+      if (normalizedTask === key) {
+        score += 200;
+      }
+      
+      partialMatches.push({ key, value, score });
     } 
     // Check if key contains the task
     else if (key.includes(normalizedTask)) {
       partialMatches.push({ key, value, score: normalizedTask.length });
     }
-    // Check for exact first-word match (e.g., "vanity" matches "vanity_60in" but NOT "vanity_light")
-    else if (taskWords[0] && keyWords[0] === taskWords[0]) {
-      // Only match if key doesn't have extra unrelated words
-      const extraKeyWords = keyWords.slice(1).filter(kw => !taskWords.includes(kw) && kw.length > 2);
-      if (extraKeyWords.length === 0) {
-        partialMatches.push({ key, value, score: key.length + 50 });
-      }
+    // Check for word-by-word matching (all key words in task)
+    else if (keyWords.every(kw => taskWords.includes(kw))) {
+      // All key words are in task words - good match
+      partialMatches.push({ key, value, score: key.length + keyWords.length * 50 });
+    }
+    // Check for exact first-word match but ONLY if no better multi-word match exists
+    else if (taskWords[0] && keyWords[0] === taskWords[0] && keyWords.length === 1) {
+      // Single-word key matching first word - low priority to prevent "vanity" matching "vanity_light_install"
+      partialMatches.push({ key, value, score: key.length });
     }
   }
   
   if (partialMatches.length > 0) {
-    // Return the match with the highest score
+    // Return the match with the highest score (most specific match wins)
     partialMatches.sort((a, b) => b.score - a.score);
     return partialMatches[0].value;
   }
