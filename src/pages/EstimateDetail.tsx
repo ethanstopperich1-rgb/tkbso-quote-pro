@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
 import { ProposalPdf, buildTradeGroups } from '@/components/pdf/ProposalPdf';
+import { SimpleProposalPdf } from '@/components/pdf/SimpleProposalPdf';
+import { extractPassthroughLineItems, calculatePassthroughTotal } from '@/lib/estimate-passthrough';
 import { generateProposalWord } from '@/components/word/ProposalWord';
 import { ClientInfoEditCard } from '@/components/estimates/ClientInfoEditCard';
 import { ConversationHistoryCard } from '@/components/estimates/ConversationHistoryCard';
@@ -33,6 +35,7 @@ import {
   FileText,
   Send,
   FileIcon,
+  Table,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -189,6 +192,9 @@ export default function EstimateDetail() {
   const [showTileSqft, setShowTileSqft] = useState(true);
   const [customLowPrice, setCustomLowPrice] = useState<string>('');
   const [customHighPrice, setCustomHighPrice] = useState<string>('');
+  // STRICT PASSTHROUGH MODE: When enabled, PDF shows line items exactly as stored
+  // No grouping, no description rewriting, individual pricing per line
+  const [useSimplePdf, setUseSimplePdf] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -246,35 +252,60 @@ export default function EstimateDetail() {
     
     setDownloading(true);
     try {
-      // Determine price range if enabled
-      const priceRange = showRange ? {
-        low: parseFloat(customLowPrice) || estimate.low_estimate_cp || 0,
-        high: parseFloat(customHighPrice) || estimate.high_estimate_cp || 0,
-      } : undefined;
+      let blob: Blob;
       
-      // If not showing range, use selected price level
-      const selectedPrice = !showRange ? (
-        selectedPriceLevel === 'low' 
+      if (useSimplePdf) {
+        // STRICT PASSTHROUGH MODE: Display line items exactly as stored
+        // No grouping, no description rewriting, individual pricing per line
+        const lineItems = extractPassthroughLineItems(estimate);
+        
+        // Use the selected price for total, or calculate from line items
+        const selectedPrice = selectedPriceLevel === 'low' 
           ? estimate.low_estimate_cp 
           : selectedPriceLevel === 'high' 
             ? estimate.high_estimate_cp 
-            : estimate.final_cp_total
-      ) : estimate.final_cp_total;
-      
-      const estimateForPdf = {
-        ...estimate,
-        final_cp_total: selectedPrice,
-      };
-      
-      const blob = await pdf(
-        <ProposalPdf 
-          contractor={contractor} 
-          estimate={estimateForPdf} 
-          pricingConfig={pricingConfig || undefined}
-          priceRange={priceRange}
-          showTileSqft={showTileSqft}
-        />
-      ).toBlob();
+            : estimate.final_cp_total;
+        
+        const total = selectedPrice || calculatePassthroughTotal(lineItems);
+        
+        blob = await pdf(
+          <SimpleProposalPdf 
+            contractor={contractor} 
+            estimate={estimate} 
+            lineItems={lineItems}
+            total={total}
+          />
+        ).toBlob();
+      } else {
+        // LEGACY MODE: Complex grouping and description rewriting
+        const priceRange = showRange ? {
+          low: parseFloat(customLowPrice) || estimate.low_estimate_cp || 0,
+          high: parseFloat(customHighPrice) || estimate.high_estimate_cp || 0,
+        } : undefined;
+        
+        const selectedPrice = !showRange ? (
+          selectedPriceLevel === 'low' 
+            ? estimate.low_estimate_cp 
+            : selectedPriceLevel === 'high' 
+              ? estimate.high_estimate_cp 
+              : estimate.final_cp_total
+        ) : estimate.final_cp_total;
+        
+        const estimateForPdf = {
+          ...estimate,
+          final_cp_total: selectedPrice,
+        };
+        
+        blob = await pdf(
+          <ProposalPdf 
+            contractor={contractor} 
+            estimate={estimateForPdf} 
+            pricingConfig={pricingConfig || undefined}
+            priceRange={priceRange}
+            showTileSqft={showTileSqft}
+          />
+        ).toBlob();
+      }
       
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -621,20 +652,45 @@ export default function EstimateDetail() {
                 )}
               </div>
               
-              {/* Show Tile Sqft Toggle */}
+              {/* PDF Mode Toggle - Simple vs Legacy */}
               <div className="mt-3 pt-3 border-t border-white/10">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="show-tile-sqft" className="text-sm text-slate-300 cursor-pointer">
-                    Show tile square footage on PDF
-                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Table className="h-3.5 w-3.5 text-slate-400" />
+                    <Label htmlFor="simple-pdf" className="text-sm text-slate-300 cursor-pointer">
+                      Simple table format (show individual pricing)
+                    </Label>
+                  </div>
                   <Switch
-                    id="show-tile-sqft"
-                    checked={showTileSqft}
-                    onCheckedChange={setShowTileSqft}
+                    id="simple-pdf"
+                    checked={useSimplePdf}
+                    onCheckedChange={setUseSimplePdf}
                     className="data-[state=checked]:bg-sky-500"
                   />
                 </div>
+                <p className="text-[10px] text-slate-500 mt-1.5 pl-5">
+                  {useSimplePdf 
+                    ? 'Line items displayed exactly as entered with individual prices' 
+                    : 'Trade-grouped format with descriptions (legacy)'}
+                </p>
               </div>
+              
+              {/* Show Tile Sqft Toggle - only show when NOT in simple mode */}
+              {!useSimplePdf && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-tile-sqft" className="text-sm text-slate-300 cursor-pointer">
+                      Show tile square footage on PDF
+                    </Label>
+                    <Switch
+                      id="show-tile-sqft"
+                      checked={showTileSqft}
+                      onCheckedChange={setShowTileSqft}
+                      className="data-[state=checked]:bg-sky-500"
+                    />
+                  </div>
+                </div>
+              )}
               
               <p className="text-[10px] text-slate-500 text-center mt-3">
                 {showRange ? 'PDF will show range' : 'Tap to select price for PDF'}

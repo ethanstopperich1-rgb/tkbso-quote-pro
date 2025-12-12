@@ -14,7 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ProposalPdf } from '@/components/pdf/ProposalPdf';
+import { SimpleProposalPdf } from '@/components/pdf/SimpleProposalPdf';
+import { extractPassthroughLineItems, calculatePassthroughTotal } from '@/lib/estimate-passthrough';
 import { Estimate, PricingConfig, Contractor } from '@/types/database';
 import { formatCurrency } from '@/lib/pricing-calculator';
 import { Send, RefreshCw, Mail, FileText } from 'lucide-react';
@@ -57,17 +58,16 @@ export function SendProposalDialog({
 
     setSending(true);
     try {
-      // Generate PDF with selected price
-      const estimateForPdf = {
-        ...estimate,
-        final_cp_total: selectedPrice,
-      };
+      // STRICT PASSTHROUGH: Use SimpleProposalPdf with exact line items
+      const lineItems = extractPassthroughLineItems(estimate);
+      const total = selectedPrice || calculatePassthroughTotal(lineItems);
 
       const pdfBlob = await pdf(
-        <ProposalPdf
+        <SimpleProposalPdf
           contractor={contractor}
-          estimate={estimateForPdf}
-          pricingConfig={pricingConfig || undefined}
+          estimate={estimate}
+          lineItems={lineItems}
+          total={total}
         />
       ).toBlob();
 
