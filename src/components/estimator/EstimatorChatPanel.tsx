@@ -34,6 +34,16 @@ import {
   verifyCompleteness,
   ExtractedLineItem,
 } from '@/lib/deterministic-pricing';
+import {
+  detectBundles,
+  getBundleByKey,
+  applyDerivations,
+  derivedToLineItems,
+  getMissingBundleInfo,
+  generateBundleAcknowledgment,
+  formatLineItemsPreview,
+  DerivedItem,
+} from '@/lib/estimate-bundles';
 
 interface PricingLineItem {
   category: string;
@@ -570,6 +580,11 @@ export function EstimatorChatPanel() {
     const updatedScopeState = extractScopeFromMessage(content, scopeState);
     setScopeState(updatedScopeState);
     
+    // BUNDLE DETECTION: Check for common project type triggers
+    const newBundles = detectBundles(content);
+    const previousBundleCount = scopeState.activeBundles.length;
+    const hasNewBundles = newBundles.length > 0 && newBundles.some(b => !scopeState.activeBundles.includes(b));
+    
     // Check if user wants to proceed to quote (trigger line items review)
     const lowerContent = content.toLowerCase();
     const wantsToProceed = 
@@ -588,12 +603,44 @@ export function EstimatorChatPanel() {
     
     // If user wants to proceed and we have enough scope, show line items review
     if (wantsToProceed && updatedScopeState.projectType) {
-      const lineItems = buildLineItemsFromScope(updatedScopeState);
-      if (lineItems.length > 0) {
-        setPendingLineItems(lineItems);
+      const baseLineItems = buildLineItemsFromScope(updatedScopeState);
+      const derivedItems = applyDerivations(updatedScopeState);
+      const derivedLineItems = derivedToLineItems(derivedItems);
+      
+      // Merge and deduplicate
+      const baseItemNames = new Set(baseLineItems.map(item => item.name.toLowerCase().replace(/\s*\([^)]*\)/g, '')));
+      const uniqueDerivedItems = derivedLineItems.filter(item => {
+        const simpleName = item.name.toLowerCase().replace(/\s*\([^)]*\)/g, '');
+        return !baseItemNames.has(simpleName);
+      });
+      const allLineItems = [...baseLineItems, ...uniqueDerivedItems];
+      
+      if (allLineItems.length > 0) {
+        setPendingLineItems(allLineItems);
         setShowLineItemsReview(true);
-        const totals = calculateTotals(lineItems);
-        addAssistantMessage(`📋 **Here's what I captured - ${lineItems.length} line items totaling ${formatCurrency(totals.totalCP)}.**\n\nReview below and let me know if anything's missing.`);
+        const totals = calculateTotals(allLineItems);
+        
+        let derivedNote = '';
+        if (derivedItems.length > 0) {
+          derivedNote = `\n\n*Auto-included:*\n${derivedItems.slice(0, 3).map(d => `• ${d.lineItem} - ${d.reason}`).join('\n')}`;
+          if (derivedItems.length > 3) derivedNote += `\n...and ${derivedItems.length - 3} more`;
+        }
+        
+        addAssistantMessage(`📋 **Here's what I captured - ${allLineItems.length} line items totaling ${formatCurrency(totals.totalCP)}.**\n\nReview below and let me know if anything's missing.${derivedNote}`);
+        setIsLoading(false);
+        return;
+      }
+    }
+    
+    // If new bundles were detected, acknowledge them
+    if (hasNewBundles) {
+      const acknowledgment = generateBundleAcknowledgment(newBundles);
+      // Check what info we still need
+      const missingInfo = getMissingBundleInfo(newBundles, updatedScopeState);
+      
+      if (missingInfo.length > 0) {
+        const nextQuestion = missingInfo[0];
+        addAssistantMessage(`${acknowledgment}\n\nWhat ${nextQuestion}?`);
         setIsLoading(false);
         return;
       }
@@ -789,15 +836,31 @@ export function EstimatorChatPanel() {
       .map(m => m.content);
     
     // Build line items from deterministic scope state
-    const lineItems = buildLineItemsFromScope(scopeState);
+    const baseLineItems = buildLineItemsFromScope(scopeState);
+    
+    // Apply intelligent derivation rules
+    const derivedItems = applyDerivations(scopeState);
+    const derivedLineItems = derivedToLineItems(derivedItems);
+    
+    // Merge base and derived items (avoid duplicates by checking pricing keys)
+    const baseItemNames = new Set(baseLineItems.map(item => item.name.toLowerCase().replace(/\s*\([^)]*\)/g, '')));
+    const uniqueDerivedItems = derivedLineItems.filter(item => {
+      const simpleName = item.name.toLowerCase().replace(/\s*\([^)]*\)/g, '');
+      return !baseItemNames.has(simpleName);
+    });
+    
+    const allLineItems = [...baseLineItems, ...uniqueDerivedItems];
     
     // Verify completeness
     const { missing, warnings } = verifyCompleteness(userMessages, scopeState);
     
-    if (missing.length > 0) {
-      // Show what might be missing
-      const missingMsg = missing.join(', ');
-      addAssistantMessage(`⚠️ I noticed you mentioned: ${missingMsg}. Let me make sure I captured everything.`);
+    // Check for missing bundle info
+    const missingBundleInfo = getMissingBundleInfo(scopeState.activeBundles, scopeState);
+    
+    if (missing.length > 0 || missingBundleInfo.length > 0) {
+      const allMissing = [...missing, ...missingBundleInfo.map(m => m)];
+      const missingMsg = allMissing.join(', ');
+      addAssistantMessage(`⚠️ I noticed: ${missingMsg}. Let me make sure I captured everything.`);
     }
     
     if (warnings.length > 0) {
@@ -805,12 +868,22 @@ export function EstimatorChatPanel() {
     }
     
     // Set pending line items for review
-    setPendingLineItems(lineItems);
+    setPendingLineItems(allLineItems);
     setShowLineItemsReview(true);
     
     // Add message showing we're ready for review
-    const totals = calculateTotals(lineItems);
-    addAssistantMessage(`📋 **Here's what I have - ${lineItems.length} line items totaling ${formatCurrency(totals.totalCP)}.**\n\nReview below and let me know if anything's missing.`);
+    const totals = calculateTotals(allLineItems);
+    
+    // Show what was auto-included from bundles/derivations
+    let derivedNote = '';
+    if (derivedItems.length > 0) {
+      derivedNote = `\n\n*Auto-included:*\n${derivedItems.slice(0, 5).map(d => `• ${d.lineItem} - ${d.reason}`).join('\n')}`;
+      if (derivedItems.length > 5) {
+        derivedNote += `\n...and ${derivedItems.length - 5} more`;
+      }
+    }
+    
+    addAssistantMessage(`📋 **Here's what I have - ${allLineItems.length} line items totaling ${formatCurrency(totals.totalCP)}.**\n\nReview below and let me know if anything's missing.${derivedNote}`);
   };
   
   // Handle line items review confirmation

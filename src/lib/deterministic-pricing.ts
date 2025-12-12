@@ -385,6 +385,9 @@ export interface ScopeExtractionState {
   // Custom items (not in pricing table)
   customItems: Array<{ description: string; quantity: number; unit: string; price: number }>;
   
+  // Active bundles (for intelligent bundling)
+  activeBundles: string[];
+  
   // Notes
   exclusions: string[];
   warnings: string[];
@@ -469,6 +472,7 @@ export const initialScopeState: ScopeExtractionState = {
   lvpSqft: null,
   hasFloorLeveling: false,
   customItems: [],
+  activeBundles: [],
   exclusions: [],
   warnings: [],
 };
@@ -483,7 +487,7 @@ export function extractScopeFromMessage(
   currentState: ScopeExtractionState
 ): ScopeExtractionState {
   const msg = message.toLowerCase();
-  const state = { ...currentState };
+  const state = { ...currentState, activeBundles: [...currentState.activeBundles] };
   
   // Helper to extract numbers
   const extractNumber = (text: string, ...patterns: string[]): number | null => {
@@ -498,6 +502,28 @@ export function extractScopeFromMessage(
     }
     return null;
   };
+  
+  // ============ BUNDLE DETECTION ============
+  // Detect common project types and activate bundles
+  const BUNDLE_TRIGGERS: Record<string, string[]> = {
+    'VANITY_SWAP': ['vanity swap', 'replace vanity', 'new vanity', 'swap out the vanity', 'swap the vanity', 'changing vanity'],
+    'TOILET_SWAP': ['toilet swap', 'replace toilet', 'new toilet', 'swap out toilet', 'change toilet'],
+    'SHOWER_REMODEL': ['shower remodel', 'redo the shower', 'new shower', 'gut the shower', 'retile shower'],
+    'TUB_TO_SHOWER': ['tub to shower', 'convert tub to shower', 'remove tub add shower', 'get rid of tub', 'tub conversion'],
+    'FULL_BATH_GUT': ['full gut', 'gut remodel', 'complete remodel', 'tear it all out', 'start from scratch', 'gut the bathroom', 'full bathroom remodel', 'full bath remodel'],
+    'MAJOR_BATH_REMODEL': ['major remodel', 'big project', 'moving plumbing', 'layout changes', 'reconfiguring', 'major project'],
+    'KITCHEN_REFRESH': ['kitchen refresh', 'update kitchen', 'new countertops and backsplash', 'counters and backsplash'],
+    'FULL_KITCHEN_REMODEL': ['full kitchen remodel', 'gut kitchen', 'new cabinets', 'all new kitchen', 'kitchen gut'],
+  };
+  
+  for (const [bundleKey, triggers] of Object.entries(BUNDLE_TRIGGERS)) {
+    for (const trigger of triggers) {
+      if (msg.includes(trigger) && !state.activeBundles.includes(bundleKey)) {
+        state.activeBundles.push(bundleKey);
+        break;
+      }
+    }
+  }
   
   // Project type
   if (msg.includes('kitchen')) state.projectType = 'Kitchen';
