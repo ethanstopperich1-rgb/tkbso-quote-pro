@@ -1247,6 +1247,44 @@ export type Database = {
           },
         ]
       }
+      pricing_overrides: {
+        Row: {
+          contractor_id: string
+          created_at: string
+          custom_cost: number | null
+          custom_price: number | null
+          id: string
+          item_key: string
+          updated_at: string
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string
+          custom_cost?: number | null
+          custom_price?: number | null
+          id?: string
+          item_key: string
+          updated_at?: string
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string
+          custom_cost?: number | null
+          custom_price?: number | null
+          id?: string
+          item_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_overrides_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_mappings: {
         Row: {
           contractor_id: string
