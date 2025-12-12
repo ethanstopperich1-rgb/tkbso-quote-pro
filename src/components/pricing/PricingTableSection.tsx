@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -6,7 +6,7 @@ import { ChevronDown, Search, X } from 'lucide-react';
 import { 
   Bath, ChefHat, Wrench, Hammer, Palette, Zap, Droplets, 
   Shield, Home, Sparkles, FileText, DoorOpen, Layers, 
-  Thermometer, Scissors, Info 
+  Thermometer, Scissors, Info, Flame, Truck, Package
 } from 'lucide-react';
 import {
   Collapsible,
@@ -15,11 +15,10 @@ import {
 } from '@/components/ui/collapsible';
 import { 
   PRICING_TABLE, 
-  CATEGORY_METADATA, 
+  CATEGORY_CONFIG,
   PricingItem,
   getAllCategoriesWithItems,
-  applyMargin
-} from '@/lib/pricing-table';
+} from '@/lib/pricing-table-v2';
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Hammer: <Hammer className="h-5 w-5" />,
@@ -36,7 +35,38 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Thermometer: <Thermometer className="h-5 w-5" />,
   FileText: <FileText className="h-5 w-5" />,
   Info: <Info className="h-5 w-5" />,
+  Flame: <Flame className="h-5 w-5" />,
+  Truck: <Truck className="h-5 w-5" />,
+  Package: <Package className="h-5 w-5" />,
+  Wrench: <Wrench className="h-5 w-5" />,
+  ChefHat: <ChefHat className="h-5 w-5" />,
 };
+
+// Map category keys to icons
+const CATEGORY_ICONS: Record<string, string> = {
+  demo: 'Hammer',
+  framing: 'Home',
+  plumbing: 'Droplets',
+  electrical: 'Zap',
+  tile: 'Layers',
+  cabinetry: 'Bath',
+  countertops: 'Sparkles',
+  fixtures: 'Wrench',
+  glass: 'Shield',
+  paint: 'Palette',
+  trim: 'Scissors',
+  doors: 'DoorOpen',
+  mechanical: 'Thermometer',
+  admin: 'FileText',
+  allowance: 'Package',
+};
+
+interface CategoryData {
+  category: string;
+  label: string;
+  order: number;
+  items: Array<{ key: string; item: PricingItem }>;
+}
 
 interface PricingTableSectionProps {
   targetMargin: number;
@@ -54,7 +84,19 @@ export function PricingTableSection({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const categories = getAllCategoriesWithItems();
+  // Transform getAllCategoriesWithItems to the format we need
+  const categories = useMemo((): CategoryData[] => {
+    const rawCategories = getAllCategoriesWithItems();
+    
+    return Object.entries(rawCategories)
+      .map(([category, items]) => ({
+        category,
+        label: CATEGORY_CONFIG[category]?.label || category,
+        order: CATEGORY_CONFIG[category]?.order || 99,
+        items: Object.entries(items).map(([key, item]) => ({ key, item }))
+      }))
+      .sort((a, b) => a.order - b.order);
+  }, []);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
@@ -68,31 +110,43 @@ export function PricingTableSection({
     });
   };
 
-  const filteredCategories = categories.map(cat => ({
-    ...cat,
-    items: cat.items.filter(({ key, item }) => {
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        key.toLowerCase().includes(query) ||
-        item.aliases.some(a => a.toLowerCase().includes(query)) ||
-        item.category.toLowerCase().includes(query)
-      );
-    })
-  })).filter(cat => cat.items.length > 0);
+  // Filter categories and items based on search
+  const filteredCategories = useMemo(() => {
+    return categories.map(cat => ({
+      ...cat,
+      items: cat.items.filter(({ key, item }) => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+          key.toLowerCase().includes(query) ||
+          item.aliases.some(a => a.toLowerCase().includes(query)) ||
+          item.category.toLowerCase().includes(query) ||
+          cat.label.toLowerCase().includes(query)
+        );
+      })
+    })).filter(cat => cat.items.length > 0);
+  }, [categories, searchQuery]);
 
+  // Get effective value considering custom overrides
   const getEffectiveValue = (key: string, field: 'cost' | 'price'): number => {
     const customItem = customPricing[key];
     if (customItem && customItem[field] !== undefined) {
       return customItem[field]!;
     }
-    return PRICING_TABLE[key][field];
+    const item = PRICING_TABLE[key];
+    return item ? item[field] : 0;
   };
 
+  // Calculate margin percentage
   const calculateMargin = (cost: number, price: number): number => {
     if (price === 0) return 0;
     return ((price - cost) / price) * 100;
   };
+
+  // Count total items
+  const totalItems = useMemo(() => {
+    return filteredCategories.reduce((sum, cat) => sum + cat.items.length, 0);
+  }, [filteredCategories]);
 
   return (
     <div className="space-y-4">
@@ -100,7 +154,7 @@ export function PricingTableSection({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search pricing items..."
+          placeholder="Search 150+ pricing items..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 pr-9"
@@ -116,121 +170,143 @@ export function PricingTableSection({
       </div>
 
       {/* Results count */}
-      {searchQuery && (
+      <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Found {filteredCategories.reduce((sum, cat) => sum + cat.items.length, 0)} items
+          {searchQuery 
+            ? `Found ${totalItems} items` 
+            : `${totalItems} items across ${filteredCategories.length} categories`
+          }
         </p>
-      )}
+        {!searchQuery && (
+          <button
+            onClick={() => {
+              if (expandedCategories.size === filteredCategories.length) {
+                setExpandedCategories(new Set());
+              } else {
+                setExpandedCategories(new Set(filteredCategories.map(c => c.category)));
+              }
+            }}
+            className="text-sm text-primary hover:underline"
+          >
+            {expandedCategories.size === filteredCategories.length ? 'Collapse All' : 'Expand All'}
+          </button>
+        )}
+      </div>
 
       {/* Category Sections */}
       <div className="space-y-3">
-        {filteredCategories.map(({ category, metadata, items }) => (
-          <Collapsible 
-            key={category} 
-            open={expandedCategories.has(category) || !!searchQuery}
-            onOpenChange={() => !searchQuery && toggleCategory(category)}
-          >
-            <CollapsibleTrigger asChild>
-              <button className="w-full flex items-center justify-between p-4 bg-card rounded-xl border border-border shadow-sm hover:border-primary/30 transition-all group">
-                <div className="flex items-center gap-3">
-                  <span className="text-primary">
-                    {ICON_MAP[metadata.icon] || <Layers className="h-5 w-5" />}
-                  </span>
-                  <span className="text-base font-semibold text-foreground">{metadata.label}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {items.length} items
-                  </Badge>
-                </div>
-                <ChevronDown className={cn(
-                  "h-5 w-5 text-muted-foreground transition-transform duration-200",
-                  (expandedCategories.has(category) || searchQuery) && "rotate-180"
-                )} />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2">
-              <div className="bg-card rounded-xl border border-border overflow-hidden">
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground">
-                  <div className="col-span-4">Item</div>
-                  <div className="col-span-2 text-right">Cost (IC)</div>
-                  <div className="col-span-2 text-right">Price (CP)</div>
-                  <div className="col-span-2 text-center">Unit</div>
-                  <div className="col-span-2 text-right">Margin</div>
-                </div>
-                
-                {/* Table Rows */}
-                <div className="divide-y divide-border">
-                  {items.map(({ key, item }) => {
-                    const cost = getEffectiveValue(key, 'cost');
-                    const price = getEffectiveValue(key, 'price');
-                    const margin = calculateMargin(cost, price);
-                    const isCustomized = customPricing[key] !== undefined;
-                    
-                    return (
-                      <div 
-                        key={key} 
-                        className={cn(
-                          "grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors",
-                          isCustomized && "bg-primary/5"
-                        )}
-                      >
-                        <div className="col-span-4">
-                          <p className="text-sm font-medium text-foreground">{key}</p>
-                          {item.aliases.length > 0 && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {item.aliases.slice(0, 3).join(', ')}
-                              {item.aliases.length > 3 && '...'}
-                            </p>
+        {filteredCategories.map(({ category, label, items }) => {
+          const iconKey = CATEGORY_ICONS[category] || 'Layers';
+          const isExpanded = expandedCategories.has(category) || !!searchQuery;
+          
+          return (
+            <Collapsible 
+              key={category} 
+              open={isExpanded}
+              onOpenChange={() => !searchQuery && toggleCategory(category)}
+            >
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between p-4 bg-card rounded-xl border border-border shadow-sm hover:border-primary/30 transition-all group">
+                  <div className="flex items-center gap-3">
+                    <span className="text-primary">
+                      {ICON_MAP[iconKey] || <Layers className="h-5 w-5" />}
+                    </span>
+                    <span className="text-base font-semibold text-foreground">{label}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {items.length} items
+                    </Badge>
+                  </div>
+                  <ChevronDown className={cn(
+                    "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                    isExpanded && "rotate-180"
+                  )} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground">
+                    <div className="col-span-4">Item</div>
+                    <div className="col-span-2 text-right">Cost (IC)</div>
+                    <div className="col-span-2 text-right">Price (CP)</div>
+                    <div className="col-span-2 text-center">Unit</div>
+                    <div className="col-span-2 text-right">Margin</div>
+                  </div>
+                  
+                  {/* Table Rows */}
+                  <div className="divide-y divide-border">
+                    {items.map(({ key, item }) => {
+                      const cost = getEffectiveValue(key, 'cost');
+                      const price = getEffectiveValue(key, 'price');
+                      const margin = calculateMargin(cost, price);
+                      const isCustomized = customPricing[key] !== undefined;
+                      
+                      return (
+                        <div 
+                          key={key} 
+                          className={cn(
+                            "grid grid-cols-12 gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors",
+                            isCustomized && "bg-primary/5"
                           )}
-                        </div>
-                        <div className="col-span-2 text-right">
-                          {readOnly ? (
-                            <span className="text-sm font-mono">${cost.toFixed(2)}</span>
-                          ) : (
-                            <Input
-                              type="number"
-                              value={cost}
-                              onChange={(e) => onItemChange?.(key, 'cost', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-right text-sm font-mono"
-                            />
-                          )}
-                        </div>
-                        <div className="col-span-2 text-right">
-                          {readOnly ? (
-                            <span className="text-sm font-mono">${price.toFixed(2)}</span>
-                          ) : (
-                            <Input
-                              type="number"
-                              value={price}
-                              onChange={(e) => onItemChange?.(key, 'price', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-right text-sm font-mono"
-                            />
-                          )}
-                        </div>
-                        <div className="col-span-2 text-center">
-                          <Badge variant="outline" className="text-xs">
-                            {item.perUnit ? `per ${item.unit}` : item.unit}
-                          </Badge>
-                        </div>
-                        <div className="col-span-2 text-right">
-                          <Badge 
-                            variant={margin >= targetMargin * 100 - 5 ? "default" : "secondary"}
-                            className={cn(
-                              "text-xs font-mono",
-                              margin < targetMargin * 100 - 10 && "bg-destructive/10 text-destructive border-destructive/30"
+                        >
+                          <div className="col-span-4">
+                            <p className="text-sm font-medium text-foreground">{key}</p>
+                            {item.aliases.length > 0 && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {item.aliases.slice(0, 3).join(', ')}
+                                {item.aliases.length > 3 && '...'}
+                              </p>
                             )}
-                          >
-                            {margin.toFixed(1)}%
-                          </Badge>
+                          </div>
+                          <div className="col-span-2 text-right">
+                            {readOnly ? (
+                              <span className="text-sm font-mono">${cost.toFixed(2)}</span>
+                            ) : (
+                              <Input
+                                type="number"
+                                value={cost}
+                                onChange={(e) => onItemChange?.(key, 'cost', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-right text-sm font-mono"
+                              />
+                            )}
+                          </div>
+                          <div className="col-span-2 text-right">
+                            {readOnly ? (
+                              <span className="text-sm font-mono">${price.toFixed(2)}</span>
+                            ) : (
+                              <Input
+                                type="number"
+                                value={price}
+                                onChange={(e) => onItemChange?.(key, 'price', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-right text-sm font-mono"
+                              />
+                            )}
+                          </div>
+                          <div className="col-span-2 text-center">
+                            <Badge variant="outline" className="text-xs">
+                              {item.perUnit ? `per ${item.unit}` : item.unit}
+                            </Badge>
+                          </div>
+                          <div className="col-span-2 text-right">
+                            <Badge 
+                              variant={margin >= targetMargin * 100 - 5 ? "default" : "secondary"}
+                              className={cn(
+                                "text-xs font-mono",
+                                margin < targetMargin * 100 - 10 && "bg-destructive/10 text-destructive border-destructive/30"
+                              )}
+                            >
+                              {margin.toFixed(1)}%
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        ))}
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
       </div>
     </div>
   );
