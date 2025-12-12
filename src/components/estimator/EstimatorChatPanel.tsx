@@ -5,7 +5,7 @@ import { ChatInput } from '@/components/ChatInput';
 import { Message } from '@/types/estimator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, Menu, FileText, Camera, Upload } from 'lucide-react';
+import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, Menu, FileText, Camera, Upload, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,15 @@ import {
   isReadyForClientDetails,
   hasCompleteClientDetails 
 } from '@/lib/estimator-scope-mapper';
+import {
+  ScopeExtractionState,
+  initialScopeState,
+  extractScopeFromMessage,
+  buildLineItemsFromScope,
+  calculateTotals,
+  verifyCompleteness,
+  ExtractedLineItem,
+} from '@/lib/deterministic-pricing';
 
 interface PricingLineItem {
   category: string;
@@ -136,6 +145,12 @@ export function EstimatorChatPanel() {
   const [showForgottenItemsModal, setShowForgottenItemsModal] = useState(false);
   const [forgottenItems, setForgottenItems] = useState<string[]>([]);
   const [pendingClientDetails, setPendingClientDetails] = useState<{name: string; phone: string; email: string; address: string} | null>(null);
+  
+  // Deterministic pricing state
+  const [scopeState, setScopeState] = useState<ScopeExtractionState>(initialScopeState);
+  const [pendingLineItems, setPendingLineItems] = useState<ExtractedLineItem[]>([]);
+  const [showLineItemsReview, setShowLineItemsReview] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const dragCounterRef = useRef(0);
@@ -551,6 +566,39 @@ export function EstimatorChatPanel() {
     const updatedHistory = [...conversationHistory, { role: 'user' as const, content }];
     setConversationHistory(updatedHistory);
     
+    // DETERMINISTIC EXTRACTION: Update scope state from user message
+    const updatedScopeState = extractScopeFromMessage(content, scopeState);
+    setScopeState(updatedScopeState);
+    
+    // Check if user wants to proceed to quote (trigger line items review)
+    const lowerContent = content.toLowerCase();
+    const wantsToProceed = 
+      lowerContent.includes('looks good') ||
+      lowerContent.includes('that\'s it') ||
+      lowerContent.includes('thats it') ||
+      lowerContent.includes('that is it') ||
+      lowerContent.includes('generate quote') ||
+      lowerContent.includes('generate the quote') ||
+      lowerContent.includes('create quote') ||
+      lowerContent.includes('let\'s go') ||
+      lowerContent.includes('lets go') ||
+      lowerContent.includes('ready') ||
+      lowerContent.includes('proceed') ||
+      lowerContent.includes('done describing');
+    
+    // If user wants to proceed and we have enough scope, show line items review
+    if (wantsToProceed && updatedScopeState.projectType) {
+      const lineItems = buildLineItemsFromScope(updatedScopeState);
+      if (lineItems.length > 0) {
+        setPendingLineItems(lineItems);
+        setShowLineItemsReview(true);
+        const totals = calculateTotals(lineItems);
+        addAssistantMessage(`📋 **Here's what I captured - ${lineItems.length} line items totaling ${formatCurrency(totals.totalCP)}.**\n\nReview below and let me know if anything's missing.`);
+        setIsLoading(false);
+        return;
+      }
+    }
+    
     setIsLoading(true);
 
     try {
@@ -727,6 +775,68 @@ export function EstimatorChatPanel() {
     setShowForgottenItemsModal(false);
     setForgottenItems([]);
     setPendingClientDetails(null);
+    // Reset deterministic pricing state
+    setScopeState(initialScopeState);
+    setPendingLineItems([]);
+    setShowLineItemsReview(false);
+  };
+
+  // Build line items from scope and show for review
+  const handleShowLineItemsReview = () => {
+    // Get all user messages for completeness check
+    const userMessages = conversationHistory
+      .filter(m => m.role === 'user')
+      .map(m => m.content);
+    
+    // Build line items from deterministic scope state
+    const lineItems = buildLineItemsFromScope(scopeState);
+    
+    // Verify completeness
+    const { missing, warnings } = verifyCompleteness(userMessages, scopeState);
+    
+    if (missing.length > 0) {
+      // Show what might be missing
+      const missingMsg = missing.join(', ');
+      addAssistantMessage(`⚠️ I noticed you mentioned: ${missingMsg}. Let me make sure I captured everything.`);
+    }
+    
+    if (warnings.length > 0) {
+      warnings.forEach(w => console.warn('Scope warning:', w));
+    }
+    
+    // Set pending line items for review
+    setPendingLineItems(lineItems);
+    setShowLineItemsReview(true);
+    
+    // Add message showing we're ready for review
+    const totals = calculateTotals(lineItems);
+    addAssistantMessage(`📋 **Here's what I have - ${lineItems.length} line items totaling ${formatCurrency(totals.totalCP)}.**\n\nReview below and let me know if anything's missing.`);
+  };
+  
+  // Handle line items review confirmation
+  const handleLineItemsConfirmed = () => {
+    setShowLineItemsReview(false);
+    setShowClientDetailsForm(true);
+    addAssistantMessage("Great! Now let's get the client details.");
+  };
+  
+  // Handle adding an item during review
+  const handleAddItemDuringReview = (itemName: string, quantity: number, price: number) => {
+    const newItem: ExtractedLineItem = {
+      name: itemName,
+      quantity,
+      unit: 'ea',
+      ic: price * 0.58, // Estimate IC at 58%
+      cp: price,
+      category: 'Custom',
+    };
+    setPendingLineItems(prev => [...prev, newItem]);
+    toast.success(`Added: ${itemName}`);
+  };
+  
+  // Handle removing an item during review
+  const handleRemoveItemDuringReview = (index: number) => {
+    setPendingLineItems(prev => prev.filter((_, i) => i !== index));
   };
 
   // Handle client details form submission
@@ -744,21 +854,26 @@ export function EstimatorChatPanel() {
     }));
     setShowClientDetailsForm(false);
 
-    // Check for forgotten items before generating
-    const allScopeText = conversationHistory
-      .filter(m => m.role === 'user')
-      .map(m => m.content)
-      .join(' ');
-    const lineItems = mapScopeToLineItems(allScopeText, conversationState);
-    const missing = validateQuoteCompleteness(allScopeText, lineItems);
-
-    if (missing.length > 0) {
-      setForgottenItems(missing);
-      setPendingClientDetails(details);
-      setShowForgottenItemsModal(true);
+    // Use the pending line items from deterministic pricing
+    if (pendingLineItems.length > 0) {
+      // Generate quote with deterministic line items
+      await generateQuoteWithDeterministicItems(details, pendingLineItems);
     } else {
-      // Generate quote directly
-      await generateQuoteWithDetails(details);
+      // Fallback to AI-based generation
+      const allScopeText = conversationHistory
+        .filter(m => m.role === 'user')
+        .map(m => m.content)
+        .join(' ');
+      const lineItems = mapScopeToLineItems(allScopeText, conversationState);
+      const missing = validateQuoteCompleteness(allScopeText, lineItems);
+
+      if (missing.length > 0) {
+        setForgottenItems(missing);
+        setPendingClientDetails(details);
+        setShowForgottenItemsModal(true);
+      } else {
+        await generateQuoteWithDetails(details);
+      }
     }
   };
 
@@ -890,7 +1005,110 @@ export function EstimatorChatPanel() {
     }
   };
 
-  // Handle video analysis result - show confirmation instead of auto-adding
+  // Generate quote with deterministic line items (bypasses AI pricing)
+  const generateQuoteWithDeterministicItems = async (
+    details: {name: string; phone: string; email: string; address: string} | null,
+    lineItems: ExtractedLineItem[]
+  ) => {
+    if (!contractor?.id) return;
+
+    setIsLoading(true);
+    
+    try {
+      const totals = calculateTotals(lineItems);
+      
+      // Convert ExtractedLineItem to PricingLineItem format
+      const pricingLineItems: PricingLineItem[] = lineItems.map(item => ({
+        category: item.category,
+        task_description: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        ic_per_unit: item.quantity > 0 ? item.ic / item.quantity : item.ic,
+        cp_per_unit: item.quantity > 0 ? item.cp / item.quantity : item.cp,
+        ic_total: item.ic,
+        cp_total: item.cp,
+        margin_percent: item.cp > 0 ? (item.cp - item.ic) / item.cp : 0,
+      }));
+
+      // Build the estimate response from deterministic data
+      const deterministicResponse: EstimateResponse = {
+        project_header: {
+          client_name: details?.name || null,
+          project_type: scopeState.projectType || 'Bathroom',
+          overall_size_sqft: scopeState.roomSqft || null,
+        },
+        dimensions: {
+          ceiling_height_ft: 9,
+          room_length_ft: null,
+          room_width_ft: null,
+          shower_floor_sqft: scopeState.showerFloorSqft || null,
+          shower_wall_sqft: scopeState.wallTileSqft || null,
+          main_floor_sqft: scopeState.floorTileSqft || null,
+        },
+        trade_buckets: lineItems.map(item => ({
+          category: item.category,
+          task_description: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+        })),
+        pricing: {
+          line_items: pricingLineItems,
+          totals: {
+            total_ic: totals.totalIC,
+            total_cp: totals.totalCP,
+            low_estimate: totals.lowEstimate,
+            high_estimate: totals.highEstimate,
+            overall_margin_percent: totals.margin,
+          },
+          warnings: [],
+        },
+        payment_schedule: {
+          deposit: Math.round(totals.totalCP * 0.65),
+          progress: Math.round(totals.totalCP * 0.25),
+          final: Math.round(totals.totalCP * 0.10),
+        },
+        allowances: [],
+        exclusions: scopeState.exclusions,
+        warnings: scopeState.warnings,
+      };
+
+      // Add client details to the payload
+      const payloadWithClientDetails = {
+        ...deterministicResponse,
+        client_details: details ? {
+          client_name: details.name,
+          client_phone: details.phone,
+          client_email: details.email,
+          property_address: details.address,
+        } : {},
+      };
+
+      setEstimate(deterministicResponse);
+
+      // Save to database
+      const estimateId = await saveEstimateToDatabase(payloadWithClientDetails as any, conversationHistory);
+      if (estimateId) {
+        setSavedEstimateId(estimateId);
+      }
+
+      // Update conversation state
+      const projectType = scopeState.projectType || 'Bathroom';
+      setConversationState(prev => ({
+        ...prev,
+        phase: 'complete' as const,
+        readyForQuote: true,
+        projectType: projectType,
+      }));
+
+      addAssistantMessage(`**${projectType} Quote Ready** ✓\n${lineItems.length} line items • ${formatCurrency(totals.totalCP)}`);
+      
+    } catch (err) {
+      console.error('Error generating quote:', err);
+      toast.error('Failed to generate quote');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const handleVideoAnalyzed = async (result: VideoAnalysisResult) => {
     setIsProcessingVideo(false);
     
@@ -1410,6 +1628,78 @@ export function EstimatorChatPanel() {
           />
         )}
 
+        {/* Line Items Review - shown before client details */}
+        {showLineItemsReview && pendingLineItems.length > 0 && !estimate && (
+          <Card className="animate-scale-in border-primary/20 shadow-lg">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-display font-semibold text-lg tracking-tight">Review Line Items</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {pendingLineItems.length} items • {formatCurrency(calculateTotals(pendingLineItems).totalCP)} total
+                  </p>
+                </div>
+              </div>
+
+              {/* Line Items List */}
+              <div className="space-y-2 max-h-80 overflow-y-auto mb-4">
+                {pendingLineItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg group">
+                    <div className="flex-1">
+                      <span className="text-sm font-medium">{item.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        ({item.quantity} {item.unit})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold">{formatCurrency(item.cp)}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveItemDuringReview(idx)}
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Totals */}
+              <div className="border-t border-border pt-3 mb-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Total</span>
+                  <span className="text-xl font-bold text-primary">{formatCurrency(calculateTotals(pendingLineItems).totalCP)}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowLineItemsReview(false);
+                    addAssistantMessage("No problem! Tell me what else to add.");
+                  }}
+                  className="flex-1"
+                >
+                  Add More Items
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleLineItemsConfirmed}
+                  className="flex-1"
+                >
+                  <Check className="h-4 w-4 mr-2" />
+                  Looks Good
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Client Details Form - shown when ready for client details */}
         {showClientDetailsForm && !estimate && (
           <ClientDetailsForm
@@ -1579,7 +1869,26 @@ export function EstimatorChatPanel() {
             </span>
           </div>
         )}
-        <ChatInput 
+        
+        {/* Generate Quote Button - appears when scope is sufficient */}
+        {scopeState.projectType && 
+         (scopeState.demoScope || scopeState.vanitySize || scopeState.wallTileSqft || scopeState.showerType) && 
+         !estimate && 
+         !showLineItemsReview && 
+         !showClientDetailsForm && (
+          <div className="mb-2">
+            <Button
+              onClick={handleShowLineItemsReview}
+              className="w-full h-10"
+              disabled={isLoading}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Review & Generate Quote
+            </Button>
+          </div>
+        )}
+        
+        <ChatInput
           onSend={handleSendMessage} 
           onPhotoUpload={handlePhotoUpload}
           onVideoUpload={handleVideoUpload}
