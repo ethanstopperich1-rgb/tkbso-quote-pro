@@ -42,6 +42,8 @@ export const PRICING_DATABASE: Record<string, PricingEntry> = {
   'demo_large_bath': { ic: 1650, cp: 4500, unit: 'ea', perUnit: false, category: 'Demolition' },
   'demo_small_bath': { ic: 1300, cp: 2050, unit: 'ea', perUnit: false, category: 'Demolition' },
   'demo_shower_only': { ic: 900, cp: 1450, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'demo_vanity': { ic: 200, cp: 350, unit: 'ea', perUnit: true, category: 'Demolition' }, // Per vanity demo
+  'demo_toilet': { ic: 75, cp: 125, unit: 'ea', perUnit: true, category: 'Demolition' }, // Per toilet demo
   'soffit_removal': { ic: 15, cp: 30, unit: 'ea', perUnit: true, category: 'Demolition' },
   'cabinet_deconstruction': { ic: 500, cp: 900, unit: 'ea', perUnit: false, category: 'Demolition' },
   
@@ -351,6 +353,7 @@ export interface ScopeExtractionState {
   undermountSinks: boolean; // triggers sink cutout line items
   sinkCount: number; // usually equals vanityCount unless double sinks
   vanityPlumbingConnections: boolean; // user mentioned plumbing for vanities
+  hasVanityDemo: boolean; // user is replacing vanities (needs demo)
   
   // Fixtures & Accessories
   mirrorCount: number;
@@ -453,6 +456,7 @@ export const initialScopeState: ScopeExtractionState = {
   undermountSinks: false,
   sinkCount: 0,
   vanityPlumbingConnections: false,
+  hasVanityDemo: false,
   mirrorCount: 0,
   isLedMirror: false,
   hasToilet: false,
@@ -734,18 +738,35 @@ export function extractScopeFromMessage(
   if (msg.includes('double vanity') && !state.vanitySize) state.vanitySize = 60;
   if (msg.includes('single vanity') && !state.vanitySize) state.vanitySize = 36;
   
-  // Undermount sinks detection
-  if (msg.includes('undermount') || msg.includes('under mount') || msg.includes('under-mount')) {
+  // ============ SINKS (CRITICAL FIX: Extract sink count directly) ============
+  // Pattern: "4 sinks", "2 undermount sinks", etc.
+  const sinkMatch = msg.match(/(\d+)\s*(?:undermount\s+)?sink(?:s)?/i);
+  if (sinkMatch) {
+    state.sinkCount = parseInt(sinkMatch[1], 10);
+    state.undermountSinks = true; // Assume undermount if sinks are mentioned
+  } else if (msg.includes('sink') && !msg.includes('no sink')) {
+    // Generic sink mention without quantity
+    if (state.sinkCount === 0) state.sinkCount = state.vanityCount || 1;
     state.undermountSinks = true;
-    // Sink count defaults to vanity count unless specified
-    const sinkNum = extractNumber(msg, 'sink', 'sinks');
-    state.sinkCount = sinkNum || state.vanityCount || 1;
   }
   
-  // Plumbing for vanities detection
-  if ((msg.includes('plumbing') || msg.includes('connect') || msg.includes('hook up')) && 
+  // Explicit undermount detection
+  if (msg.includes('undermount') || msg.includes('under mount') || msg.includes('under-mount')) {
+    state.undermountSinks = true;
+    if (state.sinkCount === 0) state.sinkCount = state.vanityCount || 1;
+  }
+  
+  // Plumbing for vanities detection - also trigger when user mentions install/remove
+  if ((msg.includes('plumbing') || msg.includes('connect') || msg.includes('hook up') || 
+       msg.includes('install') || msg.includes('remove and install')) && 
       (msg.includes('vanit') || msg.includes('sink'))) {
     state.vanityPlumbingConnections = true;
+  }
+  
+  // Also trigger vanity plumbing when doing vanity swap/replace
+  if ((msg.includes('swap') || msg.includes('replace') || msg.includes('new')) && msg.includes('vanit')) {
+    state.vanityPlumbingConnections = true;
+    state.hasVanityDemo = true; // Mark that we need vanity demo
   }
   
   // Linen cabinet
@@ -904,6 +925,11 @@ export function buildLineItemsFromScope(state: ScopeExtractionState): ExtractedL
   if (state.hasCastIronTub) addItem('demo_cast_iron_tub', 1);
   if (state.hasWallRemoval) addItem('wall_removal', 1);
   
+  // VANITY DEMO - add when replacing vanities
+  if (state.hasVanityDemo && state.vanityCount > 0) {
+    addItem('demo_vanity', state.vanityCount, `Demo - Vanity${state.vanityCount > 1 ? ' (' + state.vanityCount + ')' : ''}`);
+  }
+  
   // ============ PLUMBING ============
   if (state.showerType === 'new' || state.showerType === 'relocate') {
     addItem('plumbing_shower_standard', 1);
@@ -924,10 +950,10 @@ export function buildLineItemsFromScope(state: ScopeExtractionState): ExtractedL
   if (state.extraShowerHeads > 0) addItem('plumbing_extra_head', state.extraShowerHeads);
   
   // ============ FIXTURES ============
-  if (state.hasToilet && state.toiletAction !== 'reinstall') addItem('fixture_toilet', 1);
+  if (state.hasToilet && state.toiletAction !== 'reinstall') addItem('fixture_toilet', 1, 'Toilet');
   if (state.hasTubFiller) addItem('fixture_tub_filler', 1, 'Tub Filler');
-  if (state.hasShowerTrimKit) addItem('fixture_shower_trim_kit', 1);
-  if (state.faucetCount > 0) addItem('fixture_faucet', state.faucetCount, `Faucet${state.faucetCount > 1 ? 's' : ''}`);
+  if (state.hasShowerTrimKit) addItem('fixture_shower_trim_kit', 1, 'Shower Trim Kit');
+  if (state.faucetCount > 0) addItem('fixture_faucet', state.faucetCount, `Faucet (${state.faucetCount})`);
   
   // ============ ELECTRICAL ============
   if (state.recessedCanCount > 0) addItem('electrical_recessed_can', state.recessedCanCount);
@@ -984,9 +1010,10 @@ export function buildLineItemsFromScope(state: ScopeExtractionState): ExtractedL
     // Get pricing for this vanity size
     const vanityPricing = PRICING_DATABASE[`vanity_${sizeKey}`];
     if (vanityPricing) {
-      // Add vanity with proper quantity
+      // Add vanity with proper quantity - name shows size and type
+      const vanityTypeName = state.vanitySize >= 60 ? 'Double' : 'Single';
       lineItems.push({
-        name: `Vanity - ${state.vanitySize}" ${state.vanitySize >= 60 ? 'Double' : 'Single'}`,
+        name: `Vanity - ${state.vanitySize}" ${vanityTypeName}`,
         quantity: state.vanityCount,
         unit: 'ea',
         ic: vanityPricing.ic * state.vanityCount,
@@ -995,8 +1022,8 @@ export function buildLineItemsFromScope(state: ScopeExtractionState): ExtractedL
       });
     }
   }
-  if (state.hasLinenCabinet) addItem('linen_cabinet', state.linenCabinetCount || 1);
-  if (state.hasMedicineCabinet) addItem('medicine_cabinet', state.medicineCabinetCount || 1);
+  if (state.hasLinenCabinet) addItem('linen_cabinet', state.linenCabinetCount || 1, 'Linen Cabinet');
+  if (state.hasMedicineCabinet) addItem('medicine_cabinet', state.medicineCabinetCount || 1, 'Medicine Cabinet');
   if (state.kitchenCabinetLf && state.kitchenCabinetLf > 0) {
     addItem('cabinet_kitchen', state.kitchenCabinetLf, `Kitchen Cabinets (${state.kitchenCabinetLf} LF)`);
   }
@@ -1016,19 +1043,27 @@ export function buildLineItemsFromScope(state: ScopeExtractionState): ExtractedL
     const material = state.countertopMaterial || 'quartz';
     const materialKey = material === 'granite' ? 'granite_countertop' : 
                         material === 'quartzite' ? 'quartzite_countertop' : 'quartz_countertop';
-    addItem(materialKey, counterSqft, `${material.charAt(0).toUpperCase() + material.slice(1)} Countertop (${counterSqft} sqft)`);
+    const materialName = material.charAt(0).toUpperCase() + material.slice(1);
+    addItem(materialKey, counterSqft, `${materialName} Countertop (${counterSqft} sqft)`);
   }
   
   // ============ DERIVED ITEMS (CRITICAL: Auto-add related items) ============
-  // Undermount sink cutouts - one per vanity or per explicit sink count
-  if (state.undermountSinks && state.vanityCount > 0) {
-    const sinkCount = state.sinkCount || state.vanityCount;
-    addItem('undermount_sink_cutout', sinkCount, `Undermount Sink Cutout${sinkCount > 1 ? 's' : ''}`);
+  // Sink cutouts - use explicit sinkCount if provided, otherwise match vanity count
+  const effectiveSinkCount = state.sinkCount > 0 ? state.sinkCount : 
+                              (state.undermountSinks && state.vanityCount > 0 ? state.vanityCount : 0);
+  if (effectiveSinkCount > 0) {
+    addItem('undermount_sink_cutout', effectiveSinkCount, `Undermount Sink Cutout (${effectiveSinkCount})`);
   }
   
-  // Plumbing vanity connections - if user mentioned plumbing for vanities
-  if (state.vanityPlumbingConnections && state.vanityCount > 0) {
-    addItem('plumbing_vanity_connection', state.vanityCount, `Vanity Plumbing Connection${state.vanityCount > 1 ? 's' : ''}`);
+  // Plumbing vanity connections - add when vanities are being installed (swap/replace)
+  // This is automatic when hasVanityDemo is true OR vanityPlumbingConnections is explicitly set
+  if ((state.vanityPlumbingConnections || state.hasVanityDemo) && state.vanityCount > 0) {
+    addItem('plumbing_vanity_connection', state.vanityCount, `Plumbing - Vanity Connection (${state.vanityCount})`);
+  }
+  
+  // ============ CAULKING (CRITICAL: Auto-add for vanity work) ============
+  if (state.vanityCount > 0 || effectiveSinkCount > 0) {
+    addItem('caulking_sealing_final', 1, 'Caulking/Sealing Final');
   }
   
   // ============ ACCESSORIES ============
