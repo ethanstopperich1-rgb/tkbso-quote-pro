@@ -6,6 +6,8 @@
  */
 
 import { ScopeExtractionState, PRICING_DATABASE, ExtractedLineItem } from './deterministic-pricing';
+import { PRICING_TABLE, findPricingItem } from './pricing-table-v2';
+import { LineItem as V2LineItem } from './line-item-generator-v2';
 
 // ============================================================
 // BUNDLE INTERFACES

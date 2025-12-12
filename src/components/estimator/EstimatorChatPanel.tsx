@@ -30,7 +30,6 @@ import {
   initialScopeState,
   extractScopeFromMessage,
   buildLineItemsFromScope,
-  calculateTotals,
   verifyCompleteness,
   ExtractedLineItem,
 } from '@/lib/deterministic-pricing';
@@ -44,6 +43,16 @@ import {
   formatLineItemsPreview,
   DerivedItem,
 } from '@/lib/estimate-bundles';
+import {
+  PRICING_TABLE,
+  findPricingItem,
+  calculateTotals,
+  buildLineItem,
+  parseQuickAdd,
+  buildFromQuickAdd,
+  LineItem,
+  calculateEstimateTotals,
+} from '@/lib/pricing-adapter';
 
 interface PricingLineItem {
   category: string;
