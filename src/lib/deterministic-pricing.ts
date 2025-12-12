@@ -83,6 +83,7 @@ export const PRICING_DATABASE: Record<string, PricingEntry> = {
   'shower_drain_relocation_linear': { ic: 1335, cp: 2225, unit: 'ea', perUnit: false, category: 'Plumbing' },
   'vanity_plumbing_capoff': { ic: 200, cp: 350, unit: 'ea', perUnit: false, category: 'Plumbing' },
   'plumbing_toilet_reinstall': { ic: 100, cp: 175, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_vanity_connection': { ic: 350, cp: 583, unit: 'ea', perUnit: true, category: 'Plumbing' }, // Per vanity connection
   
   'steam_generator_install': { ic: 1200, cp: 2200, unit: 'ea', perUnit: false, category: 'Plumbing' },
   'pot_filler_rough_trim': { ic: 550, cp: 950, unit: 'ea', perUnit: false, category: 'Plumbing' },
@@ -161,7 +162,7 @@ export const PRICING_DATABASE: Record<string, PricingEntry> = {
   'soft_close_hinge_upgrade': { ic: 8, cp: 15, unit: 'ea', perUnit: true, category: 'Cabinetry' },
   'pull_out_trash': { ic: 180, cp: 340, unit: 'ea', perUnit: false, category: 'Cabinetry' },
   'lazy_susan': { ic: 250, cp: 450, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'undermount_sink_cutout': { ic: 150, cp: 280, unit: 'ea', perUnit: false, category: 'Countertops' },
+  'undermount_sink_cutout': { ic: 150, cp: 280, unit: 'ea', perUnit: true, category: 'Countertops' }, // Per sink cutout
   'cooktop_cutout': { ic: 200, cp: 380, unit: 'ea', perUnit: false, category: 'Countertops' },
   'waterfall_edge': { ic: 650, cp: 1200, unit: 'ea', perUnit: false, category: 'Countertops' },
   'linen_cabinet': { ic: 300, cp: 520, unit: 'ea', perUnit: true, category: 'Cabinetry' },
@@ -334,7 +335,8 @@ export interface ScopeExtractionState {
   hasTubWaterproofing: boolean;
   
   // Cabinetry
-  vanitySize: number | null; // in inches
+  vanitySize: number | null; // in inches (single vanity size)
+  vanityCount: number; // how many vanities (CRITICAL: track multiple vanities)
   hasLinenCabinet: boolean;
   linenCabinetCount: number;
   hasMedicineCabinet: boolean;
@@ -342,8 +344,13 @@ export interface ScopeExtractionState {
   kitchenCabinetLf: number | null;
   
   // Countertops
-  countertopMaterial: 'quartz' | 'granite' | 'laminate' | null;
-  countertopSqft: number | null;
+  countertopMaterial: 'quartz' | 'granite' | 'quartzite' | 'laminate' | null;
+  countertopSqft: number | null; // if explicitly specified, otherwise derived from vanities
+  
+  // Derived sink/plumbing tracking
+  undermountSinks: boolean; // triggers sink cutout line items
+  sinkCount: number; // usually equals vanityCount unless double sinks
+  vanityPlumbingConnections: boolean; // user mentioned plumbing for vanities
   
   // Fixtures & Accessories
   mirrorCount: number;
@@ -432,6 +439,7 @@ export const initialScopeState: ScopeExtractionState = {
   hasShowerWaterproofing: false,
   hasTubWaterproofing: false,
   vanitySize: null,
+  vanityCount: 0, // CRITICAL: track multiple vanities
   hasLinenCabinet: false,
   linenCabinetCount: 0,
   hasMedicineCabinet: false,
@@ -439,6 +447,9 @@ export const initialScopeState: ScopeExtractionState = {
   kitchenCabinetLf: null,
   countertopMaterial: null,
   countertopSqft: null,
+  undermountSinks: false,
+  sinkCount: 0,
+  vanityPlumbingConnections: false,
   mirrorCount: 0,
   isLedMirror: false,
   hasToilet: false,
@@ -668,11 +679,48 @@ export function extractScopeFromMessage(
     if (msg.includes('tub')) state.hasTubWaterproofing = true;
   }
   
-  // Vanity size
-  const vanitySize = extractNumber(msg, '"', 'inch', 'in', 'vanity');
-  if (vanitySize && vanitySize >= 24 && vanitySize <= 120) state.vanitySize = vanitySize;
+  // ============ VANITY TRACKING (CRITICAL FIX) ============
+  // Track vanity count CUMULATIVELY - "2 vanities" + "another one" = 3
+  const vanityCountMatch = msg.match(/(\d+)\s*(?:vanit(?:y|ies)|double vanit(?:y|ies)|single vanit(?:y|ies))/i);
+  if (vanityCountMatch) {
+    const newCount = parseInt(vanityCountMatch[1], 10);
+    // If this is a new specification, set it; if "another" is mentioned, add to existing
+    if (msg.includes('another') || msg.includes('one more') || msg.includes('plus')) {
+      state.vanityCount = (state.vanityCount || 0) + newCount;
+    } else {
+      state.vanityCount = newCount;
+    }
+  } else if (msg.includes('another vanity') || msg.includes('another 60') || msg.includes('one more vanity')) {
+    // "another vanity" or "another 60" increments by 1
+    state.vanityCount = (state.vanityCount || 0) + 1;
+  } else if (msg.includes('vanity') || msg.includes('vanities')) {
+    // Generic vanity mention - only set to 1 if not already tracked
+    if (state.vanityCount === 0) state.vanityCount = 1;
+  }
+  
+  // Vanity size extraction
+  const vanitySize = extractNumber(msg, '"', 'inch', 'in');
+  if (vanitySize && vanitySize >= 24 && vanitySize <= 144) {
+    state.vanitySize = vanitySize;
+    // If we detect size but no count yet, assume 1
+    if (state.vanityCount === 0) state.vanityCount = 1;
+  }
   if (msg.includes('double vanity') && !state.vanitySize) state.vanitySize = 60;
   if (msg.includes('single vanity') && !state.vanitySize) state.vanitySize = 36;
+  
+  // Undermount sinks detection
+  if (msg.includes('undermount') || msg.includes('under mount') || msg.includes('under-mount')) {
+    state.undermountSinks = true;
+    // Sink count defaults to vanity count unless specified
+    const sinkNum = extractNumber(msg, 'sink', 'sinks');
+    state.sinkCount = sinkNum || state.vanityCount || 1;
+  }
+  
+  // Plumbing for vanities detection
+  if ((msg.includes('plumbing') || msg.includes('connect') || msg.includes('hook up')) && 
+      (msg.includes('vanit') || msg.includes('sink'))) {
+    state.vanityPlumbingConnections = true;
+  }
   
   // Linen cabinet
   const linenCount = extractNumber(msg, 'linen', 'linen cabinet');
@@ -698,11 +746,12 @@ export function extractScopeFromMessage(
   const cabinetLf = extractNumber(msg, 'lf', 'linear feet', 'linear foot');
   if (cabinetLf && state.projectType === 'Kitchen') state.kitchenCabinetLf = cabinetLf;
   
-  // Countertops
-  if (msg.includes('quartz')) state.countertopMaterial = 'quartz';
+  // Countertops - explicit sqft (rare, usually derived from vanity)
+  if (msg.includes('quartzite')) state.countertopMaterial = 'quartzite';
+  else if (msg.includes('quartz')) state.countertopMaterial = 'quartz';
   if (msg.includes('granite')) state.countertopMaterial = 'granite';
   if (msg.includes('laminate')) state.countertopMaterial = 'laminate';
-  const counterSqft = extractNumber(msg, 'countertop', 'counter');
+  const counterSqft = extractNumber(msg, 'countertop sqft', 'counter sqft', 'sqft countertop');
   if (counterSqft) state.countertopSqft = counterSqft;
   
   // Mirrors - CRITICAL: User specifically mentioned this
@@ -897,15 +946,28 @@ export function buildLineItemsFromScope(state: ScopeExtractionState): ExtractedL
     addItem('cement_board', sqft, `Cement Board (${sqft} sqft)`);
   }
   
-  // ============ CABINETRY ============
-  if (state.vanitySize) {
+  // ============ CABINETRY (CRITICAL FIX: Handle multiple vanities) ============
+  if (state.vanitySize && state.vanityCount > 0) {
     const sizeKey = state.vanitySize >= 96 ? '96' :
                     state.vanitySize >= 84 ? '84' :
                     state.vanitySize >= 72 ? '72' :
                     state.vanitySize >= 60 ? '60' :
                     state.vanitySize >= 48 ? '48' :
                     state.vanitySize >= 36 ? '36' : '30';
-    addItem(`vanity_${sizeKey}`, 1, `${state.vanitySize}" Vanity`);
+    
+    // Get pricing for this vanity size
+    const vanityPricing = PRICING_DATABASE[`vanity_${sizeKey}`];
+    if (vanityPricing) {
+      // Add vanity with proper quantity
+      lineItems.push({
+        name: `Vanity - ${state.vanitySize}" ${state.vanitySize >= 60 ? 'Double' : 'Single'}`,
+        quantity: state.vanityCount,
+        unit: 'ea',
+        ic: vanityPricing.ic * state.vanityCount,
+        cp: vanityPricing.cp * state.vanityCount,
+        category: 'Cabinetry',
+      });
+    }
   }
   if (state.hasLinenCabinet) addItem('linen_cabinet', state.linenCabinetCount || 1);
   if (state.hasMedicineCabinet) addItem('medicine_cabinet', state.medicineCabinetCount || 1);
@@ -913,10 +975,34 @@ export function buildLineItemsFromScope(state: ScopeExtractionState): ExtractedL
     addItem('cabinet_kitchen', state.kitchenCabinetLf, `Kitchen Cabinets (${state.kitchenCabinetLf} LF)`);
   }
   
-  // ============ COUNTERTOPS ============
-  if (state.countertopSqft && state.countertopSqft > 0) {
-    addItem('quartz_fab_install', state.countertopSqft, `Quartz Countertop (${state.countertopSqft} sqft)`);
-    addItem('allowance_quartz', 1, 'Quartz Material Allowance ($1,200/slab)');
+  // ============ COUNTERTOPS (CRITICAL FIX: Auto-derive from vanity dimensions) ============
+  // Calculate countertop sqft from vanity size if not explicitly provided
+  let counterSqft = state.countertopSqft;
+  if (!counterSqft && state.vanitySize && state.vanityCount > 0) {
+    // Formula: vanity width (inches) / 12 = linear feet
+    // Linear feet × 2 (standard depth) × 1.1 (overhang) = sqft per vanity
+    const vanityLF = state.vanitySize / 12;
+    const sqftPerVanity = Math.ceil(vanityLF * 2 * 1.1);
+    counterSqft = sqftPerVanity * state.vanityCount;
+  }
+  
+  if (counterSqft && counterSqft > 0) {
+    const material = state.countertopMaterial || 'quartz';
+    const materialKey = material === 'granite' ? 'granite_countertop' : 
+                        material === 'quartzite' ? 'quartzite_countertop' : 'quartz_countertop';
+    addItem(materialKey, counterSqft, `${material.charAt(0).toUpperCase() + material.slice(1)} Countertop (${counterSqft} sqft)`);
+  }
+  
+  // ============ DERIVED ITEMS (CRITICAL: Auto-add related items) ============
+  // Undermount sink cutouts - one per vanity or per explicit sink count
+  if (state.undermountSinks && state.vanityCount > 0) {
+    const sinkCount = state.sinkCount || state.vanityCount;
+    addItem('undermount_sink_cutout', sinkCount, `Undermount Sink Cutout${sinkCount > 1 ? 's' : ''}`);
+  }
+  
+  // Plumbing vanity connections - if user mentioned plumbing for vanities
+  if (state.vanityPlumbingConnections && state.vanityCount > 0) {
+    addItem('plumbing_vanity_connection', state.vanityCount, `Vanity Plumbing Connection${state.vanityCount > 1 ? 's' : ''}`);
   }
   
   // ============ ACCESSORIES ============
@@ -1055,6 +1141,32 @@ export function verifyCompleteness(
   }
   if (allText.includes('bench') && state.benchCount === 0) {
     missing.push('Shower bench - mentioned but not captured');
+  }
+  
+  // CRITICAL: Vanity count verification
+  const vanityMatches = allText.match(/(\d+)\s*vanit/gi);
+  if (vanityMatches) {
+    const totalMentioned = vanityMatches.reduce((sum, match) => {
+      const num = parseInt(match.match(/\d+/)?.[0] || '0', 10);
+      return sum + num;
+    }, 0);
+    // Check for "another" which adds 1
+    const anotherCount = (allText.match(/another\s*(vanity|60|48|72)/gi) || []).length;
+    const expectedCount = totalMentioned + anotherCount;
+    if (state.vanityCount < expectedCount) {
+      warnings.push(`Vanity count mismatch: mentioned ${expectedCount}, captured ${state.vanityCount}`);
+    }
+  }
+  
+  // Plumbing for vanities check
+  if ((allText.includes('plumbing') || allText.includes('connect')) && 
+      allText.includes('vanit') && !state.vanityPlumbingConnections) {
+    missing.push('Vanity plumbing connections - mentioned but not captured');
+  }
+  
+  // Undermount sinks check
+  if (allText.includes('undermount') && !state.undermountSinks) {
+    missing.push('Undermount sinks - mentioned but not captured');
   }
   
   return { missing, warnings };
