@@ -31,131 +31,237 @@ export interface ExtractedLineItem {
 // ============================================================
 
 export const PRICING_DATABASE: Record<string, PricingEntry> = {
-  // ============ DEMOLITION ============
-  'demo_shower_only': { ic: 900, cp: 1552, unit: 'ea', perUnit: false, category: 'Demolition' },
-  'demo_small_bath': { ic: 1300, cp: 2241, unit: 'ea', perUnit: false, category: 'Demolition' },
-  'demo_large_bath': { ic: 1650, cp: 2845, unit: 'ea', perUnit: false, category: 'Demolition' },
-  'demo_full_bath': { ic: 1360, cp: 2345, unit: 'ea', perUnit: false, category: 'Demolition' },
-  'demo_kitchen': { ic: 1750, cp: 3017, unit: 'ea', perUnit: false, category: 'Demolition' },
-  'demo_cast_iron_tub': { ic: 250, cp: 431, unit: 'ea', perUnit: false, category: 'Demolition' },
-  'soffit_removal': { ic: 150, cp: 259, unit: 'ea', perUnit: true, category: 'Demolition' },
-  'dumpster': { ic: 550, cp: 948, unit: 'ea', perUnit: false, category: 'Demolition' },
-  'wall_removal': { ic: 1200, cp: 2069, unit: 'ea', perUnit: false, category: 'Demolition' },
+  // ============ DEMOLITION & SITE PREP ============
+  'floor_protection': { ic: 0.50, cp: 1.00, unit: 'sqft', perUnit: true, category: 'Site Protection' },
+  'dust_barrier': { ic: 150, cp: 300, unit: 'ea', perUnit: false, category: 'Site Protection' },
+  'air_scrubber_rental': { ic: 200, cp: 350, unit: 'ea', perUnit: true, category: 'Site Protection' },
+  'furniture_moving': { ic: 45, cp: 85, unit: 'ea', perUnit: true, category: 'Site Protection' },
   
-  // ============ PLUMBING ============
-  'plumbing_shower_standard': { ic: 1800, cp: 3103, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_shower_valve': { ic: 1800, cp: 3103, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_extra_head': { ic: 625, cp: 1078, unit: 'ea', perUnit: true, category: 'Plumbing' },
-  'plumbing_toilet_swap': { ic: 350, cp: 603, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_toilet_reinstall': { ic: 150, cp: 259, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_toilet_relocation': { ic: 4000, cp: 6897, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_tub_drain_relocation': { ic: 2800, cp: 4828, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_tub_to_shower': { ic: 2550, cp: 4397, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_freestanding_tub': { ic: 4500, cp: 7759, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_linear_drain': { ic: 750, cp: 1293, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_smart_valve': { ic: 1350, cp: 2328, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_curb_liner': { ic: 500, cp: 862, unit: 'ea', perUnit: false, category: 'Plumbing' },
-  'plumbing_kitchen_reconnect': { ic: 800, cp: 1379, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'demo_kitchen': { ic: 1360, cp: 1500, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'demo_full_bath': { ic: 1360, cp: 1200, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'demo_large_bath': { ic: 1650, cp: 4500, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'demo_small_bath': { ic: 1300, cp: 2050, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'demo_shower_only': { ic: 900, cp: 1450, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'soffit_removal': { ic: 15, cp: 30, unit: 'ea', perUnit: true, category: 'Demolition' },
+  'cabinet_deconstruction': { ic: 500, cp: 900, unit: 'ea', perUnit: false, category: 'Demolition' },
   
-  // ============ FIXTURES (Material Allowances) ============
-  'fixture_toilet': { ic: 450, cp: 450, unit: 'ea', perUnit: true, category: 'Fixtures' },
-  'fixture_tub_filler': { ic: 500, cp: 862, unit: 'ea', perUnit: true, category: 'Fixtures' },
-  'fixture_shower_trim_kit': { ic: 450, cp: 450, unit: 'ea', perUnit: true, category: 'Fixtures' },
-  'fixture_faucet': { ic: 350, cp: 350, unit: 'ea', perUnit: true, category: 'Fixtures' },
-  'fixture_kitchen_faucet': { ic: 400, cp: 400, unit: 'ea', perUnit: true, category: 'Fixtures' },
-  'fixture_sink': { ic: 300, cp: 300, unit: 'ea', perUnit: true, category: 'Fixtures' },
-  'fixture_garbage_disposal': { ic: 250, cp: 250, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'tile_removal_mudset': { ic: 6, cp: 12, unit: 'sqft', perUnit: true, category: 'Demolition' },
+  'demo_cast_iron_tub': { ic: 250, cp: 500, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'glued_flooring_removal': { ic: 4, cp: 8, unit: 'sqft', perUnit: true, category: 'Demolition' },
+  'popcorn_ceiling_removal': { ic: 3.50, cp: 7, unit: 'sqft', perUnit: true, category: 'Demolition' },
   
+  'dumpster': { ic: 550, cp: 750, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'haul_away': { ic: 400, cp: 700, unit: 'ea', perUnit: true, category: 'Demolition' },
+  'difficult_access_fee': { ic: 300, cp: 600, unit: 'ea', perUnit: false, category: 'Demolition' },
+  
+  'post_construction_clean': { ic: 350, cp: 583, unit: 'ea', perUnit: false, category: 'Demolition' },
+  'daily_cleanup': { ic: 75, cp: 125, unit: 'ea', perUnit: true, category: 'Demolition' },
+
+  // ============ STRUCTURAL & FRAMING ============
+  'framing_standard': { ic: 550, cp: 917, unit: 'ea', perUnit: false, category: 'Framing' },
+  'framing_pony_wall': { ic: 400, cp: 667, unit: 'ea', perUnit: false, category: 'Framing' },
+  'framing_pocket_door': { ic: 1200, cp: 1875, unit: 'ea', perUnit: true, category: 'Framing' },
+  'framing_niche': { ic: 300, cp: 500, unit: 'ea', perUnit: true, category: 'Framing' },
+  
+  'wall_removal': { ic: 2100, cp: 3500, unit: 'ea', perUnit: false, category: 'Framing' },
+  'framing_door_relocation': { ic: 1000, cp: 1667, unit: 'ea', perUnit: false, category: 'Framing' },
+  'framing_door_closure': { ic: 500, cp: 833, unit: 'ea', perUnit: false, category: 'Framing' },
+  'framing_new_doorway': { ic: 550, cp: 917, unit: 'ea', perUnit: true, category: 'Framing' },
+  'framing_shower_enlargement': { ic: 2000, cp: 3333, unit: 'ea', perUnit: false, category: 'Framing' },
+  'tub_relocation': { ic: 3000, cp: 5000, unit: 'ea', perUnit: false, category: 'Framing' },
+  'toilet_relocation': { ic: 4000, cp: 6667, unit: 'ea', perUnit: false, category: 'Framing' },
+
+  // ============ PLUMBING & GAS ============
+  'plumbing_shower_standard': { ic: 1800, cp: 3000, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_extra_head': { ic: 500, cp: 833, unit: 'ea', perUnit: true, category: 'Plumbing' },
+  'plumbing_tub_to_shower': { ic: 2500, cp: 5500, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_freestanding_tub': { ic: 1250, cp: 2500, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_toilet_swap': { ic: 250, cp: 583, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_smart_valve': { ic: 1350, cp: 2250, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_linear_drain': { ic: 750, cp: 1250, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_tub_drain_relocation': { ic: 1800, cp: 3000, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'shower_drain_relocation_linear': { ic: 1335, cp: 2225, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'vanity_plumbing_capoff': { ic: 200, cp: 350, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'plumbing_toilet_reinstall': { ic: 100, cp: 175, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  
+  'steam_generator_install': { ic: 1200, cp: 2200, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'pot_filler_rough_trim': { ic: 550, cp: 950, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'tankless_water_heater': { ic: 1800, cp: 3200, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'recirculation_pump': { ic: 450, cp: 850, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  
+  'gas_line_new': { ic: 800, cp: 1500, unit: 'ea', perUnit: false, category: 'Plumbing' },
+  'gas_line_range': { ic: 18, cp: 32, unit: 'lf', perUnit: true, category: 'Plumbing' },
+
   // ============ ELECTRICAL ============
-  'electrical_recessed_can': { ic: 65, cp: 112, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_vanity_light': { ic: 225, cp: 388, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_pendant': { ic: 150, cp: 259, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_under_cabinet': { ic: 350, cp: 603, unit: 'ea', perUnit: false, category: 'Electrical' },
-  'electrical_outlet': { ic: 85, cp: 147, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_switch': { ic: 65, cp: 112, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_gfci': { ic: 95, cp: 164, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_dimmer': { ic: 85, cp: 147, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_led_mirror': { ic: 100, cp: 172, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_exhaust_fan': { ic: 175, cp: 302, unit: 'ea', perUnit: true, category: 'Electrical' },
-  'electrical_small_package': { ic: 250, cp: 431, unit: 'ea', perUnit: false, category: 'Electrical' },
-  'electrical_kitchen_package': { ic: 950, cp: 1638, unit: 'ea', perUnit: false, category: 'Electrical' },
-  'electrical_220_line': { ic: 450, cp: 776, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'electrical_recessed_can': { ic: 65, cp: 108, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_vanity_light': { ic: 225, cp: 333, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_outlet': { ic: 35, cp: 65, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_switch': { ic: 30, cp: 55, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_dimmer': { ic: 45, cp: 85, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_new_line': { ic: 250, cp: 450, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'electrical_dedicated_circuit': { ic: 175, cp: 325, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'electrical_gfci': { ic: 45, cp: 85, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_small_package': { ic: 850, cp: 1083, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'electrical_kitchen_package': { ic: 1500, cp: 2500, unit: 'ea', perUnit: false, category: 'Electrical' },
   
-  // ============ FRAMING ============
-  'framing_standard': { ic: 750, cp: 1293, unit: 'ea', perUnit: false, category: 'Framing' },
-  'framing_niche': { ic: 150, cp: 259, unit: 'ea', perUnit: true, category: 'Framing' },
-  'framing_bench': { ic: 400, cp: 690, unit: 'ea', perUnit: true, category: 'Framing' },
-  'framing_pony_wall': { ic: 450, cp: 776, unit: 'ea', perUnit: true, category: 'Framing' },
-  'framing_new_wall': { ic: 1200, cp: 2069, unit: 'ea', perUnit: false, category: 'Framing' },
-  'framing_pocket_door': { ic: 650, cp: 1121, unit: 'ea', perUnit: true, category: 'Framing' },
-  'framing_door_relocation': { ic: 1200, cp: 2069, unit: 'ea', perUnit: false, category: 'Framing' },
-  'framing_door_closure': { ic: 600, cp: 1034, unit: 'ea', perUnit: false, category: 'Framing' },
-  'framing_shower_enlargement': { ic: 1800, cp: 3103, unit: 'ea', perUnit: false, category: 'Framing' },
+  'panel_upgrade_200a': { ic: 2500, cp: 3800, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'dedicated_circuit_240v': { ic: 450, cp: 850, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'under_cabinet_led': { ic: 400, cp: 750, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'heated_floor_system': { ic: 18, cp: 32, unit: 'sqft', perUnit: true, category: 'Electrical' },
   
-  // ============ DRYWALL ============
-  'drywall_patch': { ic: 330, cp: 569, unit: 'ea', perUnit: false, category: 'Drywall' },
+  'toe_kick_lighting': { ic: 12, cp: 22, unit: 'lf', perUnit: true, category: 'Electrical' },
+  'in_drawer_outlet': { ic: 150, cp: 280, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'smart_switch': { ic: 75, cp: 140, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'bathroom_heat_lamp_fan': { ic: 350, cp: 650, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'electrical_exhaust_fan': { ic: 175, cp: 300, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_pendant': { ic: 150, cp: 260, unit: 'ea', perUnit: true, category: 'Electrical' },
+  'electrical_led_mirror': { ic: 100, cp: 175, unit: 'ea', perUnit: true, category: 'Electrical' },
+
+  // ============ TILE & FLOORING ============
+  'tile_wall': { ic: 18, cp: 50, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'tile_shower_floor': { ic: 5, cp: 8.33, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'tile_main_floor': { ic: 4.50, cp: 7.50, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'tile_tub_surround': { ic: 18, cp: 35, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'cement_board': { ic: 3, cp: 5, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'waterproofing': { ic: 2, cp: 8.33, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'floor_leveling': { ic: 500, cp: 833, unit: 'ea', perUnit: false, category: 'Tile' },
+  
+  'tile_backsplash': { ic: 18, cp: 32, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'tile_accent_band': { ic: 18, cp: 35, unit: 'lf', perUnit: true, category: 'Tile' },
+  'herringbone_premium': { ic: 8, cp: 15, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'large_format_premium': { ic: 6, cp: 12, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'mosaic_penny_tile': { ic: 28, cp: 52, unit: 'sqft', perUnit: true, category: 'Tile' },
+  'bullnose_trim_tile': { ic: 12, cp: 22, unit: 'lf', perUnit: true, category: 'Tile' },
+  'shower_curb_cap': { ic: 25, cp: 45, unit: 'lf', perUnit: true, category: 'Tile' },
+  'schluter_profile': { ic: 15, cp: 28, unit: 'lf', perUnit: true, category: 'Tile' },
+  
+  'lvp_flooring': { ic: 2.50, cp: 4.17, unit: 'sqft', perUnit: true, category: 'Flooring' },
+  'laminate_flooring': { ic: 2.25, cp: 4, unit: 'sqft', perUnit: true, category: 'Flooring' },
+  'wood_look_tile': { ic: 8, cp: 14, unit: 'sqft', perUnit: true, category: 'Flooring' },
+  'hardwood_flooring': { ic: 6, cp: 10, unit: 'sqft', perUnit: true, category: 'Flooring' },
+  'hardwood_refinish': { ic: 3.50, cp: 6, unit: 'sqft', perUnit: true, category: 'Flooring' },
+
+  // ============ CABINETRY & COUNTERTOPS ============
+  'cabinet_material': { ic: 150, cp: 250, unit: 'ea', perUnit: true, category: 'Cabinetry' },
+  'cabinet_install_labor': { ic: 50, cp: 83, unit: 'ea', perUnit: true, category: 'Cabinetry' },
+  
+  'vanity_30': { ic: 1100, cp: 1833, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'vanity_36': { ic: 1300, cp: 2167, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'vanity_48': { ic: 2500, cp: 4167, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'vanity_60': { ic: 2200, cp: 3667, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'vanity_72': { ic: 2600, cp: 4333, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'vanity_84': { ic: 3200, cp: 5333, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'vanity_96': { ic: 3800, cp: 6000, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'vanity_144': { ic: 4500, cp: 6750, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  
+  'quartz_countertop': { ic: 47, cp: 78, unit: 'sqft', perUnit: true, category: 'Countertops' },
+  'granite_countertop': { ic: 47, cp: 78, unit: 'sqft', perUnit: true, category: 'Countertops' },
+  'quartzite_countertop': { ic: 65, cp: 108, unit: 'sqft', perUnit: true, category: 'Countertops' },
+  
+  'soft_close_hinge_upgrade': { ic: 8, cp: 15, unit: 'ea', perUnit: true, category: 'Cabinetry' },
+  'pull_out_trash': { ic: 180, cp: 340, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'lazy_susan': { ic: 250, cp: 450, unit: 'ea', perUnit: false, category: 'Cabinetry' },
+  'undermount_sink_cutout': { ic: 150, cp: 280, unit: 'ea', perUnit: false, category: 'Countertops' },
+  'cooktop_cutout': { ic: 200, cp: 380, unit: 'ea', perUnit: false, category: 'Countertops' },
+  'waterfall_edge': { ic: 650, cp: 1200, unit: 'ea', perUnit: false, category: 'Countertops' },
+  'linen_cabinet': { ic: 300, cp: 520, unit: 'ea', perUnit: true, category: 'Cabinetry' },
+  'medicine_cabinet': { ic: 125, cp: 220, unit: 'ea', perUnit: true, category: 'Cabinetry' },
+  'cabinet_kitchen': { ic: 200, cp: 345, unit: 'lf', perUnit: true, category: 'Cabinetry' },
+
+  // ============ PAINT & DRYWALL ============
+  'paint_per_sqft': { ic: 1.50, cp: 2.75, unit: 'sqft', perUnit: true, category: 'Paint' },
+  'paint_full_bath': { ic: 1000, cp: 1667, unit: 'ea', perUnit: false, category: 'Paint' },
+  'paint_full_kitchen': { ic: 1200, cp: 2000, unit: 'ea', perUnit: false, category: 'Paint' },
+  'paint_half_bath': { ic: 600, cp: 1000, unit: 'ea', perUnit: false, category: 'Paint' },
+  'paint_ceiling': { ic: 250, cp: 450, unit: 'ea', perUnit: false, category: 'Paint' },
+  'paint_door': { ic: 75, cp: 135, unit: 'ea', perUnit: true, category: 'Paint' },
+  'paint_cabinets': { ic: 45, cp: 85, unit: 'ea', perUnit: true, category: 'Paint' },
+  'paint_closet': { ic: 300, cp: 475, unit: 'ea', perUnit: true, category: 'Paint' },
+  'ceiling_texture': { ic: 1000, cp: 2500, unit: 'ea', perUnit: false, category: 'Paint' },
   'drywall_large': { ic: 13, cp: 22, unit: 'sqft', perUnit: true, category: 'Drywall' },
+  'drywall_patch': { ic: 330, cp: 570, unit: 'ea', perUnit: false, category: 'Drywall' },
+  'wallpaper_removal': { ic: 1.50, cp: 2.75, unit: 'sqft', perUnit: true, category: 'Drywall' },
+  'wallpaper_installation': { ic: 3, cp: 5.50, unit: 'sqft', perUnit: true, category: 'Drywall' },
   'drywall_ceiling': { ic: 8, cp: 14, unit: 'sqft', perUnit: true, category: 'Drywall' },
+
+  // ============ GLASS ============
+  'glass_door_panel': { ic: 1350, cp: 2250, unit: 'ea', perUnit: false, category: 'Glass' },
+  'glass_panel_only': { ic: 800, cp: 1333, unit: 'ea', perUnit: false, category: 'Glass' },
+  'glass_90_return': { ic: 1425, cp: 2375, unit: 'ea', perUnit: false, category: 'Glass' },
+
+  // ============ FINISH CARPENTRY ============
+  'baseboard_install': { ic: 3.50, cp: 6.50, unit: 'lf', perUnit: true, category: 'Finish Carpentry' },
+  'crown_molding': { ic: 6, cp: 12, unit: 'lf', perUnit: true, category: 'Finish Carpentry' },
+  'window_door_casing': { ic: 75, cp: 150, unit: 'ea', perUnit: true, category: 'Finish Carpentry' },
+  'wainscoting_shiplap': { ic: 12, cp: 22, unit: 'sqft', perUnit: true, category: 'Finish Carpentry' },
+  'closet_shelving_system': { ic: 400, cp: 750, unit: 'ea', perUnit: true, category: 'Finish Carpentry' },
+  'closet_buildout': { ic: 1750, cp: 3500, unit: 'ea', perUnit: false, category: 'Finish Carpentry' },
+  'closet_cabinetry': { ic: 2000, cp: 3500, unit: 'ea', perUnit: false, category: 'Finish Carpentry' },
+  'floating_shelves': { ic: 85, cp: 160, unit: 'ea', perUnit: true, category: 'Finish Carpentry' },
+
+  // ============ FIXTURES (ALLOWANCES) ============
+  'fixture_bathroom_package': { ic: 810, cp: 1350, unit: 'ea', perUnit: false, category: 'Fixtures' },
+  'fixture_toilet': { ic: 210, cp: 350, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'fixture_faucet': { ic: 99, cp: 165, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'fixture_shower_trim_kit': { ic: 180, cp: 300, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'fixture_tub_standard': { ic: 300, cp: 500, unit: 'ea', perUnit: false, category: 'Fixtures' },
+  'fixture_tub_filler': { ic: 300, cp: 500, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'fixture_tub_freestanding': { ic: 720, cp: 1200, unit: 'ea', perUnit: false, category: 'Fixtures' },
+  'mirror_standard': { ic: 150, cp: 250, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'mirror_led': { ic: 210, cp: 350, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'lighting_fixture': { ic: 150, cp: 250, unit: 'ea', perUnit: true, category: 'Fixtures' },
+  'hardware_pulls': { ic: 3.60, cp: 6, unit: 'ea', perUnit: true, category: 'Fixtures' },
   
-  // ============ TILE & WATERPROOFING ============
-  'tile_wall': { ic: 18, cp: 31, unit: 'sqft', perUnit: true, category: 'Tile' },
-  'tile_shower_floor': { ic: 5, cp: 9, unit: 'sqft', perUnit: true, category: 'Tile' },
-  'tile_main_floor': { ic: 4.5, cp: 8, unit: 'sqft', perUnit: true, category: 'Tile' },
-  'tile_backsplash': { ic: 25, cp: 43, unit: 'sqft', perUnit: true, category: 'Tile' },
-  'waterproofing': { ic: 2, cp: 3.45, unit: 'sqft', perUnit: true, category: 'Tile' },
-  'cement_board': { ic: 3, cp: 5.17, unit: 'sqft', perUnit: true, category: 'Tile' },
-  'schluter_profile': { ic: 15, cp: 26, unit: 'lf', perUnit: true, category: 'Tile' },
-  
+  'kitchen_faucet': { ic: 159, cp: 265, unit: 'ea', perUnit: false, category: 'Fixtures' },
+  'kitchen_sink': { ic: 270, cp: 450, unit: 'ea', perUnit: false, category: 'Fixtures' },
+  'garbage_disposal': { ic: 84, cp: 140, unit: 'ea', perUnit: false, category: 'Fixtures' },
+  'garbage_disposal_install': { ic: 150, cp: 250, unit: 'ea', perUnit: false, category: 'Fixtures' },
+
+  // ============ ACCESSORIES ============
+  'towel_bar_tp_holder': { ic: 65, cp: 120, unit: 'ea', perUnit: true, category: 'Accessories' },
+  'towel_bar': { ic: 45, cp: 80, unit: 'ea', perUnit: true, category: 'Accessories' },
+  'tp_holder': { ic: 12, cp: 22, unit: 'ea', perUnit: true, category: 'Accessories' },
+  'grab_bar': { ic: 120, cp: 220, unit: 'ea', perUnit: true, category: 'Accessories' },
+  'shower_rod_curved': { ic: 85, cp: 160, unit: 'ea', perUnit: false, category: 'Accessories' },
+  'interior_door': { ic: 350, cp: 650, unit: 'ea', perUnit: true, category: 'Accessories' },
+  'door_hardware_upgrade': { ic: 45, cp: 85, unit: 'ea', perUnit: true, category: 'Accessories' },
+  'robe_hook': { ic: 25, cp: 45, unit: 'ea', perUnit: true, category: 'Accessories' },
+  'shower_shelf': { ic: 45, cp: 80, unit: 'ea', perUnit: true, category: 'Accessories' },
+
+  // ============ MECHANICALS ============
+  'hvac_vent_relocation': { ic: 600, cp: 1000, unit: 'ea', perUnit: false, category: 'Mechanicals' },
+  'range_hood_ducting': { ic: 450, cp: 750, unit: 'ea', perUnit: false, category: 'Mechanicals' },
+  'appliance_install_standard': { ic: 350, cp: 583, unit: 'ea', perUnit: false, category: 'Mechanicals' },
+  'appliance_install_pro': { ic: 800, cp: 1333, unit: 'ea', perUnit: false, category: 'Mechanicals' },
+
+  // ============ ADMIN & MISC ============
+  'permit_admin_fee': { ic: 800, cp: 1333, unit: 'ea', perUnit: false, category: 'Admin' },
+  'portable_toilet': { ic: 150, cp: 250, unit: 'ea', perUnit: true, category: 'Admin' },
+  'engineering_stamp': { ic: 800, cp: 1500, unit: 'ea', perUnit: false, category: 'Admin' },
+  'hoa_access_fee': { ic: 0, cp: 500, unit: 'ea', perUnit: false, category: 'Admin' },
+  'asbestos_testing': { ic: 250, cp: 450, unit: 'ea', perUnit: false, category: 'Admin' },
+  'lead_paint_testing': { ic: 150, cp: 280, unit: 'ea', perUnit: false, category: 'Admin' },
+  'caulking_sealing_final': { ic: 150, cp: 280, unit: 'ea', perUnit: true, category: 'Admin' },
+
   // ============ MATERIAL ALLOWANCES (Pass-through, CP = IC) ============
-  'allowance_tile_main': { ic: 6.5, cp: 6.5, unit: 'sqft', perUnit: true, category: 'Material Allowances' },
+  'allowance_tile_main': { ic: 6.50, cp: 6.50, unit: 'sqft', perUnit: true, category: 'Material Allowances' },
   'allowance_tile_shower': { ic: 12, cp: 12, unit: 'sqft', perUnit: true, category: 'Material Allowances' },
-  'allowance_tile_wall': { ic: 6.5, cp: 6.5, unit: 'sqft', perUnit: true, category: 'Material Allowances' },
+  'allowance_tile_wall': { ic: 6.50, cp: 6.50, unit: 'sqft', perUnit: true, category: 'Material Allowances' },
   'allowance_quartz': { ic: 1200, cp: 1200, unit: 'ea', perUnit: false, category: 'Material Allowances' },
   'allowance_plumbing_fixtures': { ic: 1350, cp: 1350, unit: 'ea', perUnit: false, category: 'Material Allowances' },
-  'allowance_mirror': { ic: 200, cp: 344, unit: 'ea', perUnit: true, category: 'Material Allowances' },
+  'allowance_mirror': { ic: 200, cp: 250, unit: 'ea', perUnit: true, category: 'Material Allowances' },
   'allowance_led_mirror': { ic: 550, cp: 550, unit: 'ea', perUnit: true, category: 'Material Allowances' },
-  
-  // ============ CABINETRY & VANITIES ============
-  'vanity_30': { ic: 1100, cp: 1897, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'vanity_36': { ic: 1300, cp: 2241, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'vanity_48': { ic: 2500, cp: 4310, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'vanity_60': { ic: 2200, cp: 3793, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'vanity_72': { ic: 2600, cp: 4483, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'vanity_84': { ic: 3200, cp: 5517, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'vanity_96': { ic: 3800, cp: 6552, unit: 'ea', perUnit: false, category: 'Cabinetry' },
-  'linen_cabinet': { ic: 300, cp: 517, unit: 'ea', perUnit: true, category: 'Cabinetry' },
-  'cabinet_kitchen': { ic: 200, cp: 345, unit: 'lf', perUnit: true, category: 'Cabinetry' },
-  'medicine_cabinet': { ic: 125, cp: 216, unit: 'ea', perUnit: true, category: 'Cabinetry' },
-  
-  // ============ COUNTERTOPS ============
+
+  // ============ FRAMING/BENCH ============
+  'framing_bench': { ic: 400, cp: 700, unit: 'ea', perUnit: true, category: 'Framing' },
+  'framing_new_wall': { ic: 1200, cp: 2070, unit: 'ea', perUnit: false, category: 'Framing' },
+
+  // ============ ELECTRICAL (additional) ============
+  'electrical_220_line': { ic: 450, cp: 775, unit: 'ea', perUnit: false, category: 'Electrical' },
+  'electrical_under_cabinet': { ic: 350, cp: 600, unit: 'ea', perUnit: false, category: 'Electrical' },
+
+  // ============ COUNTERTOP WORK (additional) ============
   'quartz_fab_install': { ic: 22, cp: 38, unit: 'sqft', perUnit: true, category: 'Countertops' },
-  
-  // ============ PAINT ============
-  'paint_patch': { ic: 500, cp: 862, unit: 'ea', perUnit: false, category: 'Paint' },
-  'paint_full_bath': { ic: 1000, cp: 1724, unit: 'ea', perUnit: false, category: 'Paint' },
-  'paint_full_kitchen': { ic: 1200, cp: 2069, unit: 'ea', perUnit: false, category: 'Paint' },
-  'paint_ceiling': { ic: 250, cp: 431, unit: 'ea', perUnit: false, category: 'Paint' },
-  
-  // ============ GLASS ============
-  'glass_door_panel': { ic: 1350, cp: 2328, unit: 'ea', perUnit: false, category: 'Glass' },
-  'glass_panel_only': { ic: 800, cp: 1379, unit: 'ea', perUnit: false, category: 'Glass' },
-  'glass_90_return': { ic: 1425, cp: 2457, unit: 'ea', perUnit: false, category: 'Glass' },
-  
-  // ============ ACCESSORIES ============
-  'mirror_standard': { ic: 200, cp: 345, unit: 'ea', perUnit: true, category: 'Accessories' },
-  'towel_bar': { ic: 45, cp: 78, unit: 'ea', perUnit: true, category: 'Accessories' },
-  'tp_holder': { ic: 12, cp: 21, unit: 'ea', perUnit: true, category: 'Accessories' },
-  'robe_hook': { ic: 25, cp: 43, unit: 'ea', perUnit: true, category: 'Accessories' },
-  'grab_bar': { ic: 85, cp: 147, unit: 'ea', perUnit: true, category: 'Accessories' },
-  'shower_shelf': { ic: 45, cp: 78, unit: 'ea', perUnit: true, category: 'Accessories' },
-  
-  // ============ FLOORING ============
-  'lvp_flooring': { ic: 2.5, cp: 4.31, unit: 'sqft', perUnit: true, category: 'Flooring' },
-  'floor_leveling': { ic: 500, cp: 862, unit: 'ea', perUnit: false, category: 'Flooring' },
-  
-  // ============ SITE PROTECTION ============
-  'floor_protection': { ic: 0.5, cp: 0.86, unit: 'sqft', perUnit: true, category: 'Site Protection' },
-  'dust_barrier': { ic: 150, cp: 259, unit: 'ea', perUnit: false, category: 'Site Protection' },
 };
 
 // ============================================================
