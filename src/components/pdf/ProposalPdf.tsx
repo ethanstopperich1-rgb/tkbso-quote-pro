@@ -9,7 +9,7 @@ import {
 import { Contractor, Estimate, PricingConfig } from '@/types/database';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
 import tkbsoLogo from '@/assets/tkbso-logo-full.png';
-import { transformToProDescription } from '@/lib/professional-descriptions';
+import { parseToFormattedLineItem, renderLineItem } from '@/lib/line-item-renderer';
 
 const styles = StyleSheet.create({
   page: {
@@ -455,8 +455,8 @@ export function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConf
         grouped[category] = { items: [], total: 0 };
       }
       
-      // Transform to professional description
-      const proDesc = transformToProDescription(
+      // Parse to formatted line item and render
+      const formattedItem = parseToFormattedLineItem(
         item.task_description,
         category,
         {
@@ -465,13 +465,16 @@ export function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConf
         }
       );
       
+      // Render using the standard format
+      const renderedDescription = renderLineItem(formattedItem);
+      
       // Skip duplicates
-      const descKey = proDesc.description.toLowerCase().substring(0, 60);
+      const descKey = renderedDescription.toLowerCase().substring(0, 60);
       if (seenDescriptions.has(descKey)) continue;
       seenDescriptions.add(descKey);
       
       grouped[category].items.push({
-        description: proDesc.description,
+        description: renderedDescription,
         quantity: item.quantity,
         unit: item.unit,
       });
