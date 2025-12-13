@@ -9,19 +9,19 @@ import {
 import { Contractor, Estimate, PricingConfig } from '@/types/database';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
 import tkbsoLogo from '@/assets/tkbso-logo-full.png';
-import { formatLineItemForPdf } from '@/lib/line-item-descriptions';
+import { transformToProDescription } from '@/lib/professional-descriptions';
 
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 10,
-    paddingTop: 100, // Space for fixed header
+    paddingTop: 100,
     paddingBottom: 70,
     paddingHorizontal: 50,
     backgroundColor: '#ffffff',
   },
   
-  // Fixed Header with large logo banner (appears on every page)
+  // Fixed Header Banner
   headerBanner: {
     position: 'absolute',
     top: 0,
@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     marginTop: 2,
+    marginBottom: 14,
   },
   
   // Client Info
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   clientLabel: {
-    width: 60,
+    width: 70,
     fontSize: 9,
     color: '#64748b',
   },
@@ -85,57 +86,32 @@ const styles = StyleSheet.create({
     color: '#1e293b',
   },
   
-  // Trade Section
+  // Trade Section - Bold underlined headers
   tradeSection: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   tradeHeader: {
     fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e3a8a',
-    paddingBottom: 2,
+    textDecoration: 'underline',
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
   lineItem: {
-    flexDirection: 'row',
-    paddingVertical: 2,
-    paddingLeft: 6,
-  },
-  lineItemText: {
-    flex: 1,
     fontSize: 9,
     color: '#475569',
+    paddingLeft: 4,
+    lineHeight: 1.5,
+    marginBottom: 3,
   },
-  lineItemPrice: {
-    width: 65,
+  lineItemAllowance: {
     fontSize: 9,
-    color: '#1e293b',
-    textAlign: 'right',
-  },
-  tradeTotalRow: {
-    flexDirection: 'row',
-    paddingTop: 2,
-    paddingLeft: 6,
-  },
-  tradeTotalText: {
-    flex: 1,
-    fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
-    color: '#1e293b',
-    textAlign: 'right',
-    paddingRight: 6,
-  },
-  tradeTotalPrice: {
-    width: 65,
-    fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
-    color: '#1e293b',
-    textAlign: 'right',
+    color: '#64748b',
+    fontStyle: 'italic',
   },
   
-  // Final Price
+  // Final Price Box
   finalPriceSection: {
     backgroundColor: '#1e3a8a',
     paddingVertical: 12,
@@ -158,7 +134,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   
-  // Payment Milestones
+  // Payment Section
   paymentSection: {
     marginBottom: 12,
   },
@@ -173,7 +149,8 @@ const styles = StyleSheet.create({
   },
   paymentRow: {
     flexDirection: 'row',
-    paddingVertical: 3,
+    paddingVertical: 4,
+    alignItems: 'flex-start',
   },
   paymentPercent: {
     width: 35,
@@ -187,7 +164,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   paymentAmount: {
-    width: 65,
+    width: 100,
     fontSize: 9,
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
@@ -197,6 +174,7 @@ const styles = StyleSheet.create({
   // Signature Block
   signatureSection: {
     marginBottom: 12,
+    marginTop: 10,
   },
   acceptanceText: {
     fontSize: 8,
@@ -207,6 +185,7 @@ const styles = StyleSheet.create({
   signatureRow: {
     flexDirection: 'row',
     gap: 24,
+    marginBottom: 10,
   },
   signatureField: {
     flex: 1,
@@ -215,37 +194,37 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
     marginBottom: 2,
-    height: 18,
+    height: 20,
   },
   signatureLabel: {
     fontSize: 7,
     color: '#64748b',
   },
-  printedNameRow: {
-    marginTop: 8,
-  },
-  printedNameLabel: {
-    fontSize: 8,
-    color: '#475569',
-  },
   
-  // Notes
+  // Notes Section
   notesSection: {
-    padding: 8,
-    backgroundColor: '#f8fafc',
+    padding: 10,
+    backgroundColor: '#fffbeb',
     borderLeftWidth: 3,
-    borderLeftColor: '#1e3a8a',
+    borderLeftColor: '#f59e0b',
+    marginBottom: 10,
   },
   notesTitle: {
-    fontSize: 8,
+    fontSize: 9,
     fontFamily: 'Helvetica-Bold',
-    color: '#1e293b',
-    marginBottom: 3,
+    color: '#92400e',
+    marginBottom: 4,
   },
   notesText: {
-    fontSize: 7,
-    color: '#475569',
+    fontSize: 8,
+    color: '#78350f',
     lineHeight: 1.5,
+  },
+  noteItem: {
+    fontSize: 8,
+    color: '#78350f',
+    lineHeight: 1.5,
+    marginBottom: 4,
   },
   
   // Footer
@@ -298,243 +277,153 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Define the exact trade order for bathroom estimates
+// Trade order for bathroom estimates
 const BATHROOM_TRADE_ORDER = [
-  'Demolition',
-  'Plumbing',
-  'Electrical',
-  'Framing & Drywall',
-  'Tile & Waterproofing',
-  'Cabinetry & Countertops',
-  'Paint',
-  'Glass & Final Trimout',
+  'DEMOLITION',
+  'PLUMBING',
+  'ELECTRICAL',
+  'DRYWALL & FRAMING',
+  'TILE WORK',
+  'CABINET & COUNTERTOP',
+  'PAINTING & FINAL TRIMOUT',
+  'GLASS',
 ];
 
-// Define the exact trade order for kitchen estimates
+// Trade order for kitchen estimates
 const KITCHEN_TRADE_ORDER = [
-  'Demolition',
-  'Cabinetry Package',
-  'Countertops',
-  'Plumbing',
-  'Electrical',
-  'Drywall',
-  'Backsplash',
-  'Flooring',
-  'Paint',
+  'DEMOLITION',
+  'CABINETRY PACKAGE',
+  'COUNTERTOPS',
+  'PLUMBING',
+  'ELECTRICAL',
+  'DRYWALL',
+  'BACKSPLASH',
+  'FLOORING',
+  'PAINT',
 ];
 
-// Normalize category for BATHROOM estimates - PRIORITY ORDER MATTERS
+// Normalize category to uppercase trade names
 function normalizeBathroomCategory(cat: string, taskDescription?: string): string {
   const lower = cat.toLowerCase();
   const taskLower = (taskDescription || '').toLowerCase();
   
-  // === PRIORITY 1: ELECTRICAL (check specific electrical items FIRST) ===
-  // Vanity lights, recessed cans, exhaust fans, outlets, switches
-  // But NOT vanity cabinets or LED mirrors - those go elsewhere
-  const isVanityOrCabinetItem = (taskLower.includes('vanity') || taskLower.includes('cabinet') || taskLower.includes('linen')) && 
+  // ELECTRICAL
+  const isVanityOrCabinetItem = (taskLower.includes('vanity') || taskLower.includes('cabinet')) && 
                                  !taskLower.includes('vanity light') && !taskLower.includes('light');
-  const isLedMirrorItem = taskLower.includes('led mirror') || taskLower.includes('mirror');
-  
-  if (!isVanityOrCabinetItem && !isLedMirrorItem && (
+  if (!isVanityOrCabinetItem && (
       taskLower.includes('vanity light') || taskLower.includes('light fixture') ||
       taskLower.includes('recessed') || taskLower.includes('can light') ||
       taskLower.includes('exhaust fan') || taskLower.includes('bath fan') || 
-      taskLower.includes('vent fan') || taskLower.includes('outlet') ||
-      taskLower.includes('switch') || taskLower.includes('under-cabinet') ||
+      taskLower.includes('outlet') || taskLower.includes('switch') ||
       taskLower.includes('gfci') ||
       lower === 'electrical' || lower.includes('electric') || lower.includes('lighting'))) {
-    return 'Electrical';
+    return 'ELECTRICAL';
   }
   
-  // === PRIORITY 2: GLASS & FINAL TRIMOUT ===
-  // Glass, mirrors (including LED mirrors), towel bars, toilet paper holders, accessories
-  if (taskLower.includes('frameless glass') || taskLower.includes('glass panel') ||
+  // GLASS
+  if (taskLower.includes('frameless') || taskLower.includes('glass panel') ||
       taskLower.includes('glass enclosure') || taskLower.includes('shower door') ||
       taskLower.includes('glass door') ||
-      taskLower.includes('mirror') || taskLower.includes('led mirror') || 
-      taskLower.includes('backlit mirror') ||
+      lower === 'glass' || lower.includes('glass')) {
+    return 'GLASS';
+  }
+  
+  // PAINTING & FINAL TRIMOUT (accessories, mirrors, touch-up)
+  if (taskLower.includes('mirror') || taskLower.includes('led mirror') ||
       taskLower.includes('towel bar') || taskLower.includes('towel ring') || 
-      taskLower.includes('towel rack') || taskLower.includes('toilet paper') ||
-      taskLower.includes('tp holder') || taskLower.includes('robe hook') ||
-      taskLower.includes('shower shelf') || taskLower.includes('soap dish') ||
-      taskLower.includes('grab bar') || taskLower.includes('accessories') ||
-      taskLower.includes('touch-up') || taskLower.includes('final') ||
-      lower === 'glass' || lower === 'accessories' || lower.includes('glass') ||
-      lower.includes('trimout') || lower.includes('final')) {
-    return 'Glass & Final Trimout';
+      taskLower.includes('toilet paper') || taskLower.includes('tp holder') || 
+      taskLower.includes('robe hook') || taskLower.includes('grab bar') ||
+      taskLower.includes('accessories') || taskLower.includes('touch-up') ||
+      taskLower.includes('paint') || taskLower.includes('primer') ||
+      lower === 'accessories' || lower.includes('trimout') || 
+      lower === 'paint' || lower === 'painting') {
+    return 'PAINTING & FINAL TRIMOUT';
   }
   
-  // === PRIORITY 3: PLUMBING (check BEFORE demo to catch toilet installations) ===
-  // Shower valves, drains, tub fillers, toilet work, freestanding tub, relocate plumbing
-  // NOTE: Do NOT include HVAC here - HVAC goes to separate section
-  if (taskLower.includes('valve') || taskLower.includes('shower valve') ||
-      taskLower.includes('drain') || taskLower.includes('tub drain') ||
+  // PLUMBING
+  if (taskLower.includes('valve') || taskLower.includes('drain') ||
       taskLower.includes('tub filler') || taskLower.includes('freestanding tub') ||
-      taskLower.includes('toilet line') || taskLower.includes('relocate toilet') ||
-      taskLower.includes('toilet install') || taskLower.includes('toilet reconnect') ||
-      taskLower.includes('wax ring') || taskLower.includes('supply line') ||
+      taskLower.includes('toilet') && !taskLower.includes('paper') ||
+      taskLower.includes('faucet') || taskLower.includes('shower') && !taskLower.includes('tile') ||
       taskLower.includes('rough-in') || taskLower.includes('plumb') ||
-      taskLower.includes('curb') || taskLower.includes('liner') ||
-      (taskLower.includes('toilet') && !taskLower.includes('paper') && !taskLower.includes('walls') && !taskLower.includes('toilet room')) ||
-      (taskLower.includes('tub') && !taskLower.includes('bathtub tile')) ||
       lower === 'plumbing' || lower.includes('plumbing')) {
-    return 'Plumbing';
+    return 'PLUMBING';
   }
   
-  // === PRIORITY 4: DEMOLITION ===
-  // Demo, gut, dumpster, haul, debris removal - but NOT installations
+  // DEMOLITION
   const isInstallation = taskLower.includes('install') && !taskLower.includes('uninstall');
   if (!isInstallation && (
       taskLower.includes('demo') || taskLower.includes('gut') || 
       taskLower.includes('dumpster') || taskLower.includes('haul') || 
-      taskLower.includes('debris') || taskLower.includes('tearout') ||
-      (taskLower.includes('remove') && !taskLower.includes('removal of tile')) ||
-      lower === 'demo' || lower === 'demolition' || lower.includes('haul') ||
-      lower.includes('dumpster') || lower.includes('tearout') || lower.includes('removal'))) {
-    return 'Demolition';
+      taskLower.includes('debris') || taskLower.includes('remove') ||
+      lower === 'demo' || lower === 'demolition' || lower.includes('haul'))) {
+    return 'DEMOLITION';
   }
   
-  // === PRIORITY 5: FRAMING & DRYWALL ===
-  // Wall framing, niche, drywall, door work, wall removal, relocate walls
+  // DRYWALL & FRAMING
   if (taskLower.includes('niche') || taskLower.includes('blocking') ||
-      taskLower.includes('fram') || taskLower.includes('framing') ||
-      taskLower.includes('drywall') || taskLower.includes('tape') ||
-      taskLower.includes('mud') || taskLower.includes('finish drywall') ||
-      taskLower.includes('wall removal') || taskLower.includes('new wall') ||
-      taskLower.includes('relocate') && taskLower.includes('wall') ||
-      taskLower.includes('toilet walls') || taskLower.includes('toilet room') ||
-      taskLower.includes('halfwall') || taskLower.includes('half wall') ||
-      taskLower.includes('door') ||
-      lower === 'framing' || lower === 'structural' || lower === 'drywall' ||
-      lower.includes('framing') || lower.includes('drywall')) {
-    return 'Framing & Drywall';
+      taskLower.includes('fram') || taskLower.includes('drywall') ||
+      taskLower.includes('wall removal') || taskLower.includes('door') ||
+      lower === 'framing' || lower === 'drywall' || lower.includes('framing')) {
+    return 'DRYWALL & FRAMING';
   }
   
-  // === PRIORITY 6: TILE & WATERPROOFING ===
-  // Tile installation, waterproofing, cement board, grout, seal
+  // TILE WORK
   if (taskLower.includes('tile') || taskLower.includes('waterproof') ||
-      taskLower.includes('redgard') || taskLower.includes('cement board') ||
-      taskLower.includes('backer board') || taskLower.includes('grout') ||
-      taskLower.includes('seal') ||
-      lower === 'tile' || lower === 'support' || lower === 'waterproofing' || 
-      lower === 'cement board' || lower === 'tile & waterproofing' || 
-      lower === 'tile & support' || lower.includes('backer board') ||
-      lower.includes('floor tile') || lower.includes('wall tile') ||
-      lower.includes('shower floor') || lower.includes('shower wall')) {
-    return 'Tile & Waterproofing';
+      taskLower.includes('cement board') || taskLower.includes('grout') ||
+      lower === 'tile' || lower.includes('tile') || lower.includes('waterproof')) {
+    return 'TILE WORK';
   }
   
-  // === PRIORITY 7: CABINETRY & COUNTERTOPS ===
-  // Vanity cabinet, linen cabinet, countertops, quartz (but NOT vanity light)
+  // CABINET & COUNTERTOP
   if ((taskLower.includes('vanity') && !taskLower.includes('light')) ||
-      taskLower.includes('cabinet') || taskLower.includes('linen') ||
-      taskLower.includes('countertop') || taskLower.includes('quartz') ||
-      taskLower.includes('hardware') ||
-      lower === 'vanity' || lower === 'countertop' || lower === 'quartz' || 
-      lower === 'cabinet' || lower === 'cabinetry' ||
-      lower.includes('vanity') || lower.includes('countertop') || 
-      lower.includes('cabinet') || lower.includes('quartz')) {
-    return 'Cabinetry & Countertops';
+      taskLower.includes('cabinet') || taskLower.includes('countertop') || 
+      taskLower.includes('quartz') ||
+      lower === 'vanity' || lower === 'countertop' || lower === 'cabinet') {
+    return 'CABINET & COUNTERTOP';
   }
   
-  // === PRIORITY 8: PAINT ===
-  // Paint, primer, ceiling paint
-  if (taskLower.includes('paint') || taskLower.includes('primer') ||
-      (taskLower.includes('ceiling') && !taskLower.includes('tile')) ||
-      lower === 'paint' || lower === 'painting' || lower === 'paint & drywall') {
-    return 'Paint';
-  }
-  
-  return 'Other';
+  return 'OTHER';
 }
 
-// Normalize category for KITCHEN estimates
 function normalizeKitchenCategory(cat: string, taskDescription?: string): string {
   const lower = cat.toLowerCase();
   const taskLower = (taskDescription || '').toLowerCase();
   
-  // === DEMOLITION ===
-  if (lower === 'demo' || lower === 'demolition' || lower.includes('haul') ||
-      lower.includes('dumpster') || lower.includes('tearout') || lower.includes('removal') ||
-      taskLower.includes('demo') || taskLower.includes('gut') || taskLower.includes('remove') ||
-      taskLower.includes('dumpster') || taskLower.includes('haul') || taskLower.includes('debris') ||
-      taskLower.includes('disconnect')) {
-    return 'Demolition';
+  if (lower === 'demo' || lower === 'demolition' || 
+      taskLower.includes('demo') || taskLower.includes('remove') || taskLower.includes('dumpster')) {
+    return 'DEMOLITION';
+  }
+  if (lower === 'cabinet' || lower === 'cabinetry' || 
+      taskLower.includes('cabinet') || taskLower.includes('hardware')) {
+    return 'CABINETRY PACKAGE';
+  }
+  if (lower === 'countertop' || lower === 'quartz' || 
+      taskLower.includes('countertop') || taskLower.includes('fabrication')) {
+    return 'COUNTERTOPS';
+  }
+  if (lower === 'plumbing' || taskLower.includes('sink') || taskLower.includes('faucet') || 
+      taskLower.includes('disposal') || taskLower.includes('dishwasher')) {
+    return 'PLUMBING';
+  }
+  if (lower === 'electrical' || taskLower.includes('outlet') || taskLower.includes('switch') ||
+      taskLower.includes('recessed') || taskLower.includes('under-cabinet')) {
+    return 'ELECTRICAL';
+  }
+  if (lower === 'drywall' || taskLower.includes('drywall') || taskLower.includes('patch')) {
+    return 'DRYWALL';
+  }
+  if (lower === 'backsplash' || taskLower.includes('backsplash') || taskLower.includes('tile')) {
+    return 'BACKSPLASH';
+  }
+  if (lower === 'flooring' || taskLower.includes('floor') || taskLower.includes('lvp')) {
+    return 'FLOORING';
+  }
+  if (lower === 'paint' || taskLower.includes('paint')) {
+    return 'PAINT';
   }
   
-  // === CABINETRY PACKAGE ===
-  if (lower === 'cabinet' || lower === 'cabinetry' || lower.includes('cabinet') ||
-      taskLower.includes('cabinet') || taskLower.includes('pantry') ||
-      taskLower.includes('pull') || taskLower.includes('knob') ||
-      (taskLower.includes('hardware') && !taskLower.includes('plumb'))) {
-    return 'Cabinetry Package';
-  }
-  
-  // === COUNTERTOPS ===
-  if (lower === 'countertop' || lower === 'quartz' || lower === 'granite' || lower === 'laminate' ||
-      lower.includes('countertop') || lower.includes('quartz') ||
-      taskLower.includes('countertop') || taskLower.includes('quartz') ||
-      taskLower.includes('granite') || taskLower.includes('laminate') ||
-      taskLower.includes('sink cutout') || taskLower.includes('cooktop cutout') ||
-      taskLower.includes('fabrication')) {
-    return 'Countertops';
-  }
-  
-  // === PLUMBING ===
-  if (lower === 'plumbing' || lower.includes('plumbing') ||
-      taskLower.includes('plumb') || taskLower.includes('sink') ||
-      taskLower.includes('faucet') || taskLower.includes('disposal') ||
-      taskLower.includes('dishwasher') || taskLower.includes('ice maker') ||
-      taskLower.includes('gas line') || taskLower.includes('hookup') ||
-      taskLower.includes('rough-in') || taskLower.includes('drain')) {
-    return 'Plumbing';
-  }
-  
-  // === ELECTRICAL ===
-  if (lower === 'electrical' || lower.includes('electric') || lower.includes('lighting') ||
-      taskLower.includes('outlet') || taskLower.includes('switch') ||
-      taskLower.includes('under-cabinet') || taskLower.includes('undercabinet') ||
-      taskLower.includes('pendant') || taskLower.includes('recessed') ||
-      taskLower.includes('can light') || taskLower.includes('range hood') ||
-      taskLower.includes('gfci') || taskLower.includes('electrical')) {
-    return 'Electrical';
-  }
-  
-  // === DRYWALL ===
-  if (lower === 'drywall' || lower === 'framing' || lower === 'structural' ||
-      lower.includes('drywall') || lower.includes('framing') ||
-      taskLower.includes('drywall') || taskLower.includes('tape') ||
-      taskLower.includes('mud') || taskLower.includes('texture') ||
-      taskLower.includes('ceiling') && !taskLower.includes('paint') ||
-      taskLower.includes('repair') && !taskLower.includes('appliance')) {
-    return 'Drywall';
-  }
-  
-  // === BACKSPLASH ===
-  if (lower === 'backsplash' || lower.includes('backsplash') ||
-      taskLower.includes('backsplash') || taskLower.includes('back splash') ||
-      (taskLower.includes('tile') && (taskLower.includes('wall') || taskLower.includes('full-height')))) {
-    return 'Backsplash';
-  }
-  
-  // === FLOORING ===
-  if (lower === 'flooring' || lower === 'floor' || lower === 'lvp' || lower === 'hardwood' ||
-      lower.includes('flooring') || lower.includes('floor') ||
-      taskLower.includes('flooring') || taskLower.includes('floor') ||
-      taskLower.includes('lvp') || taskLower.includes('hardwood') ||
-      taskLower.includes('underlayment') || taskLower.includes('transition') ||
-      taskLower.includes('baseboard') || taskLower.includes('leveling')) {
-    return 'Flooring';
-  }
-  
-  // === PAINT ===
-  if (lower === 'paint' || lower === 'painting' ||
-      taskLower.includes('paint') || taskLower.includes('primer') ||
-      taskLower.includes('prime')) {
-    return 'Paint';
-  }
-  
-  return 'Other';
+  return 'OTHER';
 }
 
 export function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConfig, showTileSqft: boolean = true): TradeGroup[] {
@@ -549,323 +438,49 @@ export function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConf
     unit?: string;
   }> | undefined;
 
-  // Determine project type - Kitchen vs Bathroom
   const isKitchen = estimate.has_kitchen && !estimate.has_bathrooms;
   const normalizeCategory = isKitchen ? normalizeKitchenCategory : normalizeBathroomCategory;
   const TRADE_ORDER = isKitchen ? KITCHEN_TRADE_ORDER : BATHROOM_TRADE_ORDER;
 
-  // Helper to check if a line item is a tile sqft item
-  const isTileSqftItem = (taskDescription: string): boolean => {
-    const lower = taskDescription.toLowerCase();
-    return (lower.includes('floor tile') || lower.includes('wall tile') || 
-            lower.includes('shower floor') || lower.includes('shower wall') ||
-            lower.includes('main floor') || lower.includes('bathroom floor') ||
-            lower.includes('backsplash')) &&
-           !lower.includes('material');
-  };
-
-  // Helper to format tile description with sqft
-  const formatTileDescription = (description: string, quantity?: number, unit?: string): string => {
-    if (quantity && unit?.toLowerCase() === 'sqft' && quantity > 0) {
-      const sqft = Math.round(quantity);
-      if (!description.includes('sqft') && !description.includes('sq ft')) {
-        return `${description} (${sqft} sqft)`;
-      }
-    }
-    return description;
-  };
-
-  // Helper to check if item should be EXCLUDED (not user-specified scope)
-  const shouldExcludeItem = (taskDescription: string, allItems: typeof lineItems): boolean => {
-    const lower = taskDescription.toLowerCase();
-    
-    // EXCLUDE ANY shower curtain rod or handheld shower mention - ALWAYS filter out if frameless glass is present
-    if (lower.includes('curtain') || lower.includes('shower rod') || lower.includes('curtain rod') ||
-        lower.includes('hand-held') || lower.includes('handheld') || lower.includes('slide bar')) {
-      const hasFramelessGlass = allItems?.some(item => {
-        const itemLower = item.task_description.toLowerCase();
-        return itemLower.includes('frameless') || itemLower.includes('glass enclosure') ||
-               itemLower.includes('shower door') || itemLower.includes('glass door') ||
-               itemLower.includes('glass panel') || itemLower.includes('glass shower');
-      });
-      if (hasFramelessGlass) return true;
-    }
-    
-    // EXCLUDE HVAC-related items unless user explicitly mentioned HVAC
-    if (lower.includes('hvac') || lower.includes('supply vent') || lower.includes('return vent') ||
-        lower.includes('air vent') || lower.includes('relocating hvac') || lower.includes('adjusting hvac')) {
-      const hasExplicitHvac = allItems?.some(item => {
-        const itemLower = item.task_description.toLowerCase();
-        return (itemLower.includes('hvac') || itemLower.includes('vent relocat')) &&
-               !itemLower.includes('includes adjusting') && !itemLower.includes('includes relocating hvac');
-      });
-      if (!hasExplicitHvac && (lower.includes('includes adjusting') || lower.includes('includes relocating hvac'))) {
-        return true;
-      }
-    }
-    
-    return false;
-  };
-
-  // Helper to clean item description (remove auto-added HVAC text and wrong descriptions)
-  const cleanDescription = (description: string): string => {
-    // Remove auto-added HVAC phrases and wrong cabinetry descriptions
-    let cleaned = description
-      .replace(/\s*Includes adjusting or relocating HVAC supply or return vent to fit revised layout\.?\s*/gi, '')
-      .replace(/\s*Includes HVAC vent adjustment\.?\s*/gi, '')
-      .replace(/\s*Includes installation of shower curtain rod with secure wall mounting\.?\s*/gi, '')
-      .replace(/\s*Includes vanity cabinet, countertop, sink, and basic plumbing preparation for installation\.?\s*/gi, '')
-      .replace(/\s*Includes installation of hand-held shower attachment with slide bar or wall mount\.?\s*/gi, '')
-      .trim();
-    
-    // Clean up any double periods or trailing commas
-    cleaned = cleaned.replace(/\.\./g, '.').replace(/,\s*$/g, '').replace(/\s+/g, ' ');
-    
-    return cleaned;
-  };
-
-  // Helper to determine correct category for misplaced items - COMPREHENSIVE ROUTING
-  // PRIORITY ORDER IS CRITICAL - Plumbing must be checked before Electrical!
-  const getCorrectCategory = (taskDescription: string, originalCategory: string): string => {
-    const lower = taskDescription.toLowerCase();
-    
-    // === PLUMBING FIRST (HIGHEST PRIORITY) - Catch ALL plumbing items before other checks ===
-    // This MUST run before Electrical to prevent tub fillers, drains, valves from going to wrong category
-    if (lower.includes('tub') || lower.includes('filler') || lower.includes('shower valve') ||
-        lower.includes('shower curb') || lower.includes('shower liner') || lower.includes('drain') ||
-        lower.includes('valve') || lower.includes('rough-in') || lower.includes('supply line') ||
-        (lower.includes('plumb') && !lower.includes('plumb prep'))) {
-      return 'Plumbing';
-    }
-    if (lower.includes('toilet') && (lower.includes('relocate') || lower.includes('reuse') || 
-        lower.includes('reinstall') || lower.includes('install') || lower.includes('wax ring') ||
-        lower.includes('supply') || lower.includes('line'))) {
-      return 'Plumbing';
-    }
-    
-    // === CABINETRY & COUNTERTOPS - Check BEFORE Electrical to catch mis-categorized vanity items ===
-    if ((lower.includes('vanity') && !lower.includes('vanity light') && !lower.includes('light fixture')) ||
-        lower.includes('cabinet') || lower.includes('linen') || lower.includes('countertop') ||
-        lower.includes('quartz') || lower.includes('granite') || lower.includes('bundle')) {
-      return 'Cabinetry & Countertops';
-    }
-    
-    // === GLASS & FINAL TRIMOUT - Check before Electrical to catch LED mirrors ===
-    if (lower.includes('frameless') || lower.includes('glass enclosure') || 
-        lower.includes('glass shower') || lower.includes('shower door') ||
-        lower.includes('glass panel') || lower.includes('shower glass')) {
-      return 'Glass & Final Trimout';
-    }
-    if (lower.includes('led mirror') || (lower.includes('mirror') && !lower.includes('wiring'))) {
-      return 'Glass & Final Trimout';
-    }
-    if (lower.includes('towel bar') || lower.includes('toilet paper') || 
-        lower.includes('tp holder') || lower.includes('robe hook') ||
-        lower.includes('grab bar') || lower.includes('soap dish') ||
-        lower.includes('accessory') || lower.includes('accessories')) {
-      return 'Glass & Final Trimout';
-    }
-    
-    // === ELECTRICAL - Only lights, wiring, outlets, switches ===
-    // Plumbing and Cabinetry already filtered out above
-    if (lower.includes('recessed') || lower.includes('can light') || 
-        lower.includes('vanity light') || lower.includes('light fixture') ||
-        lower.includes('outlet') || lower.includes('switch') || lower.includes('wiring') ||
-        lower.includes('exhaust fan') || lower.includes('vent fan') ||
-        (lower.includes('light') && lower.includes('install'))) {
-      return 'Electrical';
-    }
-    
-    // === DEMOLITION - Only gut/demo/removal/dumpster (NOT installations) ===
-    const isInstallation = lower.includes('install') && !lower.includes('uninstall');
-    if (!isInstallation && (lower.includes('gut') || lower.includes('demo') || lower.includes('dumpster') ||
-        lower.includes('tearout') || (lower.includes('remove') && !lower.includes('removal')))) {
-      return 'Demolition';
-    }
-    
-    // === FRAMING & DRYWALL - Walls, niches, framing, drywall ===
-    if (lower.includes('frame') || lower.includes('niche') || lower.includes('drywall') ||
-        lower.includes('wall') && (lower.includes('relocate') || lower.includes('remove') || lower.includes('patch')) ||
-        lower.includes('door closure') || lower.includes('door relocation')) {
-      return 'Framing & Drywall';
-    }
-    
-    // === TILE & WATERPROOFING ===
-    if (lower.includes('tile') || lower.includes('waterproof') || lower.includes('redgard') ||
-        lower.includes('cement board') || lower.includes('backer')) {
-      return 'Tile & Waterproofing';
-    }
-    
-    // === PAINT ===
-    if (lower.includes('paint') || lower.includes('primer') || lower.includes('texture')) {
-      return 'Paint';
-    }
-    
-    return originalCategory;
-  };
-
-  // Track seen descriptions AND semantic concepts to remove duplicates
+  // Track seen items to prevent duplicates
   const seenDescriptions = new Set<string>();
-  const seenConcepts = new Set<string>();
-  
-  // Helper to extract key concept from description for better duplicate detection
-  const extractConcept = (desc: string): string | null => {
-    const lower = desc.toLowerCase();
-    // Extract main concepts that shouldn't appear twice
-    if (lower.includes('relocat') && lower.includes('toilet') && lower.includes('drain')) return 'toilet_drain_relocate';
-    if (lower.includes('relocat') && lower.includes('tub') && lower.includes('drain')) return 'tub_drain_relocate';
-    if (lower.includes('toilet') && (lower.includes('install') || lower.includes('reinstall') || lower.includes('reuse'))) return 'toilet_install';
-    if (lower.includes('dumpster')) return 'dumpster';
-    if (lower.includes('frameless') && lower.includes('glass')) return 'frameless_glass';
-    if (lower.includes('led mirror')) return 'led_mirror';
-    return null;
-  };
 
   if (lineItems && lineItems.length > 0) {
-    // Group line items by category, filtering out items that shouldn't be included
     const grouped: Record<string, { items: LineItem[]; total: number }> = {};
     
     for (const item of lineItems) {
-      // Skip items that should be excluded
-      if (shouldExcludeItem(item.task_description, lineItems)) {
-        continue;
-      }
-      
-      // Get normalized category first, then check for corrections
-      let category = normalizeCategory(item.category || 'Other', item.task_description);
-      category = getCorrectCategory(item.task_description, category);
+      const category = normalizeCategory(item.category || 'Other', item.task_description);
       
       if (!grouped[category]) {
         grouped[category] = { items: [], total: 0 };
       }
       
-      // Clean and format description
-      let description = cleanDescription(item.task_description);
+      // Transform to professional description
+      const proDesc = transformToProDescription(
+        item.task_description,
+        category,
+        {
+          quantity: item.quantity,
+          unit: item.unit,
+        }
+      );
       
-      // Skip if description is empty after cleaning
-      if (!description || description.length < 3) {
-        continue;
-      }
+      // Skip duplicates
+      const descKey = proDesc.description.toLowerCase().substring(0, 60);
+      if (seenDescriptions.has(descKey)) continue;
+      seenDescriptions.add(descKey);
       
-      // Check for semantic duplicates using concept extraction
-      const concept = extractConcept(description);
-      if (concept && seenConcepts.has(concept)) {
-        continue; // Skip semantic duplicate
-      }
-      if (concept) seenConcepts.add(concept);
-      
-      // Create a normalized key for duplicate detection (fallback)
-      const normalizedKey = description.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 50);
-      if (seenDescriptions.has(normalizedKey)) {
-        continue; // Skip duplicate
-      }
-      seenDescriptions.add(normalizedKey);
-      
-      // Format tile items with sqft in description (only if showTileSqft is true)
-      if (showTileSqft && isTileSqftItem(description)) {
-        description = formatTileDescription(description, item.quantity, item.unit);
-      }
-      
-      // Add the actual line item description with quantity/unit
       grouped[category].items.push({
-        description,
+        description: proDesc.description,
         quantity: item.quantity,
         unit: item.unit,
       });
       grouped[category].total += item.cp_total || 0;
     }
     
-    // Add material allowances based on project type with NEW FORMAT
-    if (isKitchen) {
-      // Kitchen-specific material allowances
-      if (grouped['Countertops'] && pricingConfig?.quartz_slab_level1_allowance_cp) {
-        grouped['Countertops'].items.push({
-          description: `Product allowance $${pricingConfig.quartz_slab_level1_allowance_cp.toLocaleString()} per slab (Level 1 Quartz). Includes fabrication and installation.`,
-          isMaterialAllowance: true,
-        });
-      }
-      if (grouped['Cabinetry Package']) {
-        grouped['Cabinetry Package'].items.push({
-          description: `Cabinet Material Allowance: Painted shaker style`,
-          isMaterialAllowance: true,
-        });
-      }
-      if (grouped['Plumbing'] && pricingConfig?.plumbing_fixture_allowance_cp) {
-        grouped['Plumbing'].items.push({
-          description: `Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)}`,
-          isMaterialAllowance: true,
-        });
-      }
-      if (grouped['Backsplash'] && pricingConfig?.tile_material_allowance_cp_per_sqft) {
-        grouped['Backsplash'].items.push({
-          description: `Product allowance $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft. Includes thinset, grout, and Schluter trim.`,
-          isMaterialAllowance: true,
-        });
-      }
-      if (grouped['Flooring'] && pricingConfig?.lvp_cp_per_sqft) {
-        grouped['Flooring'].items.push({
-          description: `Product allowance $${pricingConfig.lvp_cp_per_sqft.toFixed(2)}/sqft (LVP/Tile). Includes underlayment and transitions.`,
-          isMaterialAllowance: true,
-        });
-      }
-    } else {
-      // Bathroom-specific material allowances - Read from payload allowances array
-      const allowances = payload?.allowances as Array<{item: string; notes: string; quantity: number}> | undefined;
-      
-      if (grouped['Tile & Waterproofing'] && allowances) {
-        // Add specific tile allowances from the estimate data
-        const tileAllowances = allowances.filter(a => a.item === 'Materials - Tile');
-        
-        for (const allowance of tileAllowances) {
-          // Parse the notes to extract rate and type (e.g., "Main bathroom floor: porcelain @ $6.50/sqft")
-          const notes = allowance.notes || '';
-          const rateMatch = notes.match(/\$(\d+(?:\.\d+)?)/);
-          const rate = rateMatch ? rateMatch[1] : '6.50';
-          
-          let areaType = 'floor';
-          if (notes.toLowerCase().includes('shower floor')) {
-            areaType = 'shower floor';
-          } else if (notes.toLowerCase().includes('shower wall') || notes.toLowerCase().includes('wall')) {
-            areaType = 'shower walls';
-          } else if (notes.toLowerCase().includes('main') || notes.toLowerCase().includes('bathroom floor')) {
-            areaType = 'main floor';
-          }
-          
-          grouped['Tile & Waterproofing'].items.push({
-            description: `Product allowance $${rate}/sqft (${areaType}). Includes thinset, grout, and Schluter trim.`,
-            isMaterialAllowance: true,
-          });
-        }
-        
-        // If no tile allowances found, add generic one as fallback
-        if (tileAllowances.length === 0 && pricingConfig?.tile_material_allowance_cp_per_sqft) {
-          const hasAllowance = grouped['Tile & Waterproofing'].items.some(i => 
-            i.description.toLowerCase().includes('allowance'));
-          if (!hasAllowance) {
-            grouped['Tile & Waterproofing'].items.push({
-              description: `Product allowance $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft. Includes thinset, grout, and Schluter trim.`,
-              isMaterialAllowance: true,
-            });
-          }
-        }
-      }
-      
-      if (grouped['Cabinetry & Countertops'] && pricingConfig?.quartz_slab_level1_allowance_cp) {
-        const hasAllowance = grouped['Cabinetry & Countertops'].items.some(i => 
-          i.description.toLowerCase().includes('allowance') || i.description.toLowerCase().includes('product'));
-        if (!hasAllowance) {
-          grouped['Cabinetry & Countertops'].items.push({
-            description: `Product allowance $${pricingConfig.quartz_slab_level1_allowance_cp.toLocaleString()} per slab (Level 1 Quartz). Includes fabrication and installation.`,
-            isMaterialAllowance: true,
-          });
-        }
-      }
-      // REMOVED: Fixture allowance for plumbing - user requested this not appear on PDF
-    }
-    
-    // Convert to array with proper ordering
+    // Convert to array
     for (const [trade, data] of Object.entries(grouped)) {
-      if (data.total > 0) {
+      if (data.items.length > 0) {
         groups.push({
           trade,
           items: data.items,
@@ -874,36 +489,51 @@ export function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConf
       }
     }
   } else {
-    // Fallback to legacy estimate fields - build in correct order
+    // Fallback for legacy estimates
     if (estimate.include_demo !== false && (estimate.demo_cp_total || 0) > 0) {
       groups.push({
-        trade: 'Demolition',
-        items: [{ description: 'Demo, debris removal, and dumpster' }],
+        trade: 'DEMOLITION',
+        items: [{ 
+          description: '− Demo and remove all existing fixtures, tile, vanity, and debris. Dispose of all materials and haul away.' 
+        }],
         total: estimate.demo_cp_total || 0,
       });
     }
 
     if (estimate.include_plumbing !== false && (estimate.plumbing_cp_total || 0) > 0) {
-      const plumbingItems: LineItem[] = [{ description: 'Plumbing rough-in and fixture installation' }];
-      
-      if (pricingConfig?.plumbing_fixture_allowance_cp) {
-        plumbingItems.push({
-          description: `Fixture Allowance: ${formatCurrency(pricingConfig.plumbing_fixture_allowance_cp)}`,
-          isMaterialAllowance: true,
+      const plumbingItems: LineItem[] = [];
+      plumbingItems.push({ 
+        description: `− Supply and install new thermostatic shower valve with pressure-balanced trim kit and diverter in customer selected finish. (Product Allowance $${pricingConfig?.plumbing_fixture_allowance_cp || 450})` 
+      });
+      if (estimate.num_toilets && estimate.num_toilets > 0) {
+        plumbingItems.push({ 
+          description: `− Supply and install new chair height toilet with new wax ring, shut-off valve, and braided supply line. (Product Allowance $350)` 
         });
       }
-      
       groups.push({
-        trade: 'Plumbing',
+        trade: 'PLUMBING',
         items: plumbingItems,
         total: estimate.plumbing_cp_total || 0,
       });
     }
 
-    if (estimate.include_electrical !== false && ((estimate.lighting_cp_total || 0) > 0 || estimate.num_recessed_cans || estimate.num_vanity_lights)) {
+    if (estimate.include_electrical !== false && ((estimate.lighting_cp_total || 0) > 0)) {
+      const electricalItems: LineItem[] = [];
+      if (estimate.num_recessed_cans && estimate.num_recessed_cans > 0) {
+        const qty = estimate.num_recessed_cans;
+        electricalItems.push({ 
+          description: `− Supply and install ${qty === 1 ? 'one (1)' : qty} recessed LED can light(s) with IC-rated housing and retrofit trim. (Product Allowance $${65 * qty})` 
+        });
+      }
+      if (estimate.num_vanity_lights && estimate.num_vanity_lights > 0) {
+        electricalItems.push({ 
+          description: `− Supply and install vanity light fixture in customer selected finish. (Product Allowance $175)` 
+        });
+      }
+      electricalItems.push({ description: '− Supply and install new bathroom exhaust fan with quiet motor. (Product Allowance $125)' });
       groups.push({
-        trade: 'Electrical',
-        items: [{ description: 'Lighting and electrical work' }],
+        trade: 'ELECTRICAL',
+        items: electricalItems,
         total: estimate.lighting_cp_total || 0,
       });
     }
@@ -913,116 +543,87 @@ export function buildTradeGroups(estimate: Estimate, pricingConfig?: PricingConf
       const tileItems: LineItem[] = [];
       
       if (estimate.bath_wall_tile_sqft && estimate.bath_wall_tile_sqft > 0) {
-        tileItems.push({ description: `Wall tile installation (${Math.round(estimate.bath_wall_tile_sqft)} sqft)` });
-      } else {
-        tileItems.push({ description: 'Tile installation (wall and floor)' });
-      }
-      
-      if (estimate.bath_floor_tile_sqft && estimate.bath_floor_tile_sqft > 0) {
-        tileItems.push({ description: `Main floor tile installation (${Math.round(estimate.bath_floor_tile_sqft)} sqft)` });
-      }
-      
-      if (estimate.bath_shower_floor_tile_sqft && estimate.bath_shower_floor_tile_sqft > 0) {
-        tileItems.push({ description: `Shower floor tile installation (${Math.round(estimate.bath_shower_floor_tile_sqft)} sqft)` });
-      }
-      
-      tileItems.push({ description: 'Waterproofing system' });
-      
-      if (pricingConfig?.tile_material_allowance_cp_per_sqft) {
         tileItems.push({ 
-          description: `Material Allowance: $${pricingConfig.tile_material_allowance_cp_per_sqft.toFixed(2)}/sqft`,
-          isMaterialAllowance: true,
+          description: `− Install large-format porcelain tile to full height around shower area. (Product allowance $6.50/sq ft. Includes thinset, grout, and Schluter trim.)` 
         });
       }
+      if (estimate.bath_floor_tile_sqft && estimate.bath_floor_tile_sqft > 0) {
+        tileItems.push({ 
+          description: `− Install large-format porcelain tile to bathroom floor. (Product allowance $6.50/sq ft. Includes thinset, grout, and Schluter trim.)` 
+        });
+      }
+      if (estimate.bath_shower_floor_tile_sqft && estimate.bath_shower_floor_tile_sqft > 0) {
+        tileItems.push({ 
+          description: `− Install mosaic tile to shower floor with proper slope to drain. (Product allowance $12/sq ft. Includes thinset, grout, and Schluter trim.)` 
+        });
+      }
+      tileItems.push({ description: '− Apply waterproofing membrane to all shower/tub wet areas. Includes corners, seams, and fastener penetrations.' });
+      tileItems.push({ description: '− Install cement backer board to wet areas as substrate for tile.' });
       
       groups.push({
-        trade: isKitchen ? 'Backsplash' : 'Tile & Waterproofing',
+        trade: isKitchen ? 'BACKSPLASH' : 'TILE WORK',
         items: tileItems,
         total: tileTotal,
       });
     }
 
-    // Cabinetry & Countertops - combine vanity, cabinets, and countertops
     const cabinetryTotal = (estimate.vanities_cp_total || 0) + (estimate.cabinets_cp_total || 0) + (estimate.quartz_cp_total || 0);
     if (cabinetryTotal > 0) {
-      if (isKitchen) {
-        // Kitchen: separate Cabinetry Package and Countertops
-        if ((estimate.cabinets_cp_total || 0) > 0) {
-          groups.push({
-            trade: 'Cabinetry Package',
-            items: [{ description: 'Cabinet delivery, installation, and hardware' }],
-            total: estimate.cabinets_cp_total || 0,
-          });
-        }
-        if ((estimate.quartz_cp_total || 0) > 0) {
-          groups.push({
-            trade: 'Countertops',
-            items: [{ description: 'Countertop measurement, fabrication, and installation' }],
-            total: estimate.quartz_cp_total || 0,
-          });
-        }
-      } else {
-        // Bathroom: combined Cabinetry & Countertops
-        const cabinetryItems: LineItem[] = [];
+      const cabinetryItems: LineItem[] = [];
+      
+      if ((estimate.vanities_cp_total || 0) > 0) {
+        const size = estimate.vanity_size || '48';
+        let allowance = 1800;
+        if (parseInt(size) <= 30) allowance = 1200;
+        else if (parseInt(size) <= 36) allowance = 1400;
+        else if (parseInt(size) <= 60) allowance = 2400;
+        else allowance = 3200;
         
-        if ((estimate.vanities_cp_total || 0) > 0) {
-          cabinetryItems.push({ description: `Vanity installation${estimate.vanity_size ? ` (${estimate.vanity_size}")` : ''}` });
-        }
-        if ((estimate.cabinets_cp_total || 0) > 0) {
-          cabinetryItems.push({ description: 'Cabinet installation' });
-        }
-        if ((estimate.quartz_cp_total || 0) > 0) {
-          cabinetryItems.push({ description: 'Quartz countertop fabrication and installation' });
-        }
-        
-        if (pricingConfig?.quartz_slab_level1_allowance_cp) {
-          cabinetryItems.push({
-            description: `Countertop Material Allowance: $${pricingConfig.quartz_slab_level1_allowance_cp.toFixed(2)}/sqft`,
-            isMaterialAllowance: true,
-          });
-        }
-        
-        groups.push({
-          trade: 'Cabinetry & Countertops',
-          items: cabinetryItems,
-          total: cabinetryTotal,
+        cabinetryItems.push({ 
+          description: `− Supply and install one (1) ${size}" shaker-style, soft-close vanity with undermount sink. (Product Allowance $${allowance.toLocaleString()})` 
         });
       }
+      if ((estimate.quartz_cp_total || 0) > 0) {
+        cabinetryItems.push({ 
+          description: `− Fabricate and install Level 1 Quartz countertop with mitered edge. Includes undermount sink cutout and faucet holes. (Product Allowance $${pricingConfig?.quartz_slab_level1_allowance_cp || 1200}/slab)` 
+        });
+      }
+      
+      groups.push({
+        trade: isKitchen ? 'COUNTERTOPS' : 'CABINET & COUNTERTOP',
+        items: cabinetryItems,
+        total: cabinetryTotal,
+      });
     }
 
     if (estimate.include_paint !== false && (estimate.paint_cp_total || 0) > 0) {
       groups.push({
-        trade: 'Paint',
-        items: [{ description: 'Paint and drywall finish' }],
+        trade: 'PAINTING & FINAL TRIMOUT',
+        items: [
+          { description: '− Prime and apply 2 coats of paint to walls and ceiling in homeowner selected color.' },
+          { description: '− Supply and install one (1) towel bar in customer selected finish. (Product Allowance $45)' },
+          { description: '− Supply and install one (1) toilet paper holder in customer selected finish. (Product Allowance $35)' },
+        ],
         total: estimate.paint_cp_total || 0,
       });
     }
 
     if (estimate.include_glass !== false && (estimate.glass_cp_total || 0) > 0) {
       groups.push({
-        trade: 'Glass & Final Trimout',
-        items: [{ description: `Frameless glass${estimate.glass_type ? ` (${estimate.glass_type.replace('_', ' ')})` : ''}` }],
+        trade: 'GLASS',
+        items: [{ 
+          description: `− Fabricate and install frameless glass shower enclosure with brushed nickel hardware. Includes tempered glass panels, door, and all mounting hardware. (Product Allowance $1,800)` 
+        }],
         total: estimate.glass_cp_total || 0,
-      });
-    }
-
-    if ((estimate.other_cp_total || 0) > 0) {
-      groups.push({
-        trade: 'Other',
-        items: [{ description: 'Additional work' }],
-        total: estimate.other_cp_total || 0,
       });
     }
   }
 
-  // Sort groups according to the defined trade order
+  // Sort by defined trade order
   groups.sort((a, b) => {
     const indexA = TRADE_ORDER.indexOf(a.trade);
     const indexB = TRADE_ORDER.indexOf(b.trade);
-    
-    if (indexA !== -1 && indexB !== -1) {
-      return indexA - indexB;
-    }
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
     if (indexA !== -1) return -1;
     if (indexB !== -1) return 1;
     return a.trade.localeCompare(b.trade);
@@ -1039,7 +640,6 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
   const progressSplit = (defaults.progressPct || pricingConfig?.payment_split_progress || 25) / 100;
   const finalSplit = (defaults.finalPct || pricingConfig?.payment_split_final || 10) / 100;
 
-  // Determine project type for milestone label
   const isKitchenProject = estimate.has_kitchen && !estimate.has_bathrooms;
   const progressLabel = isKitchenProject
     ? (defaults.progressLabelKitchen || 'Due at arrival of cabinetry')
@@ -1048,13 +648,11 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
   const showRange = priceRange && priceRange.low > 0 && priceRange.high > 0;
   const totalCost = estimate.final_cp_total || 0;
   
-  // Calculate payment amounts - use midpoint for range display
   const baseAmount = showRange ? Math.round((priceRange.low + priceRange.high) / 2) : totalCost;
   const depositAmount = Math.round(baseAmount * depositSplit);
   const progressAmount = Math.round(baseAmount * progressSplit);
   const finalAmount = Math.round(baseAmount * finalSplit);
   
-  // Range amounts for payment milestones
   const depositAmountLow = showRange ? Math.round(priceRange.low * depositSplit) : depositAmount;
   const depositAmountHigh = showRange ? Math.round(priceRange.high * depositSplit) : depositAmount;
   const progressAmountLow = showRange ? Math.round(priceRange.low * progressSplit) : progressAmount;
@@ -1062,7 +660,13 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
   const finalAmountLow = showRange ? Math.round(priceRange.low * finalSplit) : finalAmount;
   const finalAmountHigh = showRange ? Math.round(priceRange.high * finalSplit) : finalAmount;
 
-  const addressParts = [estimate.property_address, estimate.city, estimate.state, estimate.zip].filter(Boolean);
+  // Build full address
+  const addressParts = [
+    estimate.property_address, 
+    estimate.city, 
+    estimate.state, 
+    estimate.zip
+  ].filter(Boolean);
   const fullAddress = addressParts.join(', ').replace(/,\s*,/g, ',');
 
   const clientName = estimate.client_name || 'Valued Customer';
@@ -1078,12 +682,15 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
     day: 'numeric',
   });
 
-  const notes = estimate.job_notes || defaults.termsText || 'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are excluded unless noted otherwise.';
+  // Determine project type description
+  const projectType = isKitchenProject ? 'Kitchen' : 
+    (estimate.num_bathrooms === 1 ? 'Primary Bathroom' : 
+     estimate.num_bathrooms && estimate.num_bathrooms > 1 ? `${estimate.num_bathrooms} Bathroom` : 'Bathroom');
 
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
-        {/* Fixed Header Banner with Logo + Contact Info (appears on every page) */}
+        {/* Fixed Header Banner with Logo + Contact Info */}
         <View style={styles.headerBanner} fixed>
           <Image src={tkbsoLogo} style={styles.logo} />
           <View style={styles.headerContactRow}>
@@ -1098,7 +705,7 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
           <Text style={styles.quoteDate}>{currentDate}</Text>
         </View>
 
-        {/* Client Info */}
+        {/* Client Info Section */}
         <View style={styles.clientSection} wrap={false}>
           {estimate.client_phone && (
             <View style={styles.clientRow}>
@@ -1120,44 +727,42 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
           )}
         </View>
 
-        {/* Trade Breakdown - NO per-trade pricing, just scope items with professional descriptions */}
+        {/* Trade Sections with Professional Descriptions */}
         {tradeGroups.map((group, idx) => (
           <View key={idx} style={styles.tradeSection} wrap={false}>
-            <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e3a8a', borderBottomWidth: 1, borderBottomColor: '#1e3a8a', paddingBottom: 2, marginBottom: 4 }}>{group.trade}</Text>
+            <Text style={styles.tradeHeader}>{group.trade}</Text>
             {group.items.map((item, itemIdx) => (
-              <Text key={itemIdx} style={{ 
-                fontSize: 9, 
-                color: item.isMaterialAllowance ? '#64748b' : '#475569', 
-                paddingLeft: 4, 
-                lineHeight: 1.4, 
-                marginBottom: 2,
-                fontStyle: item.isMaterialAllowance ? 'italic' : 'normal',
-              }}>
-                • {item.isMaterialAllowance ? item.description : formatLineItemForPdf(item.description, item.quantity, item.unit)}
+              <Text key={itemIdx} style={styles.lineItem}>
+                {item.description}
               </Text>
             ))}
           </View>
         ))}
 
         {/* Subtotal + Management Fee + Total */}
-        <View wrap={false} style={{ marginTop: 8 }}>
-          {/* Show subtotal if there's a management fee */}
+        <View wrap={false} style={{ marginTop: 10 }}>
           {estimate.include_management_fee && (estimate.management_fee_cp || 0) > 0 && (
             <>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
-                <Text style={{ fontSize: 10, color: '#475569' }}>Subtotal</Text>
-                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e293b' }}>{formatCurrency(totalCost - (estimate.management_fee_cp || 0))}</Text>
+                <Text style={{ fontSize: 10, color: '#475569' }}>{projectType} Subtotal</Text>
+                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e293b' }}>
+                  {formatCurrency(totalCost - (estimate.management_fee_cp || 0))}
+                </Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
-                <Text style={{ fontSize: 10, color: '#475569' }}>Project Management Fee ({((estimate.management_fee_percent || 0) * 100).toFixed(0)}%)</Text>
-                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e293b' }}>{formatCurrency(estimate.management_fee_cp)}</Text>
+                <Text style={{ fontSize: 10, color: '#475569' }}>
+                  Project Management ({((estimate.management_fee_percent || 0) * 100).toFixed(0)}%)
+                </Text>
+                <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#1e293b' }}>
+                  {formatCurrency(estimate.management_fee_cp)}
+                </Text>
               </View>
             </>
           )}
 
           {/* Final Total */}
           <View style={styles.finalPriceSection}>
-            <Text style={styles.finalPriceLabel}>Total Investment</Text>
+            <Text style={styles.finalPriceLabel}>{projectType} Final Cost</Text>
             <Text style={styles.finalPriceAmount}>
               {showRange 
                 ? `${formatCurrency(priceRange.low)} to ${formatCurrency(priceRange.high)}`
@@ -1167,69 +772,90 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
           </View>
         </View>
 
-        {/* Payment Schedule */}
+        {/* Payment Milestones */}
         <View style={styles.paymentSection} wrap={false}>
-          <Text style={styles.sectionTitle}>Payment Schedule</Text>
+          <Text style={styles.sectionTitle}>PAYMENT MILESTONES</Text>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Deposit – Due upon signing</Text>
+            <Text style={styles.paymentLabel}>Upon Contract Signing – Includes mobilization, materials ordering, and scheduling.</Text>
             <Text style={styles.paymentAmount}>
               {showRange 
-                ? `${formatCurrency(depositAmountLow)} to ${formatCurrency(depositAmountHigh)}`
+                ? `${formatCurrency(depositAmountLow)} – ${formatCurrency(depositAmountHigh)}`
                 : formatCurrency(depositAmount)
               }
             </Text>
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Progress – {progressLabel}</Text>
+            <Text style={styles.paymentLabel}>{progressLabel} – Rough plumbing and tile work substantially complete.</Text>
             <Text style={styles.paymentAmount}>
               {showRange 
-                ? `${formatCurrency(progressAmountLow)} to ${formatCurrency(progressAmountHigh)}`
+                ? `${formatCurrency(progressAmountLow)} – ${formatCurrency(progressAmountHigh)}`
                 : formatCurrency(progressAmount)
               }
             </Text>
           </View>
           <View style={styles.paymentRow}>
             <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Final – Due at completion</Text>
+            <Text style={styles.paymentLabel}>Upon Overall Completion of Project – Final walkthrough and punchlist complete.</Text>
             <Text style={styles.paymentAmount}>
               {showRange 
-                ? `${formatCurrency(finalAmountLow)} to ${formatCurrency(finalAmountHigh)}`
+                ? `${formatCurrency(finalAmountLow)} – ${formatCurrency(finalAmountHigh)}`
                 : formatCurrency(finalAmount)
               }
             </Text>
           </View>
         </View>
 
-        {/* Signature */}
+        {/* Signature Blocks */}
         <View style={styles.signatureSection} wrap={false}>
-          <Text style={styles.sectionTitle}>Acceptance</Text>
+          <Text style={styles.sectionTitle}>ACCEPTANCE</Text>
           <Text style={styles.acceptanceText}>
-            By signing below, I accept this quote and agree to the terms and payment schedule.
+            By signing below, I accept this quote and agree to the terms, scope of work, and payment schedule outlined above.
           </Text>
           <View style={styles.signatureRow}>
             <View style={styles.signatureField}>
               <View style={styles.signatureLine} />
-              <Text style={styles.signatureLabel}>Client Signature</Text>
+              <Text style={styles.signatureLabel}>Approval (Homeowner)</Text>
             </View>
             <View style={styles.signatureField}>
               <View style={styles.signatureLine} />
               <Text style={styles.signatureLabel}>Date</Text>
             </View>
           </View>
-          <View style={styles.printedNameRow}>
-            <Text style={styles.printedNameLabel}>Print Name: _________________________________</Text>
+          <View style={styles.signatureRow}>
+            <View style={styles.signatureField}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Accepted ({companyName})</Text>
+            </View>
+            <View style={styles.signatureField}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Date</Text>
+            </View>
           </View>
         </View>
 
-        {/* Notes */}
+        {/* Project Notes */}
         <View style={styles.notesSection} wrap={false}>
-          <Text style={styles.notesTitle}>Notes</Text>
-          <Text style={styles.notesText}>{notes}</Text>
+          <Text style={styles.notesTitle}>PROJECT NOTES</Text>
+          <Text style={styles.noteItem}>
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note I:</Text> Dumpster delivery will be scheduled for the first day of demolition. Please ensure clear access to the driveway or designated area.
+          </Text>
+          <Text style={styles.noteItem}>
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note II:</Text> {companyName} will take reasonable precautions to minimize dust and disruption, including floor protection, dust barriers, and daily cleanup.
+          </Text>
+          <Text style={styles.noteItem}>
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note III:</Text> Estimated project timeline is approximately 14 working days from start date, pending material lead times.
+          </Text>
+          <Text style={styles.noteItem}>
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note IV:</Text> Permits, if required, are EXCLUDED from this proposal unless noted otherwise.
+          </Text>
+          <Text style={styles.noteItem}>
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note V:</Text> This estimate is valid for 30 days. Final pricing subject to site conditions and material selections.
+          </Text>
         </View>
 
-        {/* Footer - minimal since contact info is in header */}
+        {/* Footer */}
         <View style={styles.pageFooter} fixed>
           <Text style={styles.footerText}>{companyName}</Text>
         </View>
