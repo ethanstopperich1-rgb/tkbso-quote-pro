@@ -53,6 +53,8 @@ import {
   LineItem,
   calculateEstimateTotals,
 } from '@/lib/pricing-adapter';
+import { useSmartQuestions } from '@/hooks/useSmartQuestions';
+import { ProjectType } from '@/lib/smart-questions';
 
 interface PricingLineItem {
   category: string;
@@ -169,6 +171,9 @@ export function EstimatorChatPanel() {
   const [scopeState, setScopeState] = useState<ScopeExtractionState>(initialScopeState);
   const [pendingLineItems, setPendingLineItems] = useState<ExtractedLineItem[]>([]);
   const [showLineItemsReview, setShowLineItemsReview] = useState(false);
+  
+  // Smart questions for conversational scope building
+  const smartQuestions = useSmartQuestions();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -585,17 +590,62 @@ export function EstimatorChatPanel() {
     const updatedHistory = [...conversationHistory, { role: 'user' as const, content }];
     setConversationHistory(updatedHistory);
     
+    const lowerContent = content.toLowerCase().trim();
+    
+    // LAYER 2: Smart Questions Flow
+    // Check if user is selecting project type
+    if (!smartQuestions.projectType) {
+      if (lowerContent.includes('bathroom') || lowerContent === 'bath') {
+        const nextQuestion = smartQuestions.setProjectType('Bathroom');
+        addAssistantMessage(`Got it, bathroom remodel! ${nextQuestion}`);
+        return;
+      } else if (lowerContent.includes('kitchen')) {
+        const nextQuestion = smartQuestions.setProjectType('Kitchen');
+        addAssistantMessage(`Got it, kitchen remodel! ${nextQuestion}`);
+        return;
+      }
+    }
+    
+    // If we have a project type and smart questions is active, process through smart questions
+    if (smartQuestions.projectType && smartQuestions.currentQuestion) {
+      const result = smartQuestions.processUserResponse(content);
+      
+      if (result.understood) {
+        // Also update the deterministic scope state with the answer
+        const updatedScopeState = extractScopeFromMessage(content, {
+          ...scopeState,
+          projectType: smartQuestions.projectType as 'Bathroom' | 'Kitchen',
+        });
+        setScopeState(updatedScopeState);
+        
+        addAssistantMessage(result.nextMessage);
+        
+        // If smart questions is complete, we can proceed to more detailed scope or quote
+        if (result.isComplete) {
+          // Sync smart question answers to scope state
+          const syncedState: ScopeExtractionState = {
+            ...updatedScopeState,
+            projectType: smartQuestions.projectType as 'Bathroom' | 'Kitchen',
+            vanitySize: smartQuestions.answers.vanitySize ? parseInt(smartQuestions.answers.vanitySize) : undefined,
+          };
+          setScopeState(syncedState);
+        }
+        return;
+      } else {
+        addAssistantMessage(result.nextMessage);
+        return;
+      }
+    }
+    
     // DETERMINISTIC EXTRACTION: Update scope state from user message
     const updatedScopeState = extractScopeFromMessage(content, scopeState);
     setScopeState(updatedScopeState);
     
     // BUNDLE DETECTION: Check for common project type triggers
     const newBundles = detectBundles(content);
-    const previousBundleCount = scopeState.activeBundles.length;
     const hasNewBundles = newBundles.length > 0 && newBundles.some(b => !scopeState.activeBundles.includes(b));
     
     // Check if user wants to proceed to quote (trigger line items review)
-    const lowerContent = content.toLowerCase();
     const wantsToProceed = 
       lowerContent.includes('looks good') ||
       lowerContent.includes('that\'s it') ||
@@ -611,9 +661,15 @@ export function EstimatorChatPanel() {
       lowerContent.includes('done describing');
     
     // If user wants to proceed and we have enough scope, show line items review
-    if (wantsToProceed && updatedScopeState.projectType) {
-      const baseLineItems = buildLineItemsFromScope(updatedScopeState);
-      const derivedItems = applyDerivations(updatedScopeState);
+    if (wantsToProceed && (updatedScopeState.projectType || smartQuestions.projectType)) {
+      const finalProjectType = updatedScopeState.projectType || (smartQuestions.projectType as 'Bathroom' | 'Kitchen');
+      const finalScopeState = {
+        ...updatedScopeState,
+        projectType: finalProjectType,
+      };
+      
+      const baseLineItems = buildLineItemsFromScope(finalScopeState);
+      const derivedItems = applyDerivations(finalScopeState);
       const derivedLineItems = derivedToLineItems(derivedItems);
       
       // Merge and deduplicate
@@ -835,6 +891,8 @@ export function EstimatorChatPanel() {
     setScopeState(initialScopeState);
     setPendingLineItems([]);
     setShowLineItemsReview(false);
+    // Reset smart questions
+    smartQuestions.reset();
   };
 
   // Build line items from scope and show for review
