@@ -145,30 +145,59 @@ function SortableLineItem({
             className="h-8"
             placeholder="Description"
           />
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             <Input
               type="number"
               value={editForm.quantity}
-              onChange={(e) => setEditForm({ ...editForm, quantity: parseFloat(e.target.value) || 1 })}
+              onChange={(e) => {
+                const newQty = parseFloat(e.target.value) || 1;
+                const cpPerUnit = editForm.cp_per_unit || (editForm.cp_total && editForm.quantity ? editForm.cp_total / editForm.quantity : 0);
+                const icPerUnit = editForm.ic_per_unit || (editForm.ic_total && editForm.quantity ? editForm.ic_total / editForm.quantity : 0);
+                setEditForm({ 
+                  ...editForm, 
+                  quantity: newQty,
+                  cp_total: Math.round(newQty * cpPerUnit * 100) / 100,
+                  ic_total: Math.round(newQty * icPerUnit * 100) / 100,
+                });
+              }}
               className="h-8"
               placeholder="Qty"
             />
             {!hideInternalCost && (
               <Input
                 type="number"
-                value={editForm.ic_total}
-                onChange={(e) => setEditForm({ ...editForm, ic_total: parseFloat(e.target.value) || 0 })}
+                value={editForm.ic_per_unit}
+                onChange={(e) => {
+                  const icPerUnit = parseFloat(e.target.value) || 0;
+                  const qty = editForm.quantity || 1;
+                  setEditForm({ 
+                    ...editForm, 
+                    ic_per_unit: icPerUnit,
+                    ic_total: Math.round(qty * icPerUnit * 100) / 100,
+                  });
+                }}
                 className="h-8"
-                placeholder="IC Total"
+                placeholder="IC/unit"
               />
             )}
             <Input
               type="number"
-              value={editForm.cp_total}
-              onChange={(e) => setEditForm({ ...editForm, cp_total: parseFloat(e.target.value) || 0 })}
+              value={editForm.cp_per_unit}
+              onChange={(e) => {
+                const cpPerUnit = parseFloat(e.target.value) || 0;
+                const qty = editForm.quantity || 1;
+                setEditForm({ 
+                  ...editForm, 
+                  cp_per_unit: cpPerUnit,
+                  cp_total: Math.round(qty * cpPerUnit * 100) / 100,
+                });
+              }}
               className="h-8"
-              placeholder="CP Total"
+              placeholder="CP/unit"
             />
+            <div className="text-sm text-muted-foreground flex items-center justify-end">
+              = {formatCurrency(editForm.cp_total || 0)}
+            </div>
             <div className="flex gap-1">
               <Button size="sm" variant="default" className="h-8 flex-1" onClick={handleSaveItemEdit}>
                 <Save className="h-3 w-3" />
@@ -331,8 +360,13 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
   const handleEditItem = (index: number) => {
     setEditingIndex(index);
     const item = lineItems[index];
+    // Ensure per-unit values are set for proper recalculation
+    const icPerUnit = item.ic_per_unit || (item.quantity > 0 ? item.ic_total / item.quantity : 0);
+    const cpPerUnit = item.cp_per_unit || (item.quantity > 0 ? item.cp_total / item.quantity : 0);
     setEditForm({ 
       ...item,
+      ic_per_unit: Math.round(icPerUnit * 100) / 100,
+      cp_per_unit: Math.round(cpPerUnit * 100) / 100,
       ic_total: item.ic_total,
       cp_total: item.cp_total,
     });
