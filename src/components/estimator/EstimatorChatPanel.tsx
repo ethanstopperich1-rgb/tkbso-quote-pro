@@ -665,7 +665,7 @@ export function EstimatorChatPanel() {
         : content;
 
       // Pass current conversation state to help AI understand where we are
-      const { data, error } = await supabase.functions.invoke('calculate-estimate', {
+      const { data, error } = await supabase.functions.invoke('generate-quote', {
         body: { 
           message: messageWithContext,
           context,
@@ -1008,7 +1008,7 @@ export function EstimatorChatPanel() {
     setConversationHistory(updatedHistory);
 
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-estimate', {
+      const { data, error } = await supabase.functions.invoke('generate-quote', {
         body: { 
           message,
           context,
