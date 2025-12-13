@@ -900,7 +900,7 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
     aliases: ["paint walls", "wall paint"]
   },
   "Paint - Ceiling": {
-    cost: 250, price: 450, unit: "ea", perUnit: false,
+    cost: 2.50, price: 4.50, unit: "sqft", perUnit: true,
     category: "paint",
     aliases: ["paint ceiling", "ceiling paint"]
   },

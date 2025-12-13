@@ -1002,7 +1002,7 @@ export const LINE_ITEM_DESCRIPTIONS: Record<string, LineItemDescription> = {
   },
   'paint_ceiling': {
     description: 'Includes preparation and painting of ceiling surface only.',
-    unit: 'each'
+    unit: 'per sqft'
   },
   'door_paint': {
     description: 'Includes sanding, prep, and painting of interior door surface on both sides.',
