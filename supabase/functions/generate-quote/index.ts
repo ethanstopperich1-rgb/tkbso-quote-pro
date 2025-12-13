@@ -5,6 +5,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Conversation response schema - for follow-up questions
+const conversationSchema = {
+  type: "object",
+  properties: {
+    action: { 
+      type: "string", 
+      enum: ["ask_question", "generate_quote"] 
+    },
+    response_text: { type: "string" },
+    parsed_data: {
+      type: "object",
+      properties: {
+        project_type: { type: ["string", "null"] },
+        scope_items: { type: "array", items: { type: "string" } },
+        dimensions: {
+          type: "object",
+          properties: {
+            room_sqft: { type: ["number", "null"] },
+            shower_sqft: { type: ["number", "null"] },
+            vanity_size: { type: ["string", "null"] }
+          }
+        }
+      }
+    }
+  },
+  required: ["action", "response_text"]
+};
+
 // Line item output schema for tool calling
 const lineItemSchema = {
   type: "object",
@@ -106,224 +134,120 @@ const lineItemSchema = {
   required: ["project_type", "areas"]
 };
 
-const systemPrompt = `# ESTIMAITE LINE ITEM GENERATION
+const conversationalSystemPrompt = `# ESTIMAITE - CONVERSATIONAL ESTIMATOR
 
-You are an AI assistant for EstimAIte, a construction estimating software. Your job is to generate detailed, professional line items for contractor quotes based on user input.
+You are EstimAIte, a friendly, conversational AI estimator for kitchen and bathroom remodels. You help contractors quickly generate professional quotes.
 
-## CORE PRINCIPLES
+## YOUR PERSONALITY
+- Sound like a knowledgeable contractor colleague, not a robot
+- Be concise - max 2-3 sentences per response
+- Never use numbered lists when asking questions
+- Acknowledge what the user said before asking the next question
+- Be helpful and efficient
 
-1. **Never be generic** — Every line item should read like it was written by an experienced contractor
-2. **Always include specifics** — Quantities, sizes, finishes, allowances
-3. **Use proper action verbs** — "Supply and install", "Demo and remove", "Template, fabricate, and install"
-4. **Group by trade** — Always organize line items by trade in the proper sequence
-5. **Include product allowances** — Every fixture/material line should have a product allowance where applicable
+## CONVERSATION FLOW
 
----
+1. **Identify project type** - Kitchen or bathroom? (or both)
+2. **Gather scope naturally** - Ask about what work they need done
+3. **Get key dimensions** - Shower size, room size, vanity size
+4. **Generate quote** - When you have enough info
 
-## TRADE SEQUENCE
+## WHEN TO ASK QUESTIONS vs GENERATE QUOTE
 
-### BATHROOM REMODEL:
-1. DEMOLITION
-2. PLUMBING
-3. ELECTRICAL
-4. DRYWALL & FRAMING
-5. TILE WORK
-6. CABINET & COUNTERTOP
-7. PAINTING & FINAL TRIMOUT
-8. GLASS
+**ASK QUESTIONS if missing:**
+- Project type (kitchen/bathroom)
+- General scope (full gut, vanity swap, shower remodel, etc.)
+- Key dimensions for pricing
 
-### KITCHEN REMODEL:
-1. DEMOLITION
-2. PLUMBING
-3. ELECTRICAL
-4. DRYWALL & FRAMING
-5. CABINETRY
-6. COUNTERTOPS
-7. BACKSPLASH
-8. PAINTING
-9. APPLIANCE INSTALLATION
-10. FINAL TRIMOUT
+**GENERATE QUOTE when you have:**
+- Project type
+- Basic scope understanding
+- Approximate dimensions OR can use reasonable defaults
 
----
+## SCOPE TRIGGERS TO RECOGNIZE
 
-## ACTION VERB REFERENCE
+- "full gut" / "gut remodel" = demo everything, all new
+- "vanity swap" / "new vanity" = remove old vanity, install new
+- "shower remodel" / "new shower" = demo shower, tile, plumbing
+- "tile only" = just tile work
+- "update fixtures" = swap out plumbing fixtures
+- "cabinet refacing" = keep cabinet boxes, new doors/fronts
 
-| Work Type | Action Verb |
-|-----------|-------------|
-| Removing existing items | "Demo and remove" |
-| Installing new fixtures | "Supply and install" |
-| Labor-only installation | "Install" |
-| Repairing/patching | "Patch and repair" |
-| Building new structures | "Frame" or "Build" |
-| Wiring work | "Run wiring for" or "Install new wiring for" |
-| Replacing items | "Replace" |
-| Countertop work | "Template, fabricate, and install" |
-| Cutting work | "Cut and finish" |
-| Painting | "Paint" |
-| Protective work | "Protect" |
-| Disconnecting | "Disconnect and cap" or "Disconnect and reconnect" |
-| Finishing/sealing | "Apply" |
-| Cleaning | "Final clean" |
+## DIMENSION DEFAULTS (use if not specified)
+- Standard bathroom: 75-100 sqft
+- Small bathroom: 35-50 sqft  
+- Large/master bathroom: 125-150 sqft
+- Standard shower: 36"x60" (~15 sqft floor, ~100 sqft walls)
+- Small shower: 32"x48"
+- Large shower: 48"x72"
+- Vanity sizes: 24", 30", 36", 48", 60", 72"
 
----
+## RESPONSE FORMAT
 
-## DEMO SECTION RULES
+You MUST call the "respond" function with:
+- action: "ask_question" (if you need more info) OR "generate_quote" (if ready to quote)
+- response_text: Your conversational message to the user
+- parsed_data: What you've understood so far (project_type, scope_items, dimensions)
 
-The demolition section should ALWAYS be a comprehensive list. Format:
-"all the following items from the remodel area: [COMMA-SEPARATED LIST]. Dispose of all debris and haul away."
+## EXAMPLES
 
----
+User: "bathroom remodel"
+→ action: "ask_question"
+→ response_text: "Got it, bathroom remodel! Are we doing a full gut or something more targeted like a vanity swap or shower update?"
 
-## PRODUCT ALLOWANCE RULES
+User: "full gut, 36x60 shower, 48 inch vanity"  
+→ action: "generate_quote"
+→ response_text: "Perfect! Full gut bathroom with a 36x60 shower and 48\" vanity. Generating your quote now..."
 
-### Items that ALWAYS need product allowances:
+User: "kitchen cabinets and countertops"
+→ action: "ask_question"
+→ response_text: "Kitchen cabinets and countertops, nice! Roughly how many linear feet of cabinets are we looking at? Or if you know the kitchen dimensions I can estimate."`;
 
-**BATHROOM:**
-- Shower trim kit: $250-$400
-- Vanity faucet: $125-$200
-- Toilet: $300-$450
-- Vanity light fixture: $100-$175
-- LED mirror: $200-$350
-- Shower wall tile: $6-$12/sq ft
-- Shower floor tile (mosaic): $10-$18/sq ft
-- Main floor tile: $5-$10/sq ft
-- Quartz countertop: $45-$75/sq ft or $800-$1500 flat
-- Cabinet hardware: $5-$10/pull
-- Towel bar: $30-$60
+const quoteSystemPrompt = `# ESTIMAITE LINE ITEM GENERATION
 
-**KITCHEN:**
-- Kitchen sink: $300-$500
-- Kitchen faucet: $200-$400
-- Garbage disposal: $150-$250
-- Upper cabinets: $150-$250/linear ft
-- Base cabinets: $175-$275/linear ft
-- Pantry cabinet: $600-$1200
-- Island cabinet: $800-$1800
-- Cabinet hardware: $6-$12/piece
-- Quartz countertop: $50-$85/sq ft
-- Backsplash tile: $8-$18/sq ft
+You are generating a detailed construction quote. Output professional line items organized by trade.
 
-### Items that DON'T need product allowances:
-- Labor-only items
-- Drywall repair
-- Waterproofing membrane
-- Cement board
-- Wiring/electrical rough-in
-- Plumbing rough-in
-- Painting
-- Demo work
-- Blocking/framing
-
----
-
-## PRICING (use 40% markup: CP = IC × 1.4)
+## PRICING (42% margin: CP = IC × 1.724)
 
 **DEMOLITION:**
-- Full Bath Gut: $1,800 IC / $2,520 CP
-- Full Kitchen Gut: $2,200 IC / $3,080 CP
-- Dumpster: $400 IC / $560 CP
-- Floor Protection: $200 IC / $280 CP
+- Full Bath Gut: $1,360 IC / $2,345 CP
+- Full Kitchen Gut: $1,360 IC / $2,345 CP  
+- Dumpster: $550 IC / $948 CP
 
 **PLUMBING:**
-- Sink install: $250 IC / $350 CP + allowance
-- Faucet install: $125 IC / $175 CP + allowance
-- Garbage disposal: $175 IC / $245 CP + allowance
-- Toilet install: $200 IC / $280 CP + allowance
-- Shut-off valves (pair): $80 IC / $112 CP
-- Dishwasher hookup: $150 IC / $210 CP
-- Refrigerator water line: $100 IC / $140 CP
+- Shower Rough-In: $1,800 IC / $3,103 CP
+- Toilet Install: $250 IC / $431 CP + allowance
+- Vanity Connection: $350 IC / $603 CP
+- Freestanding Tub: $1,250 IC / $2,155 CP
 
 **ELECTRICAL:**
-- Recessed can light: $65 IC / $91 CP each
-- Under-cabinet lighting (lot): $650 IC / $910 CP
-- Pendant rough-in: $100 IC / $140 CP each
-- Range hood wiring: $175 IC / $245 CP
-- Switch/outlet replacement (lot): $350 IC / $490 CP
-- Dedicated circuit: $275 IC / $385 CP
+- Recessed Can: $65 IC / $112 CP each
+- Vanity Light: $225 IC / $388 CP
 
-**DRYWALL:**
-- Patch and repair: $450 IC / $630 CP
-- Blocking for cabinets: $200 IC / $280 CP
+**TILE:**
+- Wall Tile: $18/sqft IC / $31/sqft CP
+- Shower Floor: $16.50/sqft IC / $28/sqft CP
+- Main Floor: $11.50/sqft IC / $20/sqft CP
+- Waterproofing: $3.60/sqft IC / $6.20/sqft CP
 
 **CABINETRY:**
-- Upper cabinets: $45/lf labor + $175/lf allowance
-- Base cabinets: $50/lf labor + $200/lf allowance
-- Island cabinet: $200-400 IC labor + allowance
-- Pantry cabinet: $150 IC labor + allowance
-- Crown molding: $18/lf
-- Hardware install: $5/piece labor
+- Vanity 48": $2,500 IC / $4,310 CP (bundle)
+- Vanity 60": $2,800 IC / $4,828 CP (bundle)
+- Vanity 72": $3,200 IC / $5,517 CP (bundle)
 
 **COUNTERTOPS:**
-- Quartz fabrication & install: $55/sqft (includes allowance)
-- Sink cutout: $175 IC / $245 CP
-- Cooktop cutout: $150 IC / $210 CP
+- Quartz fab/install: $40 IC / $69 CP per sqft
 
-**BACKSPLASH:**
-- Tile install: $18/sqft labor + $12/sqft allowance
+**GLASS:**
+- Frameless Door+Panel: $1,350 IC / $2,328 CP
+- Panel Only: $800 IC / $1,379 CP
 
 **PAINT:**
-- Kitchen walls/ceiling: $3/sqft
-- Trim painting: $350 IC / $490 CP
+- Full Bathroom: $1,000 IC / $1,724 CP
 
-**APPLIANCE INSTALLATION:**
-- Range/oven: $175 IC / $245 CP
-- Range hood: $225 IC / $315 CP
-- Dishwasher: $150 IC / $210 CP
-- Microwave: $125 IC / $175 CP
-
-**FINAL TRIMOUT:**
-- Baseboards: $3.75/lf
-- Toe kick covers: $150 IC / $210 CP
-- Caulking: $75 IC / $105 CP
-- Final clean: $200 IC / $280 CP
-
----
-
-## SUFFIX PATTERNS
-
-Use suffixes to add important details:
-- "customer selected finish"
-- "Includes thinset, grout, and Schluter trim."
-- "Layout per approved design. Color/finish TBD."
-- "Includes GFCI outlets where required by code."
-- "To be reconnected after cabinet installation."
-- "To match existing profile."
-
----
-
-## ADDITIONAL CONSIDERATIONS
-
-When relevant, suggest optional upgrades that weren't included:
-- Flooring upgrades
-- Cabinet level upgrades
-- Countertop level upgrades
-- Built-in features (wine rack, appliance garage)
-- Pot filler, touchless faucet, etc.
-
----
-
-## PROJECT NOTES
-
-Include relevant notes:
-1. Dumpster delivery timing
-2. Kitchen non-functional during remodel (for kitchens)
-3. Dust/disruption precautions
-4. Templating timeline (for countertops)
-5. Appliance delivery requirements
-6. Estimated timeline
-
----
-
-## COMMON MISTAKES TO AVOID
-
-❌ "Includes toilet installation"
-✅ "Supply and install a new chair height toilet with new wax ring, shut-off valve, and braided supply line. (Product Allowance $350)"
-
-❌ "New cabinets"
-✅ "Supply and install new shaker-style base cabinets with soft-close drawers and doors (18 linear ft). Layout per approved design. Color/finish TBD. (Product allowance $200/linear ft)"
-
-❌ Using bullet points "•"
-✅ Using en-dash "−" (but return clean JSON, rendering adds the dash)`;
+## TRADE ORDER
+BATHROOM: Demo → Plumbing → Electrical → Framing → Tile → Cabinetry → Paint → Glass
+KITCHEN: Demo → Cabinetry → Countertops → Plumbing → Electrical → Backsplash → Paint`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -331,19 +255,24 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, customer, company } = await req.json();
+    const { message, context, conversation_history, customer, company } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Generating quote for:", message);
+    console.log("Processing message:", message);
+    console.log("Context:", JSON.stringify(context || {}));
     
-    const contextStr = context ? `\n\n**PROJECT CONTEXT:**\n${JSON.stringify(context)}` : '';
-    const customerStr = customer ? `\n\n**CUSTOMER INFO:**\n${JSON.stringify(customer)}` : '';
-    
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Build conversation messages for context
+    const historyMessages = (conversation_history || []).map((msg: { role: string; content: string }) => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    // Step 1: Conversational response - decide if we need more info or can generate quote
+    const conversationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -352,15 +281,105 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt + contextStr + customerStr },
+          { role: "system", content: conversationalSystemPrompt },
+          ...historyMessages.slice(-6), // Keep last 6 messages for context
           { role: "user", content: message }
         ],
         tools: [
           {
             type: "function",
             function: {
+              name: "respond",
+              description: "Respond to the user - either ask a clarifying question or indicate you're ready to generate a quote.",
+              parameters: conversationSchema
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "respond" } }
+      }),
+    });
+
+    if (!conversationResponse.ok) {
+      const status = conversationResponse.status;
+      const errorText = await conversationResponse.text();
+      console.error(`AI gateway error (${status}):`, errorText);
+      
+      if (status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (status === 402) {
+        return new Response(JSON.stringify({ error: "AI quota exceeded" }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw new Error(`AI gateway error: ${status}`);
+    }
+
+    const conversationData = await conversationResponse.json();
+    const toolCall = conversationData.choices?.[0]?.message?.tool_calls?.[0];
+    
+    if (!toolCall) {
+      throw new Error("No tool call in conversation response");
+    }
+
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(toolCall.function.arguments);
+    } catch (e) {
+      console.error("Failed to parse conversation response");
+      throw new Error("Invalid response format");
+    }
+
+    console.log("Conversation action:", parsedResponse.action);
+
+    // If we need more info, return a follow-up question
+    if (parsedResponse.action === "ask_question") {
+      return new Response(JSON.stringify({
+        needsMoreInfo: true,
+        followUpQuestion: parsedResponse.response_text,
+        parsed: parsedResponse.parsed_data
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Step 2: Generate the actual quote
+    console.log("Generating quote...");
+    
+    // Combine all conversation context for quote generation
+    const fullContext = historyMessages.map((m: { role: string; content: string }) => 
+      `${m.role}: ${m.content}`
+    ).join('\n');
+    
+    const quotePrompt = `Based on this conversation, generate a detailed quote:
+
+${fullContext}
+${message}
+
+Project context: ${JSON.stringify(parsedResponse.parsed_data || {})}`;
+
+    const quoteResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: quoteSystemPrompt },
+          { role: "user", content: quotePrompt }
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
               name: "generate_quote",
-              description: "Generate a structured construction quote with professional line items organized by trade. Always use this function.",
+              description: "Generate a structured construction quote with professional line items.",
               parameters: lineItemSchema
             }
           }
@@ -369,72 +388,33 @@ serve(async (req) => {
       }),
     });
 
-    if (!response.ok) {
-      const status = response.status;
-      const errorText = await response.text();
-      console.error(`AI gateway error (${status}):`, errorText);
-      
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI service quota exceeded." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI gateway error: ${status}`);
+    if (!quoteResponse.ok) {
+      throw new Error(`Quote generation failed: ${quoteResponse.status}`);
     }
 
-    const data = await response.json();
-    console.log("AI response received");
+    const quoteData = await quoteResponse.json();
+    const quoteToolCall = quoteData.choices?.[0]?.message?.tool_calls?.[0];
     
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    
-    if (!toolCall || toolCall.function.name !== "generate_quote") {
-      throw new Error("No valid tool call in response");
+    if (!quoteToolCall) {
+      throw new Error("No quote tool call in response");
     }
-    
-    let quoteData: unknown;
+
+    let quote;
     try {
-      quoteData = JSON.parse(toolCall.function.arguments);
+      quote = JSON.parse(quoteToolCall.function.arguments);
     } catch (e) {
-      console.error("Failed to parse tool arguments:", toolCall.function.arguments);
-      throw new Error("Invalid JSON in tool response");
+      throw new Error("Invalid quote JSON");
     }
     
     // Calculate totals
-    const quote = quoteData as {
-      project_type: string;
-      areas: Array<{
-        area_id: string;
-        area_name: string;
-        trades: Array<{
-          trade_id: string;
-          trade_name: string;
-          trade_order: number;
-          line_items: Array<{
-            internal_cost: number;
-            customer_price: number;
-          }>;
-        }>;
-      }>;
-      additional_considerations?: unknown[];
-      project_notes?: unknown[];
-      warnings?: string[];
-    };
-    
     let grandTotal = 0;
     let subtotalIC = 0;
     const areaTotals: Array<{ area_name: string; total: number }> = [];
     
-    for (const area of quote.areas) {
+    for (const area of quote.areas || []) {
       let areaTotal = 0;
-      for (const trade of area.trades) {
-        for (const item of trade.line_items) {
+      for (const trade of area.trades || []) {
+        for (const item of trade.line_items || []) {
           areaTotal += item.customer_price || 0;
           subtotalIC += item.internal_cost || 0;
         }
@@ -443,22 +423,16 @@ serve(async (req) => {
       grandTotal += areaTotal;
     }
     
-    // Build complete quote schema
+    // Build complete quote response
     const completeQuote = {
       quote: {
         metadata: {
           quote_id: `EST-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
           created_date: new Date().toISOString().split('T')[0],
           valid_for_days: 30,
-          company: company || {
-            name: "The Kitchen and Bath Store of Orlando",
-            phone: "4078195809",
-            email: "ethan@tkbso.com"
-          }
+          company: company || { name: "TKBSO" }
         },
-        customer: customer || {
-          name: "Valued Customer"
-        },
+        customer: customer || { name: "Valued Customer" },
         project: {
           type: quote.project_type,
           areas: quote.areas
@@ -466,35 +440,44 @@ serve(async (req) => {
         additional_considerations: quote.additional_considerations || [],
         totals: {
           subtotal_labor_materials: subtotalIC,
-          markup_multiplier: 1.4,
+          markup_multiplier: 1.724,
           area_totals: areaTotals,
           grand_total: grandTotal
         },
         payment_schedule: {
-          deposit: {
-            percentage: 65,
-            description: "Due upon signing (7 days prior to scheduled start date)",
-            amount: Math.round(grandTotal * 0.65)
-          },
-          progress: {
-            percentage: 25,
-            description: quote.project_type === 'kitchen_remodel' 
-              ? "Due upon completion of cabinet installation"
-              : "Due at start of tile installation",
-            amount: Math.round(grandTotal * 0.25)
-          },
-          final: {
-            percentage: 10,
-            description: "Due upon overall completion of project",
-            amount: Math.round(grandTotal * 0.10)
-          }
+          deposit: { percentage: 65, amount: Math.round(grandTotal * 0.65) },
+          progress: { percentage: 25, amount: Math.round(grandTotal * 0.25) },
+          final: { percentage: 10, amount: Math.round(grandTotal * 0.10) }
         },
         project_notes: quote.project_notes || [],
-        terms: {
-          validity_days: 30,
-          permits_included: false,
-          permits_note: "Permits, if required, are excluded unless noted otherwise."
-        }
+        warnings: quote.warnings || []
+      },
+      // Also include flat pricing structure for easier consumption
+      pricing: {
+        total_ic: subtotalIC,
+        total_cp: grandTotal,
+        low_estimate: Math.round(grandTotal * 0.95),
+        high_estimate: Math.round(grandTotal * 1.05),
+        overall_margin_percent: subtotalIC > 0 ? ((grandTotal - subtotalIC) / grandTotal) * 100 : 42,
+        line_items: (quote.areas || []).flatMap((area: any) => 
+          (area.trades || []).flatMap((trade: any) =>
+            (trade.line_items || []).map((item: any) => ({
+              category: trade.trade_name,
+              task_description: item.description,
+              quantity: item.quantity || 1,
+              unit: item.unit || 'ea',
+              ic_per_unit: item.internal_cost,
+              cp_per_unit: item.customer_price,
+              ic_total: item.internal_cost,
+              cp_total: item.customer_price,
+              margin_percent: 42
+            }))
+          )
+        )
+      },
+      project_header: {
+        project_type: quote.project_type === 'bathroom_remodel' ? 'Bathroom' : 'Kitchen',
+        overall_size_sqft: parsedResponse.parsed_data?.dimensions?.room_sqft || null
       }
     };
     
@@ -508,7 +491,9 @@ serve(async (req) => {
     console.error("Error in generate-quote function:", error);
     
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
+      needsMoreInfo: true,
+      followUpQuestion: "I had trouble with that. Could you describe your project? Is it a kitchen or bathroom?"
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -590,127 +590,6 @@ export function EstimatorChatPanel() {
     const updatedHistory = [...conversationHistory, { role: 'user' as const, content }];
     setConversationHistory(updatedHistory);
     
-    const lowerContent = content.toLowerCase().trim();
-    
-    // LAYER 2: Smart Questions Flow
-    // Check if user is selecting project type
-    if (!smartQuestions.projectType) {
-      if (lowerContent.includes('bathroom') || lowerContent === 'bath') {
-        const nextQuestion = smartQuestions.setProjectType('Bathroom');
-        addAssistantMessage(`Got it, bathroom remodel! ${nextQuestion}`);
-        return;
-      } else if (lowerContent.includes('kitchen')) {
-        const nextQuestion = smartQuestions.setProjectType('Kitchen');
-        addAssistantMessage(`Got it, kitchen remodel! ${nextQuestion}`);
-        return;
-      }
-    }
-    
-    // If we have a project type and smart questions is active, process through smart questions
-    if (smartQuestions.projectType && smartQuestions.currentQuestion) {
-      const result = smartQuestions.processUserResponse(content);
-      
-      if (result.understood) {
-        // Also update the deterministic scope state with the answer
-        const updatedScopeState = extractScopeFromMessage(content, {
-          ...scopeState,
-          projectType: smartQuestions.projectType as 'Bathroom' | 'Kitchen',
-        });
-        setScopeState(updatedScopeState);
-        
-        addAssistantMessage(result.nextMessage);
-        
-        // If smart questions is complete, we can proceed to more detailed scope or quote
-        if (result.isComplete) {
-          // Sync smart question answers to scope state
-          const syncedState: ScopeExtractionState = {
-            ...updatedScopeState,
-            projectType: smartQuestions.projectType as 'Bathroom' | 'Kitchen',
-            vanitySize: smartQuestions.answers.vanitySize ? parseInt(smartQuestions.answers.vanitySize) : undefined,
-          };
-          setScopeState(syncedState);
-        }
-        return;
-      } else {
-        addAssistantMessage(result.nextMessage);
-        return;
-      }
-    }
-    
-    // DETERMINISTIC EXTRACTION: Update scope state from user message
-    const updatedScopeState = extractScopeFromMessage(content, scopeState);
-    setScopeState(updatedScopeState);
-    
-    // BUNDLE DETECTION: Check for common project type triggers
-    const newBundles = detectBundles(content);
-    const hasNewBundles = newBundles.length > 0 && newBundles.some(b => !scopeState.activeBundles.includes(b));
-    
-    // Check if user wants to proceed to quote (trigger line items review)
-    const wantsToProceed = 
-      lowerContent.includes('looks good') ||
-      lowerContent.includes('that\'s it') ||
-      lowerContent.includes('thats it') ||
-      lowerContent.includes('that is it') ||
-      lowerContent.includes('generate quote') ||
-      lowerContent.includes('generate the quote') ||
-      lowerContent.includes('create quote') ||
-      lowerContent.includes('let\'s go') ||
-      lowerContent.includes('lets go') ||
-      lowerContent.includes('ready') ||
-      lowerContent.includes('proceed') ||
-      lowerContent.includes('done describing');
-    
-    // If user wants to proceed and we have enough scope, show line items review
-    if (wantsToProceed && (updatedScopeState.projectType || smartQuestions.projectType)) {
-      const finalProjectType = updatedScopeState.projectType || (smartQuestions.projectType as 'Bathroom' | 'Kitchen');
-      const finalScopeState = {
-        ...updatedScopeState,
-        projectType: finalProjectType,
-      };
-      
-      const baseLineItems = buildLineItemsFromScope(finalScopeState);
-      const derivedItems = applyDerivations(finalScopeState);
-      const derivedLineItems = derivedToLineItems(derivedItems);
-      
-      // Merge and deduplicate
-      const baseItemNames = new Set(baseLineItems.map(item => item.name.toLowerCase().replace(/\s*\([^)]*\)/g, '')));
-      const uniqueDerivedItems = derivedLineItems.filter(item => {
-        const simpleName = item.name.toLowerCase().replace(/\s*\([^)]*\)/g, '');
-        return !baseItemNames.has(simpleName);
-      });
-      const allLineItems = [...baseLineItems, ...uniqueDerivedItems];
-      
-      if (allLineItems.length > 0) {
-        setPendingLineItems(allLineItems);
-        setShowLineItemsReview(true);
-        const totals = calculateTotals(allLineItems);
-        
-        let derivedNote = '';
-        if (derivedItems.length > 0) {
-          derivedNote = `\n\n*Auto-included:*\n${derivedItems.slice(0, 3).map(d => `• ${d.lineItem} - ${d.reason}`).join('\n')}`;
-          if (derivedItems.length > 3) derivedNote += `\n...and ${derivedItems.length - 3} more`;
-        }
-        
-        addAssistantMessage(`📋 **Here's what I captured - ${allLineItems.length} line items totaling ${formatCurrency(totals.totalCP)}.**\n\nReview below and let me know if anything's missing.${derivedNote}`);
-        setIsLoading(false);
-        return;
-      }
-    }
-    
-    // If new bundles were detected, acknowledge them
-    if (hasNewBundles) {
-      const acknowledgment = generateBundleAcknowledgment(newBundles);
-      // Check what info we still need
-      const missingInfo = getMissingBundleInfo(newBundles, updatedScopeState);
-      
-      if (missingInfo.length > 0) {
-        const nextQuestion = missingInfo[0];
-        addAssistantMessage(`${acknowledgment}\n\nWhat ${nextQuestion}?`);
-        setIsLoading(false);
-        return;
-      }
-    }
-    
     setIsLoading(true);
 
     try {
@@ -720,7 +599,7 @@ export function EstimatorChatPanel() {
         ? `${content}\n\n[Photo Analysis Context]\n${photoContext}`
         : content;
 
-      // Pass current conversation state to help AI understand where we are
+      // AI-first approach: Let AI handle all natural language parsing
       const { data, error } = await supabase.functions.invoke('generate-quote', {
         body: { 
           message: messageWithContext,
@@ -791,8 +670,6 @@ export function EstimatorChatPanel() {
       }
 
       // We have a complete estimate - transform response to expected structure
-      // The edge function returns { estimate: {...}, pricing: {...} }
-      // But our interface expects flat structure with pricing.totals nested
       const rawPricing = response.pricing as any;
       const rawEstimate = (response as any).estimate;
       
@@ -863,7 +740,7 @@ export function EstimatorChatPanel() {
         }
       }
       
-      addAssistantMessage("Sorry, I had an issue. Let's try again - is this a kitchen or bathroom project?");
+      addAssistantMessage("Sorry, I had an issue processing that. Could you describe your project again?");
     } finally {
       setIsLoading(false);
     }
