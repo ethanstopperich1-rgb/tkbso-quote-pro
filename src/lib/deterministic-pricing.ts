@@ -176,7 +176,7 @@ export const PRICING_DATABASE: Record<string, PricingEntry> = {
   'paint_full_bath': { ic: 1000, cp: 1667, unit: 'ea', perUnit: false, category: 'Paint' },
   'paint_full_kitchen': { ic: 1200, cp: 2000, unit: 'ea', perUnit: false, category: 'Paint' },
   'paint_half_bath': { ic: 600, cp: 1000, unit: 'ea', perUnit: false, category: 'Paint' },
-  'paint_ceiling': { ic: 250, cp: 450, unit: 'ea', perUnit: false, category: 'Paint' },
+  'paint_ceiling': { ic: 2.50, cp: 4.50, unit: 'sqft', perUnit: true, category: 'Paint' },
   'paint_door': { ic: 75, cp: 135, unit: 'ea', perUnit: true, category: 'Paint' },
   'paint_cabinets': { ic: 45, cp: 85, unit: 'ea', perUnit: true, category: 'Paint' },
   'paint_closet': { ic: 300, cp: 475, unit: 'ea', perUnit: true, category: 'Paint' },
