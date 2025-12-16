@@ -14,6 +14,7 @@ import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
 import { ProposalPdf, buildTradeGroups } from '@/components/pdf/ProposalPdf';
 import { SimpleProposalPdf } from '@/components/pdf/SimpleProposalPdf';
+import { CleanEstimatePdf, TradeScope } from '@/components/pdf/CleanEstimatePdf';
 import { extractPassthroughLineItems, calculatePassthroughTotal } from '@/lib/estimate-passthrough';
 import { generateProposalWord } from '@/components/word/ProposalWord';
 import { ClientInfoEditCard } from '@/components/estimates/ClientInfoEditCard';
@@ -36,8 +37,12 @@ import {
   Send,
   FileIcon,
   Table,
+  ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// PDF mode options
+type PdfMode = 'clean' | 'table' | 'legacy';
 
 // Deal stages for the progress bar
 const DEAL_STAGES = [
@@ -177,6 +182,135 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
   return lines.join('\n');
 }
 
+// Build narrative trade scopes from estimate line items for clean PDF format
+function buildTradeScopesFromEstimate(estimate: Estimate): TradeScope[] {
+  const tradeScopes: TradeScope[] = [];
+  
+  // Get line items from internal_json_payload if available
+  const payload = estimate.internal_json_payload as any;
+  const lineItems = payload?.pricing?.line_items || payload?.line_items || [];
+  
+  // Group line items by category/trade
+  const tradeGroups: { [key: string]: string[] } = {};
+  
+  for (const item of lineItems) {
+    const category = item.category || 'Other';
+    if (!tradeGroups[category]) {
+      tradeGroups[category] = [];
+    }
+    // Build description with quantity and sqft if applicable
+    let desc = item.task_description || item.description || item.name || '';
+    if (item.quantity && item.quantity > 1) {
+      desc = `${item.quantity}x ${desc}`;
+    }
+    if (item.unit === 'sqft' && item.quantity) {
+      desc = `${desc} — approx. ${Math.round(item.quantity)} sq ft`;
+    }
+    tradeGroups[category].push(desc);
+  }
+  
+  // Define trade order
+  const tradeOrder = [
+    'Demo', 'Demolition', 
+    'Plumbing', 
+    'Electrical', 
+    'Framing', 'Framing & Drywall',
+    'Tile', 'Tile Work', 'Tile & Support',
+    'Cabinetry', 'Cabinetry & Countertops', 'Vanity',
+    'Countertops', 'Countertop',
+    'Glass',
+    'Paint', 'Paint & Trim', 'Paint & Drywall',
+    'Closets',
+    'Other'
+  ];
+  
+  // Sort and build trade scopes
+  const orderedTrades = Object.keys(tradeGroups).sort((a, b) => {
+    const aIndex = tradeOrder.findIndex(t => a.toLowerCase().includes(t.toLowerCase()));
+    const bIndex = tradeOrder.findIndex(t => b.toLowerCase().includes(t.toLowerCase()));
+    return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+  });
+  
+  for (const trade of orderedTrades) {
+    const items = tradeGroups[trade];
+    if (items.length > 0) {
+      // Consolidate items into a narrative paragraph
+      const description = items.join('. ') + '.';
+      tradeScopes.push({
+        name: trade,
+        description
+      });
+    }
+  }
+  
+  // If no line items, generate from estimate fields
+  if (tradeScopes.length === 0) {
+    if (estimate.include_demo !== false) {
+      tradeScopes.push({
+        name: 'Demo',
+        description: estimate.has_bathrooms 
+          ? 'Full gut of existing bathroom including fixtures, tile, vanity, and toilet. Protect adjacent areas. Debris removal and disposal.'
+          : 'Remove existing cabinets, countertops, and appliances as needed. Protect adjacent areas. Debris removal and disposal.'
+      });
+    }
+    
+    if (estimate.include_plumbing !== false && estimate.has_bathrooms) {
+      tradeScopes.push({
+        name: 'Plumbing',
+        description: 'Rough-in water supply and drain lines. Install shower valve, trim, and fixtures. Set and connect toilet. Install vanity plumbing and faucet. Final pressure testing.'
+      });
+    }
+    
+    if (estimate.include_electrical && estimate.has_bathrooms) {
+      let elecDesc = [];
+      if (estimate.num_recessed_cans) elecDesc.push(`${estimate.num_recessed_cans} recessed LED lights`);
+      if (estimate.num_vanity_lights) elecDesc.push(`${estimate.num_vanity_lights} vanity light fixtures`);
+      elecDesc.push('Exhaust fan');
+      elecDesc.push('GFCI outlets per code');
+      tradeScopes.push({
+        name: 'Electrical',
+        description: elecDesc.join('. ') + '.'
+      });
+    }
+    
+    if (estimate.has_bathrooms) {
+      let tileDesc = 'Install waterproofing system. Level and prep substrate.';
+      if (estimate.bath_wall_tile_sqft) tileDesc += ` Shower wall tile — approx. ${Math.round(estimate.bath_wall_tile_sqft)} sq ft.`;
+      if (estimate.bath_shower_floor_tile_sqft) tileDesc += ` Shower floor tile — approx. ${Math.round(estimate.bath_shower_floor_tile_sqft)} sq ft.`;
+      if (estimate.bath_floor_tile_sqft) tileDesc += ` Bathroom floor tile — approx. ${Math.round(estimate.bath_floor_tile_sqft)} sq ft.`;
+      tileDesc += ' Includes cement board, thinset, grout, and Schluter trim.';
+      tradeScopes.push({
+        name: 'Tile Work',
+        description: tileDesc
+      });
+    }
+    
+    if (estimate.bath_uses_tkbso_vanities && estimate.has_bathrooms) {
+      const vanitySize = estimate.vanity_size || '48';
+      tradeScopes.push({
+        name: 'Cabinetry & Countertops',
+        description: `${vanitySize}" vanity with countertop and undermount sink. Mirror installation. Plumbing connections.`
+      });
+    }
+    
+    if (estimate.include_glass || estimate.bath_uses_frameless_glass) {
+      tradeScopes.push({
+        name: 'Glass',
+        description: 'Frameless glass shower enclosure. Field measurement after tile completion. Custom hardware and seals.'
+      });
+    }
+    
+    if (estimate.include_paint) {
+      tradeScopes.push({
+        name: 'Paint & Trim',
+        description: 'Patch and repair drywall as needed. Prime and paint walls and ceiling. Paint color selected by homeowner.'
+      });
+    }
+  }
+  
+  return tradeScopes;
+}
+
 export default function EstimateDetail() {
   const { id } = useParams<{ id: string }>();
   const { contractor } = useAuth();
@@ -192,9 +326,8 @@ export default function EstimateDetail() {
   const [showTileSqft, setShowTileSqft] = useState(true);
   const [customLowPrice, setCustomLowPrice] = useState<string>('');
   const [customHighPrice, setCustomHighPrice] = useState<string>('');
-  // STRICT PASSTHROUGH MODE: When enabled, PDF shows line items exactly as stored
-  // No grouping, no description rewriting, individual pricing per line
-  const [useSimplePdf, setUseSimplePdf] = useState(true);
+  // PDF Mode: 'clean' = narrative scope format, 'table' = line items with prices, 'legacy' = old grouped format
+  const [pdfMode, setPdfMode] = useState<PdfMode>('clean');
 
   useEffect(() => {
     async function fetchData() {
@@ -254,18 +387,35 @@ export default function EstimateDetail() {
     try {
       let blob: Blob;
       
-      if (useSimplePdf) {
-        // STRICT PASSTHROUGH MODE: Display line items exactly as stored
-        // No grouping, no description rewriting, individual pricing per line
-        const lineItems = extractPassthroughLineItems(estimate);
+      // Get price range
+      const priceRangeLow = parseFloat(customLowPrice) || estimate.low_estimate_cp || Math.round((estimate.final_cp_total || 0) * 0.9);
+      const priceRangeHigh = parseFloat(customHighPrice) || estimate.high_estimate_cp || Math.round((estimate.final_cp_total || 0) * 1.1);
+      
+      if (pdfMode === 'clean') {
+        // CLEAN NARRATIVE FORMAT: Scope descriptions by trade, single price range
+        const tradeScopes = buildTradeScopesFromEstimate(estimate);
+        const projectLabel = estimate.job_label || 
+          (estimate.has_bathrooms && estimate.has_kitchen ? 'Kitchen & Bathroom Remodel' :
+           estimate.has_kitchen ? 'Kitchen Remodel' :
+           estimate.has_bathrooms ? 'Bathroom Remodel' : 'Home Remodel');
         
-        // Use the selected price for total, or calculate from line items
+        blob = await pdf(
+          <CleanEstimatePdf
+            contractor={contractor}
+            estimate={estimate}
+            projectLabel={projectLabel}
+            tradeScopes={tradeScopes}
+            priceRange={{ low: priceRangeLow, high: priceRangeHigh }}
+          />
+        ).toBlob();
+      } else if (pdfMode === 'table') {
+        // TABLE FORMAT: Line items with individual prices
+        const lineItems = extractPassthroughLineItems(estimate);
         const selectedPrice = selectedPriceLevel === 'low' 
           ? estimate.low_estimate_cp 
           : selectedPriceLevel === 'high' 
             ? estimate.high_estimate_cp 
             : estimate.final_cp_total;
-        
         const total = selectedPrice || calculatePassthroughTotal(lineItems);
         
         blob = await pdf(
@@ -279,8 +429,8 @@ export default function EstimateDetail() {
       } else {
         // LEGACY MODE: Complex grouping and description rewriting
         const priceRange = showRange ? {
-          low: parseFloat(customLowPrice) || estimate.low_estimate_cp || 0,
-          high: parseFloat(customHighPrice) || estimate.high_estimate_cp || 0,
+          low: priceRangeLow,
+          high: priceRangeHigh,
         } : undefined;
         
         const selectedPrice = !showRange ? (
@@ -313,8 +463,8 @@ export default function EstimateDetail() {
       const clientName = estimate.client_name?.replace(/[^a-zA-Z0-9]/g, '_') || '';
       const jobLabel = estimate.job_label?.replace(/[^a-zA-Z0-9]/g, '_') || '';
       const filename = clientName || jobLabel
-        ? `Proposal_${clientName}${jobLabel ? '_' + jobLabel : ''}.pdf`
-        : `Proposal_${estimate.id}.pdf`;
+        ? `Estimate_${clientName}${jobLabel ? '_' + jobLabel : ''}.pdf`
+        : `Estimate_${estimate.id}.pdf`;
       
       link.href = url;
       link.download = filename;
@@ -652,31 +802,56 @@ export default function EstimateDetail() {
                 )}
               </div>
               
-              {/* PDF Mode Toggle - Simple vs Legacy */}
+              {/* PDF Mode Selector */}
               <div className="mt-3 pt-3 border-t border-white/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Table className="h-3.5 w-3.5 text-slate-400" />
-                    <Label htmlFor="simple-pdf" className="text-sm text-slate-300 cursor-pointer">
-                      Simple table format (show individual pricing)
-                    </Label>
-                  </div>
-                  <Switch
-                    id="simple-pdf"
-                    checked={useSimplePdf}
-                    onCheckedChange={setUseSimplePdf}
-                    className="data-[state=checked]:bg-sky-500"
-                  />
+                <Label className="text-sm text-slate-300 mb-2 block">PDF Format</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setPdfMode('clean')}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                      pdfMode === 'clean'
+                        ? "bg-sky-500 text-white"
+                        : "bg-white/10 text-slate-300 hover:bg-white/15"
+                    )}
+                  >
+                    <ScrollText className="h-3.5 w-3.5 mx-auto mb-1" />
+                    Clean
+                  </button>
+                  <button
+                    onClick={() => setPdfMode('table')}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                      pdfMode === 'table'
+                        ? "bg-sky-500 text-white"
+                        : "bg-white/10 text-slate-300 hover:bg-white/15"
+                    )}
+                  >
+                    <Table className="h-3.5 w-3.5 mx-auto mb-1" />
+                    Table
+                  </button>
+                  <button
+                    onClick={() => setPdfMode('legacy')}
+                    className={cn(
+                      "px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                      pdfMode === 'legacy'
+                        ? "bg-sky-500 text-white"
+                        : "bg-white/10 text-slate-300 hover:bg-white/15"
+                    )}
+                  >
+                    <FileText className="h-3.5 w-3.5 mx-auto mb-1" />
+                    Legacy
+                  </button>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1.5 pl-5">
-                  {useSimplePdf 
-                    ? 'Line items displayed exactly as entered with individual prices' 
-                    : 'Trade-grouped format with descriptions (legacy)'}
+                <p className="text-[10px] text-slate-500 mt-2">
+                  {pdfMode === 'clean' && 'Narrative scope by trade, single price range'}
+                  {pdfMode === 'table' && 'Line items with individual prices'}
+                  {pdfMode === 'legacy' && 'Grouped format with detailed descriptions'}
                 </p>
               </div>
               
-              {/* Show Tile Sqft Toggle - only show when NOT in simple mode */}
-              {!useSimplePdf && (
+              {/* Show Tile Sqft Toggle - only show when in legacy mode */}
+              {pdfMode === 'legacy' && (
                 <div className="mt-3 pt-3 border-t border-white/10">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="show-tile-sqft" className="text-sm text-slate-300 cursor-pointer">
