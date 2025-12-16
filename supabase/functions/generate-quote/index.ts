@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Conversation response schema - for follow-up questions
+// Conversation response schema
 const conversationSchema = {
   type: "object",
   properties: {
@@ -18,13 +18,15 @@ const conversationSchema = {
       type: "object",
       properties: {
         project_type: { type: ["string", "null"] },
-        scope_items: { type: "array", items: { type: "string" } },
+        scope_summary: { type: ["string", "null"] },
         dimensions: {
           type: "object",
           properties: {
             room_sqft: { type: ["number", "null"] },
-            shower_sqft: { type: ["number", "null"] },
-            vanity_size: { type: ["string", "null"] }
+            shower_dims: { type: ["string", "null"] },
+            vanity_size: { type: ["string", "null"] },
+            cabinet_lf: { type: ["number", "null"] },
+            countertop_sqft: { type: ["number", "null"] }
           }
         }
       }
@@ -33,224 +35,174 @@ const conversationSchema = {
   required: ["action", "response_text"]
 };
 
-// Line item output schema for tool calling
-const lineItemSchema = {
+// Clean estimate output schema - CONSOLIDATED line items
+const estimateSchema = {
   type: "object",
   properties: {
-    project_type: { 
-      type: "string", 
-      enum: ["bathroom_remodel", "kitchen_remodel", "full_remodel", "combination"] 
-    },
-    areas: {
+    project_type: { type: "string" },
+    project_label: { type: "string" },
+    trades: {
       type: "array",
       items: {
         type: "object",
         properties: {
-          area_id: { type: "string" },
-          area_name: { type: "string" },
-          trades: {
+          trade_name: { type: "string" },
+          trade_order: { type: "number" },
+          line_items: {
             type: "array",
             items: {
               type: "object",
               properties: {
-                trade_id: { type: "string" },
-                trade_name: { type: "string" },
-                trade_order: { type: "number" },
-                line_items: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      item_id: { type: "string" },
-                      item_type: { 
-                        type: "string", 
-                        enum: ["lump_sum", "labor_only", "labor_and_material"] 
-                      },
-                      action_verb: { type: "string" },
-                      description: { type: "string" },
-                      suffix: { type: ["string", "null"] },
-                      product_allowance: {
-                        type: ["object", "null"],
-                        properties: {
-                          amount: { type: "number" },
-                          per_unit: { type: "boolean" },
-                          unit: { type: ["string", "null"] },
-                          description: { type: "string" }
-                        },
-                        required: ["amount", "description"]
-                      },
-                      quantity: { type: ["number", "null"] },
-                      unit: { type: ["string", "null"] },
-                      internal_cost: { type: "number" },
-                      markup: { type: "number" },
-                      customer_price: { type: "number" }
-                    },
-                    required: ["item_id", "item_type", "action_verb", "description", "internal_cost", "markup", "customer_price"]
-                  }
-                }
+                description: { type: "string" },
+                internal_cost: { type: "number" },
+                customer_price: { type: "number" }
               },
-              required: ["trade_id", "trade_name", "trade_order", "line_items"]
+              required: ["description", "internal_cost", "customer_price"]
             }
           }
         },
-        required: ["area_id", "area_name", "trades"]
+        required: ["trade_name", "trade_order", "line_items"]
       }
     },
-    additional_considerations: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          item_name: { type: "string" },
-          price_range: {
-            type: "object",
-            properties: {
-              min: { type: "number" },
-              max: { type: "number" }
-            },
-            required: ["min", "max"]
-          },
-          description: { type: "string" }
-        },
-        required: ["item_name", "price_range", "description"]
-      }
-    },
-    project_notes: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          note_number: { type: "number" },
-          text: { type: "string" }
-        },
-        required: ["note_number", "text"]
-      }
-    },
-    warnings: {
-      type: "array",
-      items: { type: "string" }
-    }
+    notes: { type: "array", items: { type: "string" } }
   },
-  required: ["project_type", "areas"]
+  required: ["project_type", "project_label", "trades"]
 };
 
-const conversationalSystemPrompt = `# ESTIMAITE - PROFESSIONAL ESTIMATOR
+const conversationalSystemPrompt = `# ESTIMAITE - QUICK SCOPE ESTIMATOR
 
-You are EstimAIte, a knowledgeable AI estimator for kitchen and bathroom remodels. You sound like an expert contractor who knows exactly what questions to ask.
+You're EstimAIte, a pro estimator for kitchen and bathroom remodels. You sound like an experienced contractor who knows exactly what to ask.
 
-## CORE PRINCIPLE: GATHER KEY MEASUREMENTS, THEN QUOTE
-You must collect the essential measurements before generating. This ensures accurate quotes.
+## YOUR STYLE
+- Quick, conversational, confident
+- Get the essentials, don't over-ask
+- Sound like a colleague, not a robot
+- 2-3 sentences max per response
 
-## REQUIRED INFO BEFORE QUOTING
+## CONVERSATION FLOW
 
-**For BATHROOM projects, you MUST know:**
-1. Project type (bathroom) ✓
-2. Scope (full gut, shower remodel, vanity swap, etc.)
-3. Shower dimensions (e.g., 36x60, 48x72) OR confirm no shower work
-4. Vanity size (24", 36", 48", 60", 72") OR confirm no vanity work
-5. Room size in sqft (for flooring/paint) OR confirm not needed
+**Phase 1: Project Type** (if unclear)
+"Kitchen or bathroom remodel?"
 
-**For KITCHEN projects, you MUST know:**
-1. Project type (kitchen) ✓
-2. Scope (full gut, cabinet refresh, countertops only, etc.)
-3. Linear feet of cabinets
-4. Countertop sqft
+**Phase 2: Quick Scope**
+"Tell me about the project - what's the vision? What's staying, what's going?"
 
-## SCOPE-SPECIFIC INCLUSIONS (be precise!)
+**Phase 3: Key Measurements** (ask in ONE message)
+For BATHROOM: "Quick specs: shower size, vanity size, and rough room sqft?"
+For KITCHEN: "Quick specs: linear feet of cabinets and countertop sqft?"
 
-**Tub-to-Shower Conversion includes:**
-- Demo of existing tub
-- Plumbing rough-in conversion
-- New shower pan/waterproofing
-- Wall tile, shower floor tile
-- Glass enclosure
-- Shower valve/trim
-- Does NOT include: paint (unless bathroom is getting paint work), flooring (unless specified)
+**Phase 4: Generate** (once you have enough)
+action: "generate_quote"
 
-**Full Gut Bathroom includes:**
-- All demo
-- Plumbing, electrical
-- Tile (walls, floor, shower)
-- Vanity/countertop
-- Paint
-- Glass
+## WHAT YOU NEED BEFORE GENERATING
 
-**Vanity Swap includes:**
-- Demo old vanity
-- Install new vanity
-- Countertop
-- Plumbing connections
-- Does NOT include: tile, shower work, paint (unless specified)
+**BATHROOM - need 2 of these 3:**
+- Shower dimensions (36x60, 48x72, etc.) OR "no shower work"
+- Vanity size (36", 48", 60") OR "no vanity work"  
+- Room sqft (for flooring scope)
 
-## CONVERSATION STYLE
-- Be concise but thorough (2-3 sentences)
-- Ask for the specific measurements you need
-- Sound knowledgeable - you know what info matters
-- Don't over-ask - if they give you shower size, don't ask again
+**KITCHEN - need both:**
+- Cabinet linear feet
+- Countertop sqft
+
+## SMART DEFAULTS (use when info is missing)
+- Vanity not mentioned? Skip it.
+- Shower not mentioned? Skip it.
+- No room sqft? Use 75 for bathroom, 150 for kitchen.
+- No countertop sqft? Calculate from cabinet LF × 2.2
 
 ## EXAMPLES
 
 User: "bathroom remodel"
 → action: "ask_question"
-→ response_text: "Got it - bathroom remodel. What's the scope? Full gut, shower remodel, or something more targeted like a vanity swap?"
+→ "Got it. What's the scope - full gut, just the shower, vanity swap? What's the vision?"
 
-User: "tub to shower conversion"
-→ action: "ask_question"
-→ response_text: "Tub to shower conversion - nice upgrade. What are the current tub dimensions? And what size vanity is in the bathroom?"
+User: "full gut, want to do a walk-in shower and new double vanity"
+→ action: "ask_question"  
+→ "Nice. Quick specs: what size shower and vanity? And roughly how big is the bathroom?"
 
-User: "full gut, shower is 36x60, 48 inch vanity, about 75sqft bathroom"
+User: "shower is about 4x5, 60 inch vanity, maybe 80sqft"
 → action: "generate_quote"
-→ response_text: "Perfect - full gut with 36x60 shower, 48\" vanity, 75sqft bathroom. Generating your quote..."
+→ "Perfect - 4x5 shower, 60\" double vanity, 80sqft bathroom. Generating your estimate..."
 
-User: "just swapping the vanity to a 60 inch double"
-→ action: "generate_quote" (vanity swap doesn't need shower dimensions)
-→ response_text: "60\" double vanity swap. I'll include demo, new vanity, countertop, and plumbing connections. Generating now..."`;
+User: "just swapping the vanity to a 48 inch"
+→ action: "generate_quote"
+→ "48\" vanity swap - includes demo, new vanity, countertop, plumbing. Generating now..."`;
 
-const quoteSystemPrompt = `# ESTIMAITE LINE ITEM GENERATION
+const estimateSystemPrompt = `# ESTIMAITE - CLEAN ESTIMATE GENERATOR
 
-You are generating a detailed construction quote. Output professional line items organized by trade.
+Generate a SIMPLE, CLEAN estimate. This is NOT a contract - it's a scannable 1-2 page document.
 
-## PRICING (42% margin: CP = IC × 1.724)
+## OUTPUT RULES
 
-**DEMOLITION:**
-- Full Bath Gut: $1,360 IC / $2,345 CP
-- Full Kitchen Gut: $1,360 IC / $2,345 CP  
-- Dumpster: $550 IC / $948 CP
+**CONSOLIDATE LINE ITEMS** - Max 2-5 items per trade. Roll details together.
 
-**PLUMBING:**
-- Shower Rough-In: $1,800 IC / $3,103 CP
-- Toilet Install: $250 IC / $431 CP + allowance
-- Vanity Connection: $350 IC / $603 CP
-- Freestanding Tub: $1,250 IC / $2,155 CP
+BAD (too granular):
+- Supply cement board - $400
+- Install cement board - $300
+- Waterproofing membrane - $500
+- Wall tile labor - $2,000
+- Wall tile material - $800
+- Shower floor tile labor - $600
+- Shower floor tile material - $300
 
-**ELECTRICAL:**
-- Recessed Can: $65 IC / $112 CP each
-- Vanity Light: $225 IC / $388 CP
+GOOD (consolidated):
+- Shower tile (walls, floor, bench) — approx. 225 sq ft - $4,900
+  Includes waterproofing, cement board, all tile labor and materials
 
-**TILE:**
-- Wall Tile: $18/sqft IC / $31/sqft CP
-- Shower Floor: $16.50/sqft IC / $28/sqft CP
-- Main Floor: $11.50/sqft IC / $20/sqft CP
-- Waterproofing: $3.60/sqft IC / $6.20/sqft CP
-
-**CABINETRY:**
-- Vanity 48": $2,500 IC / $4,310 CP (bundle)
-- Vanity 60": $2,800 IC / $4,828 CP (bundle)
-- Vanity 72": $3,200 IC / $5,517 CP (bundle)
-
-**COUNTERTOPS:**
-- Quartz fab/install: $40 IC / $69 CP per sqft
-
-**GLASS:**
-- Frameless Door+Panel: $1,350 IC / $2,328 CP
-- Panel Only: $800 IC / $1,379 CP
-
-**PAINT:**
-- Full Bathroom: $1,000 IC / $1,724 CP
+**LINE ITEM FORMAT:**
+[Area/Item] — [brief description or qty] - $X,XXX
 
 ## TRADE ORDER
-BATHROOM: Demo → Plumbing → Electrical → Framing → Tile → Cabinetry → Paint → Glass
-KITCHEN: Demo → Cabinetry → Countertops → Plumbing → Electrical → Backsplash → Paint`;
+
+BATHROOM: Demo → Plumbing → Electrical → Framing & Drywall → Tile Work → Cabinetry & Countertops → Glass → Paint & Trim
+
+KITCHEN: Demo → Cabinetry → Countertops → Plumbing → Electrical → Backsplash → Paint & Trim
+
+## PRICING GUIDE (42% margin: CP = IC × 1.724)
+
+**BATHROOM by complexity:**
+| Trade | Simple | Standard | Complex |
+|-------|--------|----------|---------|
+| Demo | $800 | $1,500 | $3,500 |
+| Plumbing | $1,500 | $3,000 | $5,000 |
+| Electrical | $800 | $1,500 | $3,000 |
+| Framing/Drywall | $500 | $1,500 | $4,000 |
+| Tile | $2,500 | $5,000 | $12,000 |
+| Cabinets/Counter | $2,000 | $4,000 | $8,500 |
+| Glass | $800 | $1,500 | $2,500 |
+| Paint/Trim | $600 | $1,200 | $2,500 |
+
+**VANITY SWAP (targeted scope):**
+- Demo old vanity: $300
+- New vanity (48"): $2,800 / (60"): $3,200 / (72"): $3,800
+- Countertop: $40-65/sqft
+- Plumbing connections: $400-600
+- Total typical: $4,000-6,500
+
+**TUB-TO-SHOWER CONVERSION:**
+- Demo: $1,200
+- Plumbing conversion: $2,500
+- Tile + waterproofing: $3,500-5,500
+- Glass: $1,500-2,500
+- Total typical: $9,000-12,500
+
+**FULL GUT BATHROOM:**
+- Small (50sqft): $18,000-25,000
+- Standard (75sqft): $28,000-38,000
+- Large (100+sqft): $45,000-65,000
+
+## SCOPE MATCHING - BE PRECISE
+
+Only include what's mentioned:
+- "Vanity swap" → vanity, countertop, plumbing. NO shower, NO tile, NO paint.
+- "Tub to shower" → demo, plumbing, tile, glass. NO vanity work, NO paint.
+- "Full gut" → everything.
+
+## NOTES TO INCLUDE
+1. Estimate valid for 30 days
+2. Permits not included unless noted
+3. Final material selections to be confirmed`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -268,13 +220,12 @@ serve(async (req) => {
     console.log("Processing message:", message);
     console.log("Context:", JSON.stringify(context || {}));
     
-    // Build conversation messages for context
     const historyMessages = (conversation_history || []).map((msg: { role: string; content: string }) => ({
       role: msg.role,
       content: msg.content
     }));
 
-    // Step 1: Conversational response - decide if we need more info or can generate quote
+    // Step 1: Determine if we have enough info
     const conversationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -285,7 +236,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: conversationalSystemPrompt },
-          ...historyMessages.slice(-6), // Keep last 6 messages for context
+          ...historyMessages.slice(-6),
           { role: "user", content: message }
         ],
         tools: [
@@ -293,7 +244,7 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "respond",
-              description: "Respond to the user - either ask a clarifying question or indicate you're ready to generate a quote.",
+              description: "Respond to the user - ask a quick clarifying question or generate the estimate.",
               parameters: conversationSchema
             }
           }
@@ -350,22 +301,24 @@ serve(async (req) => {
       });
     }
 
-    // Step 2: Generate the actual quote
-    console.log("Generating quote...");
+    // Step 2: Generate clean estimate
+    console.log("Generating estimate...");
     
-    // Combine all conversation context for quote generation
     const fullContext = historyMessages.map((m: { role: string; content: string }) => 
       `${m.role}: ${m.content}`
     ).join('\n');
     
-    const quotePrompt = `Based on this conversation, generate a detailed quote:
+    const estimatePrompt = `Generate a clean estimate for this project:
 
+CONVERSATION:
 ${fullContext}
-${message}
+User: ${message}
 
-Project context: ${JSON.stringify(parsedResponse.parsed_data || {})}`;
+PARSED SCOPE: ${JSON.stringify(parsedResponse.parsed_data || {})}
 
-    const quoteResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+Remember: CONSOLIDATE line items (2-5 per trade max). Make it clean and scannable.`;
+
+    const estimateResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -374,59 +327,53 @@ Project context: ${JSON.stringify(parsedResponse.parsed_data || {})}`;
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: quoteSystemPrompt },
-          { role: "user", content: quotePrompt }
+          { role: "system", content: estimateSystemPrompt },
+          { role: "user", content: estimatePrompt }
         ],
         tools: [
           {
             type: "function",
             function: {
-              name: "generate_quote",
-              description: "Generate a structured construction quote with professional line items.",
-              parameters: lineItemSchema
+              name: "generate_estimate",
+              description: "Generate a clean, consolidated estimate with 2-5 line items per trade.",
+              parameters: estimateSchema
             }
           }
         ],
-        tool_choice: { type: "function", function: { name: "generate_quote" } }
+        tool_choice: { type: "function", function: { name: "generate_estimate" } }
       }),
     });
 
-    if (!quoteResponse.ok) {
-      throw new Error(`Quote generation failed: ${quoteResponse.status}`);
+    if (!estimateResponse.ok) {
+      throw new Error(`Estimate generation failed: ${estimateResponse.status}`);
     }
 
-    const quoteData = await quoteResponse.json();
-    const quoteToolCall = quoteData.choices?.[0]?.message?.tool_calls?.[0];
+    const estimateData = await estimateResponse.json();
+    const estimateToolCall = estimateData.choices?.[0]?.message?.tool_calls?.[0];
     
-    if (!quoteToolCall) {
-      throw new Error("No quote tool call in response");
+    if (!estimateToolCall) {
+      throw new Error("No estimate tool call in response");
     }
 
-    let quote;
+    let estimate;
     try {
-      quote = JSON.parse(quoteToolCall.function.arguments);
+      estimate = JSON.parse(estimateToolCall.function.arguments);
     } catch (e) {
-      throw new Error("Invalid quote JSON");
+      throw new Error("Invalid estimate JSON");
     }
     
     // Calculate totals
     let grandTotal = 0;
     let subtotalIC = 0;
-    const areaTotals: Array<{ area_name: string; total: number }> = [];
     
-    for (const area of quote.areas || []) {
-      let areaTotal = 0;
-      for (const trade of area.trades || []) {
-        for (const item of trade.line_items || []) {
-          areaTotal += item.customer_price || 0;
-          subtotalIC += item.internal_cost || 0;
-        }
+    for (const trade of estimate.trades || []) {
+      for (const item of trade.line_items || []) {
+        grandTotal += item.customer_price || 0;
+        subtotalIC += item.internal_cost || 0;
       }
-      areaTotals.push({ area_name: area.area_name, total: areaTotal });
-      grandTotal += areaTotal;
     }
     
-    // Build complete quote response
+    // Build response in expected format
     const completeQuote = {
       quote: {
         metadata: {
@@ -437,14 +384,27 @@ Project context: ${JSON.stringify(parsedResponse.parsed_data || {})}`;
         },
         customer: customer || { name: "Valued Customer" },
         project: {
-          type: quote.project_type,
-          areas: quote.areas
+          type: estimate.project_type,
+          label: estimate.project_label,
+          areas: [{
+            area_id: "main",
+            area_name: estimate.project_label,
+            trades: estimate.trades.map((t: any) => ({
+              trade_id: t.trade_name.toLowerCase().replace(/\s+/g, '_'),
+              trade_name: t.trade_name,
+              trade_order: t.trade_order,
+              line_items: t.line_items.map((item: any, idx: number) => ({
+                item_id: `${t.trade_name.toLowerCase().replace(/\s+/g, '_')}_${idx}`,
+                item_type: "lump_sum",
+                description: item.description,
+                internal_cost: item.internal_cost,
+                customer_price: item.customer_price
+              }))
+            }))
+          }]
         },
-        additional_considerations: quote.additional_considerations || [],
         totals: {
           subtotal_labor_materials: subtotalIC,
-          markup_multiplier: 1.724,
-          area_totals: areaTotals,
           grand_total: grandTotal
         },
         payment_schedule: {
@@ -452,39 +412,40 @@ Project context: ${JSON.stringify(parsedResponse.parsed_data || {})}`;
           progress: { percentage: 25, amount: Math.round(grandTotal * 0.25) },
           final: { percentage: 10, amount: Math.round(grandTotal * 0.10) }
         },
-        project_notes: quote.project_notes || [],
-        warnings: quote.warnings || []
+        project_notes: (estimate.notes || []).map((note: string, idx: number) => ({
+          note_number: idx + 1,
+          text: note
+        }))
       },
-      // Also include flat pricing structure for easier consumption
+      // Flat pricing structure for consumption
       pricing: {
         total_ic: subtotalIC,
         total_cp: grandTotal,
-        low_estimate: Math.round(grandTotal * 0.95),
-        high_estimate: Math.round(grandTotal * 1.05),
+        low_estimate: Math.round(grandTotal * 0.90),
+        high_estimate: Math.round(grandTotal * 1.10),
         overall_margin_percent: subtotalIC > 0 ? ((grandTotal - subtotalIC) / grandTotal) * 100 : 42,
-        line_items: (quote.areas || []).flatMap((area: any) => 
-          (area.trades || []).flatMap((trade: any) =>
-            (trade.line_items || []).map((item: any) => ({
-              category: trade.trade_name,
-              task_description: item.description,
-              quantity: item.quantity || 1,
-              unit: item.unit || 'ea',
-              ic_per_unit: item.internal_cost,
-              cp_per_unit: item.customer_price,
-              ic_total: item.internal_cost,
-              cp_total: item.customer_price,
-              margin_percent: 42
-            }))
-          )
+        line_items: estimate.trades.flatMap((trade: any) =>
+          trade.line_items.map((item: any) => ({
+            category: trade.trade_name,
+            task_description: item.description,
+            quantity: 1,
+            unit: 'ea',
+            ic_per_unit: item.internal_cost,
+            cp_per_unit: item.customer_price,
+            ic_total: item.internal_cost,
+            cp_total: item.customer_price,
+            margin_percent: item.internal_cost > 0 ? ((item.customer_price - item.internal_cost) / item.customer_price) * 100 : 42
+          }))
         )
       },
       project_header: {
-        project_type: quote.project_type === 'bathroom_remodel' ? 'Bathroom' : 'Kitchen',
+        project_type: estimate.project_type === 'bathroom_remodel' ? 'Bathroom' : 'Kitchen',
+        project_label: estimate.project_label,
         overall_size_sqft: parsedResponse.parsed_data?.dimensions?.room_sqft || null
       }
     };
     
-    console.log("Generated quote total:", grandTotal);
+    console.log("Generated estimate total:", grandTotal);
     
     return new Response(JSON.stringify(completeQuote), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
