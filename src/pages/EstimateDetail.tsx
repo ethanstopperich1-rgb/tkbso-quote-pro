@@ -186,8 +186,43 @@ function generateScopeTextFromEstimate(estimate: Estimate): string {
 function buildTradeScopesFromEstimate(estimate: Estimate): TradeScope[] {
   const tradeScopes: TradeScope[] = [];
   
-  // Get line items from internal_json_payload if available
+  // Get data from internal_json_payload
   const payload = estimate.internal_json_payload as any;
+  
+  // PRIORITY 1: Use trade_narratives from the quote response if available
+  const tradeNarratives = payload?.trade_narratives || [];
+  if (tradeNarratives.length > 0) {
+    for (const narrative of tradeNarratives) {
+      if (narrative.trade_name && narrative.scope_narrative) {
+        tradeScopes.push({
+          name: narrative.trade_name,
+          description: narrative.scope_narrative
+        });
+      }
+    }
+    if (tradeScopes.length > 0) {
+      return tradeScopes;
+    }
+  }
+  
+  // PRIORITY 2: Use scope_narrative from trade areas if available
+  const areas = payload?.quote?.project?.areas || [];
+  for (const area of areas) {
+    const trades = area.trades || [];
+    for (const trade of trades) {
+      if (trade.scope_narrative) {
+        tradeScopes.push({
+          name: trade.trade_name,
+          description: trade.scope_narrative
+        });
+      }
+    }
+  }
+  if (tradeScopes.length > 0) {
+    return tradeScopes;
+  }
+  
+  // PRIORITY 3: Build from line items
   const lineItems = payload?.pricing?.line_items || payload?.line_items || [];
   
   // Group line items by category/trade
@@ -243,7 +278,7 @@ function buildTradeScopesFromEstimate(estimate: Estimate): TradeScope[] {
     }
   }
   
-  // If no line items, generate from estimate fields
+  // PRIORITY 4: If no line items, generate from estimate fields
   if (tradeScopes.length === 0) {
     if (estimate.include_demo !== false) {
       tradeScopes.push({
