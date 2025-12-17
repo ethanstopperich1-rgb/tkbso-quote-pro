@@ -6,20 +6,12 @@ import { QuickStartCards } from "./QuickStartCards";
 import { Button } from "./ui/button";
 import { RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useEstimator } from "@/contexts/EstimatorContext";
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Welcome! I'm **TKE** (The Knowledgeable Estimator), your AI-powered estimator for The Kitchen & Bath Store of Orlando.
-
-I'll guide you through a structured 4-phase workflow:
-
-**Phase 1:** Scope Ingestion — I'll listen to your project description
-**Phase 2:** Question & Refinement — I'll ask key clarifying questions
-**Phase 3:** Data Extraction — I'll output structured scope details
-**Phase 4:** Image Processing — Upload floor plans for automated takeoffs (optional)
-
-Let's begin! **Describe your project:**`,
+  content: `Hey! I'm your estimating assistant. What are we pricing today — **kitchen** or **bathroom**?`,
   timestamp: new Date(),
 };
 
@@ -27,6 +19,7 @@ export function EstimatorChat() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { setFinalQuote, setStage, state } = useEstimator();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,32 +41,57 @@ export function EstimatorChat() {
     setIsTyping(true);
 
     try {
-      // Call the parse-project edge function with conversation context
-      const { data, error } = await supabase.functions.invoke('parse-project', {
+      // Build conversation history for the AI
+      const conversationHistory = messages
+        .filter(m => m.id !== 'welcome')
+        .map(m => ({
+          role: m.role,
+          content: m.content
+        }));
+      
+      // Add current message
+      conversationHistory.push({ role: 'user', content });
+
+      // Call the generate-quote edge function
+      const { data, error } = await supabase.functions.invoke('generate-quote', {
         body: { 
           message: content,
-          context: { messages: messages.slice(1) } // Exclude welcome message
+          conversationHistory
         }
       });
 
       if (error) throw error;
 
-      // Handle Markdown response (Phases 1-3)
-      if (data?.isMarkdown) {
+      console.log('generate-quote response:', data);
+
+      // Check if we have a complete quote
+      if (data?.isComplete && data?.quote) {
+        // Quote is ready - update context and show success message
+        setFinalQuote(data.quote);
+        setStage('complete');
+        
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: data.content,
+          content: `Got it! I've generated your estimate. Check out the preview on the right. 👉\n\nYou can adjust line items, update pricing, or download the PDF when ready.`,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else if (data?.followUpQuestion) {
+        // Still gathering info - show the follow-up question
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: data.followUpQuestion,
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, assistantMessage]);
       } else {
-        // Handle JSON response (legacy or structured data)
-        const response = data?.followUpQuestion || data?.summary || "I'm processing your request...";
+        // Fallback response
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: response,
+          content: "I'm processing your request. Could you tell me more about the project?",
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, assistantMessage]);
@@ -83,7 +101,7 @@ export function EstimatorChat() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I encountered an error processing your request. Please try rephrasing your project description.",
+        content: "I encountered an error processing your request. Please try again.",
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -94,6 +112,8 @@ export function EstimatorChat() {
 
   const handleReset = () => {
     setMessages([WELCOME_MESSAGE]);
+    setFinalQuote(null as any);
+    setStage('collecting');
   };
 
   const showQuickStart = messages.length === 1;
@@ -138,7 +158,7 @@ export function EstimatorChat() {
           <div className="max-w-4xl mx-auto flex justify-end">
             <Button variant="ghost" size="sm" onClick={handleReset} className="text-muted-foreground">
               <RotateCcw className="w-4 h-4 mr-1" />
-              Start New Quote
+              Start Over
             </Button>
           </div>
         </div>
@@ -148,7 +168,7 @@ export function EstimatorChat() {
       <ChatInput 
         onSend={handleSendMessage} 
         disabled={isTyping}
-        placeholder="Describe your project (e.g., 'Full bathroom remodel, 85 sq ft, no GC involved...')"
+        placeholder="Describe your project..."
       />
     </div>
   );
