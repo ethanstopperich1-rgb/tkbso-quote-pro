@@ -69,7 +69,7 @@ function extractDominantColor(imageUrl: string): Promise<string> {
 
 type ProjectType = 'kitchen' | 'bathroom' | 'full-home' | 'additions' | 'basement' | 'commercial';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -316,7 +316,7 @@ export default function Onboarding() {
       
       await refreshProfile();
       toast.success('Welcome! Your profile is set up.');
-      navigate('/welcome');
+      setStep(5); // Show completion celebration
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save profile';
       toast.error(errorMessage);
@@ -346,6 +346,7 @@ export default function Onboarding() {
       case 2: return 'Halfway there!';
       case 3: return 'Almost done!';
       case 4: return 'Final step!';
+      case 5: return 'You\'re all set!';
       default: return '';
     }
   };
@@ -798,7 +799,32 @@ export default function Onboarding() {
               disabled={isSubmitting}
               className="w-full text-center text-slate-500 text-sm mt-4 hover:text-slate-700 disabled:opacity-50"
             >
-              Skip branding for now
+              Skip branding for now — I'll set this up later
+            </button>
+          </div>
+        )}
+
+        {/* Step 5: Completion Celebration */}
+        {step === 5 && (
+          <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Check className="h-10 w-10 text-green-600" />
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">You're All Set! 🎉</h2>
+            <p className="text-slate-600 mb-8 max-w-md mx-auto">
+              Your account is ready. Let's create your first estimate and see how fast AI can work.
+            </p>
+            <Button
+              onClick={() => navigate('/estimator')}
+              className="bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 px-8 py-4 text-lg font-semibold hover:shadow-lg transition-all"
+            >
+              Create My First Estimate →
+            </Button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="block w-full text-center text-slate-500 text-sm mt-4 hover:text-slate-700"
+            >
+              Go to Dashboard instead
             </button>
           </div>
         )}

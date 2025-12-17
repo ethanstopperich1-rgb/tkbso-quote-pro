@@ -135,11 +135,13 @@ interface ConversationMessage {
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Hey! What project are we estimating today?
+  content: `Hey! 👋 I'm EstimAIte, your AI estimating assistant.
 
-📷 **Upload a photo** or 🎥 **Record a video walk-through** for instant AI detection, or just tell me:
+What project are we working on today? **Kitchen** or **Bathroom**?
 
-**Kitchen** or **Bathroom**?`,
+Just describe it naturally — like "master bath remodel" or "kitchen cabinet replacement" — and I'll ask a few quick questions to build your quote.
+
+📷 You can also **upload a photo** or 🎥 **record a video** for instant AI detection.`,
   timestamp: new Date(),
 };
 
