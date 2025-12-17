@@ -577,7 +577,8 @@ Include a scope_narrative for each trade that describes the work in plain Englis
         )
       },
       project_header: {
-        project_type: estimate.project_type === 'bathroom_remodel' ? 'Bathroom' : 'Kitchen',
+        project_type: (estimate.project_type || '').toLowerCase().includes('bathroom') ? 'Bathroom' : 
+                      (estimate.project_type || '').toLowerCase().includes('kitchen') ? 'Kitchen' : 'Remodel',
         project_label: estimate.project_label,
         size_category: estimate.size_category,
         overall_size_sqft: dimensions?.room_sqft || null
