@@ -18,15 +18,35 @@ const conversationSchema = {
       type: "object",
       properties: {
         project_type: { type: ["string", "null"] },
+        size_category: { type: ["string", "null"], enum: ["small", "standard", "large", "complex", null] },
         scope_summary: { type: ["string", "null"] },
         dimensions: {
           type: "object",
           properties: {
             room_sqft: { type: ["number", "null"] },
             shower_dims: { type: ["string", "null"] },
+            shower_sqft: { type: ["number", "null"] },
             vanity_size: { type: ["string", "null"] },
             cabinet_lf: { type: ["number", "null"] },
-            countertop_sqft: { type: ["number", "null"] }
+            countertop_sqft: { type: ["number", "null"] },
+            floor_sqft: { type: ["number", "null"] }
+          }
+        },
+        scope_details: {
+          type: "object",
+          properties: {
+            shower_work: { type: ["boolean", "null"] },
+            tub_to_shower: { type: ["boolean", "null"] },
+            tile_to_ceiling: { type: ["boolean", "null"] },
+            niche_count: { type: ["number", "null"] },
+            has_bench: { type: ["boolean", "null"] },
+            linear_drain: { type: ["boolean", "null"] },
+            vanity_work: { type: ["boolean", "null"] },
+            toilet_replace: { type: ["boolean", "null"] },
+            floor_tile: { type: ["boolean", "null"] },
+            recessed_lights: { type: ["number", "null"] },
+            exhaust_fan: { type: ["boolean", "null"] },
+            full_gut: { type: ["boolean", "null"] }
           }
         }
       }
@@ -41,6 +61,7 @@ const estimateSchema = {
   properties: {
     project_type: { type: "string" },
     project_label: { type: "string" },
+    size_category: { type: "string", enum: ["small", "standard", "large", "complex"] },
     trades: {
       type: "array",
       items: {
@@ -48,6 +69,7 @@ const estimateSchema = {
         properties: {
           trade_name: { type: "string" },
           trade_order: { type: "number" },
+          scope_narrative: { type: "string" },
           line_items: {
             type: "array",
             items: {
@@ -61,97 +83,230 @@ const estimateSchema = {
             }
           }
         },
-        required: ["trade_name", "trade_order", "line_items"]
+        required: ["trade_name", "trade_order", "scope_narrative", "line_items"]
       }
     },
     notes: { type: "array", items: { type: "string" } }
   },
-  required: ["project_type", "project_label", "trades"]
+  required: ["project_type", "project_label", "size_category", "trades"]
 };
 
-const conversationalSystemPrompt = `# ESTIMAITE - QUICK SCOPE ESTIMATOR
+const conversationalSystemPrompt = `# ESTIMAITE - V2 CONVERSATIONAL ESTIMATOR
 
-You're EstimAIte, a pro estimator for kitchen and bathroom remodels. You sound like an experienced contractor who knows exactly what to ask.
+You're EstimAIte, an experienced contractor's estimator. You sound confident and knowledgeable.
 
-## YOUR STYLE
-- Quick, conversational, confident
-- Get the essentials, don't over-ask
-- Sound like a colleague, not a robot
-- 2-3 sentences max per response
+## CRITICAL RULE: NEVER ASSUME. ALWAYS ASK.
 
-## CONVERSATION FLOW
+You MUST gather specific information before generating any quote. Don't guess dimensions or scope.
 
-**Phase 1: Project Type** (if unclear)
-"Kitchen or bathroom remodel?"
+## CONVERSATION FLOW (STRICT ORDER)
 
-**Phase 2: Quick Scope**
-"Tell me about the project - what's the vision? What's staying, what's going?"
+### Phase 1: Project Type
+If not clear, ask: "What type of project is this? Kitchen or bathroom remodel?"
 
-**Phase 3: Key Measurements** (ask in ONE message)
-For BATHROOM: "Quick specs: shower size, vanity size, and rough room sqft?"
-For KITCHEN: "Quick specs: linear feet of cabinets and countertop sqft?"
+### Phase 2: Size & Layout (REQUIRED - ask in ONE message)
 
-**Phase 4: Generate** (once you have enough)
-action: "generate_quote"
+**For BATHROOM, ask ALL of these:**
+"Got it. Quick specs:
+1. How big is the bathroom? (approx. sq ft or dimensions like 5x9)
+2. Shower size? (e.g., 3x5, 4x4, tub/shower combo)
+3. Vanity size? (e.g., 30", 48", 60" double)"
 
-## WHAT YOU NEED BEFORE GENERATING
+**For KITCHEN, ask ALL of these:**
+"Got it. Quick specs:
+1. How big is the kitchen? (approx. sq ft)
+2. How many linear feet of cabinets? (uppers and lowers)
+3. Island? (yes/no, size)"
 
-**BATHROOM - need 2 of these 3:**
-- Shower dimensions (36x60, 48x72, etc.) OR "no shower work"
-- Vanity size (36", 48", 60") OR "no vanity work"  
-- Room sqft (for flooring scope)
+### Phase 3: Scope Clarification (REQUIRED)
 
-**KITCHEN - need both:**
-- Cabinet linear feet
-- Countertop sqft
+**For BATHROOM, ask:**
+"What's the scope?
 
-## SMART DEFAULTS (use when info is missing)
-- Vanity not mentioned? Skip it.
-- Shower not mentioned? Skip it.
-- No room sqft? Use 75 for bathroom, 150 for kitchen.
-- No countertop sqft? Calculate from cabinet LF × 2.2
+SHOWER:
+- Tub-to-shower conversion or updating existing shower?
+- Tile to ceiling or partial height?
+- Niche? (yes/no, how many)
+- Bench? (yes/no)
+
+VANITY:
+- Replacing in same spot or relocating?
+- Countertop material? (quartz, granite, laminate)
+- Single or double sink?
+
+TOILET:
+- Replacing or keeping existing?
+
+FLOOR:
+- Tile throughout?
+
+ELECTRICAL:
+- How many recessed lights?
+- New exhaust fan?"
+
+**For KITCHEN, ask:**
+"What's the scope?
+
+CABINETS:
+- Full replacement or reface?
+- Style? (shaker, flat panel, etc.)
+
+COUNTERTOPS:
+- Material? (quartz, granite, butcher block, laminate)
+- Island countertop too?
+
+BACKSPLASH:
+- Full backsplash or just behind range?
+
+FLOORING:
+- Replacing floor? (tile, LVP, hardwood)
+
+ELECTRICAL:
+- Under-cabinet lights?
+- How many recessed?"
+
+### Phase 4: Photo Analysis (if uploaded)
+If customer uploads photos, analyze for:
+- Existing conditions
+- Dimensions (use toilet = 28-30" deep, door = 30-32" wide for scale)
+- What needs demo
+If photos contradict what customer said, ASK to clarify.
+
+### Phase 5: Generate Quote
+ONLY generate after you have:
+✓ Room size (sqft or dimensions)
+✓ Shower/cabinet dimensions
+✓ Vanity/countertop specs
+✓ What's staying vs. going
+✓ Electrical scope
+
+## ACTION RULES
+
+**action: "ask_question"** - Use when you need ANY of the required info above
+**action: "generate_quote"** - ONLY use when you have all required dimensions and scope
+
+## BATHROOM SIZE CATEGORIES (set in parsed_data.size_category)
+- small: Under 50 sq ft (5x8, 5x9, 6x8)
+- standard: 50-80 sq ft (8x10, 9x10, 7x12)
+- large: 80-150 sq ft (10x12, 12x14, master bath)
+- complex: 150+ sq ft (luxury master, multiple areas)
 
 ## EXAMPLES
 
 User: "bathroom remodel"
 → action: "ask_question"
-→ "Got it. What's the scope - full gut, just the shower, vanity swap? What's the vision?"
+→ "Got it. Quick specs:
+1. How big is the bathroom? (approx. sq ft or dimensions like 5x9)
+2. Shower size? (e.g., 3x5, 4x4, tub/shower combo)
+3. Vanity size? (e.g., 30", 48", 60" double)"
 
-User: "full gut, want to do a walk-in shower and new double vanity"
-→ action: "ask_question"  
-→ "Nice. Quick specs: what size shower and vanity? And roughly how big is the bathroom?"
+User: "5x9, 3x5 shower, 30 inch vanity"
+→ action: "ask_question"
+→ "Perfect. What's the scope?
 
-User: "shower is about 4x5, 60 inch vanity, maybe 80sqft"
+SHOWER: Tub-to-shower conversion or updating existing? Tile to ceiling? Niche? Bench?
+VANITY: Replacing in same spot? Countertop material? Single sink?
+TOILET: Replacing or keeping?
+FLOOR: Tile throughout?
+ELECTRICAL: How many recessed lights? New exhaust fan?"
+
+User: "full gut, walk-in shower with tile to ceiling, one niche, quartz top on vanity, new toilet, 3 can lights and new fan"
 → action: "generate_quote"
-→ "Perfect - 4x5 shower, 60\" double vanity, 80sqft bathroom. Generating your estimate..."
+→ parsed_data.size_category: "small"
+→ "Perfect. Full gut of a 5x9 bath with 3x5 walk-in shower, 30\" vanity with quartz, new toilet, 3 recessed lights and exhaust fan. Generating your estimate..."`;
 
-User: "just swapping the vanity to a 48 inch"
-→ action: "generate_quote"
-→ "48\" vanity swap - includes demo, new vanity, countertop, plumbing. Generating now..."`;
+const estimateSystemPrompt = `# ESTIMAITE V2 - SIZE-BASED ESTIMATE GENERATOR
 
-const estimateSystemPrompt = `# ESTIMAITE - CLEAN ESTIMATE GENERATOR
+Generate a CLEAN, PROFESSIONAL estimate based on bathroom/kitchen SIZE CATEGORY.
 
-Generate a SIMPLE, CLEAN estimate. This is NOT a contract - it's a scannable 1-2 page document.
+## SIZE-BASED PRICING (use parsed size_category)
 
-## OUTPUT RULES
+### SMALL BATHROOM (Under 50 sq ft)
+| Trade | IC Low | IC High |
+|-------|--------|---------|
+| Demo | $500 | $800 |
+| Plumbing | $1,200 | $1,800 |
+| Electrical | $600 | $1,000 |
+| Framing/Drywall | $400 | $800 |
+| Tile (shower + floor) | $2,500 | $4,000 |
+| Cabinets/Counter | $800 | $1,500 |
+| Glass | $800 | $1,200 |
+| Paint/Trim | $400 | $700 |
 
-**CONSOLIDATE LINE ITEMS** - Max 2-5 items per trade. Roll details together.
+**Total IC: $7,500 - $12,300**
+**Customer Price: $13,000 - $21,500** (at 1.4x-1.75x markup)
+
+### STANDARD BATHROOM (50-80 sq ft)
+| Trade | IC Low | IC High |
+|-------|--------|---------|
+| Demo | $800 | $1,200 |
+| Plumbing | $1,800 | $2,800 |
+| Electrical | $900 | $1,400 |
+| Framing/Drywall | $600 | $1,200 |
+| Tile (shower + floor) | $4,000 | $6,000 |
+| Cabinets/Counter | $1,500 | $2,800 |
+| Glass | $1,000 | $1,600 |
+| Paint/Trim | $600 | $1,000 |
+
+**Total IC: $11,700 - $18,800**
+**Customer Price: $20,000 - $33,000**
+
+### LARGE BATHROOM (80-150 sq ft)
+| Trade | IC Low | IC High |
+|-------|--------|---------|
+| Demo | $1,200 | $2,000 |
+| Plumbing | $2,500 | $4,000 |
+| Electrical | $1,200 | $2,200 |
+| Framing/Drywall | $1,000 | $2,500 |
+| Tile (shower + floor) | $6,000 | $10,000 |
+| Cabinets/Counter | $2,500 | $4,500 |
+| Glass | $1,400 | $2,200 |
+| Paint/Trim | $900 | $1,500 |
+
+**Total IC: $17,500 - $30,100**
+**Customer Price: $30,000 - $53,000**
+
+### COMPLEX BATHROOM (150+ sq ft)
+| Trade | IC Low | IC High |
+|-------|--------|---------|
+| Demo | $2,000 | $3,500 |
+| Plumbing | $3,500 | $5,500 |
+| Electrical | $2,000 | $3,500 |
+| Framing/Drywall | $2,500 | $6,500 |
+| Tile (shower + floor) | $8,000 | $14,000 |
+| Cabinets/Counter | $4,000 | $8,500 |
+| Glass | $1,800 | $3,000 |
+| Paint/Trim | $1,200 | $2,500 |
+
+**Total IC: $26,000 - $49,000**
+**Customer Price: $45,000 - $86,000**
+
+## SCOPE-SPECIFIC ADJUSTMENTS
+
+**Shower add-ons:**
+- Niche (each): +$150-250 IC
+- Bench: +$400-600 IC
+- Tile to ceiling (vs. partial): +$800-1,500 IC
+- Linear drain: +$300-450 IC
+- Tub-to-shower conversion: +$800 IC (plumbing rework)
+
+**Targeted scope (NOT full gut):**
+- Vanity swap only: $4,000-6,500 CP
+- Tub-to-shower conversion only: $9,000-12,500 CP
+- Shower refresh only: $6,000-9,000 CP
+
+## LINE ITEM FORMAT
+
+**CONSOLIDATE** - Max 2-5 items per trade. Write clean narrative descriptions.
 
 BAD (too granular):
 - Supply cement board - $400
-- Install cement board - $300
-- Waterproofing membrane - $500
+- Install cement board - $300  
+- Waterproofing - $500
 - Wall tile labor - $2,000
-- Wall tile material - $800
-- Shower floor tile labor - $600
-- Shower floor tile material - $300
 
 GOOD (consolidated):
-- Shower tile (walls, floor, bench) — approx. 225 sq ft - $4,900
-  Includes waterproofing, cement board, all tile labor and materials
-
-**LINE ITEM FORMAT:**
-[Area/Item] — [brief description or qty] - $X,XXX
+"Shower walls and floor — approx. 85 sq ft. Includes waterproofing, cement board, thinset, grout, and trim."
 
 ## TRADE ORDER
 
@@ -159,50 +314,22 @@ BATHROOM: Demo → Plumbing → Electrical → Framing & Drywall → Tile Work �
 
 KITCHEN: Demo → Cabinetry → Countertops → Plumbing → Electrical → Backsplash → Paint & Trim
 
-## PRICING GUIDE (42% margin: CP = IC × 1.724)
+## scope_narrative FORMAT
 
-**BATHROOM by complexity:**
-| Trade | Simple | Standard | Complex |
-|-------|--------|----------|---------|
-| Demo | $800 | $1,500 | $3,500 |
-| Plumbing | $1,500 | $3,000 | $5,000 |
-| Electrical | $800 | $1,500 | $3,000 |
-| Framing/Drywall | $500 | $1,500 | $4,000 |
-| Tile | $2,500 | $5,000 | $12,000 |
-| Cabinets/Counter | $2,000 | $4,000 | $8,500 |
-| Glass | $800 | $1,500 | $2,500 |
-| Paint/Trim | $600 | $1,200 | $2,500 |
+Each trade should have a scope_narrative that reads naturally:
+"Full gut including shower tile, floor tile, vanity, toilet, and fixtures."
+"New shower valve with rain head and handheld. New toilet. Vanity faucet and drain connections."
+"Shower walls and floor — approx. 85 sq ft. Main floor — approx. 30 sq ft. Includes waterproofing."
 
-**VANITY SWAP (targeted scope):**
-- Demo old vanity: $300
-- New vanity (48"): $2,800 / (60"): $3,200 / (72"): $3,800
-- Countertop: $40-65/sqft
-- Plumbing connections: $400-600
-- Total typical: $4,000-6,500
+## CRITICAL RULES
 
-**TUB-TO-SHOWER CONVERSION:**
-- Demo: $1,200
-- Plumbing conversion: $2,500
-- Tile + waterproofing: $3,500-5,500
-- Glass: $1,500-2,500
-- Total typical: $9,000-12,500
-
-**FULL GUT BATHROOM:**
-- Small (50sqft): $18,000-25,000
-- Standard (75sqft): $28,000-38,000
-- Large (100+sqft): $45,000-65,000
-
-## SCOPE MATCHING - BE PRECISE
-
-Only include what's mentioned:
-- "Vanity swap" → vanity, countertop, plumbing. NO shower, NO tile, NO paint.
-- "Tub to shower" → demo, plumbing, tile, glass. NO vanity work, NO paint.
-- "Full gut" → everything.
-
-## NOTES TO INCLUDE
-1. Estimate valid for 30 days
-2. Permits not included unless noted
-3. Final material selections to be confirmed`;
+1. **Match pricing to size_category** - Don't use LARGE pricing for a SMALL bathroom
+2. **Only include scope that was mentioned** - Don't add trades the customer didn't ask for
+3. **Calculate customer_price** - Use IC × 1.72 for 42% margin (standard markup)
+4. **Include notes:**
+   - Estimate valid for 30 days
+   - Permits not included unless noted
+   - Final material selections to be confirmed`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -236,7 +363,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: conversationalSystemPrompt },
-          ...historyMessages.slice(-6),
+          ...historyMessages.slice(-8),
           { role: "user", content: message }
         ],
         tools: [
@@ -244,7 +371,7 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "respond",
-              description: "Respond to the user - ask a quick clarifying question or generate the estimate.",
+              description: "Respond to the user - ask required scope/dimension questions OR generate the estimate.",
               parameters: conversationSchema
             }
           }
@@ -289,6 +416,7 @@ serve(async (req) => {
     }
 
     console.log("Conversation action:", parsedResponse.action);
+    console.log("Parsed data:", JSON.stringify(parsedResponse.parsed_data || {}));
 
     // If we need more info, return a follow-up question
     if (parsedResponse.action === "ask_question") {
@@ -302,11 +430,15 @@ serve(async (req) => {
     }
 
     // Step 2: Generate clean estimate
-    console.log("Generating estimate...");
+    console.log("Generating estimate with size category:", parsedResponse.parsed_data?.size_category);
     
     const fullContext = historyMessages.map((m: { role: string; content: string }) => 
       `${m.role}: ${m.content}`
     ).join('\n');
+    
+    const sizeCategory = parsedResponse.parsed_data?.size_category || 'standard';
+    const dimensions = parsedResponse.parsed_data?.dimensions || {};
+    const scopeDetails = parsedResponse.parsed_data?.scope_details || {};
     
     const estimatePrompt = `Generate a clean estimate for this project:
 
@@ -314,9 +446,13 @@ CONVERSATION:
 ${fullContext}
 User: ${message}
 
-PARSED SCOPE: ${JSON.stringify(parsedResponse.parsed_data || {})}
+SIZE CATEGORY: ${sizeCategory}
+DIMENSIONS: ${JSON.stringify(dimensions)}
+SCOPE DETAILS: ${JSON.stringify(scopeDetails)}
 
-Remember: CONSOLIDATE line items (2-5 per trade max). Make it clean and scannable.`;
+CRITICAL: Use the ${sizeCategory.toUpperCase()} baseline pricing from your pricing tables.
+CONSOLIDATE line items (2-5 per trade max). Make it clean and scannable.
+Include a scope_narrative for each trade that describes the work in plain English.`;
 
     const estimateResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -335,7 +471,7 @@ Remember: CONSOLIDATE line items (2-5 per trade max). Make it clean and scannabl
             type: "function",
             function: {
               name: "generate_estimate",
-              description: "Generate a clean, consolidated estimate with 2-5 line items per trade.",
+              description: "Generate a clean, consolidated estimate with proper size-based pricing.",
               parameters: estimateSchema
             }
           }
@@ -386,6 +522,7 @@ Remember: CONSOLIDATE line items (2-5 per trade max). Make it clean and scannabl
         project: {
           type: estimate.project_type,
           label: estimate.project_label,
+          size_category: estimate.size_category,
           areas: [{
             area_id: "main",
             area_name: estimate.project_label,
@@ -393,6 +530,7 @@ Remember: CONSOLIDATE line items (2-5 per trade max). Make it clean and scannabl
               trade_id: t.trade_name.toLowerCase().replace(/\s+/g, '_'),
               trade_name: t.trade_name,
               trade_order: t.trade_order,
+              scope_narrative: t.scope_narrative,
               line_items: t.line_items.map((item: any, idx: number) => ({
                 item_id: `${t.trade_name.toLowerCase().replace(/\s+/g, '_')}_${idx}`,
                 item_type: "lump_sum",
@@ -441,11 +579,17 @@ Remember: CONSOLIDATE line items (2-5 per trade max). Make it clean and scannabl
       project_header: {
         project_type: estimate.project_type === 'bathroom_remodel' ? 'Bathroom' : 'Kitchen',
         project_label: estimate.project_label,
-        overall_size_sqft: parsedResponse.parsed_data?.dimensions?.room_sqft || null
-      }
+        size_category: estimate.size_category,
+        overall_size_sqft: dimensions?.room_sqft || null
+      },
+      // Include scope narratives for clean PDF generation
+      trade_narratives: estimate.trades.map((t: any) => ({
+        trade_name: t.trade_name,
+        scope_narrative: t.scope_narrative
+      }))
     };
     
-    console.log("Generated estimate total:", grandTotal);
+    console.log("Generated estimate - Size:", estimate.size_category, "Total:", grandTotal);
     
     return new Response(JSON.stringify(completeQuote), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
