@@ -626,13 +626,30 @@ export default function EstimateDetail() {
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold font-display truncate">
               {(() => {
-                // Determine project type from estimate data
-                const payload = estimate.internal_json_payload as { quote?: { project?: { type?: string } } } | null;
-                const projectTypeFromPayload = payload?.quote?.project?.type;
+                // Determine project type from estimate data - check multiple sources
+                const payload = estimate.internal_json_payload as { 
+                  quote?: { project?: { type?: string } },
+                  project_header?: { project_type?: string }
+                } | null;
+                
+                // Try project_header first (most reliable), then quote.project.type
+                const projectTypeFromHeader = payload?.project_header?.project_type;
+                const projectTypeFromQuote = payload?.quote?.project?.type;
                 
                 let projectType = 'Remodel';
-                if (projectTypeFromPayload) {
-                  projectType = `${projectTypeFromPayload.charAt(0).toUpperCase()}${projectTypeFromPayload.slice(1)} Remodel`;
+                if (projectTypeFromHeader) {
+                  // project_header.project_type is already clean like "Bathroom" or "Kitchen"
+                  projectType = `${projectTypeFromHeader} Remodel`;
+                } else if (projectTypeFromQuote) {
+                  // Normalize project type (handle "bathroom", "bathroom_remodel", "Bathroom", etc.)
+                  const normalized = projectTypeFromQuote.toLowerCase().replace(/_remodel$/, '');
+                  if (normalized.includes('bathroom')) {
+                    projectType = 'Bathroom Remodel';
+                  } else if (normalized.includes('kitchen')) {
+                    projectType = 'Kitchen Remodel';
+                  } else {
+                    projectType = `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)} Remodel`;
+                  }
                 } else if (estimate.has_bathrooms && estimate.has_kitchen) {
                   projectType = 'Kitchen & Bathroom Remodel';
                 } else if (estimate.has_kitchen) {
