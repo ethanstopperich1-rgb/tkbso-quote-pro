@@ -625,7 +625,35 @@ export default function EstimateDetail() {
           </Link>
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold font-display truncate">
-              {estimate.job_label || estimate.client_name || 'Untitled Estimate'}
+              {(() => {
+                // Determine project type from estimate data
+                const payload = estimate.internal_json_payload as { quote?: { project?: { type?: string } } } | null;
+                const projectTypeFromPayload = payload?.quote?.project?.type;
+                
+                let projectType = 'Remodel';
+                if (projectTypeFromPayload) {
+                  projectType = `${projectTypeFromPayload.charAt(0).toUpperCase()}${projectTypeFromPayload.slice(1)} Remodel`;
+                } else if (estimate.has_bathrooms && estimate.has_kitchen) {
+                  projectType = 'Kitchen & Bathroom Remodel';
+                } else if (estimate.has_kitchen) {
+                  projectType = 'Kitchen Remodel';
+                } else if (estimate.has_bathrooms) {
+                  projectType = 'Bathroom Remodel';
+                } else if (estimate.has_closets) {
+                  projectType = 'Closet Remodel';
+                }
+                
+                // If job_label is set and it's not a generic label, use it
+                if (estimate.job_label && !['Kitchen Remodel', 'Bathroom Remodel', 'Home Remodel'].includes(estimate.job_label)) {
+                  return estimate.job_label;
+                }
+                
+                // Show client name + project type, or just project type
+                if (estimate.client_name) {
+                  return `${estimate.client_name} - ${projectType}`;
+                }
+                return projectType;
+              })()}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Created {new Date(estimate.created_at).toLocaleDateString()}
