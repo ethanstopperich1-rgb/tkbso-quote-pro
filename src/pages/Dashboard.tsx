@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, DollarSign, FileText, TrendingUp, Clock } from "lucide-react";
+import { MessageSquare, DollarSign, FileText, TrendingUp, Clock, Sparkles, Lightbulb, X } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,7 @@ export default function Dashboard() {
     totalValue: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showTip, setShowTip] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -75,6 +76,31 @@ export default function Dashboard() {
           {contractor?.name || "Here's what's happening with your estimates this month."}
         </p>
       </div>
+
+      {/* Quick Tips Card - Show for new users */}
+      {recentEstimates.length < 3 && showTip && (
+        <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-200 mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Lightbulb className="h-5 w-5 text-cyan-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-900 mb-1">Pro Tip</h3>
+                <p className="text-sm text-slate-600">
+                  Upload photos from the job site and let AI extract dimensions automatically. It's like having a second set of eyes on every estimate.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowTip(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Action Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
@@ -171,11 +197,23 @@ export default function Dashboard() {
           {loading ? (
             <p className="text-muted-foreground text-sm py-4">Loading...</p>
           ) : recentEstimates.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4 text-sm">No estimates yet</p>
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-cyan-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <MessageSquare className="h-10 w-10 text-cyan-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Ready to create your first estimate?</h3>
+              <p className="text-slate-600 mb-6 max-w-sm mx-auto">
+                Our AI can generate a professional quote in under 3 minutes. Just describe the project or upload a photo.
+              </p>
               <Link to="/estimator">
-                <Button size="sm">Create Your First Quote</Button>
+                <Button className="bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] px-6 py-3 font-semibold">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Create Your First Estimate
+                </Button>
               </Link>
+              <p className="text-xs text-slate-500 mt-4">
+                Average time: 3 minutes • No templates needed
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-border">
