@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { Shield, Lock } from 'lucide-react';
+import { Shield, Lock, Check } from 'lucide-react';
+import { analytics, EVENTS } from '@/lib/analytics';
 
 const signupSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -41,6 +42,8 @@ export default function Signup() {
       return;
     }
     
+    analytics.track(EVENTS.SIGNUP_STARTED, { email });
+    
     setIsSubmitting(true);
     const { error } = await signUp(email, password);
     setIsSubmitting(false);
@@ -52,6 +55,7 @@ export default function Signup() {
         toast.error(error.message);
       }
     } else {
+      analytics.track(EVENTS.SIGNUP_COMPLETED, { email });
       toast.success('Account created! Let\'s set up your profile.');
       navigate('/onboarding');
     }
@@ -70,16 +74,30 @@ export default function Signup() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl flex items-center justify-center">
-              <span className="text-white text-3xl">✨</span>
-            </div>
+          <div className="inline-flex items-center gap-1 mb-4">
+            <span className="text-4xl font-bold text-white">Estim</span>
+            <span className="text-4xl font-bold text-[#00E5FF]">AI</span>
+            <span className="text-4xl font-bold text-white">te</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-white mb-2">
             Start Your Free Trial
           </h1>
           <p className="text-slate-400">
             No credit card required • 14 days free
+          </p>
+        </div>
+
+        {/* Social Proof */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <div className="flex -space-x-2">
+            {['MR', 'SJ', 'DT', 'KL'].map((initials, i) => (
+              <div key={i} className="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-800 flex items-center justify-center text-xs text-white font-semibold">
+                {initials}
+              </div>
+            ))}
+          </div>
+          <p className="text-slate-400 text-sm">
+            <span className="text-white font-semibold">500+</span> contractors already estimating faster
           </p>
         </div>
 
@@ -166,6 +184,24 @@ export default function Signup() {
             </svg>
             Continue with Google
           </Button>
+
+          {/* What You'll Get */}
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <p className="text-sm font-semibold text-slate-700 mb-3">Your free trial includes:</p>
+            <div className="space-y-2">
+              {[
+                'Unlimited estimates for 14 days',
+                'Photo-to-Quote AI analysis',
+                'Professional PDF proposals',
+                'Custom branding'
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Login Link */}
           <p className="text-center text-sm text-slate-600 mt-6">
