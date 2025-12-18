@@ -22,6 +22,7 @@ import { PricingEditCard } from '@/components/estimates/PricingEditCard';
 import { LineItemEditorCard } from '@/components/estimates/LineItemEditorCard';
 import { ProjectPhotosCard } from '@/components/estimates/ProjectPhotosCard';
 import { SendProposalDialog } from '@/components/estimates/SendProposalDialog';
+import { AdditionalsCard } from '@/components/estimates/AdditionalsCard';
 import { 
   ArrowLeft, 
   Download, 
@@ -698,6 +699,12 @@ export default function EstimateDetail() {
           <ClientInfoEditCard 
             estimate={estimate} 
             onUpdate={(updated) => setEstimate({ ...estimate, ...updated })} 
+          />
+
+          {/* Recommended Additionals */}
+          <AdditionalsCard 
+            estimate={estimate}
+            onUpdate={(updates) => setEstimate({ ...estimate, ...updates })}
           />
 
           {/* Activity Log Card */}
