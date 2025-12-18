@@ -1,9 +1,119 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// ============================================================
+// ZIP-BASED MARGIN CALCULATOR (INLINE)
+// ============================================================
+
+interface MarginResult {
+  margin_used: number;
+  margin_source: string;
+  base_margin: number;
+  zip_code_applied?: string;
+  rule_notes?: string;
+}
+
+/**
+ * Extract 5-digit zip code from address string
+ */
+function extractZipCode(address: string | null | undefined): string | null {
+  if (!address) return null;
+  const zipMatch = address.match(/\b\d{5}\b/);
+  return zipMatch ? zipMatch[0] : null;
+}
+
+/**
+ * Get margin for contractor based on zip code
+ */
+async function getMarginForZipCode(
+  supabase: any,
+  contractorId: string | null,
+  zipCode: string | null
+): Promise<MarginResult> {
+  const DEFAULT_MARGIN = 0.42;
+  
+  if (!contractorId) {
+    return {
+      margin_used: DEFAULT_MARGIN,
+      margin_source: 'Default (no contractor)',
+      base_margin: DEFAULT_MARGIN
+    };
+  }
+
+  try {
+    // Get active strategy with its zip rules
+    const { data: strategy, error: strategyError } = await supabase
+      .from('margin_strategies')
+      .select('*, zip_margin_rules(*)')
+      .eq('contractor_id', contractorId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (strategyError) {
+      console.error('Error fetching margin strategy:', strategyError);
+      return {
+        margin_used: DEFAULT_MARGIN,
+        margin_source: 'Default (error)',
+        base_margin: DEFAULT_MARGIN
+      };
+    }
+
+    if (!strategy) {
+      return {
+        margin_used: DEFAULT_MARGIN,
+        margin_source: 'Default (no strategy)',
+        base_margin: DEFAULT_MARGIN
+      };
+    }
+
+    // If no zip code, use base margin
+    if (!zipCode) {
+      return {
+        margin_used: strategy.base_margin,
+        margin_source: 'Base margin',
+        base_margin: strategy.base_margin
+      };
+    }
+
+    // Check for zip-specific override
+    const zipRules = strategy.zip_margin_rules || [];
+    const zipRule = zipRules.find((rule: any) => rule.zip_code === zipCode);
+
+    if (zipRule) {
+      return {
+        margin_used: zipRule.margin_override,
+        margin_source: `${zipCode} override`,
+        base_margin: strategy.base_margin,
+        zip_code_applied: zipCode,
+        rule_notes: zipRule.notes || undefined
+      };
+    }
+
+    // No override found, use base margin
+    return {
+      margin_used: strategy.base_margin,
+      margin_source: `Base margin (no override for ${zipCode})`,
+      base_margin: strategy.base_margin
+    };
+
+  } catch (error) {
+    console.error('Error getting margin:', error);
+    return {
+      margin_used: DEFAULT_MARGIN,
+      margin_source: 'Default (error)',
+      base_margin: DEFAULT_MARGIN
+    };
+  }
+}
+
+// ============================================================
+// SCHEMAS
+// ============================================================
 
 // Conversation response schema
 const conversationSchema = {
@@ -325,7 +435,7 @@ Each trade should have a scope_narrative that reads naturally:
 
 1. **Match pricing to size_category** - Don't use LARGE pricing for a SMALL bathroom
 2. **Only include scope that was mentioned** - Don't add trades the customer didn't ask for
-3. **Calculate customer_price** - Use IC × 1.72 for 42% margin (standard markup)
+3. **Return INTERNAL COSTS (IC) only** - The system will apply margin separately
 4. **Include notes:**
    - Estimate valid for 30 days
    - Permits not included unless noted
@@ -337,16 +447,29 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, conversation_history, customer, company } = await req.json();
+    const { message, context, conversation_history, customer, company, contractor_id } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Initialize Supabase client for margin lookup
+    const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY 
+      ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+      : null;
+
     console.log("Processing message:", message);
     console.log("Context:", JSON.stringify(context || {}));
+    console.log("Contractor ID:", contractor_id);
     
+    // Extract zip code from customer address for margin calculation
+    const customerAddress = customer?.address || customer?.property_address || context?.property_address || '';
+    const zipCode = extractZipCode(customerAddress);
+    console.log("Extracted zip code:", zipCode);
+
     const historyMessages = (conversation_history || []).map((msg: { role: string; content: string }) => ({
       role: msg.role,
       content: msg.content
@@ -429,7 +552,14 @@ serve(async (req) => {
       });
     }
 
-    // Step 2: Generate clean estimate
+    // Step 2: Get margin for this project
+    const marginResult = supabase 
+      ? await getMarginForZipCode(supabase, contractor_id, zipCode)
+      : { margin_used: 0.42, margin_source: 'Default (no DB)', base_margin: 0.42 };
+    
+    console.log("Margin result:", JSON.stringify(marginResult));
+
+    // Step 3: Generate clean estimate
     console.log("Generating estimate with size category:", parsedResponse.parsed_data?.size_category);
     
     const fullContext = historyMessages.map((m: { role: string; content: string }) => 
@@ -452,7 +582,8 @@ SCOPE DETAILS: ${JSON.stringify(scopeDetails)}
 
 CRITICAL: Use the ${sizeCategory.toUpperCase()} baseline pricing from your pricing tables.
 CONSOLIDATE line items (2-5 per trade max). Make it clean and scannable.
-Include a scope_narrative for each trade that describes the work in plain English.`;
+Include a scope_narrative for each trade that describes the work in plain English.
+Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
 
     const estimateResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -498,16 +629,26 @@ Include a scope_narrative for each trade that describes the work in plain Englis
       throw new Error("Invalid estimate JSON");
     }
     
-    // Calculate totals
-    let grandTotal = 0;
+    // Step 4: Calculate totals with margin applied
+    const marginMultiplier = 1 / (1 - marginResult.margin_used); // e.g., 42% margin = 1.724x
     let subtotalIC = 0;
+    let grandTotal = 0;
     
-    for (const trade of estimate.trades || []) {
-      for (const item of trade.line_items || []) {
-        grandTotal += item.customer_price || 0;
-        subtotalIC += item.internal_cost || 0;
-      }
-    }
+    // Apply margin to each line item and calculate totals
+    const tradesWithMargin = (estimate.trades || []).map((trade: any) => ({
+      ...trade,
+      line_items: (trade.line_items || []).map((item: any) => {
+        const ic = item.internal_cost || 0;
+        const cp = Math.round(ic * marginMultiplier);
+        subtotalIC += ic;
+        grandTotal += cp;
+        return {
+          ...item,
+          internal_cost: ic,
+          customer_price: cp
+        };
+      })
+    }));
     
     // Build response in expected format
     const completeQuote = {
@@ -526,7 +667,7 @@ Include a scope_narrative for each trade that describes the work in plain Englis
           areas: [{
             area_id: "main",
             area_name: estimate.project_label,
-            trades: estimate.trades.map((t: any) => ({
+            trades: tradesWithMargin.map((t: any) => ({
               trade_id: t.trade_name.toLowerCase().replace(/\s+/g, '_'),
               trade_name: t.trade_name,
               trade_order: t.trade_order,
@@ -561,8 +702,8 @@ Include a scope_narrative for each trade that describes the work in plain Englis
         total_cp: grandTotal,
         low_estimate: Math.round(grandTotal * 0.90),
         high_estimate: Math.round(grandTotal * 1.10),
-        overall_margin_percent: subtotalIC > 0 ? ((grandTotal - subtotalIC) / grandTotal) * 100 : 42,
-        line_items: estimate.trades.flatMap((trade: any) =>
+        overall_margin_percent: marginResult.margin_used * 100,
+        line_items: tradesWithMargin.flatMap((trade: any) =>
           trade.line_items.map((item: any) => ({
             category: trade.trade_name,
             task_description: item.description,
@@ -572,7 +713,7 @@ Include a scope_narrative for each trade that describes the work in plain Englis
             cp_per_unit: item.customer_price,
             ic_total: item.internal_cost,
             cp_total: item.customer_price,
-            margin_percent: item.internal_cost > 0 ? ((item.customer_price - item.internal_cost) / item.customer_price) * 100 : 42
+            margin_percent: marginResult.margin_used * 100
           }))
         )
       },
@@ -584,13 +725,21 @@ Include a scope_narrative for each trade that describes the work in plain Englis
         overall_size_sqft: dimensions?.room_sqft || null
       },
       // Include scope narratives for clean PDF generation
-      trade_narratives: estimate.trades.map((t: any) => ({
+      trade_narratives: tradesWithMargin.map((t: any) => ({
         trade_name: t.trade_name,
         scope_narrative: t.scope_narrative
-      }))
+      })),
+      // NEW: Margin info for display
+      margin_info: {
+        margin_percentage: Math.round(marginResult.margin_used * 100),
+        margin_source: marginResult.margin_source,
+        base_margin: Math.round(marginResult.base_margin * 100),
+        zip_code: marginResult.zip_code_applied || null,
+        notes: marginResult.rule_notes || null
+      }
     };
     
-    console.log("Generated estimate - Size:", estimate.size_category, "Total:", grandTotal);
+    console.log("Generated estimate - Size:", estimate.size_category, "Total:", grandTotal, "Margin:", marginResult.margin_used);
     
     return new Response(JSON.stringify(completeQuote), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
