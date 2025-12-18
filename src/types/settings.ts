@@ -11,6 +11,7 @@ export interface CompanyProfile {
   zip: string;
   website: string;
   preferredContact: 'email' | 'phone' | 'text';
+  sendingDomain?: string; // Verified Resend domain for sending emails to anyone
 }
 
 export interface Branding {
@@ -87,6 +88,7 @@ export const defaultSettings: ContractorSettings = {
     zip: '',
     website: '',
     preferredContact: 'email',
+    sendingDomain: '',
   },
   branding: {
     logoUrl: '',

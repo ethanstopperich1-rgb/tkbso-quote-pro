@@ -19,6 +19,7 @@ interface SendProposalRequest {
   investmentAmount: string;
   pdfBase64: string;
   pdfFilename: string;
+  sendingDomain?: string; // User's verified domain for sending
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -39,11 +40,22 @@ const handler = async (req: Request): Promise<Response> => {
       investmentAmount,
       pdfBase64,
       pdfFilename,
+      sendingDomain,
     }: SendProposalRequest = await req.json();
 
     console.log("Sending proposal email to:", to);
     console.log("From contractor:", contractorName);
     console.log("Project:", projectLabel);
+    console.log("Sending domain:", sendingDomain || "using default resend.dev");
+
+    // Determine the from address
+    // If user has a verified sending domain, use it. Otherwise fall back to resend.dev test domain
+    // NOTE: resend.dev test domain only works for sending to the verified account email
+    const fromEmail = sendingDomain 
+      ? `${contractorName} <noreply@${sendingDomain}>`
+      : `${contractorName} <onboarding@resend.dev>`;
+
+    console.log("From email:", fromEmail);
 
     // Convert base64 to buffer for attachment
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
@@ -56,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: `${contractorName} <onboarding@resend.dev>`,
+        from: fromEmail,
         to: [to],
         subject: `Your ${projectLabel} Proposal from ${contractorName}`,
         html: `

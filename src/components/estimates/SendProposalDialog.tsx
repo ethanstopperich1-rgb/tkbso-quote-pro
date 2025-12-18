@@ -18,7 +18,8 @@ import { SimpleProposalPdf } from '@/components/pdf/SimpleProposalPdf';
 import { extractPassthroughLineItems, calculatePassthroughTotal } from '@/lib/estimate-passthrough';
 import { Estimate, PricingConfig, Contractor } from '@/types/database';
 import { formatCurrency } from '@/lib/pricing-calculator';
-import { Send, RefreshCw, Mail, FileText } from 'lucide-react';
+import { Send, RefreshCw, Mail, FileText, AlertTriangle } from 'lucide-react';
+import { ContractorSettings, defaultSettings } from '@/types/settings';
 
 interface SendProposalDialogProps {
   open: boolean;
@@ -44,6 +45,10 @@ export function SendProposalDialog({
   const [customMessage, setCustomMessage] = useState(
     `Thank you for the opportunity to provide you with this proposal for your ${estimate.job_label || 'remodeling project'}.\n\nWe've carefully reviewed your project requirements and are excited to help bring your vision to life. This proposal includes a detailed breakdown of the work to be performed.`
   );
+
+  // Get contractor settings
+  const settings: ContractorSettings = (contractor.settings as ContractorSettings) || defaultSettings;
+  const sendingDomain = settings.companyProfile?.sendingDomain;
 
   const handleSend = async () => {
     if (!email) {
@@ -104,6 +109,7 @@ export function SendProposalDialog({
           investmentAmount: formatCurrency(selectedPrice),
           pdfBase64,
           pdfFilename,
+          sendingDomain, // Pass verified domain for sending to any email
         },
       });
 
@@ -141,6 +147,20 @@ export function SendProposalDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Warning if no sending domain */}
+          {!sendingDomain && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-amber-800">Email Sending Limited</p>
+                <p className="text-amber-700 mt-1">
+                  Without a verified sending domain, proposals can only be sent to your registered email. 
+                  <a href="/settings" className="text-amber-800 underline ml-1">Add a sending domain in Settings</a> to send to any client.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Proposal Summary */}
           <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
             <FileText className="h-8 w-8 text-slate-400" />
