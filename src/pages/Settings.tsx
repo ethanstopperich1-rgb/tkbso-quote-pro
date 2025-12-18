@@ -3,18 +3,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Save, X, Building2, Palette, FileCheck, Shield, ChevronRight } from 'lucide-react';
+import { RefreshCw, Save, X, Building2, Palette, FileCheck, Shield, ChevronRight, DollarSign } from 'lucide-react';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
 import { CompanyProfileCard } from '@/components/settings/CompanyProfileCard';
 import { PaymentTermsCard } from '@/components/settings/PaymentTermsCard';
 import { BrandingCard } from '@/components/settings/BrandingCard';
 import { LicensesCard } from '@/components/settings/LicensesCard';
 import { InsuranceCard } from '@/components/settings/InsuranceCard';
+import { MarginStrategyCard } from '@/components/settings/MarginStrategyCard';
 import { cn } from '@/lib/utils';
 
 const tabs = [
   { id: 'company', label: 'Company Profile', icon: Building2 },
   { id: 'branding', label: 'Branding', icon: Palette },
+  { id: 'margins', label: 'Margin Strategy', icon: DollarSign },
   { id: 'licenses', label: 'Licenses', icon: FileCheck },
   { id: 'insurance', label: 'Insurance', icon: Shield },
 ];
@@ -208,6 +210,10 @@ export default function Settings() {
                 data={settings.licenses}
                 onChange={(value) => updateSettings('licenses', value)}
               />
+            )}
+
+            {activeTab === 'margins' && contractor?.id && (
+              <MarginStrategyCard contractorId={contractor.id} />
             )}
 
             {activeTab === 'insurance' && (
