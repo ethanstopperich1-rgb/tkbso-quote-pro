@@ -93,7 +93,7 @@ function parseDimensionsFromLabel(label: string): { width: number; length: numbe
   return null;
 }
 
-// Calculate wall tile square footage
+// Calculate wall tile square footage (with 12% waste factor)
 function calculateWallTileSqft(dims: { width: number; length: number }, ceilingHeight: number = 96): number {
   const widthFt = dims.width / 12;
   const lengthFt = dims.length / 12;
@@ -103,19 +103,28 @@ function calculateWallTileSqft(dims: { width: number; length: number }, ceilingH
   const sideWall1 = widthFt * heightFt;
   const sideWall2 = widthFt * heightFt;
   
-  const totalWallSqft = (backWall + sideWall1 + sideWall2) * 0.85;
+  // Total with 12% waste factor (includes cuts, waste, overage)
+  const totalWallSqft = (backWall + sideWall1 + sideWall2) * 1.12;
   
-  return Math.ceil(totalWallSqft);
+  return Math.round(totalWallSqft);
 }
 
-// Calculate shower floor square footage
+// Calculate shower floor square footage (with 18% waste for mosaic tile)
 function calculateShowerFloorSqft(dims: { width: number; length: number }): number {
   const widthFt = dims.width / 12;
   const lengthFt = dims.length / 12;
   
-  const floorSqft = (widthFt * lengthFt) * 1.1;
+  // 18% waste factor for mosaic/smaller shower floor tile
+  const floorSqft = (widthFt * lengthFt) * 1.18;
   
-  return Math.ceil(floorSqft);
+  return Math.round(floorSqft);
+}
+
+// Check if item is tile-related
+function isTileLineItem(itemName: string): boolean {
+  const name = itemName.toLowerCase();
+  return name.includes('tile') || name.includes('waterproof') || 
+         name.includes('shower wall') || name.includes('shower floor');
 }
 
 // Get additionals from estimate
@@ -377,14 +386,10 @@ export async function generateProposalWord({
     const subtotal = Math.round(calculateSubtotal(roomItems) * scaleFactor);
     
     // Check for tile work and dimensions
-    const hasTile = roomItems.some(item => 
-      item.name.toLowerCase().includes('tile') || 
-      item.name.toLowerCase().includes('waterproof')
-    );
+    const hasTile = roomItems.some(item => isTileLineItem(item.name));
     const dims = parseDimensionsFromLabel(roomLabel);
     const wallTileSqft = dims && hasTile ? calculateWallTileSqft(dims) : null;
     const showerFloorSqft = dims && hasTile ? calculateShowerFloorSqft(dims) : null;
-    const totalTileSqft = wallTileSqft && showerFloorSqft ? wallTileSqft + showerFloorSqft : null;
     
     // Room header
     children.push(
@@ -407,64 +412,42 @@ export async function generateProposalWord({
       })
     );
 
-    // Bullet items (NO PRICES)
+    // Process items - consolidate tile items with inline sqft
+    let hasAddedTileDescription = false;
+    
     for (const item of roomItems) {
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({ text: `• ${item.name}`, size: 18, color: '475569' }),
-          ],
-          indent: { left: convertInchesToTwip(0.2) },
-          spacing: { after: 50 },
-        })
-      );
-    }
-
-    // Square footage breakdown (if applicable)
-    if (totalTileSqft) {
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({ text: 'Square Footage Breakdown', bold: true, size: 16, color: '64748b' }),
-          ],
-          shading: { fill: 'f8fafc' },
-          spacing: { before: 100, after: 50 },
-        })
-      );
+      const itemIsTile = isTileLineItem(item.name);
       
-      if (wallTileSqft) {
+      // For tile items, create consolidated description with inline sqft
+      if (itemIsTile && hasTile && wallTileSqft && !hasAddedTileDescription) {
+        const bathroomName = displayLabel.replace(/\s*\([^)]*\)\s*$/, '').trim();
+        const consolidatedTileDesc = `${bathroomName}: Large format porcelain(24"x48" or 36"x36") shower wall tile to 96" ceiling (${wallTileSqft} sqft), mosaic shower floor tile (${showerFloorSqft} sqft), + waterproofing and 1 niche`;
+        
         children.push(
           new Paragraph({
             children: [
-              new TextRun({ text: `  Wall Tile (3 walls to 96"): ${wallTileSqft} sqft`, size: 16, color: '475569' }),
+              new TextRun({ text: `• ${consolidatedTileDesc}`, size: 18, color: '475569' }),
             ],
-            shading: { fill: 'f8fafc' },
-            spacing: { after: 30 },
+            indent: { left: convertInchesToTwip(0.2) },
+            spacing: { after: 50 },
           })
         );
-      }
-      
-      if (showerFloorSqft) {
+        hasAddedTileDescription = true;
+      } else if (itemIsTile && hasAddedTileDescription) {
+        // Skip additional tile line items since we consolidated
+        continue;
+      } else {
+        // Non-tile items pass through normally
         children.push(
           new Paragraph({
             children: [
-              new TextRun({ text: `  Shower Floor Tile: ${showerFloorSqft} sqft`, size: 16, color: '475569' }),
+              new TextRun({ text: `• ${item.name}`, size: 18, color: '475569' }),
             ],
-            shading: { fill: 'f8fafc' },
-            spacing: { after: 30 },
+            indent: { left: convertInchesToTwip(0.2) },
+            spacing: { after: 50 },
           })
         );
       }
-      
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({ text: `  Total Tile Coverage: ${totalTileSqft} sqft`, bold: true, size: 16, color: '1e293b' }),
-          ],
-          shading: { fill: 'f8fafc' },
-          spacing: { after: 100 },
-        })
-      );
     }
 
     // Dual pricing for room (if enabled)
@@ -476,7 +459,6 @@ export async function generateProposalWord({
         new Paragraph({
           children: [
             new TextRun({ text: `Market: ${formatCurrency(roomMarketPrice)}`, size: 18, color: '94a3b8', strike: true }),
-            new TextRun({ text: `  Your Price: ${formatCurrency(subtotal)}`, bold: true, size: 20, color: '1e293b' }),
             new TextRun({ text: `  Save ${formatCurrency(roomSavings)}`, size: 16, color: '10b981' }),
           ],
           alignment: AlignmentType.RIGHT,
