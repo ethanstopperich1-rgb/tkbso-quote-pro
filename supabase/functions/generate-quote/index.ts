@@ -115,7 +115,7 @@ async function getMarginForZipCode(
 // SCHEMAS
 // ============================================================
 
-// Conversation response schema
+// Conversation response schema - now supports multiple rooms
 const conversationSchema = {
   type: "object",
   properties: {
@@ -130,6 +130,7 @@ const conversationSchema = {
         project_type: { type: ["string", "null"] },
         size_category: { type: ["string", "null"], enum: ["small", "standard", "large", "complex", null] },
         scope_summary: { type: ["string", "null"] },
+        // Single room dimensions (for backwards compatibility)
         dimensions: {
           type: "object",
           properties: {
@@ -140,6 +141,62 @@ const conversationSchema = {
             cabinet_lf: { type: ["number", "null"] },
             countertop_sqft: { type: ["number", "null"] },
             floor_sqft: { type: ["number", "null"] }
+          }
+        },
+        // Multi-room support - array of bathrooms
+        bathrooms: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              label: { type: "string" },
+              room_sqft: { type: ["number", "null"] },
+              room_dims: { type: ["string", "null"] },
+              shower_dims: { type: ["string", "null"] },
+              shower_sqft: { type: ["number", "null"] },
+              vanity_size: { type: ["string", "null"] },
+              scope: {
+                type: "object",
+                properties: {
+                  full_gut: { type: ["boolean", "null"] },
+                  tub_to_shower: { type: ["boolean", "null"] },
+                  tile_to_ceiling: { type: ["boolean", "null"] },
+                  ceiling_height: { type: ["string", "null"] },
+                  niche_count: { type: ["number", "null"] },
+                  has_bench: { type: ["boolean", "null"] },
+                  zero_entry: { type: ["boolean", "null"] },
+                  linear_drain: { type: ["boolean", "null"] },
+                  vanity_work: { type: ["boolean", "null"] },
+                  toilet_replace: { type: ["boolean", "null"] },
+                  floor_tile: { type: ["boolean", "null"] }
+                }
+              }
+            }
+          }
+        },
+        // Multi-room support - array of kitchens
+        kitchens: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              label: { type: "string" },
+              room_sqft: { type: ["number", "null"] },
+              cabinet_lf: { type: ["number", "null"] },
+              has_island: { type: ["boolean", "null"] },
+              scope: {
+                type: "object",
+                properties: {
+                  full_gut: { type: ["boolean", "null"] },
+                  cabinet_replacement: { type: ["boolean", "null"] },
+                  countertop_material: { type: ["string", "null"] },
+                  backsplash: { type: ["boolean", "null"] },
+                  floor_replacement: { type: ["boolean", "null"] }
+                }
+              }
+            }
           }
         },
         scope_details: {
@@ -165,13 +222,14 @@ const conversationSchema = {
   required: ["action", "response_text"]
 };
 
-// Clean estimate output schema - CONSOLIDATED line items
+// Clean estimate output schema - supports room-specific line items
 const estimateSchema = {
   type: "object",
   properties: {
     project_type: { type: "string" },
     project_label: { type: "string" },
     size_category: { type: "string", enum: ["small", "standard", "large", "complex"] },
+    room_count: { type: "number" },
     trades: {
       type: "array",
       items: {
@@ -185,6 +243,7 @@ const estimateSchema = {
             items: {
               type: "object",
               properties: {
+                room_label: { type: ["string", "null"] },
                 description: { type: "string" },
                 internal_cost: { type: "number" },
                 customer_price: { type: "number" }
@@ -201,7 +260,11 @@ const estimateSchema = {
   required: ["project_type", "project_label", "size_category", "trades"]
 };
 
-const conversationalSystemPrompt = `# ESTIMAITE - V2 CONVERSATIONAL ESTIMATOR
+// ============================================================
+// CONVERSATIONAL SYSTEM PROMPT - V3 WITH MULTI-ROOM SUPPORT
+// ============================================================
+
+const conversationalSystemPrompt = `# ESTIMAITE - V3 CONVERSATIONAL ESTIMATOR
 
 You're EstimAIte, an experienced contractor's estimator. You sound confident and knowledgeable.
 
@@ -209,237 +272,269 @@ You're EstimAIte, an experienced contractor's estimator. You sound confident and
 
 You MUST gather specific information before generating any quote. Don't guess dimensions or scope.
 
+---
+
+## HANDLING MULTIPLE ROOMS (CRITICAL)
+
+When a user mentions multiple bathrooms or kitchens (e.g., "3 bathrooms", "2 master baths and a guest bath"), you MUST:
+
+### Step 1: Clarify Scope Per Room
+Ask: "Got it, [NUMBER] bathrooms. Are they all the same scope, or do I need details for each one separately?"
+
+### Step 2: Gather Dimensions Per Room
+For EACH bathroom, get:
+- Room size / shower dimensions
+- Vanity size
+- Unique features (niches, benches, zero-entry)
+
+**Example Flow:**
+User: "3 bathrooms"
+AI: "Got it, 3 bathrooms. Are they all identical, or different scopes?"
+
+User: "2 are the same, third is bigger"
+AI: "Perfect. Let's start with the 2 that are the same:
+• Shower/tub size? (e.g., 31x59 tub, 3x5 shower)
+• What's the scope? (tub-to-shower conversion, tile to ceiling, etc.)"
+
+[Get details]
+
+AI: "Great. Now for the third larger bathroom:
+• Shower/tub size?
+• Any different features? (zero-entry, bench, bigger niche?)"
+
+### Step 3: Track in parsed_data
+Store each bathroom separately in the "bathrooms" array:
+{
+  "bathrooms": [
+    { "id": "bath_1", "label": "Guest Bath 1", "shower_dims": "31x59", "scope": { "tub_to_shower": true, "tile_to_ceiling": true, "ceiling_height": "96", "niche_count": 1 } },
+    { "id": "bath_2", "label": "Guest Bath 2", "shower_dims": "31x59", "scope": { "tub_to_shower": true, "tile_to_ceiling": true, "ceiling_height": "96", "niche_count": 1 } },
+    { "id": "bath_3", "label": "Master Bath", "shower_dims": "54x40", "scope": { "tub_to_shower": true, "tile_to_ceiling": true, "ceiling_height": "96", "niche_count": 1, "zero_entry": true } }
+  ]
+}
+
+### Step 4: Generate Separate Estimates
+When action = "generate_quote" with multiple bathrooms, the estimate generator will create SEPARATE line items for EACH bathroom.
+
+---
+
 ## CONVERSATION FLOW (STRICT ORDER)
 
 ### Phase 1: Project Type
 If not clear, ask: "What type of project is this? Kitchen or bathroom remodel?"
 
-### Phase 2: Size & Layout (REQUIRED - ask in ONE message)
+### Phase 2: Detect Multiple Rooms
+If user says "3 bathrooms", "2 kitchens", "multiple baths", etc.:
+1. Acknowledge the count
+2. Ask if they're all the same or different
+3. Gather details for each group
 
-**For BATHROOM, ask ALL of these:**
-"Got it. Quick specs:
-1. How big is the bathroom? (approx. sq ft or dimensions like 5x9)
-2. Shower size? (e.g., 3x5, 4x4, tub/shower combo)
-3. Vanity size? (e.g., 30", 48", 60" double)"
+### Phase 3: Size & Layout (REQUIRED for each room)
 
-**For KITCHEN, ask ALL of these:**
-"Got it. Quick specs:
+**For BATHROOM, ask:**
+"Quick specs:
+1. Shower/tub size? (e.g., 31"x59" tub, 3x5 walk-in)
+2. Vanity size? (e.g., 30", 48", 60" double)"
+
+**For KITCHEN, ask:**
+"Quick specs:
 1. How big is the kitchen? (approx. sq ft)
-2. How many linear feet of cabinets? (uppers and lowers)
-3. Island? (yes/no, size)"
+2. How many linear feet of cabinets?
+3. Island? (yes/no)"
 
-### Phase 3: Scope Clarification (REQUIRED)
+### Phase 4: Scope Clarification (REQUIRED)
 
 **For BATHROOM, ask:**
 "What's the scope?
-
-SHOWER:
-- Tub-to-shower conversion or updating existing shower?
-- Tile to ceiling or partial height?
-- Niche? (yes/no, how many)
-- Bench? (yes/no)
-
-VANITY:
-- Replacing in same spot or relocating?
-- Countertop material? (quartz, granite, laminate)
-- Single or double sink?
-
-TOILET:
-- Replacing or keeping existing?
-
-FLOOR:
-- Tile throughout?
-
-ELECTRICAL:
-- How many recessed lights?
-- New exhaust fan?"
+- Tub-to-shower conversion?
+- Tile to ceiling? (what height?)
+- Niche? (how many)
+- Bench?
+- Zero-entry/curbless?"
 
 **For KITCHEN, ask:**
 "What's the scope?
-
-CABINETS:
-- Full replacement or reface?
-- Style? (shaker, flat panel, etc.)
-
-COUNTERTOPS:
-- Material? (quartz, granite, butcher block, laminate)
-- Island countertop too?
-
-BACKSPLASH:
-- Full backsplash or just behind range?
-
-FLOORING:
-- Replacing floor? (tile, LVP, hardwood)
-
-ELECTRICAL:
-- Under-cabinet lights?
-- How many recessed?"
-
-### Phase 4: Photo Analysis (if uploaded)
-If customer uploads photos, analyze for:
-- Existing conditions
-- Dimensions (use toilet = 28-30" deep, door = 30-32" wide for scale)
-- What needs demo
-If photos contradict what customer said, ASK to clarify.
+- Full cabinet replacement or reface?
+- Countertop material?
+- Backsplash?
+- Floor replacement?"
 
 ### Phase 5: Generate Quote
 ONLY generate after you have:
-✓ Room size (sqft or dimensions)
-✓ Shower/cabinet dimensions
+✓ Room count confirmed
+✓ Dimensions for each room (or confirmation they're identical)
+✓ Scope details for each room/group
 ✓ Vanity/countertop specs
-✓ What's staying vs. going
-✓ Electrical scope
 
 ## ACTION RULES
 
-**action: "ask_question"** - Use when you need ANY of the required info above
-**action: "generate_quote"** - ONLY use when you have all required dimensions and scope
+**action: "ask_question"** - Use when you need ANY required info
+**action: "generate_quote"** - ONLY when you have all dimensions and scope for ALL rooms
 
-## BATHROOM SIZE CATEGORIES (set in parsed_data.size_category)
+## BATHROOM SIZE CATEGORIES
 - small: Under 50 sq ft (5x8, 5x9, 6x8)
-- standard: 50-80 sq ft (8x10, 9x10, 7x12)
-- large: 80-150 sq ft (10x12, 12x14, master bath)
-- complex: 150+ sq ft (luxury master, multiple areas)
+- standard: 50-80 sq ft (8x10, 9x10)
+- large: 80-150 sq ft (10x12, master bath)
+- complex: 150+ sq ft (luxury master)
 
 ## EXAMPLES
 
+**Multi-room example:**
+User: "4 bathrooms"
+→ action: "ask_question"
+→ "Got it, 4 bathrooms. Are they all the same scope, or do I need details for each one separately?"
+
+User: "actually 3. two are 31x59 tub to shower, one is 54x40 walk-in"
+→ action: "ask_question"
+→ "Perfect, 3 bathrooms:
+• Two with 31\"x59\" tub-to-shower conversions
+• One with 54\"x40\" walk-in shower
+
+For all three:
+- Tile to ceiling? (what height?)
+- Niches? (how many per shower)
+- Bench in any?
+- Is the larger one zero-entry?"
+
+User: "all tile to ceiling at 96 inches. one niche each. no benches. the bigger one is zero-entry."
+→ action: "generate_quote"
+→ Store in bathrooms array:
+  - bath_1: 31x59, tub-to-shower, tile to 96", 1 niche
+  - bath_2: 31x59, tub-to-shower, tile to 96", 1 niche  
+  - bath_3: 54x40, zero-entry walk-in, tile to 96", 1 niche
+→ "Perfect. Generating your estimate for 3 bathrooms..."
+
+**Single room example:**
 User: "bathroom remodel"
 → action: "ask_question"
 → "Got it. Quick specs:
-1. How big is the bathroom? (approx. sq ft or dimensions like 5x9)
+1. How big is the bathroom? (approx. sq ft or dimensions)
 2. Shower size? (e.g., 3x5, 4x4, tub/shower combo)
-3. Vanity size? (e.g., 30", 48", 60" double)"
+3. Vanity size? (e.g., 30", 48", 60" double)"`;
 
-User: "5x9, 3x5 shower, 30 inch vanity"
-→ action: "ask_question"
-→ "Perfect. What's the scope?
+// ============================================================
+// ESTIMATE SYSTEM PROMPT - V3 WITH MULTI-ROOM LINE ITEMS
+// ============================================================
 
-SHOWER: Tub-to-shower conversion or updating existing? Tile to ceiling? Niche? Bench?
-VANITY: Replacing in same spot? Countertop material? Single sink?
-TOILET: Replacing or keeping?
-FLOOR: Tile throughout?
-ELECTRICAL: How many recessed lights? New exhaust fan?"
+const estimateSystemPrompt = `# ESTIMAITE V3 - SIZE-BASED ESTIMATE GENERATOR WITH MULTI-ROOM SUPPORT
 
-User: "full gut, walk-in shower with tile to ceiling, one niche, quartz top on vanity, new toilet, 3 can lights and new fan"
-→ action: "generate_quote"
-→ parsed_data.size_category: "small"
-→ "Perfect. Full gut of a 5x9 bath with 3x5 walk-in shower, 30\" vanity with quartz, new toilet, 3 recessed lights and exhaust fan. Generating your estimate..."`;
+Generate a CLEAN, PROFESSIONAL estimate. When multiple rooms are specified, create SEPARATE line items for EACH room.
 
-const estimateSystemPrompt = `# ESTIMAITE V2 - SIZE-BASED ESTIMATE GENERATOR
+## CRITICAL: MULTI-ROOM ESTIMATE FORMAT
 
-Generate a CLEAN, PROFESSIONAL estimate based on bathroom/kitchen SIZE CATEGORY.
+When there are multiple bathrooms/kitchens, DO NOT create bulk line items.
 
-## SIZE-BASED PRICING (use parsed size_category)
+### WRONG (bulk items):
+Trade: Tile
+  - "Tile installation for three showers" → $4,310
 
-### SMALL BATHROOM (Under 50 sq ft)
-| Trade | IC Low | IC High |
-|-------|--------|---------|
-| Demo | $500 | $800 |
-| Plumbing | $1,200 | $1,800 |
-| Electrical | $600 | $1,000 |
-| Framing/Drywall | $400 | $800 |
-| Tile (shower + floor) | $2,500 | $4,000 |
-| Cabinets/Counter | $800 | $1,500 |
-| Glass | $800 | $1,200 |
-| Paint/Trim | $400 | $700 |
+### CORRECT (per-room items):
+Trade: Tile
+  - "Guest Bath 1: Shower tile to 96\" ceiling (31\"x59\" area)" → $1,437
+  - "Guest Bath 2: Shower tile to 96\" ceiling (31\"x59\" area)" → $1,437
+  - "Master Bath: Shower tile to 96\" ceiling (54\"x40\" area, zero-entry)" → $1,800
 
-**Total IC: $7,500 - $12,300**
-**Customer Price: $13,000 - $21,500** (at 1.4x-1.75x markup)
+Each line item MUST include the room_label prefix (e.g., "Guest Bath 1:", "Master Bath:").
 
-### STANDARD BATHROOM (50-80 sq ft)
-| Trade | IC Low | IC High |
-|-------|--------|---------|
-| Demo | $800 | $1,200 |
-| Plumbing | $1,800 | $2,800 |
-| Electrical | $900 | $1,400 |
-| Framing/Drywall | $600 | $1,200 |
-| Tile (shower + floor) | $4,000 | $6,000 |
-| Cabinets/Counter | $1,500 | $2,800 |
-| Glass | $1,000 | $1,600 |
-| Paint/Trim | $600 | $1,000 |
+---
 
-**Total IC: $11,700 - $18,800**
-**Customer Price: $20,000 - $33,000**
+## SIZE-BASED PRICING (use for each room)
 
-### LARGE BATHROOM (80-150 sq ft)
-| Trade | IC Low | IC High |
-|-------|--------|---------|
-| Demo | $1,200 | $2,000 |
-| Plumbing | $2,500 | $4,000 |
-| Electrical | $1,200 | $2,200 |
-| Framing/Drywall | $1,000 | $2,500 |
-| Tile (shower + floor) | $6,000 | $10,000 |
-| Cabinets/Counter | $2,500 | $4,500 |
-| Glass | $1,400 | $2,200 |
-| Paint/Trim | $900 | $1,500 |
+### SMALL BATHROOM (Under 50 sq ft) - TUB-TO-SHOWER CONVERSION
+| Trade | IC Range |
+|-------|----------|
+| Demo (tub/surround) | $400 - $600 |
+| Plumbing (conversion) | $2,000 - $2,800 |
+| Framing | $300 - $500 |
+| Tile (shower walls + floor) | $1,200 - $1,800 |
+| Waterproofing | $400 - $600 |
+| Glass (panel or door) | $800 - $1,200 |
+| Niche (each) | $150 - $250 |
 
-**Total IC: $17,500 - $30,100**
-**Customer Price: $30,000 - $53,000**
+**Per-room IC for small tub-to-shower: $5,000 - $7,500**
 
-### COMPLEX BATHROOM (150+ sq ft)
-| Trade | IC Low | IC High |
-|-------|--------|---------|
-| Demo | $2,000 | $3,500 |
-| Plumbing | $3,500 | $5,500 |
-| Electrical | $2,000 | $3,500 |
-| Framing/Drywall | $2,500 | $6,500 |
-| Tile (shower + floor) | $8,000 | $14,000 |
-| Cabinets/Counter | $4,000 | $8,500 |
-| Glass | $1,800 | $3,000 |
-| Paint/Trim | $1,200 | $2,500 |
+### STANDARD/LARGE BATHROOM
+Multiply small pricing by:
+- Standard (50-80 sqft): 1.3x - 1.5x
+- Large (80-150 sqft): 1.6x - 2.0x
+- Complex (150+ sqft): 2.0x - 2.5x
 
-**Total IC: $26,000 - $49,000**
-**Customer Price: $45,000 - $86,000**
-
-## SCOPE-SPECIFIC ADJUSTMENTS
-
-**Shower add-ons:**
-- Niche (each): +$150-250 IC
+### SCOPE ADD-ONS (per room)
+- Zero-entry/curbless: +$600-800 IC (extra framing + linear drain)
+- Tile to ceiling (vs. partial): +$400-800 IC
 - Bench: +$400-600 IC
-- Tile to ceiling (vs. partial): +$800-1,500 IC
 - Linear drain: +$300-450 IC
-- Tub-to-shower conversion: +$800 IC (plumbing rework)
 
-**Targeted scope (NOT full gut):**
-- Vanity swap only: $4,000-6,500 CP
-- Tub-to-shower conversion only: $9,000-12,500 CP
-- Shower refresh only: $6,000-9,000 CP
+---
 
-## LINE ITEM FORMAT
+## LINE ITEM FORMAT FOR MULTI-ROOM
 
-**CONSOLIDATE** - Max 2-5 items per trade. Write clean narrative descriptions.
+For each trade, create separate line items per room:
 
-BAD (too granular):
-- Supply cement board - $400
-- Install cement board - $300  
-- Waterproofing - $500
-- Wall tile labor - $2,000
+**Example with 3 bathrooms:**
 
-GOOD (consolidated):
-"Shower walls and floor — approx. 85 sq ft. Includes waterproofing, cement board, thinset, grout, and trim."
+Trade: Demolition
+  line_items:
+    - room_label: "Guest Bath 1"
+      description: "Guest Bath 1: Demo existing tub and surround (31\"x59\")"
+      internal_cost: 500
+    - room_label: "Guest Bath 2"
+      description: "Guest Bath 2: Demo existing tub and surround (31\"x59\")"
+      internal_cost: 500
+    - room_label: "Master Bath"
+      description: "Master Bath: Demo existing tub and surround (54\"x40\")"
+      internal_cost: 600
+
+Trade: Plumbing
+  line_items:
+    - room_label: "Guest Bath 1"
+      description: "Guest Bath 1: Tub-to-shower conversion plumbing"
+      internal_cost: 2200
+    - room_label: "Guest Bath 2"
+      description: "Guest Bath 2: Tub-to-shower conversion plumbing"
+      internal_cost: 2200
+    - room_label: "Master Bath"
+      description: "Master Bath: Tub-to-shower conversion with linear drain for zero-entry"
+      internal_cost: 2800
+
+Trade: Tile
+  line_items:
+    - room_label: "Guest Bath 1"
+      description: "Guest Bath 1: Shower tile to 96\" ceiling (31\"x59\" area)"
+      internal_cost: 1400
+    - room_label: "Guest Bath 2"
+      description: "Guest Bath 2: Shower tile to 96\" ceiling (31\"x59\" area)"
+      internal_cost: 1400
+    - room_label: "Master Bath"
+      description: "Master Bath: Shower tile to 96\" ceiling (54\"x40\" area)"
+      internal_cost: 2200
+
+---
 
 ## TRADE ORDER
 
-BATHROOM: Demo → Plumbing → Electrical → Framing & Drywall → Tile Work → Cabinetry & Countertops → Glass → Paint & Trim
+BATHROOM: Demo → Plumbing → Framing → Tile & Waterproofing → Glass → Paint & Trim
 
-KITCHEN: Demo → Cabinetry → Countertops → Plumbing → Electrical → Backsplash → Paint & Trim
+---
 
-## scope_narrative FORMAT
+## SCOPE NARRATIVE FORMAT
 
-Each trade should have a scope_narrative that reads naturally:
-"Full gut including shower tile, floor tile, vanity, toilet, and fixtures."
-"New shower valve with rain head and handheld. New toilet. Vanity faucet and drain connections."
-"Shower walls and floor — approx. 85 sq ft. Main floor — approx. 30 sq ft. Includes waterproofing."
+For multi-room projects, the scope_narrative should mention all rooms:
+"Three tub-to-shower conversions: two 31\"x59\" guest baths and one 54\"x40\" master with zero-entry. All with tile to 96\" ceiling and one niche each."
+
+---
 
 ## CRITICAL RULES
 
-1. **Match pricing to size_category** - Don't use LARGE pricing for a SMALL bathroom
-2. **Only include scope that was mentioned** - Don't add trades the customer didn't ask for
-3. **Return INTERNAL COSTS (IC) only** - The system will apply margin separately
-4. **Include notes:**
-   - Estimate valid for 30 days
-   - Permits not included unless noted
-   - Final material selections to be confirmed`;
+1. **SEPARATE LINE ITEMS PER ROOM** - Never bulk items like "Tile for 3 showers"
+2. **Include room_label** - Every line item needs room_label field
+3. **Price each room appropriately** - Larger rooms cost more
+4. **Match pricing to dimensions** - 54x40 is bigger than 31x59
+5. **Return INTERNAL COSTS (IC)** - System applies margin separately
+6. **Include notes:** Estimate valid for 30 days, permits not included`;
+
+// ============================================================
+// MAIN HANDLER
+// ============================================================
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -486,7 +581,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: conversationalSystemPrompt },
-          ...historyMessages.slice(-8),
+          ...historyMessages.slice(-10),
           { role: "user", content: message }
         ],
         tools: [
@@ -560,15 +655,42 @@ serve(async (req) => {
     console.log("Margin result:", JSON.stringify(marginResult));
 
     // Step 3: Generate clean estimate
-    console.log("Generating estimate with size category:", parsedResponse.parsed_data?.size_category);
+    const sizeCategory = parsedResponse.parsed_data?.size_category || 'standard';
+    const dimensions = parsedResponse.parsed_data?.dimensions || {};
+    const scopeDetails = parsedResponse.parsed_data?.scope_details || {};
+    const bathrooms = parsedResponse.parsed_data?.bathrooms || [];
+    const kitchens = parsedResponse.parsed_data?.kitchens || [];
+    
+    console.log("Generating estimate with size category:", sizeCategory);
+    console.log("Bathrooms:", JSON.stringify(bathrooms));
     
     const fullContext = historyMessages.map((m: { role: string; content: string }) => 
       `${m.role}: ${m.content}`
     ).join('\n');
     
-    const sizeCategory = parsedResponse.parsed_data?.size_category || 'standard';
-    const dimensions = parsedResponse.parsed_data?.dimensions || {};
-    const scopeDetails = parsedResponse.parsed_data?.scope_details || {};
+    // Build room-specific context for the estimate prompt
+    let roomContext = '';
+    if (bathrooms.length > 0) {
+      roomContext = `\n\nMULTIPLE BATHROOMS (${bathrooms.length} total):\n`;
+      bathrooms.forEach((bath: any, idx: number) => {
+        roomContext += `\n${idx + 1}. ${bath.label || `Bathroom ${idx + 1}`}:
+   - Shower/tub dimensions: ${bath.shower_dims || bath.room_dims || 'not specified'}
+   - Vanity: ${bath.vanity_size || 'not specified'}
+   - Scope: ${JSON.stringify(bath.scope || {})}`;
+      });
+      roomContext += '\n\nCRITICAL: Create SEPARATE line items for EACH bathroom. Do NOT create bulk items.';
+    }
+    if (kitchens.length > 0) {
+      roomContext += `\n\nMULTIPLE KITCHENS (${kitchens.length} total):\n`;
+      kitchens.forEach((kitchen: any, idx: number) => {
+        roomContext += `\n${idx + 1}. ${kitchen.label || `Kitchen ${idx + 1}`}:
+   - Size: ${kitchen.room_sqft || 'not specified'} sqft
+   - Cabinets: ${kitchen.cabinet_lf || 'not specified'} LF
+   - Island: ${kitchen.has_island ? 'Yes' : 'No'}
+   - Scope: ${JSON.stringify(kitchen.scope || {})}`;
+      });
+      roomContext += '\n\nCRITICAL: Create SEPARATE line items for EACH kitchen. Do NOT create bulk items.';
+    }
     
     const estimatePrompt = `Generate a clean estimate for this project:
 
@@ -579,11 +701,14 @@ User: ${message}
 SIZE CATEGORY: ${sizeCategory}
 DIMENSIONS: ${JSON.stringify(dimensions)}
 SCOPE DETAILS: ${JSON.stringify(scopeDetails)}
+${roomContext}
 
-CRITICAL: Use the ${sizeCategory.toUpperCase()} baseline pricing from your pricing tables.
-CONSOLIDATE line items (2-5 per trade max). Make it clean and scannable.
-Include a scope_narrative for each trade that describes the work in plain English.
-Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
+CRITICAL INSTRUCTIONS:
+1. Use the ${sizeCategory.toUpperCase()} baseline pricing
+2. ${bathrooms.length > 1 || kitchens.length > 1 ? 'Create SEPARATE line items for EACH room - DO NOT bulk items' : 'Consolidate line items (2-5 per trade max)'}
+3. Each line item needs room_label field if multiple rooms
+4. Include scope_narrative for each trade
+5. Return INTERNAL COSTS (IC) - system applies margin separately`;
 
     const estimateResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -602,7 +727,7 @@ Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
             type: "function",
             function: {
               name: "generate_estimate",
-              description: "Generate a clean, consolidated estimate with proper size-based pricing.",
+              description: "Generate a clean estimate with separate line items per room when multiple rooms specified.",
               parameters: estimateSchema
             }
           }
@@ -650,6 +775,9 @@ Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
       })
     }));
     
+    // Determine room count
+    const roomCount = bathrooms.length || kitchens.length || 1;
+    
     // Build response in expected format
     const completeQuote = {
       quote: {
@@ -664,6 +792,7 @@ Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
           type: estimate.project_type,
           label: estimate.project_label,
           size_category: estimate.size_category,
+          room_count: roomCount,
           areas: [{
             area_id: "main",
             area_name: estimate.project_label,
@@ -675,6 +804,7 @@ Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
               line_items: t.line_items.map((item: any, idx: number) => ({
                 item_id: `${t.trade_name.toLowerCase().replace(/\s+/g, '_')}_${idx}`,
                 item_type: "lump_sum",
+                room_label: item.room_label || null,
                 description: item.description,
                 internal_cost: item.internal_cost,
                 customer_price: item.customer_price
@@ -706,6 +836,7 @@ Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
         line_items: tradesWithMargin.flatMap((trade: any) =>
           trade.line_items.map((item: any) => ({
             category: trade.trade_name,
+            room_label: item.room_label || null,
             task_description: item.description,
             quantity: 1,
             unit: 'ea',
@@ -722,6 +853,7 @@ Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
                       (estimate.project_type || '').toLowerCase().includes('kitchen') ? 'Kitchen' : 'Remodel',
         project_label: estimate.project_label,
         size_category: estimate.size_category,
+        room_count: roomCount,
         overall_size_sqft: dimensions?.room_sqft || null
       },
       // Include scope narratives for clean PDF generation
@@ -729,7 +861,7 @@ Return INTERNAL COSTS (IC) - the system will apply the margin separately.`;
         trade_name: t.trade_name,
         scope_narrative: t.scope_narrative
       })),
-      // NEW: Margin info for display
+      // Margin info for display
       margin_info: {
         margin_percentage: Math.round(marginResult.margin_used * 100),
         margin_source: marginResult.margin_source,
