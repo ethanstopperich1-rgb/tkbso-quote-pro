@@ -19,6 +19,7 @@ export interface PassthroughLineItem {
   unit: string;        // Unit (ea, sqft, ls, etc.)
   cost: number;        // Internal cost (not shown to customer)
   price: number;       // Customer price - shown in table
+  room_label?: string; // Optional room identifier for multi-room projects
 }
 
 /**
@@ -61,6 +62,7 @@ export function extractPassthroughLineItems(estimate: Estimate): PassthroughLine
     unit?: string;
     ic_total?: number;
     cp_total?: number;
+    room_label?: string;
   }> | undefined;
   
   if (!storedLineItems || !Array.isArray(storedLineItems)) {
@@ -74,6 +76,7 @@ export function extractPassthroughLineItems(estimate: Estimate): PassthroughLine
     unit: item.unit || 'ea',
     cost: item.ic_total || 0,
     price: item.cp_total || 0,
+    room_label: item.room_label,  // Include room label for multi-room grouping
   }));
 }
 

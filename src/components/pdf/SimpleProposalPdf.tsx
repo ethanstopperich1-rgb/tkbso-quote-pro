@@ -136,6 +136,46 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
   },
   
+  // Room header styles
+  roomHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#0ea5e9',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginTop: 2,
+  },
+  roomHeaderText: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#ffffff',
+    flex: 1,
+  },
+  
+  // Subtotal row
+  subtotalRow: {
+    flexDirection: 'row',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    backgroundColor: '#f1f5f9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+  },
+  subtotalLabel: {
+    flex: 1,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+    textAlign: 'right',
+    paddingRight: 10,
+  },
+  subtotalAmount: {
+    width: 80,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e293b',
+    textAlign: 'right',
+  },
+  
   // Total row
   totalRow: {
     flexDirection: 'row',
@@ -271,6 +311,7 @@ export interface PassthroughLineItem {
   unit: string;        // Unit (ea, sqft, ls, etc.)
   cost: number;        // Internal cost (not shown to customer)
   price: number;       // Customer price - shown in table
+  room_label?: string; // Optional room identifier for multi-room projects
 }
 
 export interface SimpleProposalPdfProps {
@@ -289,6 +330,32 @@ function formatCurrency(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+// Group line items by room_label
+function groupLineItemsByRoom(lineItems: PassthroughLineItem[]): Map<string, PassthroughLineItem[]> {
+  const grouped = new Map<string, PassthroughLineItem[]>();
+  
+  for (const item of lineItems) {
+    const roomKey = item.room_label || '_general';
+    if (!grouped.has(roomKey)) {
+      grouped.set(roomKey, []);
+    }
+    grouped.get(roomKey)!.push(item);
+  }
+  
+  return grouped;
+}
+
+// Check if we have multiple rooms
+function hasMultipleRooms(lineItems: PassthroughLineItem[]): boolean {
+  const uniqueRooms = new Set(lineItems.map(item => item.room_label).filter(Boolean));
+  return uniqueRooms.size > 1;
+}
+
+// Calculate subtotal for a group of items
+function calculateSubtotal(items: PassthroughLineItem[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
 }
 
 export function SimpleProposalPdf({ 
@@ -331,6 +398,10 @@ export function SimpleProposalPdf({
   const notes = estimate.job_notes || defaults.termsText || 
     'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are excluded unless noted otherwise.';
 
+  // Determine if we should group by room
+  const showRoomGrouping = hasMultipleRooms(lineItems);
+  const groupedItems = showRoomGrouping ? groupLineItemsByRoom(lineItems) : null;
+
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
@@ -371,8 +442,7 @@ export function SimpleProposalPdf({
           )}
         </View>
 
-        {/* LINE ITEMS TABLE - STRICT PASSTHROUGH */}
-        {/* Each line item is displayed exactly as provided - NO modifications */}
+        {/* LINE ITEMS TABLE */}
         <View style={styles.table}>
           {/* Header Row */}
           <View style={styles.tableHeader}>
@@ -381,24 +451,70 @@ export function SimpleProposalPdf({
             <Text style={[styles.tableHeaderCell, styles.tableHeaderPrice]}>Price</Text>
           </View>
 
-          {/* Data Rows - EXACTLY as provided by estimator */}
-          {lineItems.map((item, index) => (
-            <View 
-              key={index} 
-              style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}
-            >
-              {/* Name is displayed EXACTLY as provided - no rewriting */}
-              <Text style={[styles.tableCell, styles.tableCellDescription]}>
-                {item.name}
-              </Text>
-              <Text style={[styles.tableCell, styles.tableCellQty]}>
-                {item.quantity} {item.unit}
-              </Text>
-              <Text style={[styles.tableCell, styles.tableCellPrice]}>
-                {formatCurrency(item.price)}
-              </Text>
-            </View>
-          ))}
+          {/* GROUPED BY ROOM (when multiple rooms exist) */}
+          {showRoomGrouping && groupedItems && (
+            <>
+              {Array.from(groupedItems.entries()).map(([roomLabel, roomItems], groupIndex) => {
+                const subtotal = calculateSubtotal(roomItems);
+                const displayLabel = roomLabel === '_general' ? 'General Items' : roomLabel;
+                
+                return (
+                  <View key={roomLabel}>
+                    {/* Room Header */}
+                    <View style={styles.roomHeader}>
+                      <Text style={styles.roomHeaderText}>{displayLabel}</Text>
+                    </View>
+                    
+                    {/* Room Line Items */}
+                    {roomItems.map((item, index) => (
+                      <View 
+                        key={`${roomLabel}-${index}`} 
+                        style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}
+                      >
+                        <Text style={[styles.tableCell, styles.tableCellDescription]}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.tableCell, styles.tableCellQty]}>
+                          {item.quantity} {item.unit}
+                        </Text>
+                        <Text style={[styles.tableCell, styles.tableCellPrice]}>
+                          {formatCurrency(item.price)}
+                        </Text>
+                      </View>
+                    ))}
+                    
+                    {/* Room Subtotal */}
+                    <View style={styles.subtotalRow}>
+                      <Text style={styles.subtotalLabel}>{displayLabel} Subtotal:</Text>
+                      <Text style={styles.subtotalAmount}>{formatCurrency(subtotal)}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </>
+          )}
+
+          {/* FLAT LIST (single room or no room labels) */}
+          {!showRoomGrouping && (
+            <>
+              {lineItems.map((item, index) => (
+                <View 
+                  key={index} 
+                  style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}
+                >
+                  <Text style={[styles.tableCell, styles.tableCellDescription]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellQty]}>
+                    {item.quantity} {item.unit}
+                  </Text>
+                  <Text style={[styles.tableCell, styles.tableCellPrice]}>
+                    {formatCurrency(item.price)}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
 
           {/* Total Row - uses pre-calculated total, NOT sum of items */}
           <View style={styles.totalRow}>
