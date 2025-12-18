@@ -112,10 +112,156 @@ async function getMarginForZipCode(
 }
 
 // ============================================================
+// TILE BREAKDOWN CALCULATOR
+// ============================================================
+
+interface TileBreakdown {
+  wall_sqft: number;
+  shower_floor_sqft: number;
+  main_floor_sqft: number;
+  total_sqft: number;
+}
+
+interface TileMeasurements {
+  shower_wall_dims?: string | null;
+  ceiling_height?: number | null;
+  shower_floor_type?: string | null;
+  shower_floor_sqft?: number | null;
+  main_floor_tile?: boolean | null;
+  room_dims?: string | null;
+  room_sqft?: number | null;
+  tile_quality?: string | null;
+}
+
+/**
+ * Parse dimension string like "3x5", "31x59", "3'x5'" into inches
+ */
+function parseDimensions(dims: string): { width: number; length: number } {
+  if (!dims) return { width: 36, length: 60 }; // default 3x5
+  
+  // Clean and standardize
+  const cleaned = dims.replace(/['"ft\s]/gi, '').toLowerCase();
+  const parts = cleaned.split(/x|by/).map(p => parseFloat(p.trim()));
+  
+  if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+    return { width: 36, length: 60 };
+  }
+  
+  // If numbers are small (< 15), assume feet and convert to inches
+  // If numbers are larger, assume already in inches
+  const width = parts[0] < 15 ? parts[0] * 12 : parts[0];
+  const length = parts[1] < 15 ? parts[1] * 12 : parts[1];
+  
+  return { width, length };
+}
+
+/**
+ * Calculate tile breakdown for a bathroom
+ */
+function calculateTileBreakdown(tile: TileMeasurements): TileBreakdown {
+  // Parse shower dimensions
+  const showerDims = parseDimensions(tile.shower_wall_dims || "3x5");
+  const width_ft = showerDims.width / 12;
+  const length_ft = showerDims.length / 12;
+  const height_ft = (tile.ceiling_height || 96) / 12;
+  
+  // Calculate wall sqft (3 walls, accounting for door/opening)
+  const back_wall = length_ft * height_ft;
+  const side_wall_1 = width_ft * height_ft;
+  const side_wall_2 = width_ft * height_ft;
+  const wall_sqft = (back_wall + side_wall_1 + side_wall_2) * 0.85; // 15% reduction for door/opening
+  
+  // Calculate shower floor sqft
+  let shower_floor_sqft = 0;
+  if (tile.shower_floor_type && tile.shower_floor_type !== 'existing') {
+    shower_floor_sqft = tile.shower_floor_sqft || ((width_ft * length_ft) * 1.1); // 10% waste factor
+  }
+  
+  // Calculate main floor sqft (if applicable)
+  let main_floor_sqft = 0;
+  if (tile.main_floor_tile) {
+    const roomSqft = tile.room_sqft || 40; // default 5x8 bathroom
+    const showerFootprint = width_ft * length_ft;
+    main_floor_sqft = (roomSqft - showerFootprint) * 1.15; // 15% waste
+    if (main_floor_sqft < 0) main_floor_sqft = 0;
+  }
+  
+  return {
+    wall_sqft: Math.ceil(wall_sqft),
+    shower_floor_sqft: Math.ceil(shower_floor_sqft),
+    main_floor_sqft: Math.ceil(main_floor_sqft),
+    total_sqft: Math.ceil(wall_sqft + shower_floor_sqft + main_floor_sqft)
+  };
+}
+
+// Tile pricing per sqft by quality
+const TILE_PRICING = {
+  standard: { wall: 14, shower_floor: 45, main_floor: 12 },
+  'mid-range': { wall: 18, shower_floor: 55, main_floor: 16 },
+  premium: { wall: 25, shower_floor: 70, main_floor: 22 }
+};
+
+// IC multiplier (IC is ~58% of CP)
+const IC_MULTIPLIER = 0.58;
+
+/**
+ * Generate tile line items for a bathroom
+ */
+function generateTileLineItems(
+  roomLabel: string,
+  tile: TileMeasurements
+): Array<{ room_label: string; description: string; internal_cost: number; customer_price: number }> {
+  const breakdown = calculateTileBreakdown(tile);
+  const quality = (tile.tile_quality || 'standard') as keyof typeof TILE_PRICING;
+  const prices = TILE_PRICING[quality] || TILE_PRICING.standard;
+  
+  const lineItems: Array<{ room_label: string; description: string; internal_cost: number; customer_price: number }> = [];
+  
+  // 1. Wall Tile
+  if (breakdown.wall_sqft > 0) {
+    const wallCP = breakdown.wall_sqft * prices.wall;
+    const wallIC = Math.round(wallCP * IC_MULTIPLIER);
+    lineItems.push({
+      room_label: roomLabel,
+      description: `${roomLabel}: Shower wall tile to ${tile.ceiling_height || 96}" ceiling (${breakdown.wall_sqft} sqft) with full waterproofing and one recessed niche`,
+      internal_cost: wallIC,
+      customer_price: wallCP
+    });
+  }
+  
+  // 2. Shower Floor Tile
+  if (breakdown.shower_floor_sqft > 0) {
+    const floorCP = breakdown.shower_floor_sqft * prices.shower_floor;
+    const floorIC = Math.round(floorCP * IC_MULTIPLIER);
+    const drainType = tile.shower_floor_type === 'curbless' ? 'curbless with linear drain' : 'tile pan with proper drainage';
+    lineItems.push({
+      room_label: roomLabel,
+      description: `${roomLabel}: Custom ${drainType} shower floor (${breakdown.shower_floor_sqft} sqft) including sloped mud bed`,
+      internal_cost: floorIC,
+      customer_price: floorCP
+    });
+  }
+  
+  // 3. Main Floor Tile
+  if (breakdown.main_floor_sqft > 0) {
+    const mainCP = breakdown.main_floor_sqft * prices.main_floor;
+    const mainIC = Math.round(mainCP * IC_MULTIPLIER);
+    lineItems.push({
+      room_label: roomLabel,
+      description: `${roomLabel}: Bathroom floor tile (${breakdown.main_floor_sqft} sqft) including substrate prep and tile removal`,
+      internal_cost: mainIC,
+      customer_price: mainCP
+    });
+  }
+  
+  return lineItems;
+}
+
+// ============================================================
 // SCHEMAS
 // ============================================================
 
-// Conversation response schema - now supports multiple rooms
+// Conversation response schema - now supports tile measurements
 const conversationSchema = {
   type: "object",
   properties: {
@@ -143,7 +289,7 @@ const conversationSchema = {
             floor_sqft: { type: ["number", "null"] }
           }
         },
-        // Multi-room support - array of bathrooms
+        // Multi-room support - array of bathrooms with TILE MEASUREMENTS
         bathrooms: {
           type: "array",
           items: {
@@ -162,7 +308,7 @@ const conversationSchema = {
                   full_gut: { type: ["boolean", "null"] },
                   tub_to_shower: { type: ["boolean", "null"] },
                   tile_to_ceiling: { type: ["boolean", "null"] },
-                  ceiling_height: { type: ["string", "null"] },
+                  ceiling_height: { type: ["number", "null"] },
                   niche_count: { type: ["number", "null"] },
                   has_bench: { type: ["boolean", "null"] },
                   zero_entry: { type: ["boolean", "null"] },
@@ -170,6 +316,28 @@ const conversationSchema = {
                   vanity_work: { type: ["boolean", "null"] },
                   toilet_replace: { type: ["boolean", "null"] },
                   floor_tile: { type: ["boolean", "null"] }
+                }
+              },
+              // CRITICAL: Tile measurements for accurate pricing
+              tile_measurements: {
+                type: "object",
+                properties: {
+                  shower_wall_dims: { type: ["string", "null"] },
+                  ceiling_height: { type: ["number", "null"] },
+                  shower_wall_sqft: { type: ["number", "null"] },
+                  shower_floor_type: { 
+                    type: ["string", "null"],
+                    enum: ["tile_pan", "existing", "curbless", "curbed", null]
+                  },
+                  shower_floor_sqft: { type: ["number", "null"] },
+                  main_floor_tile: { type: ["boolean", "null"] },
+                  room_dims: { type: ["string", "null"] },
+                  room_sqft: { type: ["number", "null"] },
+                  main_floor_sqft: { type: ["number", "null"] },
+                  tile_quality: {
+                    type: ["string", "null"],
+                    enum: ["standard", "mid-range", "premium", null]
+                  }
                 }
               }
             }
@@ -261,10 +429,10 @@ const estimateSchema = {
 };
 
 // ============================================================
-// CONVERSATIONAL SYSTEM PROMPT - V3 WITH MULTI-ROOM SUPPORT
+// CONVERSATIONAL SYSTEM PROMPT - V4 WITH TILE BREAKDOWN
 // ============================================================
 
-const conversationalSystemPrompt = `# ESTIMAITE - V3 CONVERSATIONAL ESTIMATOR
+const conversationalSystemPrompt = `# ESTIMAITE - V4 CONVERSATIONAL ESTIMATOR WITH TILE BREAKDOWN
 
 You're EstimAIte, an experienced contractor's estimator. You sound confident and knowledgeable.
 
@@ -274,46 +442,116 @@ You MUST gather specific information before generating any quote. Don't guess di
 
 ---
 
+## CRITICAL: TILE WORK BREAKDOWN
+
+When tile work is involved, you MUST collect measurements for ALL tile components separately. This is ESSENTIAL for accurate pricing.
+
+### Required Questions for EVERY Bathroom with Tile Work:
+
+#### 1. SHOWER WALL DIMENSIONS (REQUIRED)
+Ask: "What are the shower dimensions? (width x length, e.g., 3x5 or 31x59)"
+Store as: tile_measurements.shower_wall_dims
+
+#### 2. CEILING HEIGHT (REQUIRED)
+Ask: "What height are we tiling to? (typically 96 inches to ceiling)"
+Store as: tile_measurements.ceiling_height
+
+#### 3. SHOWER FLOOR (REQUIRED)
+Ask: "What type of shower floor? (tile pan with curb, curbless/zero-entry, or existing base?)"
+Store as: tile_measurements.shower_floor_type
+Options: "tile_pan", "curbless", "curbed", "existing"
+
+#### 4. MAIN BATHROOM FLOOR (REQUIRED)
+Ask: "Are we also tiling the main bathroom floor, or just the shower?"
+If yes: "What's the total bathroom size? (e.g., 5x8 or 40 sqft)"
+Store as: tile_measurements.main_floor_tile (boolean), tile_measurements.room_sqft
+
+#### 5. TILE QUALITY (REQUIRED)
+Ask: "Tile selection: Standard, Mid-range, or Premium?"
+Store as: tile_measurements.tile_quality
+Options: "standard", "mid-range", "premium"
+
+### VALIDATION: DO NOT GENERATE QUOTE WITHOUT:
+- shower_wall_dims (e.g., "3x5" or "31x59")
+- ceiling_height (e.g., 96)
+- shower_floor_type (tile_pan, curbless, existing)
+- main_floor_tile (true/false)
+- If main_floor_tile is true: room_sqft
+- tile_quality (standard, mid-range, premium)
+
+### Example Tile Conversation:
+
+USER: "I need a quote for a tub to shower conversion"
+
+AI: "Great! Let's get the tile measurements. What are the shower/tub dimensions? (e.g., 3x5 feet or 31x59 inches)"
+
+USER: "3 by 5"
+
+AI: "Perfect, 3x5 shower. What height are we tiling to? (typically 96 inches to ceiling)"
+
+USER: "Yes, 96 inches"
+
+AI: "Got it - 3x5 tiled to 96". For the shower floor - are we installing a new tile pan with curb, curbless/zero-entry, or working with an existing base?"
+
+USER: "New tile pan with linear drain"
+
+AI: "Perfect. Are we also tiling the main bathroom floor, or just the shower area?"
+
+USER: "Yes, tile the whole floor"
+
+AI: "What's the total bathroom size? (e.g., 5x8 or 40 sqft)"
+
+USER: "5 by 8, so 40 square feet"
+
+AI: "Last question - tile quality: Standard, Mid-range, or Premium?"
+
+USER: "Mid-range"
+
+AI: "Perfect! I have everything I need:
+- Shower: 3x5 tiled to 96" 
+- Shower floor: tile pan with linear drain
+- Main floor: 40 sqft total
+- Quality: Mid-range
+
+Generating your detailed estimate..."
+
+---
+
 ## HANDLING MULTIPLE ROOMS (CRITICAL)
 
-When a user mentions multiple bathrooms or kitchens (e.g., "3 bathrooms", "2 master baths and a guest bath"), you MUST:
+When a user mentions multiple bathrooms (e.g., "3 bathrooms"):
 
 ### Step 1: Clarify Scope Per Room
 Ask: "Got it, [NUMBER] bathrooms. Are they all the same scope, or do I need details for each one separately?"
 
-### Step 2: Gather Dimensions Per Room
-For EACH bathroom, get:
-- Room size / shower dimensions
-- Vanity size
-- Unique features (niches, benches, zero-entry)
-
-**Example Flow:**
-User: "3 bathrooms"
-AI: "Got it, 3 bathrooms. Are they all identical, or different scopes?"
-
-User: "2 are the same, third is bigger"
-AI: "Perfect. Let's start with the 2 that are the same:
-• Shower/tub size? (e.g., 31x59 tub, 3x5 shower)
-• What's the scope? (tub-to-shower conversion, tile to ceiling, etc.)"
-
-[Get details]
-
-AI: "Great. Now for the third larger bathroom:
-• Shower/tub size?
-• Any different features? (zero-entry, bench, bigger niche?)"
+### Step 2: Gather TILE MEASUREMENTS for Each Room
+For EACH bathroom, collect ALL tile measurements:
+- Shower dimensions
+- Ceiling height  
+- Shower floor type
+- Main floor tile (yes/no)
+- Room size (if main floor)
+- Tile quality
 
 ### Step 3: Track in parsed_data
-Store each bathroom separately in the "bathrooms" array:
+Store each bathroom with its tile_measurements:
 {
   "bathrooms": [
-    { "id": "bath_1", "label": "Guest Bath 1", "shower_dims": "31x59", "scope": { "tub_to_shower": true, "tile_to_ceiling": true, "ceiling_height": "96", "niche_count": 1 } },
-    { "id": "bath_2", "label": "Guest Bath 2", "shower_dims": "31x59", "scope": { "tub_to_shower": true, "tile_to_ceiling": true, "ceiling_height": "96", "niche_count": 1 } },
-    { "id": "bath_3", "label": "Master Bath", "shower_dims": "54x40", "scope": { "tub_to_shower": true, "tile_to_ceiling": true, "ceiling_height": "96", "niche_count": 1, "zero_entry": true } }
+    { 
+      "id": "bath_1", 
+      "label": "Guest Bath 1", 
+      "shower_dims": "31x59",
+      "tile_measurements": {
+        "shower_wall_dims": "31x59",
+        "ceiling_height": 96,
+        "shower_floor_type": "tile_pan",
+        "main_floor_tile": true,
+        "room_sqft": 40,
+        "tile_quality": "mid-range"
+      }
+    }
   ]
 }
-
-### Step 4: Generate Separate Estimates
-When action = "generate_quote" with multiple bathrooms, the estimate generator will create SEPARATE line items for EACH bathroom.
 
 ---
 
@@ -323,7 +561,7 @@ When action = "generate_quote" with multiple bathrooms, the estimate generator w
 If not clear, ask: "What type of project is this? Kitchen or bathroom remodel?"
 
 ### Phase 2: Detect Multiple Rooms
-If user says "3 bathrooms", "2 kitchens", "multiple baths", etc.:
+If user says "3 bathrooms", "2 kitchens", etc.:
 1. Acknowledge the count
 2. Ask if they're all the same or different
 3. Gather details for each group
@@ -335,109 +573,115 @@ If user says "3 bathrooms", "2 kitchens", "multiple baths", etc.:
 1. Shower/tub size? (e.g., 31"x59" tub, 3x5 walk-in)
 2. Vanity size? (e.g., 30", 48", 60" double)"
 
-**For KITCHEN, ask:**
-"Quick specs:
-1. How big is the kitchen? (approx. sq ft)
-2. How many linear feet of cabinets?
-3. Island? (yes/no)"
+### Phase 4: TILE MEASUREMENTS (REQUIRED - see above)
 
-### Phase 4: Scope Clarification (REQUIRED)
-
+### Phase 5: Scope Clarification
 **For BATHROOM, ask:**
-"What's the scope?
+"Scope details:
 - Tub-to-shower conversion?
-- Tile to ceiling? (what height?)
 - Niche? (how many)
 - Bench?
 - Zero-entry/curbless?"
 
-**For KITCHEN, ask:**
-"What's the scope?
-- Full cabinet replacement or reface?
-- Countertop material?
-- Backsplash?
-- Floor replacement?"
-
-### Phase 5: Generate Quote
+### Phase 6: Generate Quote
 ONLY generate after you have:
 ✓ Room count confirmed
-✓ Dimensions for each room (or confirmation they're identical)
-✓ Scope details for each room/group
-✓ Vanity/countertop specs
+✓ Dimensions for each room
+✓ COMPLETE tile measurements (all 5 items)
+✓ Scope details
 
 ## ACTION RULES
 
-**action: "ask_question"** - Use when you need ANY required info
-**action: "generate_quote"** - ONLY when you have all dimensions and scope for ALL rooms
+**action: "ask_question"** - Use when you need ANY required info (especially tile measurements!)
+**action: "generate_quote"** - ONLY when you have ALL tile measurements for ALL rooms
 
 ## BATHROOM SIZE CATEGORIES
 - small: Under 50 sq ft (5x8, 5x9, 6x8)
 - standard: 50-80 sq ft (8x10, 9x10)
 - large: 80-150 sq ft (10x12, master bath)
-- complex: 150+ sq ft (luxury master)
-
-## EXAMPLES
-
-**Multi-room example:**
-User: "4 bathrooms"
-→ action: "ask_question"
-→ "Got it, 4 bathrooms. Are they all the same scope, or do I need details for each one separately?"
-
-User: "actually 3. two are 31x59 tub to shower, one is 54x40 walk-in"
-→ action: "ask_question"
-→ "Perfect, 3 bathrooms:
-• Two with 31\"x59\" tub-to-shower conversions
-• One with 54\"x40\" walk-in shower
-
-For all three:
-- Tile to ceiling? (what height?)
-- Niches? (how many per shower)
-- Bench in any?
-- Is the larger one zero-entry?"
-
-User: "all tile to ceiling at 96 inches. one niche each. no benches. the bigger one is zero-entry."
-→ action: "generate_quote"
-→ Store in bathrooms array:
-  - bath_1: 31x59, tub-to-shower, tile to 96", 1 niche
-  - bath_2: 31x59, tub-to-shower, tile to 96", 1 niche  
-  - bath_3: 54x40, zero-entry walk-in, tile to 96", 1 niche
-→ "Perfect. Generating your estimate for 3 bathrooms..."
-
-**Single room example:**
-User: "bathroom remodel"
-→ action: "ask_question"
-→ "Got it. Quick specs:
-1. How big is the bathroom? (approx. sq ft or dimensions)
-2. Shower size? (e.g., 3x5, 4x4, tub/shower combo)
-3. Vanity size? (e.g., 30", 48", 60" double)"`;
+- complex: 150+ sq ft (luxury master)`;
 
 // ============================================================
-// ESTIMATE SYSTEM PROMPT - V3 WITH MULTI-ROOM LINE ITEMS
+// ESTIMATE SYSTEM PROMPT - V4 WITH TILE BREAKDOWN
 // ============================================================
 
-const estimateSystemPrompt = `# ESTIMAITE V3 - SIZE-BASED ESTIMATE GENERATOR WITH MULTI-ROOM SUPPORT
+const estimateSystemPrompt = `# ESTIMAITE V4 - ESTIMATE GENERATOR WITH TILE BREAKDOWN
 
-Generate a CLEAN, PROFESSIONAL estimate. When multiple rooms are specified, create SEPARATE line items for EACH room.
+Generate a CLEAN, PROFESSIONAL estimate. CRITICAL: Break tile work into SEPARATE line items.
 
-## CRITICAL: MULTI-ROOM ESTIMATE FORMAT
+## CRITICAL: TILE LINE ITEM BREAKDOWN
 
-When there are multiple bathrooms/kitchens, DO NOT create bulk line items.
+NEVER create a single "tile installation" line item. ALWAYS break into 3 components:
 
-### WRONG (bulk items):
+### WRONG (single bulk item):
 Trade: Tile
-  - "Tile installation for three showers" → $4,310
+  - "Shower tile to 96" ceiling + waterproofing + niche" → $3,103
 
-### CORRECT (per-room items):
-Trade: Tile
-  - "Guest Bath 1: Shower tile to 96\" ceiling (31\"x59\" area)" → $1,437
-  - "Guest Bath 2: Shower tile to 96\" ceiling (31\"x59\" area)" → $1,437
-  - "Master Bath: Shower tile to 96\" ceiling (54\"x40\" area, zero-entry)" → $1,800
+### CORRECT (3 separate items):
+Trade: Tile & Waterproofing
+  line_items:
+    - "Guest Bath 1: Shower wall tile to 96" ceiling (75 sqft) with full waterproofing and one recessed niche" → IC: $750, CP: $1,350
+    - "Guest Bath 1: Custom tile shower pan with proper drainage (17 sqft) including sloped mud bed" → IC: $540, CP: $935
+    - "Guest Bath 1: Bathroom floor tile (28 sqft) including substrate prep and tile removal" → IC: $260, CP: $464
 
-Each line item MUST include the room_label prefix (e.g., "Guest Bath 1:", "Master Bath:").
+## TILE PRICING FORMULA (per sqft)
+
+### Wall Tile (vertical surfaces with waterproofing):
+- Standard: $14/sqft CP (IC = $8)
+- Mid-range: $18/sqft CP (IC = $10.50)
+- Premium: $25/sqft CP (IC = $14.50)
+
+### Shower Floor Tile (horizontal, sloped, mud bed):
+- Standard: $45/sqft CP (IC = $26)
+- Mid-range: $55/sqft CP (IC = $32)
+- Premium: $70/sqft CP (IC = $40)
+*More expensive due to mud bed work and sloping*
+
+### Main Floor Tile (horizontal, flat):
+- Standard: $12/sqft CP (IC = $7)
+- Mid-range: $16/sqft CP (IC = $9)
+- Premium: $22/sqft CP (IC = $13)
+
+## SQFT CALCULATION
+
+For a 3x5 shower tiled to 96":
+- Back wall: 5' x 8' = 40 sqft
+- Left wall: 3' x 8' = 24 sqft
+- Right wall: 3' x 8' = 24 sqft
+- Total walls: 88 sqft x 0.85 (door opening) = ~75 sqft
+
+Shower floor: 3' x 5' x 1.1 (waste) = ~17 sqft
+
+Main floor (if 5x8 bathroom):
+- Room total: 40 sqft - 15 sqft (shower) = 25 sqft x 1.15 (waste) = ~29 sqft
+
+## MULTI-ROOM FORMAT
+
+When multiple bathrooms, create SEPARATE line items for EACH bathroom:
+
+Trade: Tile & Waterproofing
+  line_items:
+    - room_label: "Guest Bath 1"
+      description: "Guest Bath 1: Shower wall tile to 96" (75 sqft) with waterproofing and niche"
+      internal_cost: 750
+      customer_price: 1350
+    - room_label: "Guest Bath 1"
+      description: "Guest Bath 1: Custom tile shower pan (17 sqft) with mud bed and drainage"
+      internal_cost: 540
+      customer_price: 935
+    - room_label: "Guest Bath 1"
+      description: "Guest Bath 1: Bathroom floor tile (29 sqft) with substrate prep"
+      internal_cost: 260
+      customer_price: 464
+    - room_label: "Guest Bath 2"
+      description: "Guest Bath 2: Shower wall tile to 96" (75 sqft) with waterproofing and niche"
+      internal_cost: 750
+      customer_price: 1350
+    [... and so on for each bathroom]
 
 ---
 
-## SIZE-BASED PRICING (use for each room)
+## SIZE-BASED PRICING (NON-TILE TRADES)
 
 ### SMALL BATHROOM (Under 50 sq ft) - TUB-TO-SHOWER CONVERSION
 | Trade | IC Range |
@@ -445,68 +689,13 @@ Each line item MUST include the room_label prefix (e.g., "Guest Bath 1:", "Maste
 | Demo (tub/surround) | $400 - $600 |
 | Plumbing (conversion) | $2,000 - $2,800 |
 | Framing | $300 - $500 |
-| Tile (shower walls + floor) | $1,200 - $1,800 |
-| Waterproofing | $400 - $600 |
 | Glass (panel or door) | $800 - $1,200 |
 | Niche (each) | $150 - $250 |
 
-**Per-room IC for small tub-to-shower: $5,000 - $7,500**
-
-### STANDARD/LARGE BATHROOM
-Multiply small pricing by:
-- Standard (50-80 sqft): 1.3x - 1.5x
-- Large (80-150 sqft): 1.6x - 2.0x
-- Complex (150+ sqft): 2.0x - 2.5x
-
 ### SCOPE ADD-ONS (per room)
 - Zero-entry/curbless: +$600-800 IC (extra framing + linear drain)
-- Tile to ceiling (vs. partial): +$400-800 IC
 - Bench: +$400-600 IC
 - Linear drain: +$300-450 IC
-
----
-
-## LINE ITEM FORMAT FOR MULTI-ROOM
-
-For each trade, create separate line items per room:
-
-**Example with 3 bathrooms:**
-
-Trade: Demolition
-  line_items:
-    - room_label: "Guest Bath 1"
-      description: "Guest Bath 1: Demo existing tub and surround (31\"x59\")"
-      internal_cost: 500
-    - room_label: "Guest Bath 2"
-      description: "Guest Bath 2: Demo existing tub and surround (31\"x59\")"
-      internal_cost: 500
-    - room_label: "Master Bath"
-      description: "Master Bath: Demo existing tub and surround (54\"x40\")"
-      internal_cost: 600
-
-Trade: Plumbing
-  line_items:
-    - room_label: "Guest Bath 1"
-      description: "Guest Bath 1: Tub-to-shower conversion plumbing"
-      internal_cost: 2200
-    - room_label: "Guest Bath 2"
-      description: "Guest Bath 2: Tub-to-shower conversion plumbing"
-      internal_cost: 2200
-    - room_label: "Master Bath"
-      description: "Master Bath: Tub-to-shower conversion with linear drain for zero-entry"
-      internal_cost: 2800
-
-Trade: Tile
-  line_items:
-    - room_label: "Guest Bath 1"
-      description: "Guest Bath 1: Shower tile to 96\" ceiling (31\"x59\" area)"
-      internal_cost: 1400
-    - room_label: "Guest Bath 2"
-      description: "Guest Bath 2: Shower tile to 96\" ceiling (31\"x59\" area)"
-      internal_cost: 1400
-    - room_label: "Master Bath"
-      description: "Master Bath: Shower tile to 96\" ceiling (54\"x40\" area)"
-      internal_cost: 2200
 
 ---
 
@@ -516,21 +705,15 @@ BATHROOM: Demo → Plumbing → Framing → Tile & Waterproofing → Glass → P
 
 ---
 
-## SCOPE NARRATIVE FORMAT
-
-For multi-room projects, the scope_narrative should mention all rooms:
-"Three tub-to-shower conversions: two 31\"x59\" guest baths and one 54\"x40\" master with zero-entry. All with tile to 96\" ceiling and one niche each."
-
----
-
 ## CRITICAL RULES
 
-1. **SEPARATE LINE ITEMS PER ROOM** - Never bulk items like "Tile for 3 showers"
-2. **Include room_label** - Every line item needs room_label field
-3. **Price each room appropriately** - Larger rooms cost more
-4. **Match pricing to dimensions** - 54x40 is bigger than 31x59
-5. **Return INTERNAL COSTS (IC)** - System applies margin separately
-6. **Include notes:** Estimate valid for 30 days, permits not included`;
+1. **ALWAYS BREAK TILE INTO 3 COMPONENTS** - Wall, shower floor, main floor
+2. **Include sqft in descriptions** - "(75 sqft)", "(17 sqft)", etc.
+3. **SEPARATE LINE ITEMS PER ROOM** - Never bulk items like "Tile for 3 showers"
+4. **Include room_label** - Every line item needs room_label field
+5. **Price each component separately** - Use the sqft pricing formula
+6. **Return INTERNAL COSTS (IC)** - System applies margin separately
+7. **Include notes:** Estimate valid for 30 days, permits not included`;
 
 // ============================================================
 // MAIN HANDLER
@@ -589,7 +772,7 @@ serve(async (req) => {
             type: "function",
             function: {
               name: "respond",
-              description: "Respond to the user - ask required scope/dimension questions OR generate the estimate.",
+              description: "Respond to the user - ask required scope/dimension/tile measurement questions OR generate the estimate.",
               parameters: conversationSchema
             }
           }
@@ -664,6 +847,27 @@ serve(async (req) => {
     console.log("Generating estimate with size category:", sizeCategory);
     console.log("Bathrooms:", JSON.stringify(bathrooms));
     
+    // Pre-calculate tile line items for each bathroom
+    const tileLineItemsByRoom: Map<string, any[]> = new Map();
+    
+    for (const bath of bathrooms) {
+      const label = bath.label || `Bathroom ${bath.id}`;
+      const tileMeasurements: TileMeasurements = bath.tile_measurements || {
+        shower_wall_dims: bath.shower_dims || bath.room_dims,
+        ceiling_height: bath.scope?.ceiling_height || 96,
+        shower_floor_type: bath.scope?.zero_entry ? 'curbless' : 'tile_pan',
+        main_floor_tile: bath.scope?.floor_tile,
+        room_sqft: bath.room_sqft,
+        tile_quality: bath.tile_measurements?.tile_quality || 'standard'
+      };
+      
+      // Generate tile line items using our calculation
+      const tileItems = generateTileLineItems(label, tileMeasurements);
+      tileLineItemsByRoom.set(label, tileItems);
+      
+      console.log(`Tile items for ${label}:`, JSON.stringify(tileItems));
+    }
+    
     const fullContext = historyMessages.map((m: { role: string; content: string }) => 
       `${m.role}: ${m.content}`
     ).join('\n');
@@ -673,12 +877,28 @@ serve(async (req) => {
     if (bathrooms.length > 0) {
       roomContext = `\n\nMULTIPLE BATHROOMS (${bathrooms.length} total):\n`;
       bathrooms.forEach((bath: any, idx: number) => {
-        roomContext += `\n${idx + 1}. ${bath.label || `Bathroom ${idx + 1}`}:
-   - Shower/tub dimensions: ${bath.shower_dims || bath.room_dims || 'not specified'}
+        const label = bath.label || `Bathroom ${idx + 1}`;
+        const tileMeasurements = bath.tile_measurements || {};
+        roomContext += `\n${idx + 1}. ${label}:
+   - Shower/tub dimensions: ${bath.shower_dims || bath.room_dims || tileMeasurements.shower_wall_dims || 'not specified'}
+   - Ceiling height: ${tileMeasurements.ceiling_height || bath.scope?.ceiling_height || 96}"
+   - Shower floor type: ${tileMeasurements.shower_floor_type || 'tile_pan'}
+   - Main floor tile: ${tileMeasurements.main_floor_tile ? 'Yes' : 'No'}
+   - Room sqft: ${tileMeasurements.room_sqft || bath.room_sqft || 40}
+   - Tile quality: ${tileMeasurements.tile_quality || 'standard'}
    - Vanity: ${bath.vanity_size || 'not specified'}
    - Scope: ${JSON.stringify(bath.scope || {})}`;
+        
+        // Include pre-calculated tile pricing
+        const preCalcTile = tileLineItemsByRoom.get(label);
+        if (preCalcTile && preCalcTile.length > 0) {
+          roomContext += `\n   - PRE-CALCULATED TILE LINE ITEMS (USE THESE EXACT VALUES):`;
+          preCalcTile.forEach(item => {
+            roomContext += `\n     * ${item.description} - IC: $${item.internal_cost}, CP: $${item.customer_price}`;
+          });
+        }
       });
-      roomContext += '\n\nCRITICAL: Create SEPARATE line items for EACH bathroom. Do NOT create bulk items.';
+      roomContext += '\n\nCRITICAL: Use the PRE-CALCULATED TILE LINE ITEMS above. Create SEPARATE line items for EACH tile component (wall, shower floor, main floor).';
     }
     if (kitchens.length > 0) {
       roomContext += `\n\nMULTIPLE KITCHENS (${kitchens.length} total):\n`;
@@ -705,10 +925,11 @@ ${roomContext}
 
 CRITICAL INSTRUCTIONS:
 1. Use the ${sizeCategory.toUpperCase()} baseline pricing
-2. ${bathrooms.length > 1 || kitchens.length > 1 ? 'Create SEPARATE line items for EACH room - DO NOT bulk items' : 'Consolidate line items (2-5 per trade max)'}
-3. Each line item needs room_label field if multiple rooms
-4. Include scope_narrative for each trade
-5. Return INTERNAL COSTS (IC) - system applies margin separately`;
+2. ${bathrooms.length > 1 || kitchens.length > 1 ? 'Create SEPARATE line items for EACH room - DO NOT bulk items' : 'Create room-specific line items'}
+3. FOR TILE: Use the PRE-CALCULATED values provided above - break into wall tile, shower floor, main floor
+4. Each line item needs room_label field
+5. Include scope_narrative for each trade
+6. Return INTERNAL COSTS (IC) - system applies margin separately`;
 
     const estimateResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -727,7 +948,7 @@ CRITICAL INSTRUCTIONS:
             type: "function",
             function: {
               name: "generate_estimate",
-              description: "Generate a clean estimate with separate line items per room when multiple rooms specified.",
+              description: "Generate a clean estimate with SEPARATE tile line items (wall, shower floor, main floor) for each room.",
               parameters: estimateSchema
             }
           }
@@ -754,17 +975,37 @@ CRITICAL INSTRUCTIONS:
       throw new Error("Invalid estimate JSON");
     }
     
-    // Step 4: Calculate totals with margin applied
+    // Step 4: Post-process to ensure tile items use our calculated values
+    const tradesWithTileOverride = (estimate.trades || []).map((trade: any) => {
+      // If this is the Tile trade, replace with our calculated values
+      if (trade.trade_name.toLowerCase().includes('tile')) {
+        const allTileItems: any[] = [];
+        tileLineItemsByRoom.forEach((items, roomLabel) => {
+          allTileItems.push(...items);
+        });
+        
+        if (allTileItems.length > 0) {
+          return {
+            ...trade,
+            line_items: allTileItems
+          };
+        }
+      }
+      return trade;
+    });
+    
+    // Step 5: Calculate totals with margin applied
     const marginMultiplier = 1 / (1 - marginResult.margin_used); // e.g., 42% margin = 1.724x
     let subtotalIC = 0;
     let grandTotal = 0;
     
     // Apply margin to each line item and calculate totals
-    const tradesWithMargin = (estimate.trades || []).map((trade: any) => ({
+    const tradesWithMargin = tradesWithTileOverride.map((trade: any) => ({
       ...trade,
       line_items: (trade.line_items || []).map((item: any) => {
         const ic = item.internal_cost || 0;
-        const cp = Math.round(ic * marginMultiplier);
+        // For tile items, CP is already calculated; for others, apply margin
+        const cp = item.customer_price || Math.round(ic * marginMultiplier);
         subtotalIC += ic;
         grandTotal += cp;
         return {
