@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
-import { ProposalPdf, buildTradeGroups } from '@/components/pdf/ProposalPdf';
 import { SimpleProposalPdf } from '@/components/pdf/SimpleProposalPdf';
 import { extractPassthroughLineItems, calculatePassthroughTotal } from '@/lib/estimate-passthrough';
 import { generateProposalWord } from '@/components/word/ProposalWord';
@@ -299,33 +298,21 @@ export default function EstimateDetail() {
     
     setDownloadingWord(true);
     try {
-      const priceRange = showRange && customLowPrice && customHighPrice ? {
-        low: parseFloat(customLowPrice.replace(/[^0-9.]/g, '')),
-        high: parseFloat(customHighPrice.replace(/[^0-9.]/g, '')),
-      } : undefined;
+      // Use same logic as PDF - extract line items and calculate selected price
+      const lineItems = extractPassthroughLineItems(estimate);
+      const selectedPrice = selectedPriceLevel === 'low' 
+        ? estimate.low_estimate_cp 
+        : selectedPriceLevel === 'high' 
+          ? estimate.high_estimate_cp 
+          : estimate.final_cp_total;
       
-      const selectedPrice = !showRange ? (
-        selectedPriceLevel === 'low' 
-          ? estimate.low_estimate_cp 
-          : selectedPriceLevel === 'high' 
-            ? estimate.high_estimate_cp 
-            : estimate.final_cp_total
-      ) : estimate.final_cp_total;
-      
-      const estimateForWord = {
-        ...estimate,
-        final_cp_total: selectedPrice,
-      };
-      
-      const tradeGroups = buildTradeGroups(estimateForWord, pricingConfig || undefined, showTileSqft);
+      const total = selectedPrice || calculatePassthroughTotal(lineItems);
       
       await generateProposalWord({
         contractor,
-        estimate: estimateForWord,
-        pricingConfig: pricingConfig || undefined,
-        priceRange,
-        tradeGroups,
-        showTileSqft,
+        estimate,
+        lineItems,
+        total,
       });
       
       toast.success('Word document downloaded successfully!');
