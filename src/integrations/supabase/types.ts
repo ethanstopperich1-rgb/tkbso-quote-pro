@@ -480,6 +480,44 @@ export type Database = {
           },
         ]
       }
+      margin_strategies: {
+        Row: {
+          base_margin: number
+          contractor_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          strategy_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          base_margin?: number
+          contractor_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          strategy_name?: string
+          updated_at?: string | null
+        }
+        Update: {
+          base_margin?: number
+          contractor_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          strategy_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "margin_strategies_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_configs: {
         Row: {
           air_scrubber_weekly_cp: number | null
@@ -1525,6 +1563,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      zip_margin_rules: {
+        Row: {
+          created_at: string | null
+          id: string
+          margin_override: number
+          notes: string | null
+          strategy_id: string
+          updated_at: string | null
+          zip_code: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          margin_override: number
+          notes?: string | null
+          strategy_id: string
+          updated_at?: string | null
+          zip_code: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          margin_override?: number
+          notes?: string | null
+          strategy_id?: string
+          updated_at?: string | null
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zip_margin_rules_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "margin_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
