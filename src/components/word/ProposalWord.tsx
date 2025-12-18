@@ -2,45 +2,41 @@ import {
   Document,
   Paragraph,
   TextRun,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  AlignmentType,
-  BorderStyle,
-  HeadingLevel,
   Packer,
   ImageRun,
   convertInchesToTwip,
-  ITableCellBorders,
+  AlignmentType,
+  BorderStyle,
 } from 'docx';
 import { saveAs } from 'file-saver';
-import { Contractor, Estimate, PricingConfig } from '@/types/database';
+import { Contractor, Estimate } from '@/types/database';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
-import { formatLineItemForPdf } from '@/lib/line-item-descriptions';
 import tkbsoLogo from '@/assets/tkbso-logo-full.png';
 
-// Import the buildTradeGroups function logic - we'll replicate key parts
-interface TradeGroup {
-  trade: string;
-  items: Array<{
-    description: string;
-    quantity?: number;
-    unit?: string;
-    isMaterialAllowance?: boolean;
-  }>;
+// Passthrough line item interface (matches PDF)
+export interface PassthroughLineItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  cost: number;
+  price: number;
+  room_label?: string;
+}
+
+// Additional item interface
+interface Additional {
+  id: string;
+  description: string;
+  details?: string;
+  price: number;
+  category?: string;
 }
 
 interface ProposalWordProps {
   contractor: Contractor;
   estimate: Estimate;
-  pricingConfig?: PricingConfig;
-  priceRange?: {
-    low: number;
-    high: number;
-  };
-  showTileSqft?: boolean;
-  tradeGroups: TradeGroup[];
+  lineItems: PassthroughLineItem[];
+  total: number;
 }
 
 const formatCurrency = (value: number | null | undefined): string => {
@@ -51,13 +47,6 @@ const formatCurrency = (value: number | null | undefined): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
-};
-
-const noBorders: ITableCellBorders = {
-  top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-  bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-  left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-  right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
 };
 
 // Helper to fetch image as ArrayBuffer
@@ -72,47 +61,160 @@ async function fetchImageAsArrayBuffer(url: string): Promise<ArrayBuffer | null>
   }
 }
 
+// Group line items by room_label
+function groupLineItemsByRoom(lineItems: PassthroughLineItem[]): Map<string, PassthroughLineItem[]> {
+  const groups = new Map<string, PassthroughLineItem[]>();
+  
+  for (const item of lineItems) {
+    const roomLabel = item.room_label || '_general';
+    if (!groups.has(roomLabel)) {
+      groups.set(roomLabel, []);
+    }
+    groups.get(roomLabel)!.push(item);
+  }
+  
+  return groups;
+}
+
+// Calculate subtotal for a room
+function calculateSubtotal(items: PassthroughLineItem[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+// Parse dimensions from room label (e.g., "Guest Bath 1 (31"x59")" -> {width: 31, length: 59})
+function parseDimensionsFromLabel(label: string): { width: number; length: number } | null {
+  const match = label.match(/\((\d+)"?\s*x\s*(\d+)"?\)/i);
+  if (match) {
+    return {
+      width: parseInt(match[1], 10),
+      length: parseInt(match[2], 10),
+    };
+  }
+  return null;
+}
+
+// Calculate wall tile square footage
+function calculateWallTileSqft(dims: { width: number; length: number }, ceilingHeight: number = 96): number {
+  const widthFt = dims.width / 12;
+  const lengthFt = dims.length / 12;
+  const heightFt = ceilingHeight / 12;
+  
+  const backWall = lengthFt * heightFt;
+  const sideWall1 = widthFt * heightFt;
+  const sideWall2 = widthFt * heightFt;
+  
+  const totalWallSqft = (backWall + sideWall1 + sideWall2) * 0.85;
+  
+  return Math.ceil(totalWallSqft);
+}
+
+// Calculate shower floor square footage
+function calculateShowerFloorSqft(dims: { width: number; length: number }): number {
+  const widthFt = dims.width / 12;
+  const lengthFt = dims.length / 12;
+  
+  const floorSqft = (widthFt * lengthFt) * 1.1;
+  
+  return Math.ceil(floorSqft);
+}
+
+// Get additionals from estimate
+function getAdditionals(estimate: Estimate): Additional[] {
+  const payload = estimate.internal_json_payload as any;
+  if (payload?.additionals && Array.isArray(payload.additionals)) {
+    return payload.additionals;
+  }
+  return [];
+}
+
+// Calculate market price
+function calculateMarketPrice(customerPrice: number, multiplier: number = 1.23): number {
+  return Math.round(customerPrice * multiplier);
+}
+
+// Determine progress milestone based on scope
+function determineProgressMilestone(lineItems: PassthroughLineItem[], estimate: Estimate): { description: string; details: string } {
+  const itemNames = lineItems.map(item => item.name.toLowerCase()).join(' ');
+  
+  const hasTileWork = itemNames.includes('tile') || itemNames.includes('waterproof');
+  const hasVanityWork = itemNames.includes('vanity') || itemNames.includes('cabinet');
+  const hasPlumbingWork = itemNames.includes('plumb');
+  const hasFramingWork = itemNames.includes('fram') || itemNames.includes('drywall');
+  const hasCountertopWork = itemNames.includes('countertop') || itemNames.includes('quartz');
+  
+  if (hasTileWork) {
+    return {
+      description: 'Due upon tile installation',
+      details: 'Rough plumbing and framing substantially complete',
+    };
+  }
+  
+  if (hasVanityWork) {
+    return {
+      description: 'Due upon vanity/cabinet installation',
+      details: 'Tile work and plumbing rough-in complete',
+    };
+  }
+  
+  if (hasPlumbingWork) {
+    return {
+      description: 'Due upon rough plumbing completion',
+      details: 'Demolition and framing complete',
+    };
+  }
+  
+  if (hasCountertopWork) {
+    return {
+      description: 'Due upon countertop installation',
+      details: 'Cabinets installed and plumbing rough-in complete',
+    };
+  }
+  
+  if (hasFramingWork) {
+    return {
+      description: 'Due upon drywall completion',
+      details: 'Framing and rough utilities complete',
+    };
+  }
+  
+  return {
+    description: 'Due at project midpoint',
+    details: 'Approximately 50% of work complete',
+  };
+}
+
 export async function generateProposalWord({
   contractor,
   estimate,
-  pricingConfig,
-  priceRange,
-  tradeGroups,
+  lineItems,
+  total,
 }: ProposalWordProps): Promise<void> {
   const settings: ContractorSettings = (contractor.settings as ContractorSettings) || defaultSettings;
   const { companyProfile, branding, defaults } = settings;
 
-  const depositSplit = (defaults.depositPct || pricingConfig?.payment_split_deposit || 65) / 100;
-  const progressSplit = (defaults.progressPct || pricingConfig?.payment_split_progress || 25) / 100;
-  const finalSplit = (defaults.finalPct || pricingConfig?.payment_split_final || 10) / 100;
+  // Check if dual pricing should be shown
+  const showDualPricing = defaults.showMarketComparison ?? true;
+  const marketPriceMultiplier = 1.23;
 
-  const isKitchenProject = estimate.has_kitchen && !estimate.has_bathrooms;
-  const progressLabel = isKitchenProject
-    ? (defaults.progressLabelKitchen || 'Due at arrival of cabinetry')
-    : (defaults.progressLabelBathroom || 'Due at start of tile installation');
+  // Payment splits
+  const depositSplit = (defaults.depositPct || 65) / 100;
+  const progressSplit = (defaults.progressPct || 25) / 100;
+  const finalSplit = (defaults.finalPct || 10) / 100;
 
-  const showRange = priceRange && priceRange.low > 0 && priceRange.high > 0;
-  const totalCost = estimate.final_cp_total || 0;
-  
-  const baseAmount = showRange ? Math.round((priceRange.low + priceRange.high) / 2) : totalCost;
-  const depositAmount = Math.round(baseAmount * depositSplit);
-  const progressAmount = Math.round(baseAmount * progressSplit);
-  const finalAmount = Math.round(baseAmount * finalSplit);
+  const depositAmount = Math.round(total * depositSplit);
+  const progressAmount = Math.round(total * progressSplit);
+  const finalAmount = Math.round(total * finalSplit);
 
-  const depositAmountLow = showRange ? Math.round(priceRange.low * depositSplit) : depositAmount;
-  const depositAmountHigh = showRange ? Math.round(priceRange.high * depositSplit) : depositAmount;
-  const progressAmountLow = showRange ? Math.round(priceRange.low * progressSplit) : progressAmount;
-  const progressAmountHigh = showRange ? Math.round(priceRange.high * progressSplit) : progressAmount;
-  const finalAmountLow = showRange ? Math.round(priceRange.low * finalSplit) : finalAmount;
-  const finalAmountHigh = showRange ? Math.round(priceRange.high * finalSplit) : finalAmount;
+  // Dynamic milestone
+  const progressMilestone = determineProgressMilestone(lineItems, estimate);
 
   const addressParts = [estimate.property_address, estimate.city, estimate.state, estimate.zip].filter(Boolean);
   const fullAddress = addressParts.join(', ').replace(/,\s*,/g, ',');
 
   const clientName = estimate.client_name || 'Valued Customer';
-  const companyName = companyProfile.companyName || branding.headerTitle || 'The Kitchen & Bath Store of Orlando';
-  const companyPhone = companyProfile.phone || '';
-  const companyEmail = companyProfile.email || '';
+  const companyName = companyProfile.companyName || branding.headerTitle || contractor.name;
+  const companyPhone = companyProfile.phone || contractor.primary_contact_phone || '';
+  const companyEmail = companyProfile.email || contractor.primary_contact_email || '';
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -120,26 +222,44 @@ export async function generateProposalWord({
     day: 'numeric',
   });
 
-  const notes = estimate.job_notes || defaults.termsText || 'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are excluded unless noted otherwise.';
+  // Group items by room
+  const groupedItems = groupLineItemsByRoom(lineItems);
+  const roomEntries = Array.from(groupedItems.entries());
+  
+  // Calculate base total and scale factor
+  const baseTotal = lineItems.reduce((sum, item) => sum + item.price, 0);
+  const scaleFactor = baseTotal > 0 ? total / baseTotal : 1;
+  
+  // Calculate room subtotals
+  const roomSubtotals = roomEntries.map(([label, items]) => ({
+    label: label === '_general' ? 'General Items' : label,
+    subtotal: Math.round(calculateSubtotal(items) * scaleFactor),
+  }));
+
+  // Get additionals
+  const additionals = getAdditionals(estimate);
+  const additionalsTotal = additionals.reduce((sum, a) => sum + a.price, 0);
+
+  // Market price calculations
+  const marketPrice = calculateMarketPrice(total, marketPriceMultiplier);
+  const savings = marketPrice - total;
+  const savingsPercent = Math.round((savings / marketPrice) * 100);
 
   // Fetch logo image
   const logoUrl = contractor.logo_url || tkbsoLogo;
   const logoData = await fetchImageAsArrayBuffer(logoUrl);
 
-  // Build document sections
+  // Build document
   const children: Paragraph[] = [];
 
-  // Logo header (if we have the image)
+  // Logo header
   if (logoData) {
     children.push(
       new Paragraph({
         children: [
           new ImageRun({
             data: logoData,
-            transformation: {
-              width: 200,
-              height: 60,
-            },
+            transformation: { width: 200, height: 60 },
             type: 'png',
           }),
         ],
@@ -148,16 +268,10 @@ export async function generateProposalWord({
       })
     );
   } else {
-    // Fallback to text header if logo fails to load
     children.push(
       new Paragraph({
         children: [
-          new TextRun({
-            text: companyName,
-            bold: true,
-            size: 36, // 18pt
-            color: '1e3a8a',
-          }),
+          new TextRun({ text: companyName, bold: true, size: 36, color: '1e3a8a' }),
         ],
         alignment: AlignmentType.CENTER,
         spacing: { after: 100 },
@@ -182,16 +296,10 @@ export async function generateProposalWord({
     );
   }
 
-  // Divider line
+  // Divider
   children.push(
     new Paragraph({
-      children: [
-        new TextRun({
-          text: '─'.repeat(80),
-          color: 'e2e8f0',
-          size: 16,
-        }),
-      ],
+      children: [new TextRun({ text: '─'.repeat(80), color: 'e2e8f0', size: 16 })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 300 },
     })
@@ -201,12 +309,7 @@ export async function generateProposalWord({
   children.push(
     new Paragraph({
       children: [
-        new TextRun({
-          text: `Quote for ${clientName}`,
-          bold: true,
-          size: 32, // 16pt
-          color: '1e3a8a',
-        }),
+        new TextRun({ text: `Quote for ${clientName}`, bold: true, size: 32, color: '1e3a8a' }),
       ],
       alignment: AlignmentType.CENTER,
       spacing: { after: 50 },
@@ -216,19 +319,13 @@ export async function generateProposalWord({
   // Date
   children.push(
     new Paragraph({
-      children: [
-        new TextRun({
-          text: currentDate,
-          size: 18,
-          color: '64748b',
-        }),
-      ],
+      children: [new TextRun({ text: currentDate, size: 18, color: '64748b' })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 400 },
     })
   );
 
-  // Client info section
+  // Client info
   if (estimate.client_phone) {
     children.push(
       new Paragraph({
@@ -268,208 +365,342 @@ export async function generateProposalWord({
   // Divider
   children.push(
     new Paragraph({
-      children: [
-        new TextRun({
-          text: '─'.repeat(80),
-          color: 'e2e8f0',
-          size: 16,
-        }),
-      ],
+      children: [new TextRun({ text: '─'.repeat(80), color: 'e2e8f0', size: 16 })],
       alignment: AlignmentType.CENTER,
       spacing: { after: 300, before: 100 },
     })
   );
 
-  // Trade groups
-  for (const group of tradeGroups) {
-    // Trade header
+  // Room sections
+  for (const [roomLabel, roomItems] of roomEntries) {
+    const displayLabel = roomLabel === '_general' ? 'General Items' : roomLabel;
+    const subtotal = Math.round(calculateSubtotal(roomItems) * scaleFactor);
+    
+    // Check for tile work and dimensions
+    const hasTile = roomItems.some(item => 
+      item.name.toLowerCase().includes('tile') || 
+      item.name.toLowerCase().includes('waterproof')
+    );
+    const dims = parseDimensionsFromLabel(roomLabel);
+    const wallTileSqft = dims && hasTile ? calculateWallTileSqft(dims) : null;
+    const showerFloorSqft = dims && hasTile ? calculateShowerFloorSqft(dims) : null;
+    const totalTileSqft = wallTileSqft && showerFloorSqft ? wallTileSqft + showerFloorSqft : null;
+    
+    // Room header
     children.push(
       new Paragraph({
         children: [
-          new TextRun({
-            text: group.trade,
-            bold: true,
-            size: 22,
-            color: '1e3a8a',
-          }),
+          new TextRun({ text: displayLabel, bold: true, size: 22, color: 'ffffff' }),
         ],
-        border: {
-          bottom: {
-            color: '1e3a8a',
-            size: 6,
-            style: BorderStyle.SINGLE,
-            space: 1,
-          },
-        },
+        shading: { fill: '0ea5e9' },
         spacing: { before: 200, after: 100 },
       })
     );
 
-    // Trade items
-    for (const item of group.items) {
-      const description = item.isMaterialAllowance
-        ? item.description
-        : formatLineItemForPdf(item.description, item.quantity, item.unit);
+    // Scope Details label
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'Scope Details', bold: true, size: 18, color: '64748b' }),
+        ],
+        spacing: { after: 50 },
+      })
+    );
 
+    // Bullet items (NO PRICES)
+    for (const item of roomItems) {
       children.push(
         new Paragraph({
           children: [
-            new TextRun({
-              text: `• ${description}`,
-              size: 18,
-              color: item.isMaterialAllowance ? '64748b' : '475569',
-              italics: item.isMaterialAllowance,
-            }),
+            new TextRun({ text: `• ${item.name}`, size: 18, color: '475569' }),
           ],
           indent: { left: convertInchesToTwip(0.2) },
           spacing: { after: 50 },
         })
       );
     }
+
+    // Square footage breakdown (if applicable)
+    if (totalTileSqft) {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: 'Square Footage Breakdown', bold: true, size: 16, color: '64748b' }),
+          ],
+          shading: { fill: 'f8fafc' },
+          spacing: { before: 100, after: 50 },
+        })
+      );
+      
+      if (wallTileSqft) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `  Wall Tile (3 walls to 96"): ${wallTileSqft} sqft`, size: 16, color: '475569' }),
+            ],
+            shading: { fill: 'f8fafc' },
+            spacing: { after: 30 },
+          })
+        );
+      }
+      
+      if (showerFloorSqft) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `  Shower Floor Tile: ${showerFloorSqft} sqft`, size: 16, color: '475569' }),
+            ],
+            shading: { fill: 'f8fafc' },
+            spacing: { after: 30 },
+          })
+        );
+      }
+      
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: `  Total Tile Coverage: ${totalTileSqft} sqft`, bold: true, size: 16, color: '1e293b' }),
+          ],
+          shading: { fill: 'f8fafc' },
+          spacing: { after: 100 },
+        })
+      );
+    }
+
+    // Dual pricing for room (if enabled)
+    if (showDualPricing) {
+      const roomMarketPrice = calculateMarketPrice(subtotal, marketPriceMultiplier);
+      const roomSavings = roomMarketPrice - subtotal;
+      
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: `Market: ${formatCurrency(roomMarketPrice)}`, size: 18, color: '94a3b8', strike: true }),
+            new TextRun({ text: `  Your Price: ${formatCurrency(subtotal)}`, bold: true, size: 20, color: '1e293b' }),
+            new TextRun({ text: `  Save ${formatCurrency(roomSavings)}`, size: 16, color: '10b981' }),
+          ],
+          alignment: AlignmentType.RIGHT,
+          spacing: { after: 50 },
+        })
+      );
+    }
+
+    // Room subtotal
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: `${displayLabel} Subtotal: `, size: 20, color: '475569' }),
+          new TextRun({ text: formatCurrency(subtotal), bold: true, size: 22, color: '1e293b' }),
+        ],
+        alignment: AlignmentType.RIGHT,
+        border: { top: { style: BorderStyle.SINGLE, size: 6, color: 'e2e8f0' } },
+        spacing: { before: 50, after: 150 },
+      })
+    );
   }
 
-  // Spacing before totals
+  // Additionals section (if any)
+  if (additionals.length > 0) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: '─'.repeat(80), color: 'e2e8f0', size: 16 })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200, before: 200 },
+      })
+    );
+
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'RECOMMENDED ADDITIONALS (Optional)', bold: true, size: 20, color: 'ea580c' }),
+        ],
+        spacing: { after: 100 },
+      })
+    );
+
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'Add these upgrades to enhance your project:', size: 16, color: '64748b' }),
+        ],
+        spacing: { after: 100 },
+      })
+    );
+
+    for (const additional of additionals) {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: `☐ ${additional.description}`, bold: true, size: 18, color: '1e293b' }),
+            new TextRun({ text: `  ${formatCurrency(additional.price)}`, size: 18, color: '475569' }),
+          ],
+          spacing: { after: 30 },
+        })
+      );
+      
+      if (additional.details) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `    ${additional.details}`, size: 16, color: '64748b', italics: true }),
+            ],
+            spacing: { after: 80 },
+          })
+        );
+      }
+    }
+
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: `Total if all additionals selected: ${formatCurrency(additionalsTotal)}`, bold: true, size: 18, color: 'ea580c' }),
+        ],
+        alignment: AlignmentType.RIGHT,
+        spacing: { before: 100, after: 200 },
+      })
+    );
+  }
+
+  // Project Total section
   children.push(
     new Paragraph({
-      children: [],
+      children: [new TextRun({ text: '─'.repeat(80), color: '1e3a8a', size: 16 })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100, before: 200 },
+    })
+  );
+
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'PROJECT TOTAL', bold: true, size: 20, color: '64748b' }),
+      ],
+      spacing: { after: 100 },
+    })
+  );
+
+  // Room subtotals summary
+  for (const room of roomSubtotals) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: room.label, size: 18, color: '475569' }),
+          new TextRun({ text: `  ${formatCurrency(room.subtotal)}`, size: 18, color: '1e293b' }),
+        ],
+        spacing: { after: 30 },
+      })
+    );
+  }
+
+  children.push(
+    new Paragraph({
+      children: [new TextRun({ text: '─'.repeat(40), color: 'e2e8f0', size: 16 })],
+      spacing: { after: 100, before: 50 },
+    })
+  );
+
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'TOTAL PROJECT INVESTMENT: ', bold: true, size: 24, color: '1e3a8a' }),
+        new TextRun({ text: formatCurrency(total), bold: true, size: 28, color: '1e3a8a' }),
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 },
+    })
+  );
+
+  // Market comparison for total (if enabled)
+  if (showDualPricing) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: `Market Value: ${formatCurrency(marketPrice)}`, size: 18, color: '94a3b8' }),
+          new TextRun({ text: `  |  You Save: ${formatCurrency(savings)} (${savingsPercent}%)`, size: 18, color: '10b981' }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 300 },
+      })
+    );
+  }
+
+  // Payment Schedule
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'PAYMENT SCHEDULE', bold: true, size: 20, color: '1e3a8a' }),
+      ],
+      spacing: { before: 200, after: 150 },
+    })
+  );
+
+  // Deposit
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: `${Math.round(depositSplit * 100)}%  `, bold: true, size: 20, color: '1e3a8a' }),
+        new TextRun({ text: 'Deposit – Due upon contract signing', size: 20, color: '475569' }),
+        new TextRun({ text: `    ${formatCurrency(depositAmount)}`, bold: true, size: 20, color: '1e293b' }),
+      ],
+      spacing: { after: 30 },
+    })
+  );
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: '     Includes mobilization, materials ordering, and scheduling', size: 16, color: '64748b', italics: true }),
+      ],
+      spacing: { after: 80 },
+    })
+  );
+
+  // Progress (dynamic milestone)
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: `${Math.round(progressSplit * 100)}%  `, bold: true, size: 20, color: '1e3a8a' }),
+        new TextRun({ text: `Progress – ${progressMilestone.description}`, size: 20, color: '475569' }),
+        new TextRun({ text: `    ${formatCurrency(progressAmount)}`, bold: true, size: 20, color: '1e293b' }),
+      ],
+      spacing: { after: 30 },
+    })
+  );
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: `     ${progressMilestone.details}`, size: 16, color: '64748b', italics: true }),
+      ],
+      spacing: { after: 80 },
+    })
+  );
+
+  // Final
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: `${Math.round(finalSplit * 100)}%  `, bold: true, size: 20, color: '1e3a8a' }),
+        new TextRun({ text: 'Final – Due at project completion', size: 20, color: '475569' }),
+        new TextRun({ text: `    ${formatCurrency(finalAmount)}`, bold: true, size: 20, color: '1e293b' }),
+      ],
+      spacing: { after: 30 },
+    })
+  );
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: '     Final walkthrough and punchlist complete', size: 16, color: '64748b', italics: true }),
+      ],
       spacing: { after: 200 },
     })
   );
-
-  // Subtotal + Management Fee if applicable
-  if (estimate.include_management_fee && (estimate.management_fee_cp || 0) > 0) {
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: '─'.repeat(80),
-            color: 'e2e8f0',
-            size: 16,
-          }),
-        ],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 100 },
-      })
-    );
-
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({ text: 'Subtotal: ', size: 20, color: '475569' }),
-          new TextRun({ text: formatCurrency(totalCost - (estimate.management_fee_cp || 0)), bold: true, size: 20, color: '1e293b' }),
-        ],
-        alignment: AlignmentType.RIGHT,
-        spacing: { after: 50 },
-      })
-    );
-
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({ text: `Project Management Fee (${((estimate.management_fee_percent || 0) * 100).toFixed(0)}%): `, size: 20, color: '475569' }),
-          new TextRun({ text: formatCurrency(estimate.management_fee_cp), bold: true, size: 20, color: '1e293b' }),
-        ],
-        alignment: AlignmentType.RIGHT,
-        spacing: { after: 100 },
-      })
-    );
-  }
-
-  // Total Investment
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: '─'.repeat(80),
-          color: '1e3a8a',
-          size: 16,
-        }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 100, before: 100 },
-    })
-  );
-
-  const totalText = showRange
-    ? `${formatCurrency(priceRange.low)} to ${formatCurrency(priceRange.high)}`
-    : formatCurrency(totalCost);
-
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({ text: 'Total Investment: ', bold: true, size: 28, color: '1e3a8a' }),
-        new TextRun({ text: totalText, bold: true, size: 28, color: '1e3a8a' }),
-      ],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 400 },
-    })
-  );
-
-  // Payment Schedule section
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'Payment Schedule',
-          bold: true,
-          size: 24,
-          color: '1e3a8a',
-        }),
-      ],
-      spacing: { before: 300, after: 150 },
-    })
-  );
-
-  // Payment rows
-  const paymentRows = [
-    {
-      percent: Math.round(depositSplit * 100),
-      label: 'Deposit – Due upon signing',
-      amount: showRange
-        ? `${formatCurrency(depositAmountLow)} to ${formatCurrency(depositAmountHigh)}`
-        : formatCurrency(depositAmount),
-    },
-    {
-      percent: Math.round(progressSplit * 100),
-      label: `Progress – ${progressLabel}`,
-      amount: showRange
-        ? `${formatCurrency(progressAmountLow)} to ${formatCurrency(progressAmountHigh)}`
-        : formatCurrency(progressAmount),
-    },
-    {
-      percent: Math.round(finalSplit * 100),
-      label: 'Final – Due at completion',
-      amount: showRange
-        ? `${formatCurrency(finalAmountLow)} to ${formatCurrency(finalAmountHigh)}`
-        : formatCurrency(finalAmount),
-    },
-  ];
-
-  for (const row of paymentRows) {
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({ text: `${row.percent}%  `, bold: true, size: 20, color: '1e3a8a' }),
-          new TextRun({ text: row.label, size: 20, color: '475569' }),
-          new TextRun({ text: `    ${row.amount}`, bold: true, size: 20, color: '1e293b' }),
-        ],
-        spacing: { after: 80 },
-      })
-    );
-  }
 
   // Acceptance section
   children.push(
     new Paragraph({
       children: [
-        new TextRun({
-          text: 'Acceptance',
-          bold: true,
-          size: 24,
-          color: '1e3a8a',
-        }),
+        new TextRun({ text: 'ACCEPTANCE', bold: true, size: 20, color: '1e3a8a' }),
       ],
-      spacing: { before: 400, after: 100 },
+      spacing: { before: 300, after: 100 },
     })
   );
 
@@ -477,7 +708,7 @@ export async function generateProposalWord({
     new Paragraph({
       children: [
         new TextRun({
-          text: 'By signing below, I accept this quote and agree to the terms and payment schedule.',
+          text: 'By signing below, I accept this quote and agree to the terms, scope of work, and payment schedule outlined above.',
           size: 18,
           color: '475569',
         }),
@@ -486,7 +717,7 @@ export async function generateProposalWord({
     })
   );
 
-  // Signature line
+  // Signature lines
   children.push(
     new Paragraph({
       children: [
@@ -505,49 +736,48 @@ export async function generateProposalWord({
         new TextRun({ text: 'Print Name: ', size: 20, color: '475569' }),
         new TextRun({ text: '_'.repeat(40), size: 20, color: '94a3b8' }),
       ],
+      spacing: { after: 200 },
+    })
+  );
+
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: `${companyName}: `, size: 20, color: '475569' }),
+        new TextRun({ text: '_'.repeat(40), size: 20, color: '94a3b8' }),
+        new TextRun({ text: '    Date: ', size: 20, color: '475569' }),
+        new TextRun({ text: '_'.repeat(20), size: 20, color: '94a3b8' }),
+      ],
       spacing: { after: 400 },
     })
   );
 
   // Notes section
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: 'Notes',
-          bold: true,
-          size: 20,
-          color: '64748b',
-        }),
-      ],
-      spacing: { before: 200, after: 50 },
-    })
-  );
+  const notes = estimate.job_notes || defaults.termsText || '';
+  if (notes) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: 'PROJECT NOTES', bold: true, size: 18, color: '1e3a8a' }),
+        ],
+        spacing: { before: 200, after: 100 },
+      })
+    );
 
-  children.push(
-    new Paragraph({
-      children: [
-        new TextRun({
-          text: notes,
-          size: 16,
-          color: '64748b',
-          italics: true,
-        }),
-      ],
-      spacing: { after: 200 },
-    })
-  );
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: notes, size: 16, color: '64748b' }),
+        ],
+        spacing: { after: 200 },
+      })
+    );
+  }
 
   // Footer
   children.push(
     new Paragraph({
-      children: [
-        new TextRun({
-          text: '─'.repeat(80),
-          color: 'e2e8f0',
-          size: 16,
-        }),
-      ],
+      children: [new TextRun({ text: '─'.repeat(80), color: 'e2e8f0', size: 16 })],
       alignment: AlignmentType.CENTER,
       spacing: { before: 200, after: 100 },
     })
@@ -556,15 +786,26 @@ export async function generateProposalWord({
   children.push(
     new Paragraph({
       children: [
-        new TextRun({
-          text: companyName,
-          size: 16,
-          color: '94a3b8',
-        }),
+        new TextRun({ text: `© ${new Date().getFullYear()} ${companyName}`, size: 16, color: '94a3b8' }),
       ],
       alignment: AlignmentType.CENTER,
     })
   );
+
+  if (companyPhone || companyEmail) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: [companyPhone, companyEmail].filter(Boolean).join(' | '),
+            size: 16,
+            color: '94a3b8',
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+      })
+    );
+  }
 
   const doc = new Document({
     sections: [
