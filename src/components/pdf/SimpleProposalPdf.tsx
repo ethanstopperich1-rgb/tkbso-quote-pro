@@ -742,11 +742,16 @@ export function SimpleProposalPdf({
   estimate, 
   lineItems,
   total,
-  showDualPricing = true,
+  showDualPricing,
   marketPriceMultiplier = 1.23,
 }: SimpleProposalPdfProps) {
   const settings: ContractorSettings = (contractor.settings as ContractorSettings) || defaultSettings;
   const { companyProfile, branding, defaults } = settings;
+
+  // Use setting from contractor defaults, with prop override capability
+  const shouldShowDualPricing = showDualPricing !== undefined 
+    ? showDualPricing 
+    : (defaults.showMarketComparison ?? true);
 
   // Payment splits
   const depositSplit = (defaults.depositPct || 65) / 100;
@@ -857,7 +862,7 @@ export function SimpleProposalPdf({
           const totalTileSqft = wallTileSqft && showerFloorSqft ? wallTileSqft + showerFloorSqft : null;
           
           // Calculate market price for this room
-          const roomMarketPrice = showDualPricing ? calculateMarketPrice(subtotal, marketPriceMultiplier) : null;
+          const roomMarketPrice = shouldShowDualPricing ? calculateMarketPrice(subtotal, marketPriceMultiplier) : null;
           const roomSavings = roomMarketPrice ? roomMarketPrice - subtotal : 0;
           
           return (
@@ -902,7 +907,7 @@ export function SimpleProposalPdf({
               )}
               
               {/* Dual Pricing Display */}
-              {showDualPricing && roomMarketPrice && (
+              {shouldShowDualPricing && roomMarketPrice && (
                 <View style={styles.dualPricingContainer}>
                   <Text style={styles.marketPrice}>Market: {formatCurrency(roomMarketPrice)}</Text>
                   <Text style={styles.savingsText}>Save {formatCurrency(roomSavings)}</Text>
@@ -965,7 +970,7 @@ export function SimpleProposalPdf({
         </View>
         
         {/* Market comparison for total */}
-        {showDualPricing && (
+        {shouldShowDualPricing && (
           <View style={styles.totalMarketRow}>
             <Text style={styles.totalMarketText}>Market Value: {formatCurrency(marketPrice)}</Text>
             <Text style={styles.totalSavingsText}>You Save: {formatCurrency(savings)} ({savingsPercent}%)</Text>

@@ -177,6 +177,30 @@ export function DefaultsCard({ data, onChange }: Props) {
             </div>
           </div>
         </div>
+
+        {/* PDF Display Options */}
+        <div className="space-y-4 border-t pt-4">
+          <Label className="text-base font-medium">PDF Display Options</Label>
+          
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="showMarketComparison"
+              checked={data.showMarketComparison}
+              onCheckedChange={(checked) => update('showMarketComparison', checked === true)}
+            />
+            <div className="space-y-1">
+              <label
+                htmlFor="showMarketComparison"
+                className="text-sm font-medium cursor-pointer"
+              >
+                Show market comparison pricing on PDFs
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Display crossed-out market price with savings to demonstrate value
+              </p>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

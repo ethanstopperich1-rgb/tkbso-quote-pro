@@ -61,6 +61,7 @@ export interface BusinessDefaults {
   termsText: string;
   requireSignedProposal: boolean;
   requireFixtureSelections: boolean;
+  showMarketComparison: boolean;
 }
 
 export interface ContractorSettings {
@@ -125,5 +126,6 @@ export const defaultSettings: ContractorSettings = {
     termsText: '',
     requireSignedProposal: true,
     requireFixtureSelections: false,
+    showMarketComparison: true,
   },
 };
