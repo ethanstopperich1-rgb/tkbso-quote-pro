@@ -83,94 +83,91 @@ const styles = StyleSheet.create({
     color: '#1e293b',
   },
   
-  // Table styles
-  table: {
-    marginTop: 10,
+  // Room section styles
+  roomSection: {
+    marginTop: 12,
+    marginBottom: 4,
   },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#1e3a8a',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-  },
-  tableHeaderCell: {
-    fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
-    color: '#ffffff',
-  },
-  tableHeaderDescription: {
-    flex: 1,
-  },
-  tableHeaderQty: {
-    width: 60,
-    textAlign: 'center',
-  },
-  tableHeaderPrice: {
-    width: 80,
-    textAlign: 'right',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  tableRowAlt: {
-    backgroundColor: '#f8fafc',
-  },
-  tableCell: {
-    fontSize: 9,
-    color: '#1e293b',
-  },
-  tableCellDescription: {
-    flex: 1,
-  },
-  tableCellQty: {
-    width: 60,
-    textAlign: 'center',
-  },
-  tableCellPrice: {
-    width: 80,
-    textAlign: 'right',
-    fontFamily: 'Helvetica-Bold',
-  },
-  
-  // Room header styles
   roomHeader: {
     flexDirection: 'row',
     backgroundColor: '#0ea5e9',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    marginTop: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   roomHeaderText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Helvetica-Bold',
     color: '#ffffff',
     flex: 1,
+  },
+  
+  // Bullet list styles (no prices)
+  bulletList: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f8fafc',
+  },
+  bulletItem: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  bulletPoint: {
+    width: 12,
+    fontSize: 9,
+    color: '#475569',
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 9,
+    color: '#1e293b',
+    lineHeight: 1.4,
   },
   
   // Subtotal row
   subtotalRow: {
     flexDirection: 'row',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    backgroundColor: '#f1f5f9',
-    borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#e2e8f0',
+    borderTopWidth: 1,
+    borderTopColor: '#cbd5e1',
   },
   subtotalLabel: {
     flex: 1,
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#475569',
     textAlign: 'right',
     paddingRight: 10,
   },
   subtotalAmount: {
-    width: 80,
-    fontSize: 9,
+    width: 90,
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e293b',
+    textAlign: 'right',
+  },
+  
+  // Summary table
+  summarySection: {
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  summaryLabel: {
+    flex: 1,
+    fontSize: 10,
+    color: '#475569',
+  },
+  summaryAmount: {
+    width: 90,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     textAlign: 'right',
@@ -179,22 +176,22 @@ const styles = StyleSheet.create({
   // Total row
   totalRow: {
     flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     backgroundColor: '#1e3a8a',
     marginTop: 2,
   },
   totalLabel: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Helvetica-Bold',
     color: '#ffffff',
     textAlign: 'right',
     paddingRight: 10,
   },
   totalAmount: {
-    width: 80,
-    fontSize: 12,
+    width: 90,
+    fontSize: 13,
     fontFamily: 'Helvetica-Bold',
     color: '#ffffff',
     textAlign: 'right',
@@ -202,25 +199,27 @@ const styles = StyleSheet.create({
   
   // Payment section
   paymentSection: {
-    marginTop: 20,
+    marginTop: 24,
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
-    marginBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    paddingBottom: 3,
+    marginBottom: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: '#1e3a8a',
+    paddingBottom: 4,
   },
   paymentRow: {
     flexDirection: 'row',
-    paddingVertical: 3,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   paymentPercent: {
-    width: 35,
-    fontSize: 9,
+    width: 40,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
   },
@@ -231,26 +230,46 @@ const styles = StyleSheet.create({
   },
   paymentAmount: {
     width: 80,
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     textAlign: 'right',
   },
+  paymentDetails: {
+    paddingLeft: 40,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  paymentDetailsText: {
+    fontSize: 8,
+    color: '#64748b',
+    fontStyle: 'italic',
+  },
   
-  // Signature
+  // Signature section (Page 2)
   signatureSection: {
-    marginTop: 20,
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  acceptanceTitle: {
+    fontSize: 12,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e3a8a',
     marginBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#1e3a8a',
+    paddingBottom: 4,
   },
   acceptanceText: {
-    fontSize: 8,
+    fontSize: 9,
     color: '#475569',
-    marginBottom: 10,
-    lineHeight: 1.4,
+    marginBottom: 20,
+    lineHeight: 1.5,
   },
   signatureRow: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 40,
+    marginBottom: 20,
   },
   signatureField: {
     flex: 1,
@@ -258,30 +277,41 @@ const styles = StyleSheet.create({
   signatureLine: {
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
-    marginBottom: 2,
-    height: 18,
+    marginBottom: 4,
+    height: 30,
   },
   signatureLabel: {
-    fontSize: 7,
+    fontSize: 8,
     color: '#64748b',
   },
   
-  // Notes
+  // Notes section
   notesSection: {
-    marginTop: 16,
-    padding: 8,
+    marginTop: 24,
+    padding: 12,
     backgroundColor: '#f8fafc',
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     borderLeftColor: '#1e3a8a',
   },
   notesTitle: {
-    fontSize: 8,
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
-    marginBottom: 3,
+    marginBottom: 8,
   },
-  notesText: {
-    fontSize: 7,
+  noteItem: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  noteNumber: {
+    width: 50,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e3a8a',
+  },
+  noteText: {
+    flex: 1,
+    fontSize: 8,
     color: '#475569',
     lineHeight: 1.5,
   },
@@ -293,33 +323,30 @@ const styles = StyleSheet.create({
     left: 50,
     right: 50,
     textAlign: 'center',
-    paddingTop: 6,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
   },
   footerText: {
-    fontSize: 7,
+    fontSize: 8,
     color: '#94a3b8',
   },
 });
 
 // STRICT PASSTHROUGH LINE ITEM INTERFACE
-// This is exactly what the estimator produces - NO modifications allowed
 export interface PassthroughLineItem {
-  name: string;        // Display name - shown exactly as-is
-  quantity: number;    // Quantity
-  unit: string;        // Unit (ea, sqft, ls, etc.)
-  cost: number;        // Internal cost (not shown to customer)
-  price: number;       // Customer price - shown in table
-  room_label?: string; // Optional room identifier for multi-room projects
+  name: string;
+  quantity: number;
+  unit: string;
+  cost: number;
+  price: number;
+  room_label?: string;
 }
 
 export interface SimpleProposalPdfProps {
   contractor: Contractor;
   estimate: Estimate;
-  // STRICT PASSTHROUGH: Line items are displayed exactly as provided
   lineItems: PassthroughLineItem[];
-  // Total is pre-calculated by estimator - NOT recalculated here
   total: number;
 }
 
@@ -347,16 +374,112 @@ function groupLineItemsByRoom(lineItems: PassthroughLineItem[]): Map<string, Pas
   return grouped;
 }
 
-// Check if we have multiple rooms
-function hasMultipleRooms(lineItems: PassthroughLineItem[]): boolean {
-  const uniqueRooms = new Set(lineItems.map(item => item.room_label).filter(Boolean));
-  return uniqueRooms.size > 1;
-}
-
 // Calculate subtotal for a group of items
 function calculateSubtotal(items: PassthroughLineItem[]): number {
   return items.reduce((sum, item) => sum + item.price, 0);
 }
+
+// Determine the most appropriate payment milestone based on scope
+interface PaymentMilestone {
+  type: 'tile_installation' | 'vanity_installation' | 'cabinet_installation' | 'rough_plumbing' | 'drywall_complete' | 'countertop_installation' | 'mid_project';
+  description: string;
+  details: string;
+}
+
+function determineProgressMilestone(lineItems: PassthroughLineItem[], estimate: Estimate): PaymentMilestone {
+  const itemNames = lineItems.map(item => item.name.toLowerCase()).join(' ');
+  
+  // Priority 1: Tile work (most common for bathroom remodels)
+  const hasTileWork = itemNames.includes('tile') || 
+                      itemNames.includes('shower') || 
+                      itemNames.includes('waterproof') ||
+                      estimate.tile_cp_total && estimate.tile_cp_total > 0;
+  
+  // Priority 2: Vanity/cabinet work
+  const hasVanityWork = itemNames.includes('vanity') || 
+                        itemNames.includes('cabinet') ||
+                        estimate.vanities_cp_total && estimate.vanities_cp_total > 0 ||
+                        estimate.cabinets_cp_total && estimate.cabinets_cp_total > 0;
+  
+  // Priority 3: Plumbing work
+  const hasPlumbingWork = itemNames.includes('plumb') || 
+                          estimate.plumbing_cp_total && estimate.plumbing_cp_total > 0;
+  
+  // Priority 4: Framing/Drywall work
+  const hasFramingWork = itemNames.includes('fram') || 
+                         itemNames.includes('drywall') ||
+                         estimate.demo_cp_total && estimate.demo_cp_total > 0;
+  
+  // Priority 5: Countertop work (kitchens)
+  const hasCountertopWork = itemNames.includes('countertop') || 
+                            itemNames.includes('quartz') ||
+                            estimate.quartz_cp_total && estimate.quartz_cp_total > 0;
+  
+  // Determine milestone based on what work is most prominent
+  if (hasTileWork) {
+    return {
+      type: 'tile_installation',
+      description: 'Due upon tile installation',
+      details: 'Rough plumbing and framing substantially complete',
+    };
+  }
+  
+  if (hasVanityWork && estimate.has_bathrooms) {
+    return {
+      type: 'vanity_installation',
+      description: 'Due upon vanity installation',
+      details: 'Tile work and plumbing rough-in complete',
+    };
+  }
+  
+  if (hasVanityWork && estimate.has_kitchen) {
+    return {
+      type: 'cabinet_installation',
+      description: 'Due upon cabinet installation',
+      details: 'Demolition and prep work complete',
+    };
+  }
+  
+  if (hasCountertopWork) {
+    return {
+      type: 'countertop_installation',
+      description: 'Due upon countertop installation',
+      details: 'Cabinets installed and plumbing rough-in complete',
+    };
+  }
+  
+  if (hasPlumbingWork) {
+    return {
+      type: 'rough_plumbing',
+      description: 'Due upon rough plumbing completion',
+      details: 'Demolition and framing complete',
+    };
+  }
+  
+  if (hasFramingWork) {
+    return {
+      type: 'drywall_complete',
+      description: 'Due upon drywall completion',
+      details: 'Framing and rough utilities complete',
+    };
+  }
+  
+  // Fallback: Generic mid-project
+  return {
+    type: 'mid_project',
+    description: 'Due at project midpoint',
+    details: 'Approximately 50% of work complete',
+  };
+}
+
+// Standard project notes
+const DEFAULT_NOTES = [
+  'Dumpster delivery will be scheduled for the first day of demolition. Please ensure clear access to the work area.',
+  'We will take reasonable precautions to minimize dust and disruption, including floor protection, dust barriers, and daily cleanup.',
+  'Estimated project timeline is approximately 14 working days from start date, pending material lead times.',
+  'Permits, if required, are EXCLUDED from this proposal unless specifically noted otherwise.',
+  'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections.',
+];
 
 export function SimpleProposalPdf({ 
   contractor, 
@@ -376,10 +499,8 @@ export function SimpleProposalPdf({
   const progressAmount = Math.round(total * progressSplit);
   const finalAmount = Math.round(total * finalSplit);
 
-  const isKitchenProject = estimate.has_kitchen && !estimate.has_bathrooms;
-  const progressLabel = isKitchenProject
-    ? (defaults.progressLabelKitchen || 'Due at arrival of cabinetry')
-    : (defaults.progressLabelBathroom || 'Due at start of tile installation');
+  // Dynamic milestone detection
+  const progressMilestone = determineProgressMilestone(lineItems, estimate);
 
   const addressParts = [estimate.property_address, estimate.city, estimate.state, estimate.zip].filter(Boolean);
   const fullAddress = addressParts.join(', ').replace(/,\s*,/g, ',');
@@ -395,15 +516,22 @@ export function SimpleProposalPdf({
     day: 'numeric',
   });
 
-  const notes = estimate.job_notes || defaults.termsText || 
-    'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections. Permits, if required, are excluded unless noted otherwise.';
+  // Group items by room
+  const groupedItems = groupLineItemsByRoom(lineItems);
+  const roomEntries = Array.from(groupedItems.entries());
+  
+  // Calculate room subtotals for summary
+  const roomSubtotals = roomEntries.map(([label, items]) => ({
+    label: label === '_general' ? 'General Items' : label,
+    subtotal: calculateSubtotal(items),
+  }));
 
-  // Determine if we should group by room
-  const showRoomGrouping = hasMultipleRooms(lineItems);
-  const groupedItems = showRoomGrouping ? groupLineItemsByRoom(lineItems) : null;
+  // Custom notes from estimate
+  const customNotes = estimate.job_notes ? [estimate.job_notes] : [];
 
   return (
     <Document>
+      {/* PAGE 1: Quote Details */}
       <Page size="LETTER" style={styles.page} wrap>
         {/* Fixed Header */}
         <View style={styles.headerBanner} fixed>
@@ -442,113 +570,127 @@ export function SimpleProposalPdf({
           )}
         </View>
 
-        {/* LINE ITEMS TABLE */}
-        <View style={styles.table}>
-          {/* Header Row */}
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.tableHeaderDescription]}>Description</Text>
-            <Text style={[styles.tableHeaderCell, styles.tableHeaderQty]}>Qty</Text>
-            <Text style={[styles.tableHeaderCell, styles.tableHeaderPrice]}>Price</Text>
-          </View>
-
-          {/* GROUPED BY ROOM (when multiple rooms exist) */}
-          {showRoomGrouping && groupedItems && (
-            <>
-              {Array.from(groupedItems.entries()).map(([roomLabel, roomItems], groupIndex) => {
-                const subtotal = calculateSubtotal(roomItems);
-                const displayLabel = roomLabel === '_general' ? 'General Items' : roomLabel;
-                
-                return (
-                  <View key={roomLabel}>
-                    {/* Room Header */}
-                    <View style={styles.roomHeader}>
-                      <Text style={styles.roomHeaderText}>{displayLabel}</Text>
-                    </View>
-                    
-                    {/* Room Line Items */}
-                    {roomItems.map((item, index) => (
-                      <View 
-                        key={`${roomLabel}-${index}`} 
-                        style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}
-                      >
-                        <Text style={[styles.tableCell, styles.tableCellDescription]}>
-                          {item.name}
-                        </Text>
-                        <Text style={[styles.tableCell, styles.tableCellQty]}>
-                          {item.quantity} {item.unit}
-                        </Text>
-                        <Text style={[styles.tableCell, styles.tableCellPrice]}>
-                          {formatCurrency(item.price)}
-                        </Text>
-                      </View>
-                    ))}
-                    
-                    {/* Room Subtotal */}
-                    <View style={styles.subtotalRow}>
-                      <Text style={styles.subtotalLabel}>{displayLabel} Subtotal:</Text>
-                      <Text style={styles.subtotalAmount}>{formatCurrency(subtotal)}</Text>
-                    </View>
+        {/* ROOM SECTIONS - Bullets without prices, subtotals per room */}
+        {roomEntries.map(([roomLabel, roomItems], groupIndex) => {
+          const subtotal = calculateSubtotal(roomItems);
+          const displayLabel = roomLabel === '_general' ? 'Scope of Work' : roomLabel;
+          
+          return (
+            <View key={roomLabel} style={styles.roomSection} wrap={false}>
+              {/* Room Header */}
+              <View style={styles.roomHeader}>
+                <Text style={styles.roomHeaderText}>{displayLabel}</Text>
+              </View>
+              
+              {/* Bullet List (NO PRICES) */}
+              <View style={styles.bulletList}>
+                {roomItems.map((item, index) => (
+                  <View key={`${roomLabel}-${index}`} style={styles.bulletItem}>
+                    <Text style={styles.bulletPoint}>•</Text>
+                    <Text style={styles.bulletText}>{item.name}</Text>
                   </View>
-                );
-              })}
-            </>
-          )}
+                ))}
+              </View>
+              
+              {/* Room Subtotal */}
+              <View style={styles.subtotalRow}>
+                <Text style={styles.subtotalLabel}>{displayLabel} Subtotal:</Text>
+                <Text style={styles.subtotalAmount}>{formatCurrency(subtotal)}</Text>
+              </View>
+            </View>
+          );
+        })}
 
-          {/* FLAT LIST (single room or no room labels) */}
-          {!showRoomGrouping && (
-            <>
-              {lineItems.map((item, index) => (
-                <View 
-                  key={index} 
-                  style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}
-                >
-                  <Text style={[styles.tableCell, styles.tableCellDescription]}>
-                    {item.name}
-                  </Text>
-                  <Text style={[styles.tableCell, styles.tableCellQty]}>
-                    {item.quantity} {item.unit}
-                  </Text>
-                  <Text style={[styles.tableCell, styles.tableCellPrice]}>
-                    {formatCurrency(item.price)}
-                  </Text>
-                </View>
-              ))}
-            </>
-          )}
-
-          {/* Total Row - uses pre-calculated total, NOT sum of items */}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>TOTAL</Text>
-            <Text style={styles.totalAmount}>{formatCurrency(total)}</Text>
+        {/* Summary Table (if multiple rooms) */}
+        {roomSubtotals.length > 1 && (
+          <View style={styles.summarySection}>
+            {roomSubtotals.map((room, index) => (
+              <View key={index} style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{room.label}</Text>
+                <Text style={styles.summaryAmount}>{formatCurrency(room.subtotal)}</Text>
+              </View>
+            ))}
           </View>
+        )}
+
+        {/* Total Row */}
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>TOTAL PROJECT INVESTMENT</Text>
+          <Text style={styles.totalAmount}>{formatCurrency(total)}</Text>
         </View>
 
-        {/* Payment Schedule */}
+        {/* Payment Schedule with Dynamic Milestones */}
         <View style={styles.paymentSection}>
-          <Text style={styles.sectionTitle}>Payment Schedule</Text>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Deposit – Due upon signing</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
+          <Text style={styles.sectionTitle}>PAYMENT SCHEDULE</Text>
+          
+          {/* Deposit */}
+          <View>
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
+              <Text style={styles.paymentLabel}>Deposit – Due upon contract signing</Text>
+              <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
+            </View>
+            <View style={styles.paymentDetails}>
+              <Text style={styles.paymentDetailsText}>
+                Includes mobilization, materials ordering, and scheduling
+              </Text>
+            </View>
           </View>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Progress – {progressLabel}</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
+          
+          {/* Progress - DYNAMIC MILESTONE */}
+          <View>
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
+              <Text style={styles.paymentLabel}>Progress – {progressMilestone.description}</Text>
+              <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
+            </View>
+            <View style={styles.paymentDetails}>
+              <Text style={styles.paymentDetailsText}>{progressMilestone.details}</Text>
+            </View>
           </View>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Final – Due at completion</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
+          
+          {/* Final */}
+          <View>
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
+              <Text style={styles.paymentLabel}>Final – Due at project completion</Text>
+              <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
+            </View>
+            <View style={styles.paymentDetails}>
+              <Text style={styles.paymentDetailsText}>
+                Final walkthrough and punchlist complete
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Signature */}
+        {/* Footer */}
+        <View style={styles.pageFooter} fixed>
+          <Text style={styles.footerText}>© {new Date().getFullYear()} {companyName}</Text>
+        </View>
+      </Page>
+
+      {/* PAGE 2: Acceptance & Terms */}
+      <Page size="LETTER" style={styles.page}>
+        {/* Fixed Header */}
+        <View style={styles.headerBanner} fixed>
+          <Image src={contractor.logo_url || tkbsoLogo} style={styles.logo} />
+          <View style={styles.headerContactRow}>
+            {companyPhone && <Text style={styles.headerContactText}>{companyPhone}</Text>}
+            {companyEmail && <Text style={styles.headerContactText}>{companyEmail}</Text>}
+          </View>
+        </View>
+
+        {/* Acceptance Section */}
         <View style={styles.signatureSection}>
-          <Text style={styles.sectionTitle}>Acceptance</Text>
+          <Text style={styles.acceptanceTitle}>ACCEPTANCE</Text>
           <Text style={styles.acceptanceText}>
-            By signing below, I accept this quote and agree to the terms and payment schedule outlined above.
+            By signing below, I accept this quote and agree to the terms, scope of work, and payment schedule outlined above. 
+            I understand that any changes to the scope of work may result in additional charges. 
+            Work will commence upon receipt of the signed agreement and initial deposit.
           </Text>
+          
+          {/* Client Signature */}
           <View style={styles.signatureRow}>
             <View style={styles.signatureField}>
               <View style={styles.signatureLine} />
@@ -559,17 +701,45 @@ export function SimpleProposalPdf({
               <Text style={styles.signatureLabel}>Date</Text>
             </View>
           </View>
+          
+          {/* Contractor Signature */}
+          <View style={styles.signatureRow}>
+            <View style={styles.signatureField}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>{companyName}</Text>
+            </View>
+            <View style={styles.signatureField}>
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Date</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Notes */}
+        {/* Project Notes */}
         <View style={styles.notesSection}>
-          <Text style={styles.notesTitle}>Notes & Terms</Text>
-          <Text style={styles.notesText}>{notes}</Text>
+          <Text style={styles.notesTitle}>PROJECT NOTES</Text>
+          
+          {DEFAULT_NOTES.map((note, index) => (
+            <View key={index} style={styles.noteItem}>
+              <Text style={styles.noteNumber}>Note {index + 1}:</Text>
+              <Text style={styles.noteText}>{note}</Text>
+            </View>
+          ))}
+          
+          {/* Custom notes from estimate */}
+          {customNotes.map((note, index) => (
+            <View key={`custom-${index}`} style={styles.noteItem}>
+              <Text style={styles.noteNumber}>Note {DEFAULT_NOTES.length + index + 1}:</Text>
+              <Text style={styles.noteText}>{note}</Text>
+            </View>
+          ))}
         </View>
 
         {/* Footer */}
         <View style={styles.pageFooter} fixed>
-          <Text style={styles.footerText}>© {new Date().getFullYear()} {companyName}</Text>
+          <Text style={styles.footerText}>
+            © {new Date().getFullYear()} {companyName} | {companyPhone} | {companyEmail}
+          </Text>
         </View>
       </Page>
     </Document>
