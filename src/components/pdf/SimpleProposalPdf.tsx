@@ -520,10 +520,14 @@ export function SimpleProposalPdf({
   const groupedItems = groupLineItemsByRoom(lineItems);
   const roomEntries = Array.from(groupedItems.entries());
   
-  // Calculate room subtotals for summary
+  // Calculate base total from line items (for scaling when user selects high/low)
+  const baseTotal = lineItems.reduce((sum, item) => sum + item.price, 0);
+  const scaleFactor = baseTotal > 0 ? total / baseTotal : 1;
+  
+  // Calculate room subtotals for summary (scaled to match selected price level)
   const roomSubtotals = roomEntries.map(([label, items]) => ({
     label: label === '_general' ? 'General Items' : label,
-    subtotal: calculateSubtotal(items),
+    subtotal: Math.round(calculateSubtotal(items) * scaleFactor),
   }));
 
   // Custom notes from estimate
@@ -572,7 +576,8 @@ export function SimpleProposalPdf({
 
         {/* ROOM SECTIONS - Bullets without prices, subtotals per room */}
         {roomEntries.map(([roomLabel, roomItems], groupIndex) => {
-          const subtotal = calculateSubtotal(roomItems);
+          const rawSubtotal = calculateSubtotal(roomItems);
+          const subtotal = Math.round(rawSubtotal * scaleFactor); // Scale to match selected price level
           const displayLabel = roomLabel === '_general' ? 'Scope of Work' : roomLabel;
           
           return (
