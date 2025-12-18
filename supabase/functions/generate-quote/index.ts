@@ -157,6 +157,7 @@ function parseDimensions(dims: string): { width: number; length: number } {
 
 /**
  * Calculate tile breakdown for a bathroom
+ * Uses 12% waste factor for wall tile and 18% for shower floor (mosaic)
  */
 function calculateTileBreakdown(tile: TileMeasurements): TileBreakdown {
   // Parse shower dimensions
@@ -165,32 +166,32 @@ function calculateTileBreakdown(tile: TileMeasurements): TileBreakdown {
   const length_ft = showerDims.length / 12;
   const height_ft = (tile.ceiling_height || 96) / 12;
   
-  // Calculate wall sqft (3 walls, accounting for door/opening)
+  // Calculate wall sqft (3 walls) with 12% waste factor
   const back_wall = length_ft * height_ft;
   const side_wall_1 = width_ft * height_ft;
   const side_wall_2 = width_ft * height_ft;
-  const wall_sqft = (back_wall + side_wall_1 + side_wall_2) * 0.85; // 15% reduction for door/opening
+  const wall_sqft = (back_wall + side_wall_1 + side_wall_2) * 1.12; // 12% waste factor
   
-  // Calculate shower floor sqft
+  // Calculate shower floor sqft with 18% waste factor (mosaic tile has more waste)
   let shower_floor_sqft = 0;
   if (tile.shower_floor_type && tile.shower_floor_type !== 'existing') {
-    shower_floor_sqft = tile.shower_floor_sqft || ((width_ft * length_ft) * 1.1); // 10% waste factor
+    shower_floor_sqft = tile.shower_floor_sqft || ((width_ft * length_ft) * 1.18);
   }
   
-  // Calculate main floor sqft (if applicable)
+  // Calculate main floor sqft (if applicable) with 15% waste
   let main_floor_sqft = 0;
   if (tile.main_floor_tile) {
     const roomSqft = tile.room_sqft || 40; // default 5x8 bathroom
     const showerFootprint = width_ft * length_ft;
-    main_floor_sqft = (roomSqft - showerFootprint) * 1.15; // 15% waste
+    main_floor_sqft = (roomSqft - showerFootprint) * 1.15;
     if (main_floor_sqft < 0) main_floor_sqft = 0;
   }
   
   return {
-    wall_sqft: Math.ceil(wall_sqft),
-    shower_floor_sqft: Math.ceil(shower_floor_sqft),
-    main_floor_sqft: Math.ceil(main_floor_sqft),
-    total_sqft: Math.ceil(wall_sqft + shower_floor_sqft + main_floor_sqft)
+    wall_sqft: Math.round(wall_sqft),
+    shower_floor_sqft: Math.round(shower_floor_sqft),
+    main_floor_sqft: Math.round(main_floor_sqft),
+    total_sqft: Math.round(wall_sqft + shower_floor_sqft + main_floor_sqft)
   };
 }
 

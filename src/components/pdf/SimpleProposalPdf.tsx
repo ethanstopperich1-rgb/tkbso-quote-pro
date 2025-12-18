@@ -586,7 +586,7 @@ function parseDimensionsFromLabel(roomLabel: string): { width: number; length: n
   return null;
 }
 
-// Calculate wall tile square footage
+// Calculate wall tile square footage (with 12% waste factor)
 function calculateWallTileSqft(showerDims: { width: number; length: number }, ceilingHeight: number = 96): number {
   // Convert to feet if dimensions are in inches (> 20 means inches)
   const widthFt = showerDims.width > 20 ? showerDims.width / 12 : showerDims.width;
@@ -598,22 +598,57 @@ function calculateWallTileSqft(showerDims: { width: number; length: number }, ce
   const sideWall1 = widthFt * heightFt;
   const sideWall2 = widthFt * heightFt;
   
-  // Total minus 15% for door opening
-  const totalWallSqft = (backWall + sideWall1 + sideWall2) * 0.85;
+  // Total with 12% waste factor (includes cuts, waste, overage)
+  const totalWallSqft = (backWall + sideWall1 + sideWall2) * 1.12;
   
-  return Math.ceil(totalWallSqft);
+  return Math.round(totalWallSqft);
 }
 
-// Calculate shower floor square footage
+// Calculate shower floor square footage (with 18% waste for mosaic tile)
 function calculateShowerFloorSqft(showerDims: { width: number; length: number }): number {
   // Convert to feet if dimensions are in inches
   const widthFt = showerDims.width > 20 ? showerDims.width / 12 : showerDims.width;
   const lengthFt = showerDims.length > 20 ? showerDims.length / 12 : showerDims.length;
   
-  // Add 10% for waste and cuts
-  const floorSqft = (widthFt * lengthFt) * 1.1;
+  // 18% waste factor for mosaic/smaller shower floor tile
+  const floorSqft = (widthFt * lengthFt) * 1.18;
   
-  return Math.ceil(floorSqft);
+  return Math.round(floorSqft);
+}
+
+// Check if item is a tile item and extract bathroom name
+function isTileLineItem(itemName: string): boolean {
+  const name = itemName.toLowerCase();
+  return name.includes('tile') || name.includes('waterproof') || 
+         name.includes('shower wall') || name.includes('shower floor');
+}
+
+// Format tile description with inline sqft
+function formatTileDescription(
+  itemName: string, 
+  roomLabel: string, 
+  wallSqft: number | null, 
+  floorSqft: number | null,
+  ceilingHeight: number = 96,
+  nicheCount: number = 1
+): string {
+  const name = itemName.toLowerCase();
+  
+  // Extract bathroom name from room label (remove dimensions)
+  const bathroomName = roomLabel.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  
+  // Check what type of tile item this is
+  if (name.includes('wall') && wallSqft) {
+    return `${bathroomName}: Large format porcelain(24"x48" or 36"x36") shower wall tile to ${ceilingHeight}" ceiling (${wallSqft} sqft), mosaic shower floor tile (${floorSqft || 15} sqft), + waterproofing and ${nicheCount} niche`;
+  }
+  
+  // If it's a general tile item, create comprehensive description
+  if (name.includes('tile') && wallSqft) {
+    return `${bathroomName}: Large format porcelain(24"x48" or 36"x36") shower wall tile to ${ceilingHeight}" ceiling (${wallSqft} sqft), mosaic shower floor tile (${floorSqft || 15} sqft), + waterproofing and ${nicheCount} niche`;
+  }
+  
+  // Return original if not a primary tile item
+  return itemName;
 }
 
 // Calculate market price (typically 23% higher)
@@ -859,11 +894,33 @@ export function SimpleProposalPdf({
           // Calculate sqft if we have dimensions and tile work
           const wallTileSqft = dims && hasTile ? calculateWallTileSqft(dims) : null;
           const showerFloorSqft = dims && hasTile ? calculateShowerFloorSqft(dims) : null;
-          const totalTileSqft = wallTileSqft && showerFloorSqft ? wallTileSqft + showerFloorSqft : null;
           
           // Calculate market price for this room
           const roomMarketPrice = shouldShowDualPricing ? calculateMarketPrice(subtotal, marketPriceMultiplier) : null;
           const roomSavings = roomMarketPrice ? roomMarketPrice - subtotal : 0;
+          
+          // Process items - consolidate tile items with inline sqft
+          const processedItems: { name: string; isTile: boolean; isMainTile: boolean }[] = [];
+          let hasAddedTileDescription = false;
+          
+          for (const item of roomItems) {
+            const isTile = isTileLineItem(item.name);
+            
+            // For tile items, check if we should create consolidated description
+            if (isTile && hasTile && wallTileSqft && !hasAddedTileDescription) {
+              // Create comprehensive tile description with inline sqft
+              const bathroomName = displayLabel.replace(/\s*\([^)]*\)\s*$/, '').trim();
+              const consolidatedTileDesc = `${bathroomName}: Large format porcelain(24"x48" or 36"x36") shower wall tile to 96" ceiling (${wallTileSqft} sqft), mosaic shower floor tile (${showerFloorSqft} sqft), + waterproofing and 1 niche`;
+              processedItems.push({ name: consolidatedTileDesc, isTile: true, isMainTile: true });
+              hasAddedTileDescription = true;
+            } else if (isTile && hasAddedTileDescription) {
+              // Skip additional tile line items since we consolidated
+              continue;
+            } else {
+              // Non-tile items pass through
+              processedItems.push({ name: item.name, isTile: false, isMainTile: false });
+            }
+          }
           
           return (
             <View key={roomLabel} style={styles.roomSection} wrap={false}>
@@ -872,39 +929,16 @@ export function SimpleProposalPdf({
                 <Text style={styles.roomHeaderText}>{displayLabel}</Text>
               </View>
               
-              {/* Bullet List (NO PRICES) */}
+              {/* Bullet List (NO PRICES) - with inline sqft for tile */}
               <View style={styles.bulletList}>
                 <Text style={styles.scopeLabel}>Scope Details</Text>
-                {roomItems.map((item, index) => (
+                {processedItems.map((item, index) => (
                   <View key={`${roomLabel}-${index}`} style={styles.bulletItem}>
                     <Text style={styles.bulletPoint}>•</Text>
                     <Text style={styles.bulletText}>{item.name}</Text>
                   </View>
                 ))}
               </View>
-              
-              {/* Square Footage Breakdown (if applicable) */}
-              {totalTileSqft && (
-                <View style={styles.sqftBox}>
-                  <Text style={styles.sqftTitle}>Square Footage Breakdown</Text>
-                  {wallTileSqft && (
-                    <View style={styles.sqftRow}>
-                      <Text style={styles.sqftLabel}>Wall Tile (3 walls to 96"):</Text>
-                      <Text style={styles.sqftValue}>{wallTileSqft} sqft</Text>
-                    </View>
-                  )}
-                  {showerFloorSqft && (
-                    <View style={styles.sqftRow}>
-                      <Text style={styles.sqftLabel}>Shower Floor Tile:</Text>
-                      <Text style={styles.sqftValue}>{showerFloorSqft} sqft</Text>
-                    </View>
-                  )}
-                  <View style={styles.sqftTotalRow}>
-                    <Text style={styles.sqftTotalLabel}>Total Tile Coverage:</Text>
-                    <Text style={styles.sqftTotalValue}>{totalTileSqft} sqft</Text>
-                  </View>
-                </View>
-              )}
               
               {/* Dual Pricing Display */}
               {shouldShowDualPricing && roomMarketPrice && (
