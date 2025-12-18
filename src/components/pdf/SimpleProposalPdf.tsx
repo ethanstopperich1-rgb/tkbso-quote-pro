@@ -101,6 +101,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
+  // Scope details label
+  scopeLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#64748b',
+    marginBottom: 4,
+    paddingTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  
   // Bullet list styles (no prices)
   bulletList: {
     paddingVertical: 8,
@@ -123,7 +134,58 @@ const styles = StyleSheet.create({
     lineHeight: 1.4,
   },
   
-  // Subtotal row
+  // Square footage breakdown box
+  sqftBox: {
+    marginTop: 8,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    padding: 10,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  sqftTitle: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sqftRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 3,
+  },
+  sqftLabel: {
+    fontSize: 8,
+    color: '#64748b',
+  },
+  sqftValue: {
+    fontSize: 8,
+    color: '#1e293b',
+  },
+  sqftTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#cbd5e1',
+  },
+  sqftTotalLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e293b',
+  },
+  sqftTotalValue: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e293b',
+  },
+  
+  // Subtotal row with dual pricing
   subtotalRow: {
     flexDirection: 'row',
     paddingVertical: 8,
@@ -146,6 +208,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
     textAlign: 'right',
+  },
+  
+  // Dual pricing styles
+  dualPricingContainer: {
+    alignItems: 'flex-end',
+    paddingRight: 12,
+    paddingBottom: 6,
+    backgroundColor: '#e2e8f0',
+  },
+  marketPrice: {
+    fontSize: 9,
+    color: '#94a3b8',
+    textDecoration: 'line-through',
+    marginBottom: 2,
+  },
+  savingsText: {
+    fontSize: 8,
+    color: '#10b981',
+    fontFamily: 'Helvetica-Bold',
   },
   
   // Summary table
@@ -195,6 +276,101 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     color: '#ffffff',
     textAlign: 'right',
+  },
+  
+  // Market comparison for total
+  totalMarketRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#1e3a8a',
+  },
+  totalMarketText: {
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.7)',
+    marginRight: 20,
+  },
+  totalSavingsText: {
+    fontSize: 9,
+    color: '#4ade80',
+    fontFamily: 'Helvetica-Bold',
+  },
+  
+  // Additionals section
+  additionalsSection: {
+    marginTop: 16,
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    borderRadius: 4,
+  },
+  additionalsTitle: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#92400e',
+    marginBottom: 8,
+  },
+  additionalsSubtitle: {
+    fontSize: 8,
+    color: '#a16207',
+    marginBottom: 10,
+    lineHeight: 1.4,
+  },
+  additionalItem: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#fde68a',
+  },
+  additionalCheckbox: {
+    width: 12,
+    height: 12,
+    borderWidth: 1.5,
+    borderColor: '#d97706',
+    marginRight: 8,
+    marginTop: 1,
+  },
+  additionalContent: {
+    flex: 1,
+  },
+  additionalDesc: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#78350f',
+  },
+  additionalDetails: {
+    fontSize: 8,
+    color: '#92400e',
+    marginTop: 1,
+  },
+  additionalPrice: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#78350f',
+    textAlign: 'right',
+    width: 70,
+  },
+  additionalsTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f59e0b',
+  },
+  additionalsTotalLabel: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#78350f',
+  },
+  additionalsTotalValue: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#78350f',
   },
   
   // Payment section
@@ -343,11 +519,22 @@ export interface PassthroughLineItem {
   room_label?: string;
 }
 
+// Additional item interface
+export interface Additional {
+  id: string;
+  description: string;
+  details?: string;
+  price: number;
+  category?: string;
+}
+
 export interface SimpleProposalPdfProps {
   contractor: Contractor;
   estimate: Estimate;
   lineItems: PassthroughLineItem[];
   total: number;
+  showDualPricing?: boolean;
+  marketPriceMultiplier?: number;
 }
 
 function formatCurrency(amount: number): string {
@@ -377,6 +564,61 @@ function groupLineItemsByRoom(lineItems: PassthroughLineItem[]): Map<string, Pas
 // Calculate subtotal for a group of items
 function calculateSubtotal(items: PassthroughLineItem[]): number {
   return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+// Parse dimensions from room label (e.g., "Guest Bath 1 (31"x59")" -> { width: 31, length: 59 })
+function parseDimensionsFromLabel(roomLabel: string): { width: number; length: number } | null {
+  // Try to match patterns like (31"x59"), (3x5), (3'x5'), etc.
+  const patterns = [
+    /\((\d+)"?\s*x\s*(\d+)"?\)/i,  // (31"x59") or (31x59)
+    /\((\d+)'?\s*x\s*(\d+)'?\)/i,   // (3'x5') or (3x5)
+  ];
+  
+  for (const pattern of patterns) {
+    const match = roomLabel.match(pattern);
+    if (match) {
+      return {
+        width: parseInt(match[1]),
+        length: parseInt(match[2]),
+      };
+    }
+  }
+  return null;
+}
+
+// Calculate wall tile square footage
+function calculateWallTileSqft(showerDims: { width: number; length: number }, ceilingHeight: number = 96): number {
+  // Convert to feet if dimensions are in inches (> 20 means inches)
+  const widthFt = showerDims.width > 20 ? showerDims.width / 12 : showerDims.width;
+  const lengthFt = showerDims.length > 20 ? showerDims.length / 12 : showerDims.length;
+  const heightFt = ceilingHeight / 12;
+  
+  // Calculate three walls (back + two sides)
+  const backWall = lengthFt * heightFt;
+  const sideWall1 = widthFt * heightFt;
+  const sideWall2 = widthFt * heightFt;
+  
+  // Total minus 15% for door opening
+  const totalWallSqft = (backWall + sideWall1 + sideWall2) * 0.85;
+  
+  return Math.ceil(totalWallSqft);
+}
+
+// Calculate shower floor square footage
+function calculateShowerFloorSqft(showerDims: { width: number; length: number }): number {
+  // Convert to feet if dimensions are in inches
+  const widthFt = showerDims.width > 20 ? showerDims.width / 12 : showerDims.width;
+  const lengthFt = showerDims.length > 20 ? showerDims.length / 12 : showerDims.length;
+  
+  // Add 10% for waste and cuts
+  const floorSqft = (widthFt * lengthFt) * 1.1;
+  
+  return Math.ceil(floorSqft);
+}
+
+// Calculate market price (typically 23% higher)
+function calculateMarketPrice(customerPrice: number, multiplier: number = 1.23): number {
+  return Math.round(customerPrice * multiplier);
 }
 
 // Determine the most appropriate payment milestone based on scope
@@ -472,6 +714,14 @@ function determineProgressMilestone(lineItems: PassthroughLineItem[], estimate: 
   };
 }
 
+// Check if room has tile work
+function roomHasTileWork(items: PassthroughLineItem[]): boolean {
+  return items.some(item => {
+    const name = item.name.toLowerCase();
+    return name.includes('tile') || name.includes('waterproof') || name.includes('shower');
+  });
+}
+
 // Standard project notes
 const DEFAULT_NOTES = [
   'Dumpster delivery will be scheduled for the first day of demolition. Please ensure clear access to the work area.',
@@ -481,11 +731,19 @@ const DEFAULT_NOTES = [
   'This estimate is valid for 30 days. Final pricing subject to site conditions and material selections.',
 ];
 
+// Get additionals from estimate
+function getAdditionals(estimate: Estimate): Additional[] {
+  const payload = estimate.internal_json_payload as Record<string, unknown> | null;
+  return (payload?.additionals as Additional[]) || [];
+}
+
 export function SimpleProposalPdf({ 
   contractor, 
   estimate, 
   lineItems,
   total,
+  showDualPricing = true,
+  marketPriceMultiplier = 1.23,
 }: SimpleProposalPdfProps) {
   const settings: ContractorSettings = (contractor.settings as ContractorSettings) || defaultSettings;
   const { companyProfile, branding, defaults } = settings;
@@ -529,6 +787,15 @@ export function SimpleProposalPdf({
     label: label === '_general' ? 'General Items' : label,
     subtotal: Math.round(calculateSubtotal(items) * scaleFactor),
   }));
+
+  // Get additionals
+  const additionals = getAdditionals(estimate);
+  const additionalsTotal = additionals.reduce((sum, a) => sum + a.price, 0);
+
+  // Market price calculations
+  const marketPrice = calculateMarketPrice(total, marketPriceMultiplier);
+  const savings = marketPrice - total;
+  const savingsPercent = Math.round((savings / marketPrice) * 100);
 
   // Custom notes from estimate
   const customNotes = estimate.job_notes ? [estimate.job_notes] : [];
@@ -577,8 +844,21 @@ export function SimpleProposalPdf({
         {/* ROOM SECTIONS - Bullets without prices, subtotals per room */}
         {roomEntries.map(([roomLabel, roomItems], groupIndex) => {
           const rawSubtotal = calculateSubtotal(roomItems);
-          const subtotal = Math.round(rawSubtotal * scaleFactor); // Scale to match selected price level
+          const subtotal = Math.round(rawSubtotal * scaleFactor);
           const displayLabel = roomLabel === '_general' ? 'Scope of Work' : roomLabel;
+          
+          // Parse dimensions for sqft calculation
+          const dims = parseDimensionsFromLabel(roomLabel);
+          const hasTile = roomHasTileWork(roomItems);
+          
+          // Calculate sqft if we have dimensions and tile work
+          const wallTileSqft = dims && hasTile ? calculateWallTileSqft(dims) : null;
+          const showerFloorSqft = dims && hasTile ? calculateShowerFloorSqft(dims) : null;
+          const totalTileSqft = wallTileSqft && showerFloorSqft ? wallTileSqft + showerFloorSqft : null;
+          
+          // Calculate market price for this room
+          const roomMarketPrice = showDualPricing ? calculateMarketPrice(subtotal, marketPriceMultiplier) : null;
+          const roomSavings = roomMarketPrice ? roomMarketPrice - subtotal : 0;
           
           return (
             <View key={roomLabel} style={styles.roomSection} wrap={false}>
@@ -589,6 +869,7 @@ export function SimpleProposalPdf({
               
               {/* Bullet List (NO PRICES) */}
               <View style={styles.bulletList}>
+                <Text style={styles.scopeLabel}>Scope Details</Text>
                 {roomItems.map((item, index) => (
                   <View key={`${roomLabel}-${index}`} style={styles.bulletItem}>
                     <Text style={styles.bulletPoint}>•</Text>
@@ -596,6 +877,37 @@ export function SimpleProposalPdf({
                   </View>
                 ))}
               </View>
+              
+              {/* Square Footage Breakdown (if applicable) */}
+              {totalTileSqft && (
+                <View style={styles.sqftBox}>
+                  <Text style={styles.sqftTitle}>Square Footage Breakdown</Text>
+                  {wallTileSqft && (
+                    <View style={styles.sqftRow}>
+                      <Text style={styles.sqftLabel}>Wall Tile (3 walls to 96"):</Text>
+                      <Text style={styles.sqftValue}>{wallTileSqft} sqft</Text>
+                    </View>
+                  )}
+                  {showerFloorSqft && (
+                    <View style={styles.sqftRow}>
+                      <Text style={styles.sqftLabel}>Shower Floor Tile:</Text>
+                      <Text style={styles.sqftValue}>{showerFloorSqft} sqft</Text>
+                    </View>
+                  )}
+                  <View style={styles.sqftTotalRow}>
+                    <Text style={styles.sqftTotalLabel}>Total Tile Coverage:</Text>
+                    <Text style={styles.sqftTotalValue}>{totalTileSqft} sqft</Text>
+                  </View>
+                </View>
+              )}
+              
+              {/* Dual Pricing Display */}
+              {showDualPricing && roomMarketPrice && (
+                <View style={styles.dualPricingContainer}>
+                  <Text style={styles.marketPrice}>Market: {formatCurrency(roomMarketPrice)}</Text>
+                  <Text style={styles.savingsText}>Save {formatCurrency(roomSavings)}</Text>
+                </View>
+              )}
               
               {/* Room Subtotal */}
               <View style={styles.subtotalRow}>
@@ -605,6 +917,34 @@ export function SimpleProposalPdf({
             </View>
           );
         })}
+
+        {/* Additionals Section (if any) */}
+        {additionals.length > 0 && (
+          <View style={styles.additionalsSection} wrap={false}>
+            <Text style={styles.additionalsTitle}>RECOMMENDED ADDITIONALS (Optional)</Text>
+            <Text style={styles.additionalsSubtitle}>
+              These optional upgrades can enhance your project. Let us know if you would like to include any of these in your final quote.
+            </Text>
+            
+            {additionals.map((item, index) => (
+              <View key={item.id || index} style={styles.additionalItem}>
+                <View style={styles.additionalCheckbox} />
+                <View style={styles.additionalContent}>
+                  <Text style={styles.additionalDesc}>{item.description}</Text>
+                  {item.details && (
+                    <Text style={styles.additionalDetails}>{item.details}</Text>
+                  )}
+                </View>
+                <Text style={styles.additionalPrice}>Add: {formatCurrency(item.price)}</Text>
+              </View>
+            ))}
+            
+            <View style={styles.additionalsTotalRow}>
+              <Text style={styles.additionalsTotalLabel}>Total if all additionals selected:</Text>
+              <Text style={styles.additionalsTotalValue}>{formatCurrency(additionalsTotal)}</Text>
+            </View>
+          </View>
+        )}
 
         {/* Summary Table (if multiple rooms) */}
         {roomSubtotals.length > 1 && (
@@ -623,6 +963,14 @@ export function SimpleProposalPdf({
           <Text style={styles.totalLabel}>TOTAL PROJECT INVESTMENT</Text>
           <Text style={styles.totalAmount}>{formatCurrency(total)}</Text>
         </View>
+        
+        {/* Market comparison for total */}
+        {showDualPricing && (
+          <View style={styles.totalMarketRow}>
+            <Text style={styles.totalMarketText}>Market Value: {formatCurrency(marketPrice)}</Text>
+            <Text style={styles.totalSavingsText}>You Save: {formatCurrency(savings)} ({savingsPercent}%)</Text>
+          </View>
+        )}
 
         {/* Payment Schedule with Dynamic Milestones */}
         <View style={styles.paymentSection}>
