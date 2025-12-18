@@ -196,6 +196,23 @@ export function CompanyProfileCard({ data, onChange }: Props) {
                 className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sendingDomain" className="text-slate-700 text-sm flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-slate-400" />
+                Email Sending Domain
+              </Label>
+              <Input
+                id="sendingDomain"
+                value={data.sendingDomain || ''}
+                onChange={(e) => update('sendingDomain', e.target.value)}
+                placeholder="mail.yourcompany.com"
+                className="h-10 border-0 bg-slate-100 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:bg-white transition-all"
+              />
+              <p className="text-xs text-slate-500">
+                Verify your domain at <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:underline">resend.com/domains</a> to send proposals to any email address.
+              </p>
+            </div>
           </div>
         </div>
       </div>
