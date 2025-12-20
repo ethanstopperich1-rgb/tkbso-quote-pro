@@ -411,14 +411,25 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
 
   const handleDeleteItem = (index: number) => {
     const itemToDelete = lineItems[index];
+    const currentItems = [...lineItems];
+    const newItems = currentItems.filter((_, i) => i !== index);
+    
     setDeletedItem({ item: itemToDelete, index });
-    const newItems = lineItems.filter((_, i) => i !== index);
     setLineItems(newItems);
     setHasChanges(true);
+    
     toast.success('Item deleted', {
       action: {
         label: 'Undo',
-        onClick: () => handleUndoDelete(),
+        onClick: () => {
+          // Use the captured values directly to avoid stale closure
+          const restoredItems = [...newItems];
+          restoredItems.splice(index, 0, itemToDelete);
+          setLineItems(restoredItems);
+          setDeletedItem(null);
+          setHasChanges(true);
+          toast.success('Item restored');
+        },
       },
       duration: 8000,
     });
@@ -426,10 +437,13 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
 
   const handleUndoDelete = () => {
     if (!deletedItem) return;
-    const newItems = [...lineItems];
-    newItems.splice(deletedItem.index, 0, deletedItem.item);
-    setLineItems(newItems);
+    setLineItems(prev => {
+      const newItems = [...prev];
+      newItems.splice(deletedItem.index, 0, deletedItem.item);
+      return newItems;
+    });
     setDeletedItem(null);
+    setHasChanges(true);
     toast.success('Item restored');
   };
 
