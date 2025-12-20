@@ -22,7 +22,8 @@ import {
   ChevronUp,
   Sparkles,
   Loader2,
-  GripVertical
+  GripVertical,
+  Undo2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -281,6 +282,7 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
   const [hasChanges, setHasChanges] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [deletedItem, setDeletedItem] = useState<{ item: LineItem; index: number } | null>(null);
 
   // DnD sensors
   const sensors = useSensors(
@@ -408,9 +410,27 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
   };
 
   const handleDeleteItem = (index: number) => {
+    const itemToDelete = lineItems[index];
+    setDeletedItem({ item: itemToDelete, index });
     const newItems = lineItems.filter((_, i) => i !== index);
     setLineItems(newItems);
     setHasChanges(true);
+    toast.success('Item deleted', {
+      action: {
+        label: 'Undo',
+        onClick: () => handleUndoDelete(),
+      },
+      duration: 8000,
+    });
+  };
+
+  const handleUndoDelete = () => {
+    if (!deletedItem) return;
+    const newItems = [...lineItems];
+    newItems.splice(deletedItem.index, 0, deletedItem.item);
+    setLineItems(newItems);
+    setDeletedItem(null);
+    toast.success('Item restored');
   };
 
   const handleAddItem = () => {
@@ -527,6 +547,12 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
           Line Items ({lineItems.length})
         </CardTitle>
         <div className="flex items-center gap-2">
+          {deletedItem && (
+            <Button size="sm" variant="outline" onClick={handleUndoDelete}>
+              <Undo2 className="h-4 w-4 mr-1" />
+              Undo
+            </Button>
+          )}
           {hasChanges && (
             <Button size="sm" onClick={handleSaveAll} disabled={saving}>
               <Save className="h-4 w-4 mr-1" />
