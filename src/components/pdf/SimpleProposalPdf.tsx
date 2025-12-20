@@ -547,9 +547,32 @@ function formatCurrency(amount: number): string {
 }
 
 // Group line items by room_label
-function groupLineItemsByRoom(lineItems: PassthroughLineItem[]): Map<string, PassthroughLineItem[]> {
+// For single-bathroom projects, all items go under one bathroom section
+function groupLineItemsByRoom(
+  lineItems: PassthroughLineItem[], 
+  estimate: Estimate
+): Map<string, PassthroughLineItem[]> {
   const grouped = new Map<string, PassthroughLineItem[]>();
   
+  // Count unique room labels (excluding empty/null)
+  const uniqueRooms = new Set(
+    lineItems.filter(item => item.room_label && item.room_label.trim()).map(item => item.room_label!)
+  );
+  
+  // Determine if this is a single-bathroom project
+  const bathroomCount = estimate.num_bathrooms || 1;
+  const isSingleBathroom = bathroomCount === 1 && uniqueRooms.size <= 1;
+  
+  if (isSingleBathroom) {
+    // For single-bathroom projects, ALL items go under one section
+    const bathroomLabel = uniqueRooms.size === 1 
+      ? Array.from(uniqueRooms)[0] 
+      : 'Bathroom 1';
+    grouped.set(bathroomLabel, lineItems);
+    return grouped;
+  }
+  
+  // For multi-bathroom projects, group by room_label
   for (const item of lineItems) {
     const roomKey = item.room_label || '_general';
     if (!grouped.has(roomKey)) {
@@ -815,7 +838,7 @@ export function SimpleProposalPdf({
   });
 
   // Group items by room
-  const groupedItems = groupLineItemsByRoom(lineItems);
+  const groupedItems = groupLineItemsByRoom(lineItems, estimate);
   const roomEntries = Array.from(groupedItems.entries());
   
   // Calculate base total from line items (for scaling when user selects high/low)
