@@ -315,7 +315,7 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
       const cpPerUnit = parsed.cp_per_unit || 0;
 
       const item: LineItem = {
-        id: `item-${Date.now()}`,
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         category: parsed.category || 'Other',
         task_description: parsed.task_description || aiInput,
         quantity,
@@ -343,10 +343,11 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
   useEffect(() => {
     const payload = estimate.internal_json_payload as any;
     if (payload?.pricing?.line_items) {
-      // Ensure each item has an id for drag-and-drop
+      // Ensure each item has a truly unique id for drag-and-drop
+      const timestamp = Date.now();
       const itemsWithIds = payload.pricing.line_items.map((item: LineItem, index: number) => ({
         ...item,
-        id: item.id || `item-${index}-${Date.now()}`,
+        id: item.id || `item-${index}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`,
       }));
       setLineItems(itemsWithIds);
     }
@@ -453,7 +454,7 @@ export function LineItemEditorCard({ estimate, onUpdate, defaultExpanded = false
     const cpPerUnit = newItem.cp_per_unit || 0;
 
     const item: LineItem = {
-      id: `item-${Date.now()}`,
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       category: newItem.category || 'Other',
       task_description: newItem.task_description || 'New Item',
       quantity,
