@@ -135,15 +135,13 @@ interface ConversationMessage {
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Welcome. I'm EstimAIte, your estimating consultant.
+  content: `Welcome to EstimAIte. I'm here to help you create a professional estimate for your remodeling project.
 
-I'll help you build winning quotes for your homeowner clients — with strategic upsell suggestions and presentation coaching.
+What type of project are we quoting today — kitchen or bathroom?
 
-**What project are we working on today?**
+If you have client details, include them: "master bath remodel for the Smiths at 123 Main St" and I'll capture everything upfront.
 
-Describe your client's project naturally — "master bath remodel for the Smiths" or "3-bathroom tub-to-shower conversion" — and I'll guide you through building a professional estimate.
-
-*You can also upload project photos or record a walkthrough video for AI-powered detection.*`,
+*You can also upload project photos or record a walkthrough video for AI-powered scope detection.*`,
   timestamp: new Date(),
 };
 
