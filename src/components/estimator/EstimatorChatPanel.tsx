@@ -135,13 +135,15 @@ interface ConversationMessage {
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
   role: 'assistant',
-  content: `Hey! 👋 I'm EstimAIte, your AI estimating assistant.
+  content: `Welcome. I'm EstimAIte, your estimating consultant.
 
-What project are we working on today? **Kitchen** or **Bathroom**?
+I'll help you build winning quotes for your homeowner clients — with strategic upsell suggestions and presentation coaching.
 
-Just describe it naturally — like "master bath remodel" or "kitchen cabinet replacement" — and I'll ask a few quick questions to build your quote.
+**What project are we working on today?**
 
-📷 You can also **upload a photo** or 🎥 **record a video** for instant AI detection.`,
+Describe your client's project naturally — "master bath remodel for the Smiths" or "3-bathroom tub-to-shower conversion" — and I'll guide you through building a professional estimate.
+
+*You can also upload project photos or record a walkthrough video for AI-powered detection.*`,
   timestamp: new Date(),
 };
 
