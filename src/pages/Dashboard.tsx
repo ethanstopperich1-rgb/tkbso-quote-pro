@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, DollarSign, FileText, TrendingUp, Clock, Sparkles, Lightbulb, X } from "lucide-react";
+import { MessageSquare, DollarSign, FileText, TrendingUp, Clock, X } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,25 +77,23 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Quick Tips Card - Show for new users */}
+      {/* Professional Insight Card - Replaces Pro Tip */}
       {recentEstimates.length < 3 && showTip && (
-        <Card className="bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-200 mb-6">
-          <CardContent className="p-6">
+        <Card className="bg-muted/30 border-border mb-6">
+          <CardContent className="p-5">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Lightbulb className="h-5 w-5 text-cyan-600" />
-              </div>
+              <div className="w-1 h-12 bg-luxury-gold rounded-full flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold text-slate-900 mb-1">Pro Tip</h3>
-                <p className="text-sm text-slate-600">
-                  Upload photos from the job site and let AI extract dimensions automatically. It's like having a second set of eyes on every estimate.
+                <h3 className="font-semibold text-foreground mb-1 font-sans text-sm">Professional Insight</h3>
+                <p className="text-sm text-muted-foreground">
+                  Upload photos from the job site and let AI extract dimensions automatically, saving valuable time on site measurements.
                 </p>
               </div>
               <button 
                 onClick={() => setShowTip(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </CardContent>
@@ -198,21 +196,20 @@ export default function Dashboard() {
             <p className="text-muted-foreground text-sm py-4">Loading...</p>
           ) : recentEstimates.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-20 h-20 bg-cyan-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <MessageSquare className="h-10 w-10 text-cyan-500" />
+              <div className="w-16 h-16 bg-muted rounded-xl flex items-center justify-center mx-auto mb-6">
+                <MessageSquare className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Ready to create your first estimate?</h3>
-              <p className="text-slate-600 mb-6 max-w-sm mx-auto">
-                Our AI can generate a professional quote in under 3 minutes. Just describe the project or upload a photo.
+              <h3 className="text-xl font-semibold text-foreground mb-2 font-sans">Ready to create your first estimate?</h3>
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                Generate a professional quote in under 3 minutes. Describe the project or upload a photo.
               </p>
               <Link to="/estimator">
-                <Button className="bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] px-6 py-3 font-semibold">
-                  <Sparkles className="h-4 w-4 mr-2" />
+                <Button className="px-6 py-3">
                   Create Your First Estimate
                 </Button>
               </Link>
-              <p className="text-xs text-slate-500 mt-4">
-                Average time: 3 minutes • No templates needed
+              <p className="text-xs text-muted-foreground mt-4">
+                Average time: 3 minutes
               </p>
             </div>
           ) : (

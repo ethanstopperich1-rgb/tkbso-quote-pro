@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Clean White Theme */
+    /* Luxury Color Palette - Ritz-Carlton Inspired */
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
 
@@ -14,66 +14,75 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary - Sky Blue */
-    --primary: 199 89% 48%;
+    /* Primary - Deep Navy (luxury-navy) */
+    --primary: 222 47% 11%;
     --primary-foreground: 0 0% 100%;
 
-    /* Accent */
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Subtle Gold */
+    --accent: 43 74% 52%;
+    --accent-foreground: 222 47% 11%;
 
-    /* Secondary */
+    /* Secondary - Pearl */
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted */
+    /* Muted - Slate */
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted-foreground: 215 25% 35%;
 
     /* Destructive */
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Borders & Inputs */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 199 89% 48%;
+    /* Borders & Inputs - Silver */
+    --border: 215 25% 73%;
+    --input: 215 25% 73%;
+    --ring: 222 47% 11%;
 
-    /* Glow effects */
-    --glow: 199 89% 48%;
-    --glow-muted: 199 50% 70%;
+    /* Glow effects - muted */
+    --glow: 222 47% 11%;
+    --glow-muted: 215 25% 50%;
 
     /* Sidebar */
     --sidebar-background: 210 40% 98%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary: 222 47% 11%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 199 89% 48%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-accent: 43 74% 52%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 215 25% 73%;
+    --sidebar-ring: 222 47% 11%;
 
-    /* Radius */
-    --radius: 1rem;
+    /* Radius - refined */
+    --radius: 0.75rem;
 
-    /* Shadows - Light mode */
-    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
-    --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.04);
-    --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.06);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+    /* Shadows - subtle elegance */
+    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.02);
+    --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.03);
+    --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.04);
+    --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.12);
 
     /* Chart colors */
-    --chart-1: 199 89% 48%;
-    --chart-2: 200 98% 39%;
-    --chart-3: 172 66% 50%;
-    --chart-4: 158 64% 52%;
+    --chart-1: 222 47% 11%;
+    --chart-2: 215 25% 35%;
+    --chart-3: 43 74% 52%;
+    --chart-4: 158 64% 40%;
     --chart-5: 215 16% 47%;
 
-    /* Brand identity color (for headers, logos) - can be overridden by BrandingContext */
-    --brand-primary: 222 47% 15%;
+    /* Brand identity color */
+    --brand-primary: 222 47% 11%;
+    
+    /* Luxury specific tokens */
+    --luxury-navy: 222 47% 11%;
+    --luxury-charcoal: 217 33% 17%;
+    --luxury-slate: 215 25% 35%;
+    --luxury-silver: 215 25% 73%;
+    --luxury-pearl: 210 40% 97%;
+    --luxury-gold: 43 74% 49%;
+    --luxury-success: 158 64% 40%;
   }
 
   /* Dark mode variant */
@@ -84,17 +93,17 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 10%;
     --popover-foreground: 210 40% 98%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 0 0% 100%;
-    --accent: 199 89% 48%;
-    --accent-foreground: 0 0% 100%;
-    --secondary: 215 25% 27%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+    --accent: 43 74% 52%;
+    --accent-foreground: 222 47% 11%;
+    --secondary: 215 25% 20%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 199 89% 48%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 43 74% 52%;
   }
 }
 
@@ -110,80 +119,76 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
     min-height: 100vh;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', system-ui, sans-serif;
-    font-weight: 700;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
     letter-spacing: -0.02em;
+  }
+  
+  /* Use Inter for UI headings (cards, buttons, nav) */
+  .font-ui {
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
 
 @layer components {
-  /* Glass Card - Light glass morphism effect */
+  /* Refined Card - subtle elegance */
   .glass-card {
-    @apply bg-card backdrop-blur-sm border border-border shadow-lg rounded-2xl;
+    @apply bg-card border border-border shadow-sm rounded-xl;
   }
 
-  /* Glass Card with glow */
+  /* Card with subtle emphasis */
   .glass-card-glow {
     @apply glass-card;
     box-shadow: 
-      0 4px 20px rgba(0, 0, 0, 0.08),
+      0 4px 12px rgba(0, 0, 0, 0.04),
       0 0 0 1px hsl(var(--border));
   }
 
-  /* Active glass card with accent glow */
+  /* Active card with gold accent */
   .glass-card-active {
     @apply glass-card;
     box-shadow: 
-      0 4px 20px rgba(0, 0, 0, 0.08),
-      0 0 20px -5px hsl(199 89% 48% / 0.2);
+      0 4px 12px rgba(0, 0, 0, 0.04),
+      0 0 0 1px hsl(var(--luxury-gold) / 0.3);
   }
 
-  /* Glass Input - Bottom border focus style */
+  /* Refined Input - subtle focus */
   .glass-input {
-    @apply bg-muted/50 border-0 border-b-2 border-border rounded-t-xl rounded-b-none px-4 py-3;
-    @apply focus:border-b-primary focus:bg-muted/70 focus:outline-none focus:ring-0;
-    @apply placeholder:text-muted-foreground/60 transition-all duration-300;
+    @apply bg-muted/30 border border-border rounded-lg px-4 py-3;
+    @apply focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none;
+    @apply placeholder:text-muted-foreground/50 transition-all duration-200;
   }
 
-  /* Glass Button - Hover scale + glow */
+  /* Refined Button - no scale, smooth transition */
   .glass-button {
-    @apply bg-primary text-primary-foreground font-semibold rounded-2xl px-6 py-3;
-    @apply transition-all duration-300 ease-out;
-    @apply hover:scale-105 hover:shadow-lg;
-    @apply active:scale-100;
+    @apply bg-primary text-primary-foreground font-medium rounded-lg px-6 py-3;
+    @apply transition-all duration-200 ease-out;
+    @apply hover:bg-primary/90 hover:shadow-md;
+    @apply active:bg-primary/95;
   }
 
   .glass-button-secondary {
-    @apply bg-secondary text-secondary-foreground border border-border font-medium rounded-2xl px-6 py-3;
-    @apply transition-all duration-300 ease-out;
-    @apply hover:bg-secondary/80 hover:scale-105;
-    @apply active:scale-100;
+    @apply bg-white text-foreground border border-border font-medium rounded-lg px-6 py-3;
+    @apply transition-all duration-200 ease-out;
+    @apply hover:border-primary/30 hover:shadow-sm;
+    @apply active:bg-muted/50;
   }
 
-  /* Chat bubbles */
+  /* Chat bubbles - refined */
   .chat-bubble-user {
-    @apply bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3 max-w-[85%];
-    @apply shadow-md;
+    @apply bg-primary text-primary-foreground rounded-xl rounded-br-sm px-4 py-3 max-w-[85%];
+    @apply shadow-sm;
   }
 
   .chat-bubble-ai {
-    @apply bg-muted rounded-2xl rounded-bl-md px-4 py-3 max-w-[85%];
+    @apply bg-muted/50 rounded-xl rounded-bl-sm px-4 py-3 max-w-[85%];
     @apply border border-border;
-  }
-
-  /* Glow container for chat */
-  .chat-glow-container {
-    @apply relative;
-  }
-  
-  .chat-glow-container::before {
-    content: '';
-    @apply absolute -inset-4 rounded-3xl opacity-30 blur-2xl pointer-events-none;
-    background: radial-gradient(ellipse at center, hsl(199 89% 48% / 0.1) 0%, transparent 70%);
   }
 
   /* Quote Summary Card */
@@ -198,12 +203,23 @@
 
   /* Stats/Metric display */
   .stat-value {
-    @apply text-3xl font-bold font-display tracking-tight text-primary;
+    @apply text-3xl font-semibold tracking-tight text-foreground;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Loading shimmer effect */
   .shimmer {
     @apply animate-shimmer bg-shimmer bg-[length:200%_100%];
+  }
+  
+  /* Luxury gold accent bar */
+  .luxury-accent-bar {
+    @apply h-0.5 w-12 bg-gradient-to-r from-[hsl(43,74%,52%)] to-[hsl(43,74%,62%)];
+  }
+  
+  /* Professional insight card (replaces Pro Tip) */
+  .insight-card {
+    @apply bg-muted/30 border border-border rounded-lg p-4;
   }
 }
 
@@ -212,24 +228,29 @@
     text-wrap: balance;
   }
 
-  /* Gradient text utility */
-  .text-gradient-accent {
-    @apply text-primary;
+  /* Serif headings utility */
+  .font-serif {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+  
+  /* Tabular numbers for prices */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 
   /* Subtle grid background */
   .bg-grid {
     background-image: 
-      linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
+      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling - refined */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -238,15 +259,15 @@
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.4);
 }
 
 /* Selection styling */
 ::selection {
-  background: hsl(199 89% 48% / 0.2);
+  background: hsl(var(--luxury-gold) / 0.2);
   color: inherit;
 }
