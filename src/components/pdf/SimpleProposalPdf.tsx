@@ -373,10 +373,10 @@ const styles = StyleSheet.create({
     color: '#78350f',
   },
   
-  // Payment section
+  // Payment section - keep together
   paymentSection: {
-    marginTop: 24,
-    marginBottom: 12,
+    marginTop: 16,
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 11,
@@ -1034,48 +1034,42 @@ export function SimpleProposalPdf({
           </View>
         )}
 
-        {/* Payment Schedule with Dynamic Milestones */}
-        <View style={styles.paymentSection}>
+        {/* Payment Schedule with Dynamic Milestones - wrap={false} keeps all 3 payments together */}
+        <View style={styles.paymentSection} wrap={false}>
           <Text style={styles.sectionTitle}>PAYMENT SCHEDULE</Text>
           
           {/* Deposit */}
-          <View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-              <Text style={styles.paymentLabel}>Deposit – Due upon contract signing</Text>
-              <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
-            </View>
-            <View style={styles.paymentDetails}>
-              <Text style={styles.paymentDetailsText}>
-                Includes mobilization, materials ordering, and scheduling
-              </Text>
-            </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
+            <Text style={styles.paymentLabel}>Deposit – Due upon contract signing</Text>
+            <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
+          </View>
+          <View style={styles.paymentDetails}>
+            <Text style={styles.paymentDetailsText}>
+              Includes mobilization, materials ordering, and scheduling
+            </Text>
           </View>
           
           {/* Progress - DYNAMIC MILESTONE */}
-          <View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-              <Text style={styles.paymentLabel}>Progress – {progressMilestone.description}</Text>
-              <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
-            </View>
-            <View style={styles.paymentDetails}>
-              <Text style={styles.paymentDetailsText}>{progressMilestone.details}</Text>
-            </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
+            <Text style={styles.paymentLabel}>Progress – {progressMilestone.description}</Text>
+            <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
+          </View>
+          <View style={styles.paymentDetails}>
+            <Text style={styles.paymentDetailsText}>{progressMilestone.details}</Text>
           </View>
           
           {/* Final */}
-          <View>
-            <View style={styles.paymentRow}>
-              <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-              <Text style={styles.paymentLabel}>Final – Due at project completion</Text>
-              <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
-            </View>
-            <View style={styles.paymentDetails}>
-              <Text style={styles.paymentDetailsText}>
-                Final walkthrough and punchlist complete
-              </Text>
-            </View>
+          <View style={styles.paymentRow}>
+            <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
+            <Text style={styles.paymentLabel}>Final – Due at project completion</Text>
+            <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
+          </View>
+          <View style={styles.paymentDetails}>
+            <Text style={styles.paymentDetailsText}>
+              Final walkthrough and punchlist complete
+            </Text>
           </View>
         </View>
 
