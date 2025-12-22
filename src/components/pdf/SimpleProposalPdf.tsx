@@ -14,8 +14,8 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 10,
-    paddingTop: 100,
-    paddingBottom: 70,
+    paddingTop: 88,
+    paddingBottom: 56,
     paddingHorizontal: 50,
     backgroundColor: '#ffffff',
   },
@@ -52,14 +52,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     color: '#1e3a8a',
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 12,
   },
   quoteDate: {
     fontSize: 9,
     color: '#64748b',
     textAlign: 'center',
     marginTop: 2,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   
   clientSection: {
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   
   // Room section styles
   roomSection: {
-    marginTop: 12,
+    marginTop: 10,
     marginBottom: 4,
   },
   roomHeader: {
@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
   
   // Bullet list styles (no prices)
   bulletList: {
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 12,
     backgroundColor: '#f8fafc',
   },
   bulletItem: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   bulletPoint: {
     width: 12,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   paymentDetails: {
     paddingLeft: 40,
     marginTop: 2,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   paymentDetailsText: {
     fontSize: 8,
@@ -1034,42 +1034,48 @@ export function SimpleProposalPdf({
           </View>
         )}
 
-        {/* Payment Schedule with Dynamic Milestones - wrap={false} keeps all 3 payments together */}
-        <View style={styles.paymentSection} wrap={false}>
+        {/* Payment Schedule with Dynamic Milestones - keep entire block together */}
+        <View style={styles.paymentSection} wrap={false} minPresenceAhead={140}>
           <Text style={styles.sectionTitle}>PAYMENT SCHEDULE</Text>
-          
+
           {/* Deposit */}
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Deposit – Due upon contract signing</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
+          <View wrap={false}>
+            <View style={styles.paymentRow} wrap={false}>
+              <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
+              <Text style={styles.paymentLabel}>Deposit – Due upon contract signing</Text>
+              <Text style={styles.paymentAmount}>{formatCurrency(depositAmount)}</Text>
+            </View>
+            <View style={styles.paymentDetails} wrap={false}>
+              <Text style={styles.paymentDetailsText}>
+                Includes mobilization, materials ordering, and scheduling
+              </Text>
+            </View>
           </View>
-          <View style={styles.paymentDetails}>
-            <Text style={styles.paymentDetailsText}>
-              Includes mobilization, materials ordering, and scheduling
-            </Text>
-          </View>
-          
+
           {/* Progress - DYNAMIC MILESTONE */}
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Progress – {progressMilestone.description}</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
+          <View wrap={false}>
+            <View style={styles.paymentRow} wrap={false}>
+              <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
+              <Text style={styles.paymentLabel}>Progress – {progressMilestone.description}</Text>
+              <Text style={styles.paymentAmount}>{formatCurrency(progressAmount)}</Text>
+            </View>
+            <View style={styles.paymentDetails} wrap={false}>
+              <Text style={styles.paymentDetailsText}>{progressMilestone.details}</Text>
+            </View>
           </View>
-          <View style={styles.paymentDetails}>
-            <Text style={styles.paymentDetailsText}>{progressMilestone.details}</Text>
-          </View>
-          
+
           {/* Final */}
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Final – Due at project completion</Text>
-            <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
-          </View>
-          <View style={styles.paymentDetails}>
-            <Text style={styles.paymentDetailsText}>
-              Final walkthrough and punchlist complete
-            </Text>
+          <View wrap={false}>
+            <View style={styles.paymentRow} wrap={false}>
+              <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
+              <Text style={styles.paymentLabel}>Final – Due at project completion</Text>
+              <Text style={styles.paymentAmount}>{formatCurrency(finalAmount)}</Text>
+            </View>
+            <View style={styles.paymentDetails} wrap={false}>
+              <Text style={styles.paymentDetailsText}>
+                Final walkthrough and punchlist complete
+              </Text>
+            </View>
           </View>
         </View>
 
