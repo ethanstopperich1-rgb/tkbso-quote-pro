@@ -1,6 +1,9 @@
 import { ContractorSettings } from './settings';
 
 // Database types for the TKBSO Estimator
+export type AccountType = 'gc_contractor' | 'trade_contractor';
+export type PricingMode = 'ic_and_cp' | 'cp_only';
+
 export interface Contractor {
   id: string;
   name: string;
@@ -11,6 +14,10 @@ export interface Contractor {
   logo_url: string | null;
   notes: string | null;
   settings: ContractorSettings | null;
+  account_type: AccountType;
+  pricing_mode: PricingMode;
+  parent_company_id: string | null;
+  can_create_subaccounts: boolean;
   created_at: string;
   updated_at: string;
 }

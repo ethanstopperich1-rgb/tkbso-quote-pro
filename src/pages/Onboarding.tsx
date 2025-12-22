@@ -68,8 +68,9 @@ function extractDominantColor(imageUrl: string): Promise<string> {
 }
 
 type ProjectType = 'kitchen' | 'bathroom' | 'full-home' | 'additions' | 'basement' | 'commercial';
+type AccountType = 'gc_contractor' | 'trade_contractor';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -91,11 +92,14 @@ export default function Onboarding() {
     logoUrl: '',
   });
 
-  // Step 2: Project Types
+  // Step 2: Account Type
+  const [accountType, setAccountType] = useState<AccountType>('gc_contractor');
+
+  // Step 3: Project Types
   const [selectedTypes, setSelectedTypes] = useState<ProjectType[]>([]);
   const [teamSize, setTeamSize] = useState<string>('');
 
-  // Step 3: Pricing
+  // Step 4: Pricing (only for GC contractors)
   const [pricingStrategy, setPricingStrategy] = useState<string>('standard');
   const [marketLocation, setMarketLocation] = useState<string>('');
   const [laborRates, setLaborRates] = useState({
@@ -105,7 +109,7 @@ export default function Onboarding() {
     cabinet: 150,
   });
 
-  // Step 4: Branding
+  // Step 5: Branding
   const [primaryColor, setPrimaryColor] = useState('#0B1C3E');
   const [accentColor, setAccentColor] = useState('#00E5FF');
 
@@ -118,6 +122,7 @@ export default function Onboarding() {
         if (Date.now() - timestamp < 86400000) {
           setStep(savedStep);
           if (data.formData) setFormData(data.formData);
+          if (data.accountType) setAccountType(data.accountType);
           if (data.selectedTypes) setSelectedTypes(data.selectedTypes);
           if (data.teamSize) setTeamSize(data.teamSize);
           if (data.pricingStrategy) setPricingStrategy(data.pricingStrategy);
@@ -136,14 +141,14 @@ export default function Onboarding() {
   const saveProgress = () => {
     localStorage.setItem('onboarding_progress', JSON.stringify({
       step,
-      data: { formData, selectedTypes, teamSize, pricingStrategy, laborRates, marketLocation, primaryColor, accentColor },
+      data: { formData, accountType, selectedTypes, teamSize, pricingStrategy, laborRates, marketLocation, primaryColor, accentColor },
       timestamp: Date.now()
     }));
   };
 
   useEffect(() => {
     saveProgress();
-  }, [step, formData, selectedTypes, teamSize, pricingStrategy, laborRates, marketLocation, primaryColor, accentColor]);
+  }, [step, formData, accountType, selectedTypes, teamSize, pricingStrategy, laborRates, marketLocation, primaryColor, accentColor]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -227,15 +232,29 @@ export default function Onboarding() {
   };
 
   const handleStep2Submit = () => {
+    // For trade contractors, skip pricing strategy and go directly to project types
+    if (accountType === 'trade_contractor') {
+      setStep(3); // Go to project types
+    } else {
+      setStep(3); // Go to project types (then pricing for GC)
+    }
+  };
+
+  const handleStep3Submit = () => {
     if (selectedTypes.length === 0) {
       toast.error('Please select at least one project type');
       return;
     }
-    setStep(3);
+    // GC contractors see pricing step, trade contractors skip to branding
+    if (accountType === 'gc_contractor') {
+      setStep(4); // Pricing strategy
+    } else {
+      setStep(5); // Branding (skip pricing)
+    }
   };
 
-  const handleStep3Submit = () => {
-    setStep(4);
+  const handleStep4Submit = () => {
+    setStep(5); // Branding
   };
 
   const handleFinalSubmit = async () => {
@@ -249,7 +268,7 @@ export default function Onboarding() {
     try {
       const currentSettings = contractor.settings || defaultSettings;
       
-      // Calculate target margin based on pricing strategy
+      // Calculate target margin based on pricing strategy (only for GC contractors)
       const marginMap: Record<string, number> = {
         conservative: 0.28,
         standard: 0.38,
@@ -273,10 +292,13 @@ export default function Onboarding() {
         },
         projectTypes: selectedTypes,
         teamSize: teamSize,
-        pricingStrategy: pricingStrategy,
+        pricingStrategy: accountType === 'gc_contractor' ? pricingStrategy : null,
         marketLocation: marketLocation,
         onboardingCompleted: true,
       };
+      
+      // Determine pricing mode based on account type
+      const pricingMode = accountType === 'gc_contractor' ? 'ic_and_cp' : 'cp_only';
       
       const { error: contractorError } = await supabase
         .from('contractors')
@@ -287,20 +309,24 @@ export default function Onboarding() {
           service_area: formData.address || marketLocation,
           logo_url: formData.logoUrl || logoPreview || null,
           settings: JSON.parse(JSON.stringify(updatedSettings)),
+          account_type: accountType,
+          pricing_mode: pricingMode,
         })
         .eq('id', contractor.id);
       
       if (contractorError) throw contractorError;
       
-      // Update pricing config with selected strategy
-      const { error: pricingError } = await supabase
-        .from('pricing_configs')
-        .update({
-          target_margin: marginMap[pricingStrategy] || 0.38,
-        })
-        .eq('contractor_id', contractor.id);
-      
-      if (pricingError) console.warn('Could not update pricing config:', pricingError);
+      // Update pricing config with selected strategy (only for GC contractors)
+      if (accountType === 'gc_contractor') {
+        const { error: pricingError } = await supabase
+          .from('pricing_configs')
+          .update({
+            target_margin: marginMap[pricingStrategy] || 0.38,
+          })
+          .eq('contractor_id', contractor.id);
+        
+        if (pricingError) console.warn('Could not update pricing config:', pricingError);
+      }
       
       const { error: profileError } = await supabase
         .from('profiles')
@@ -316,7 +342,7 @@ export default function Onboarding() {
       
       await refreshProfile();
       toast.success('Welcome! Your profile is set up.');
-      setStep(5); // Show completion celebration
+      setStep(6); // Show completion celebration
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to save profile';
       toast.error(errorMessage);
@@ -334,6 +360,21 @@ export default function Onboarding() {
     { id: 'commercial' as ProjectType, icon: '🏢', label: 'Commercial Projects' },
   ];
 
+  const accountTypes = [
+    { 
+      id: 'gc_contractor' as AccountType, 
+      title: 'General Contractor / Prime', 
+      desc: 'I hire subcontractors and mark up their work. I need to track profit margins.',
+      icon: '🏗️'
+    },
+    { 
+      id: 'trade_contractor' as AccountType, 
+      title: 'Trade Contractor / Subcontractor', 
+      desc: 'I do the work myself or work as a sub for GCs. My price is the price.',
+      icon: '🔧'
+    },
+  ];
+
   const pricingStrategies = [
     { id: 'conservative', label: 'Conservative', margin: '25-30%', desc: 'Competitive pricing' },
     { id: 'standard', label: 'Standard', margin: '35-40%', desc: 'Industry average', recommended: true },
@@ -341,12 +382,17 @@ export default function Onboarding() {
   ];
 
   const getStepLabel = () => {
-    switch (step) {
+    // Adjust labels based on account type (trade contractors skip pricing step)
+    const effectiveStep = step;
+    const totalForUser = accountType === 'trade_contractor' ? TOTAL_STEPS - 1 : TOTAL_STEPS;
+    
+    switch (effectiveStep) {
       case 1: return 'About 2 minutes';
-      case 2: return 'Halfway there!';
-      case 3: return 'Almost done!';
-      case 4: return 'Final step!';
-      case 5: return 'You\'re all set!';
+      case 2: return 'Choose your type';
+      case 3: return 'Project types';
+      case 4: return accountType === 'gc_contractor' ? 'Set pricing' : 'Brand setup';
+      case 5: return 'Brand setup';
+      case 6: return "You're all set!";
       default: return '';
     }
   };
@@ -475,8 +521,80 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Step 2: Project Types */}
+        {/* Step 2: Account Type Selection */}
         {step === 2 && (
+          <div className="bg-white rounded-2xl p-8 shadow-lg">
+            <h2 className="text-3xl font-bold mb-2 text-slate-900">What type of contractor are you?</h2>
+            <p className="text-slate-600 mb-8">This helps us customize your pricing and estimate views</p>
+
+            <div className="space-y-4 mb-8">
+              {accountTypes.map(type => (
+                <label 
+                  key={type.id}
+                  className={`relative flex items-start gap-4 border-2 rounded-xl p-6 cursor-pointer transition-all hover:border-cyan-400 ${
+                    accountType === type.id 
+                      ? 'border-cyan-400 bg-cyan-50' 
+                      : 'border-slate-200 bg-white'
+                  }`}
+                >
+                  <input 
+                    type="radio"
+                    name="accountType"
+                    value={type.id}
+                    checked={accountType === type.id}
+                    onChange={() => setAccountType(type.id)}
+                    className="sr-only"
+                  />
+                  <div className="text-4xl flex-shrink-0">{type.icon}</div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900 text-lg mb-1">{type.title}</p>
+                    <p className="text-sm text-slate-600">{type.desc}</p>
+                  </div>
+                  {accountType === type.id && (
+                    <div className="absolute top-4 right-4 w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                </label>
+              ))}
+            </div>
+
+            {/* Info box based on selection */}
+            <div className={`p-4 rounded-lg mb-8 ${
+              accountType === 'gc_contractor' 
+                ? 'bg-blue-50 border border-blue-200' 
+                : 'bg-green-50 border border-green-200'
+            }`}>
+              <p className={`text-sm ${
+                accountType === 'gc_contractor' ? 'text-blue-900' : 'text-green-900'
+              }`}>
+                {accountType === 'gc_contractor' 
+                  ? '✨ You\'ll see internal costs (IC), customer prices (CP), and profit margins in your dashboard.'
+                  : '✨ You\'ll see clean price-only views. Perfect for trade contractors who quote their own work.'}
+              </p>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex gap-4">
+              <Button 
+                variant="outline"
+                onClick={() => setStep(1)}
+                className="px-6 h-12 border-2 border-slate-300 rounded-lg font-semibold hover:bg-slate-50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" /> Back
+              </Button>
+              <Button 
+                onClick={handleStep2Submit}
+                className="flex-1 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 rounded-lg font-bold text-lg hover:shadow-lg transition-all"
+              >
+                Continue →
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Project Types */}
+        {step === 3 && (
           <div className="bg-white rounded-2xl p-8 shadow-lg">
             <h2 className="text-3xl font-bold mb-2 text-slate-900">What type of projects do you do?</h2>
             <p className="text-slate-600 mb-8">Select all that apply - we'll customize your pricing templates</p>
@@ -540,13 +658,13 @@ export default function Onboarding() {
             <div className="flex gap-4">
               <Button 
                 variant="outline"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 className="px-6 h-12 border-2 border-slate-300 rounded-lg font-semibold hover:bg-slate-50"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" /> Back
               </Button>
               <Button 
-                onClick={handleStep2Submit}
+                onClick={handleStep3Submit}
                 disabled={selectedTypes.length === 0}
                 className="flex-1 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50"
               >
@@ -556,8 +674,8 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Step 3: Pricing Setup */}
-        {step === 3 && (
+        {/* Step 4: Pricing Setup (GC Contractors Only) */}
+        {step === 4 && (
           <div className="bg-white rounded-2xl p-8 shadow-lg">
             <h2 className="text-3xl font-bold mb-2 text-slate-900">Set your default pricing</h2>
             <p className="text-slate-600 mb-8">We'll pre-fill with industry standards, but you can customize later</p>
@@ -648,13 +766,13 @@ export default function Onboarding() {
             <div className="flex gap-4">
               <Button 
                 variant="outline"
-                onClick={() => setStep(2)}
+                onClick={() => setStep(3)}
                 className="px-6 h-12 border-2 border-slate-300 rounded-lg font-semibold hover:bg-slate-50"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" /> Back
               </Button>
               <Button 
-                onClick={handleStep3Submit}
+                onClick={handleStep4Submit}
                 className="flex-1 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-900 rounded-lg font-bold text-lg hover:shadow-lg transition-all"
               >
                 Continue →
@@ -671,8 +789,8 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Step 4: Branding */}
-        {step === 4 && (
+        {/* Step 5: Branding */}
+        {step === 5 && (
           <div className="bg-white rounded-2xl p-8 shadow-lg">
             <h2 className="text-3xl font-bold mb-2 text-slate-900">Brand your proposals</h2>
             <p className="text-slate-600 mb-8">Make your estimates look professional and uniquely yours</p>
@@ -804,8 +922,8 @@ export default function Onboarding() {
           </div>
         )}
 
-        {/* Step 5: Completion Celebration */}
-        {step === 5 && (
+        {/* Step 6: Completion Celebration */}
+        {step === 6 && (
           <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Check className="h-10 w-10 text-green-600" />

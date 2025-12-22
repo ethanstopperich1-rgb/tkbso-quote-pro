@@ -122,11 +122,15 @@ export type Database = {
       }
       contractors: {
         Row: {
+          account_type: string | null
+          can_create_subaccounts: boolean | null
           created_at: string | null
           id: string
           logo_url: string | null
           name: string
           notes: string | null
+          parent_company_id: string | null
+          pricing_mode: string | null
           primary_contact_email: string | null
           primary_contact_name: string | null
           primary_contact_phone: string | null
@@ -135,11 +139,15 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          account_type?: string | null
+          can_create_subaccounts?: boolean | null
           created_at?: string | null
           id?: string
           logo_url?: string | null
           name: string
           notes?: string | null
+          parent_company_id?: string | null
+          pricing_mode?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
@@ -148,11 +156,15 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          account_type?: string | null
+          can_create_subaccounts?: boolean | null
           created_at?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           notes?: string | null
+          parent_company_id?: string | null
+          pricing_mode?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
@@ -160,7 +172,15 @@ export type Database = {
           settings?: Json | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contractors_parent_company_id_fkey"
+            columns: ["parent_company_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       estimates: {
         Row: {
