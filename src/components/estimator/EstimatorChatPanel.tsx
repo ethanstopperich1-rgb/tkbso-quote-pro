@@ -139,9 +139,7 @@ const WELCOME_MESSAGE: Message = {
 
 What type of project are we quoting today — kitchen or bathroom?
 
-If you have client details, include them: "master bath remodel for the Smiths at 123 Main St" and I'll capture everything upfront.
-
-*You can also upload project photos or record a walkthrough video for AI-powered scope detection.*`,
+If you have client details, include them: "master bath remodel for the Smiths at 123 Main St" and I'll capture everything upfront.`,
   timestamp: new Date(),
 };
 
@@ -1595,58 +1593,6 @@ export function EstimatorChatPanel() {
           />
         ))}
 
-        {/* Scanning animation */}
-        {isAnalyzingPhoto && (
-          <div className="flex items-center gap-3 text-cyan-600 animate-fade-in">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
-              <Camera className="h-4 w-4 animate-pulse" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">Scanning photo...</span>
-              <span className="text-xs text-muted-foreground">Detecting trade items with AI vision</span>
-            </div>
-          </div>
-        )}
-
-        {/* Photo Analysis Confirmation - show after photos are analyzed */}
-        {photoEntries.length > 0 && !estimate && showPhotoConfirmation && (
-          <PhotoAnalysisConfirmation 
-            entries={photoEntries}
-            onRemovePhoto={handleRemovePhoto}
-            onAddMore={handleAddMorePhotos}
-            onConfirm={handlePhotoConfirmation}
-            onCancel={() => {
-              setShowPhotoConfirmation(false);
-              setPhotoEntries([]);
-            }}
-            isAnalyzing={isAnalyzingPhoto}
-          />
-        )}
-
-        {/* Video Analysis Confirmation - show after video is analyzed */}
-        {videoAnalysisResult && !estimate && showVideoConfirmation && (
-          <VideoAnalysisConfirmation 
-            result={videoAnalysisResult}
-            onConfirm={handleVideoConfirmation}
-            onCancel={() => {
-              setShowVideoConfirmation(false);
-              setVideoAnalysisResult(null);
-            }}
-            onReRecord={handleVideoReRecord}
-          />
-        )}
-
-        {/* Photo Analysis Card - Multi-photo support (legacy fallback) */}
-        {photoEntries.length > 0 && !estimate && !showPhotoConfirmation && (
-          <MultiPhotoAnalysisCard 
-            entries={photoEntries}
-            onRemovePhoto={handleRemovePhoto}
-            onAddMore={handleAddMorePhotos}
-            onUpdateItem={handleUpdateItem}
-            isAnalyzing={isAnalyzingPhoto}
-          />
-        )}
-
         {/* Line Items Review - shown before client details */}
         {showLineItemsReview && pendingLineItems.length > 0 && !estimate && (
           <Card className="animate-scale-in border-primary/20 shadow-lg">
@@ -1909,39 +1855,22 @@ export function EstimatorChatPanel() {
         
         <ChatInput
           onSend={handleSendMessage} 
-          onPhotoUpload={handlePhotoUpload}
-          onVideoUpload={handleVideoUpload}
-          onVideoClick={() => setShowVideoModal(true)}
-          disabled={isLoading || isAnalyzingPhoto || isProcessingVideo}
-          showPhotoUpload={true}
-          showVideoCapture={true}
-          isAnalyzingPhoto={isAnalyzingPhoto}
-          isProcessingVideo={isProcessingVideo}
+          disabled={isLoading}
           placeholder={
-            photoEntries.length > 0 && !estimate
-              ? "Confirm items or add dimensions (e.g., '5x8 bathroom')..."
-              : conversationState.phase === 'project_type'
-                ? "Describe project, upload photo, or record video..."
-              : conversationState.phase === 'scope_gathering'
-                ? `Describe the ${conversationState.projectType?.toLowerCase() || 'project'} scope...`
-              : conversationState.phase === 'materials'
-                ? "What type of tile/materials? (e.g., porcelain, quartz)"
-              : conversationState.phase === 'client_details'
-                ? "Client name, phone, email, address..."
-              : estimate
-                ? "Add scope, change details, or start new..."
-              : `Describe the ${context.projectType?.toLowerCase() || 'project'} scope...`
+            conversationState.phase === 'project_type'
+              ? "Describe your project (e.g., 'master bath remodel for the Smiths')..."
+            : conversationState.phase === 'scope_gathering'
+              ? `Describe the ${conversationState.projectType?.toLowerCase() || 'project'} scope...`
+            : conversationState.phase === 'materials'
+              ? "What type of tile/materials? (e.g., porcelain, quartz)"
+            : conversationState.phase === 'client_details'
+              ? "Client name, phone, email, address..."
+            : estimate
+              ? "Add scope, change details, or start new..."
+            : `Describe the ${context.projectType?.toLowerCase() || 'project'} scope...`
           }
         />
       </div>
-
-      {/* Video Recording Modal */}
-      <VideoRecordingModal
-        open={showVideoModal}
-        onOpenChange={setShowVideoModal}
-        onVideoAnalyzed={handleVideoAnalyzed}
-        contractorId={contractor?.id || ''}
-      />
 
       {/* Forgotten Items Modal */}
       <ForgottenItemsModal
