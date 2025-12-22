@@ -299,6 +299,11 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
     category: "plumbing",
     aliases: ["linear drain", "trench drain", "slot drain"]
   },
+  "Plumbing - Curbless Shower Floor Pitch": {
+    cost: 800, price: 1333, unit: "ea", perUnit: false,
+    category: "plumbing",
+    aliases: ["curbless shower", "zero entry", "floor pitch", "mortar bed", "pitch shower floor", "curbless"]
+  },
   "Plumbing - Tub Drain Relocation": {
     cost: 1800, price: 3000, unit: "ea", perUnit: false,
     category: "plumbing",
@@ -313,6 +318,33 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
     cost: 150, price: 250, unit: "ea", perUnit: true,
     category: "plumbing",
     aliases: ["cap off plumbing", "cap line", "abandon line"]
+  },
+
+  // --- Fixture Allowances ---
+  "Shower Fixtures - Standard": {
+    cost: 200, price: 333, unit: "ea", perUnit: true,
+    category: "plumbing",
+    aliases: ["shower fixtures", "shower trim", "shower head", "shower hardware"]
+  },
+  "Shower Fixtures - Premium": {
+    cost: 400, price: 667, unit: "ea", perUnit: true,
+    category: "plumbing",
+    aliases: ["premium fixtures", "matte black fixtures", "brushed nickel", "oil rubbed bronze", "premium shower"]
+  },
+  "Tub Fixtures": {
+    cost: 250, price: 417, unit: "ea", perUnit: true,
+    category: "plumbing",
+    aliases: ["tub faucet", "tub fixtures", "roman tub faucet", "tub trim"]
+  },
+  "Vanity Faucet - Standard": {
+    cost: 125, price: 208, unit: "ea", perUnit: true,
+    category: "plumbing",
+    aliases: ["vanity faucet", "bathroom faucet", "sink faucet", "lav faucet"]
+  },
+  "Vanity Faucet - Premium": {
+    cost: 250, price: 417, unit: "ea", perUnit: true,
+    category: "plumbing",
+    aliases: ["premium faucet", "designer faucet", "high-end faucet", "premium vanity faucet"]
   },
 
   // --- Kitchen Plumbing ---
@@ -587,34 +619,46 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
     aliases: ["48 inch vanity", "48\" vanity"]
   },
   "Vanity - 60in": {
-    cost: 2200, price: 3667, unit: "ea", perUnit: true,
+    cost: 1800, price: 3000, unit: "ea", perUnit: true,
     category: "cabinetry",
     aliases: ["60 inch vanity", "60\" vanity", "5 foot vanity", "double vanity"]
   },
   "Vanity - 72in": {
-    cost: 2600, price: 4333, unit: "ea", perUnit: true,
+    cost: 2200, price: 3667, unit: "ea", perUnit: true,
     category: "cabinetry",
     aliases: ["72 inch vanity", "72\" vanity", "6 foot vanity"]
   },
   "Vanity - 84in": {
-    cost: 3200, price: 5333, unit: "ea", perUnit: true,
+    cost: 2800, price: 4667, unit: "ea", perUnit: true,
     category: "cabinetry",
     aliases: ["84 inch vanity", "84\" vanity", "7 foot vanity"]
   },
   "Vanity - 96in": {
-    cost: 3800, price: 6333, unit: "ea", perUnit: true,
+    cost: 3400, price: 5667, unit: "ea", perUnit: true,
     category: "cabinetry",
     aliases: ["96 inch vanity", "96\" vanity", "8 foot vanity"]
   },
   "Vanity - 120in": {
-    cost: 4200, price: 7000, unit: "ea", perUnit: true,
+    cost: 3800, price: 6333, unit: "ea", perUnit: true,
     category: "cabinetry",
     aliases: ["120 inch vanity", "120\" vanity", "10 foot vanity"]
   },
   "Vanity - 144in": {
-    cost: 4500, price: 7500, unit: "ea", perUnit: true,
+    cost: 4200, price: 7000, unit: "ea", perUnit: true,
     category: "cabinetry",
     aliases: ["144 inch vanity", "144\" vanity", "12 foot vanity"]
+  },
+
+  // --- Linen Cabinets ---
+  "Linen Cabinet - 18in Tall": {
+    cost: 500, price: 833, unit: "ea", perUnit: true,
+    category: "cabinetry",
+    aliases: ["18 inch linen", "narrow linen", "small linen cabinet"]
+  },
+  "Linen Cabinet - 24in Tall": {
+    cost: 600, price: 1000, unit: "ea", perUnit: true,
+    category: "cabinetry",
+    aliases: ["linen cabinet", "tall cabinet", "linen tower", "24 inch linen", "bathroom cabinet"]
   },
 
   // --- Kitchen Cabinets ---
@@ -670,34 +714,39 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
     aliases: ["laminate countertop", "formica"]
   },
   "Countertop - Quartz Level 1": {
-    cost: 45, price: 75, unit: "sqft", perUnit: true,
+    cost: 65, price: 108, unit: "sqft", perUnit: true,
     category: "countertops",
     aliases: ["quartz", "quartz countertop", "level 1 quartz", "basic quartz"]
   },
   "Countertop - Quartz Level 2": {
-    cost: 55, price: 92, unit: "sqft", perUnit: true,
+    cost: 75, price: 125, unit: "sqft", perUnit: true,
     category: "countertops",
     aliases: ["level 2 quartz", "mid-grade quartz"]
   },
   "Countertop - Quartz Level 3": {
-    cost: 70, price: 117, unit: "sqft", perUnit: true,
+    cost: 90, price: 150, unit: "sqft", perUnit: true,
     category: "countertops",
     aliases: ["level 3 quartz", "premium quartz"]
   },
   "Countertop - Granite": {
-    cost: 50, price: 83, unit: "sqft", perUnit: true,
+    cost: 70, price: 117, unit: "sqft", perUnit: true,
     category: "countertops",
     aliases: ["granite", "granite countertop"]
   },
   "Countertop - Quartzite": {
-    cost: 75, price: 125, unit: "sqft", perUnit: true,
+    cost: 95, price: 158, unit: "sqft", perUnit: true,
     category: "countertops",
     aliases: ["quartzite", "quartzite countertop"]
   },
   "Countertop - Marble": {
-    cost: 80, price: 133, unit: "sqft", perUnit: true,
+    cost: 100, price: 167, unit: "sqft", perUnit: true,
     category: "countertops",
     aliases: ["marble", "marble countertop"]
+  },
+  "Countertop Fabrication": {
+    cost: 22, price: 37, unit: "sqft", perUnit: true,
+    category: "countertops",
+    aliases: ["fab", "fabrication", "counter install", "template", "counter fabrication"]
   },
 
   // --- Countertop Add-Ons ---
@@ -843,10 +892,23 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
   // GLASS
   // ============================================================================
 
+  // --- Framed/Semi-Frameless Glass ---
+  "Glass - Framed Shower": {
+    cost: 800, price: 1333, unit: "ea", perUnit: false,
+    category: "glass",
+    aliases: ["framed shower", "standard shower door", "framed door", "basic shower door"]
+  },
+  "Glass - Semi-Frameless Shower": {
+    cost: 1200, price: 2000, unit: "ea", perUnit: false,
+    category: "glass",
+    aliases: ["semi-frameless", "semi frameless shower", "semi frameless door"]
+  },
+
+  // --- Frameless Glass ---
   "Glass - Door Only": {
     cost: 650, price: 1083, unit: "ea", perUnit: false,
     category: "glass",
-    aliases: ["shower door", "glass door"]
+    aliases: ["shower door", "glass door", "frameless door only"]
   },
   "Glass - Panel Only": {
     cost: 800, price: 1333, unit: "ea", perUnit: false,
@@ -858,10 +920,20 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
     category: "glass",
     aliases: ["door and panel", "shower enclosure", "glass enclosure"]
   },
+  "Glass - Frameless Shower": {
+    cost: 1500, price: 2500, unit: "ea", perUnit: false,
+    category: "glass",
+    aliases: ["frameless", "frameless shower", "frameless glass"]
+  },
   "Glass - 90 Degree Return": {
     cost: 1425, price: 2375, unit: "ea", perUnit: false,
     category: "glass",
     aliases: ["90 degree", "corner shower", "neo angle"]
+  },
+  "Glass - Frameless Custom/Angled": {
+    cost: 2000, price: 3333, unit: "ea", perUnit: false,
+    category: "glass",
+    aliases: ["custom glass", "angled glass", "custom shower glass", "custom frameless"]
   },
   "Glass - Full Enclosure": {
     cost: 1800, price: 3000, unit: "ea", perUnit: false,
