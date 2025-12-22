@@ -98,9 +98,9 @@ export default function PublicPricing() {
             </p>
 
             {/* ROI Callout */}
-            <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 mb-6">
-              <p className="text-sm text-cyan-800 font-medium">
-                💰 Saves 10 hrs/week = $6,000/month in time
+            <div className="bg-muted/30 border border-border rounded-lg p-3 mb-6">
+              <p className="text-sm text-foreground font-medium">
+                Saves 10 hours per week = $6,000/month in time
               </p>
             </div>
 
@@ -164,9 +164,9 @@ export default function PublicPricing() {
             </p>
 
             {/* Value Callout */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-              <p className="text-sm text-blue-800 font-medium">
-                👥 Includes 3 user seats (save $297/month)
+            <div className="bg-muted/30 border border-border rounded-lg p-3 mb-6">
+              <p className="text-sm text-foreground font-medium">
+                Includes 3 user seats (save $297/month)
               </p>
             </div>
 
@@ -228,7 +228,7 @@ export default function PublicPricing() {
             {/* Target Callout */}
             <div className="bg-white/10 border border-white/20 rounded-lg p-3 mb-6">
               <p className="text-sm font-medium">
-                🏢 For showrooms, franchises & multi-crew shops
+                For showrooms, franchises & multi-crew shops
               </p>
             </div>
 
@@ -332,7 +332,7 @@ export default function PublicPricing() {
             >
               Start Your Free Trial →
             </Link>
-            <p className="text-sm text-slate-700 mt-4">✓ No credit card required • ✓ Setup in 3 minutes • ✓ Cancel anytime</p>
+            <p className="text-sm text-slate-700 mt-4">No credit card required · Setup in 3 minutes · Cancel anytime</p>
           </div>
         </div>
       </div>

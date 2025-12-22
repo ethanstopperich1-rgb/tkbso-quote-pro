@@ -15,7 +15,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+        display: ['Cormorant Garamond', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'Roboto Mono', 'monospace']
       },
       fontSize: {
@@ -78,6 +79,15 @@ export default {
         },
         brand: {
           primary: 'hsl(var(--brand-primary))'
+        },
+        luxury: {
+          navy: 'hsl(var(--luxury-navy))',
+          charcoal: 'hsl(var(--luxury-charcoal))',
+          slate: 'hsl(var(--luxury-slate))',
+          silver: 'hsl(var(--luxury-silver))',
+          pearl: 'hsl(var(--luxury-pearl))',
+          gold: 'hsl(var(--luxury-gold))',
+          success: 'hsl(var(--luxury-success))'
         }
       },
       borderRadius: {

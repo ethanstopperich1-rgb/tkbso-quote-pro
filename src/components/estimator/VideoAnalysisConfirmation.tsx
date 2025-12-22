@@ -135,7 +135,7 @@ export function VideoAnalysisConfirmation({
             className="bg-purple-500/20 text-purple-700 border border-purple-500/30 gap-1"
           >
             <Video className="h-3 w-3" />
-            🎥 Video Analysis
+            Video Analysis
           </Badge>
           <Badge variant="outline" className="text-xs">
             {totalCount} items detected
@@ -189,7 +189,7 @@ export function VideoAnalysisConfirmation({
         {/* Detected Items */}
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <h3 className="font-semibold">🔍 Items Detected in Video</h3>
+            <h3 className="font-semibold">Items Detected in Video</h3>
             <span className="text-xs text-muted-foreground">
               {selectedCount} of {totalCount} selected
             </span>
@@ -255,22 +255,21 @@ export function VideoAnalysisConfirmation({
 
         {/* Understood Scope */}
         {understoodScope.length > 0 && (
-          <div className="mb-4 p-4 bg-cyan-50 dark:bg-cyan-950/30 border-l-4 border-cyan-400 rounded-r-lg">
+          <div className="mb-4 p-4 bg-muted/30 border-l-2 border-primary rounded-r-lg">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">🎯</span>
-              <h3 className="font-semibold text-cyan-900 dark:text-cyan-100">
+              <h3 className="font-semibold text-foreground">
                 What I Understood Your Scope To Be
               </h3>
             </div>
             <ul className="space-y-1">
               {understoodScope.slice(0, 8).map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm text-cyan-800 dark:text-cyan-200">
-                  <Check className="h-3 w-3 text-cyan-600 mt-1 flex-shrink-0" />
+                <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="h-3 w-3 text-primary mt-1 flex-shrink-0" />
                   <span>{item}</span>
                 </li>
               ))}
               {understoodScope.length > 8 && (
-                <li className="text-xs text-cyan-600">+ {understoodScope.length - 8} more items...</li>
+                <li className="text-xs text-muted-foreground">+ {understoodScope.length - 8} more items...</li>
               )}
             </ul>
           </div>
@@ -280,9 +279,9 @@ export function VideoAnalysisConfirmation({
         {(result.special_requests?.length > 0 || result.concerns_flagged?.length > 0) && (
           <div className="mb-4 space-y-3">
             {result.special_requests?.length > 0 && (
-              <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-xs font-semibold text-green-800 dark:text-green-200 mb-1">📋 Special Requests</p>
-                <ul className="text-xs text-green-700 dark:text-green-300 space-y-1">
+              <div className="p-3 bg-muted/30 rounded-lg border border-border">
+                <p className="text-xs font-semibold text-foreground mb-1">Special Requests</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
                   {result.special_requests.map((req, idx) => (
                     <li key={idx}>• {req}</li>
                   ))}
@@ -320,7 +319,7 @@ export function VideoAnalysisConfirmation({
             className="resize-none"
           />
           <p className="text-xs text-muted-foreground mt-2">
-            💡 Say "looks good" or leave blank to use what's selected!
+            Leave blank or say "looks good" to use what's selected.
           </p>
         </div>
 

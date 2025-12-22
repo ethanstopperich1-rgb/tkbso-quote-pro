@@ -352,12 +352,12 @@ export default function Onboarding() {
   };
 
   const projectTypes = [
-    { id: 'kitchen' as ProjectType, icon: '🍳', label: 'Kitchen Remodels', popular: true },
-    { id: 'bathroom' as ProjectType, icon: '🛁', label: 'Bathroom Remodels', popular: true },
-    { id: 'full-home' as ProjectType, icon: '🏠', label: 'Full Home Renovations' },
-    { id: 'additions' as ProjectType, icon: '🔨', label: 'Additions & Extensions' },
-    { id: 'basement' as ProjectType, icon: '🚪', label: 'Basement Finishing' },
-    { id: 'commercial' as ProjectType, icon: '🏢', label: 'Commercial Projects' },
+    { id: 'kitchen' as ProjectType, label: 'Kitchen Remodels', popular: true },
+    { id: 'bathroom' as ProjectType, label: 'Bathroom Remodels', popular: true },
+    { id: 'full-home' as ProjectType, label: 'Full Home Renovations' },
+    { id: 'additions' as ProjectType, label: 'Additions & Extensions' },
+    { id: 'basement' as ProjectType, label: 'Basement Finishing' },
+    { id: 'commercial' as ProjectType, label: 'Commercial Projects' },
   ];
 
   const accountTypes = [
@@ -365,13 +365,11 @@ export default function Onboarding() {
       id: 'gc_contractor' as AccountType, 
       title: 'General Contractor / Prime', 
       desc: 'I hire subcontractors and mark up their work. I need to track profit margins.',
-      icon: '🏗️'
     },
     { 
       id: 'trade_contractor' as AccountType, 
       title: 'Trade Contractor / Subcontractor', 
       desc: 'I do the work myself or work as a sub for GCs. My price is the price.',
-      icon: '🔧'
     },
   ];
 
@@ -545,10 +543,12 @@ export default function Onboarding() {
                     onChange={() => setAccountType(type.id)}
                     className="sr-only"
                   />
-                  <div className="text-4xl flex-shrink-0">{type.icon}</div>
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
                   <div className="flex-1">
-                    <p className="font-bold text-slate-900 text-lg mb-1">{type.title}</p>
-                    <p className="text-sm text-slate-600">{type.desc}</p>
+                    <p className="font-semibold text-foreground text-lg mb-1">{type.title}</p>
+                    <p className="text-sm text-muted-foreground">{type.desc}</p>
                   </div>
                   {accountType === type.id && (
                     <div className="absolute top-4 right-4 w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
@@ -560,17 +560,11 @@ export default function Onboarding() {
             </div>
 
             {/* Info box based on selection */}
-            <div className={`p-4 rounded-lg mb-8 ${
-              accountType === 'gc_contractor' 
-                ? 'bg-blue-50 border border-blue-200' 
-                : 'bg-green-50 border border-green-200'
-            }`}>
-              <p className={`text-sm ${
-                accountType === 'gc_contractor' ? 'text-blue-900' : 'text-green-900'
-              }`}>
+            <div className="p-4 rounded-lg mb-8 bg-muted/30 border border-border">
+              <p className="text-sm text-muted-foreground">
                 {accountType === 'gc_contractor' 
-                  ? '✨ You\'ll see internal costs (IC), customer prices (CP), and profit margins in your dashboard.'
-                  : '✨ You\'ll see clean price-only views. Perfect for trade contractors who quote their own work.'}
+                  ? 'You\'ll see internal costs (IC), customer prices (CP), and profit margins in your dashboard.'
+                  : 'You\'ll see clean price-only views. Perfect for trade contractors who quote their own work.'}
               </p>
             </div>
 
@@ -603,14 +597,14 @@ export default function Onboarding() {
               {projectTypes.map(type => (
                 <label 
                   key={type.id}
-                  className={`relative border-2 rounded-xl p-6 cursor-pointer transition-all hover:border-cyan-400 ${
+                  className={`relative border-2 rounded-xl p-6 cursor-pointer transition-all hover:border-primary ${
                     selectedTypes.includes(type.id) 
-                      ? 'border-cyan-400 bg-cyan-50' 
-                      : 'border-slate-200 bg-white'
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border bg-white'
                   }`}
                 >
                   {type.popular && (
-                    <span className="absolute top-2 right-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">
+                    <span className="absolute top-2 right-2 px-2 py-1 bg-luxury-gold/20 text-foreground text-xs font-medium rounded">
                       POPULAR
                     </span>
                   )}
@@ -620,11 +614,10 @@ export default function Onboarding() {
                     onChange={() => handleTypeToggle(type.id)}
                     className="sr-only"
                   />
-                  <div className="text-4xl mb-3">{type.icon}</div>
-                  <p className="font-semibold text-slate-900">{type.label}</p>
+                  <p className="font-semibold text-foreground">{type.label}</p>
                   {selectedTypes.includes(type.id) && (
-                    <div className="absolute top-2 left-2 w-6 h-6 bg-cyan-400 rounded-full flex items-center justify-center">
-                      <Check className="h-4 w-4 text-white" />
+                    <div className="absolute top-2 left-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                      <Check className="h-4 w-4 text-primary-foreground" />
                     </div>
                   )}
                 </label>

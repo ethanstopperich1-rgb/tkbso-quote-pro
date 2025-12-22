@@ -140,7 +140,7 @@ export function ForgottenItemsModal({
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-4">
-          💡 These suggestions are based on 10,000+ real remodeling projects
+          These suggestions are based on 10,000+ real remodeling projects
         </p>
       </DialogContent>
     </Dialog>
