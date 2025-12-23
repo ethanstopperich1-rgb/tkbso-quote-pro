@@ -22,6 +22,7 @@ import { LineItemEditorCard } from '@/components/estimates/LineItemEditorCard';
 import { ProjectPhotosCard } from '@/components/estimates/ProjectPhotosCard';
 import { SendProposalDialog } from '@/components/estimates/SendProposalDialog';
 import { AdditionalsCard } from '@/components/estimates/AdditionalsCard';
+import { AddSectionCard } from '@/components/estimates/AddSectionCard';
 import { 
   ArrowLeft, 
   Download, 
@@ -693,6 +694,14 @@ export default function EstimateDetail() {
             estimate={estimate}
             onUpdate={(updates) => setEstimate({ ...estimate, ...updates })}
           />
+
+          {/* Add Section - Template or Clone */}
+          {!clientMode && (
+            <AddSectionCard 
+              estimate={estimate}
+              onUpdate={(updates) => setEstimate({ ...estimate, ...updates })}
+            />
+          )}
 
           {/* Activity Log Card */}
           <Card>
