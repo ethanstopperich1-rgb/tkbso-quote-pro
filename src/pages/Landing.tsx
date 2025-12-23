@@ -163,6 +163,7 @@ export default function Landing() {
               <span className="text-[#0F172A]">Estim</span>
               <span className="text-[#00E5FF]">AI</span>
               <span className="text-[#0F172A]">te</span>
+              <sup className="text-[10px] text-slate-400 ml-0.5">™</sup>
             </div>
           </div>
           
@@ -682,7 +683,8 @@ export default function Landing() {
               <span className="text-xl font-bold text-white">Estim</span>
               <span className="text-xl font-bold text-[#00E5FF]">AI</span>
               <span className="text-xl font-bold text-white">te</span>
-              <span className="text-slate-500 ml-4 text-sm">© {new Date().getFullYear()} EstimAIte. All rights reserved.</span>
+              <sup className="text-[10px] text-slate-400">™</sup>
+              <span className="text-slate-500 ml-4 text-sm">© {new Date().getFullYear()} EstimAIte™. All rights reserved.</span>
             </div>
 
             {/* Legal Links */}

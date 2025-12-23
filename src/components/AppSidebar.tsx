@@ -70,6 +70,7 @@ export function AppSidebar() {
                 <span className="text-sidebar-foreground/70 font-semibold">Estim</span>
                 <span className="text-cyan-400 font-semibold">AI</span>
                 <span className="text-sidebar-foreground/70 font-semibold">te</span>
+                <sup className="text-[8px] text-sidebar-foreground/50 ml-0.5">™</sup>
               </span>
             </div>
           )}
