@@ -57,6 +57,8 @@ export default function Contact() {
     setIsSubmitting(true);
 
     try {
+      console.log('[Contact] Submitting form:', formData);
+      
       // Send to lead-followup edge function
       const { data, error } = await supabase.functions.invoke('lead-followup', {
         body: {
@@ -70,12 +72,11 @@ export default function Contact() {
 
       if (error) throw error;
 
-      // Also send to n8n webhook for automation
+      // Also send to n8n webhook for automation (production URL)
       try {
-        await fetch('https://estopperich.app.n8n.cloud/webhook-test/estimaite-lead', {
+        const response = await fetch('https://estopperich.app.n8n.cloud/webhook/estimaite-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          mode: 'no-cors',
           body: JSON.stringify({
             name: formData.name,
             email: formData.email,
@@ -85,7 +86,13 @@ export default function Contact() {
             timestamp: new Date().toISOString(),
           }),
         });
-        console.log('[Contact] n8n webhook triggered');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('[Contact] n8n response:', result);
       } catch (n8nError) {
         console.warn('[Contact] n8n webhook failed (non-blocking):', n8nError);
       }
