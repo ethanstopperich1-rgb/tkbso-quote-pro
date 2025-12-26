@@ -314,6 +314,7 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
   const [draftId, setDraftId] = useState<string | null>(null);
   const lastSavedRef = useRef<string>('');
   const savingRef = useRef(false);
+  const saveProgressRef = useRef<() => void>(() => {});
   
   /**
    * Calculate prices using TKBSO real trade allowances
@@ -603,6 +604,8 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       ...prev,
       clientInfo: { ...prev.clientInfo, ...updates },
     }));
+    // Trigger save after a short debounce to capture all field changes
+    setTimeout(() => saveProgressRef.current(), 500);
   }, []);
   
   // Pricing override functions
@@ -1104,6 +1107,11 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       savingRef.current = false;
     }
   }, [contractor, profile, draftId]);
+
+  // Keep the ref updated so updateClientInfo can call it
+  useEffect(() => {
+    saveProgressRef.current = saveProgress;
+  }, [saveProgress]);
 
   // Auto-save interval
   useEffect(() => {
