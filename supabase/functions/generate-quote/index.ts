@@ -744,12 +744,12 @@ serve(async (req) => {
 
   try {
     const { message, context, conversation_history, customer, company, contractor_id } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
     // Initialize Supabase client for margin lookup
@@ -771,38 +771,40 @@ serve(async (req) => {
       content: msg.content
     }));
 
-    // Step 1: Determine if we have enough info
-    const conversationResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Step 1: Determine if we have enough info using Claude
+    const conversationResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
+        system: conversationalSystemPrompt,
         messages: [
-          { role: "system", content: conversationalSystemPrompt },
-          ...historyMessages.slice(-10),
+          ...historyMessages.slice(-10).map((m: { role: string; content: string }) => ({
+            role: m.role === "assistant" ? "assistant" : "user",
+            content: m.content
+          })),
           { role: "user", content: message }
         ],
         tools: [
           {
-            type: "function",
-            function: {
-              name: "respond",
-              description: "Respond to the user - ask required scope/dimension/tile measurement questions OR generate the estimate.",
-              parameters: conversationSchema
-            }
+            name: "respond",
+            description: "Respond to the user - ask required scope/dimension/tile measurement questions OR generate the estimate.",
+            input_schema: conversationSchema
           }
         ],
-        tool_choice: { type: "function", function: { name: "respond" } }
+        tool_choice: { type: "tool", name: "respond" }
       }),
     });
 
     if (!conversationResponse.ok) {
       const status = conversationResponse.status;
       const errorText = await conversationResponse.text();
-      console.error(`AI gateway error (${status}):`, errorText);
+      console.error(`Claude API error (${status}):`, errorText);
       
       if (status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
@@ -810,25 +812,28 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "AI quota exceeded" }), {
+      if (status === 402 || status === 400) {
+        return new Response(JSON.stringify({ error: "AI quota exceeded or invalid request" }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error(`AI gateway error: ${status}`);
+      throw new Error(`Claude API error: ${status}`);
     }
 
     const conversationData = await conversationResponse.json();
-    const toolCall = conversationData.choices?.[0]?.message?.tool_calls?.[0];
+    console.log("Claude response:", JSON.stringify(conversationData));
     
-    if (!toolCall) {
+    // Extract tool use from Claude's response format
+    const toolUseBlock = conversationData.content?.find((block: any) => block.type === "tool_use");
+    
+    if (!toolUseBlock) {
       throw new Error("No tool call in conversation response");
     }
 
     let parsedResponse;
     try {
-      parsedResponse = JSON.parse(toolCall.function.arguments);
+      parsedResponse = toolUseBlock.input;
     } catch (e) {
       console.error("Failed to parse conversation response");
       throw new Error("Invalid response format");
@@ -949,46 +954,50 @@ CRITICAL INSTRUCTIONS:
 5. Include scope_narrative for each trade
 6. Return INTERNAL COSTS (IC) - system applies margin separately`;
 
-    const estimateResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const estimateResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8192,
+        system: estimateSystemPrompt,
         messages: [
-          { role: "system", content: estimateSystemPrompt },
           { role: "user", content: estimatePrompt }
         ],
         tools: [
           {
-            type: "function",
-            function: {
-              name: "generate_estimate",
-              description: "Generate a clean estimate with SEPARATE tile line items (wall, shower floor, main floor) for each room.",
-              parameters: estimateSchema
-            }
+            name: "generate_estimate",
+            description: "Generate a clean estimate with SEPARATE tile line items (wall, shower floor, main floor) for each room.",
+            input_schema: estimateSchema
           }
         ],
-        tool_choice: { type: "function", function: { name: "generate_estimate" } }
+        tool_choice: { type: "tool", name: "generate_estimate" }
       }),
     });
 
     if (!estimateResponse.ok) {
+      const errorText = await estimateResponse.text();
+      console.error("Estimate generation error:", errorText);
       throw new Error(`Estimate generation failed: ${estimateResponse.status}`);
     }
 
     const estimateData = await estimateResponse.json();
-    const estimateToolCall = estimateData.choices?.[0]?.message?.tool_calls?.[0];
+    console.log("Estimate response:", JSON.stringify(estimateData));
     
-    if (!estimateToolCall) {
+    // Extract tool use from Claude's response format
+    const estimateToolUseBlock = estimateData.content?.find((block: any) => block.type === "tool_use");
+    
+    if (!estimateToolUseBlock) {
       throw new Error("No estimate tool call in response");
     }
 
     let estimate;
     try {
-      estimate = JSON.parse(estimateToolCall.function.arguments);
+      estimate = estimateToolUseBlock.input;
     } catch (e) {
       throw new Error("Invalid estimate JSON");
     }
