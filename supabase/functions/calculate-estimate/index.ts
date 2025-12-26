@@ -605,13 +605,13 @@ const analysisJsonSchema = {
   properties: {
     action: { 
       type: "string", 
-      enum: ["ask_question", "generate_estimate"],
-      description: "Whether to ask clarifying questions or generate the estimate"
+      enum: ["ask_question", "show_summary", "generate_estimate"],
+      description: "ask_question = need more info, show_summary = have all info and showing summary for confirmation, generate_estimate = user confirmed summary"
     },
     conversation_phase: {
       type: "string",
-      enum: ["project_type", "scope_description", "clarifications", "client_details", "ready_to_generate"],
-      description: "Current phase: project_type -> scope_description -> clarifications -> ready_to_generate"
+      enum: ["project_type", "scope_description", "clarifications", "summary_confirmation", "ready_to_generate"],
+      description: "Current phase: project_type -> scope_description -> clarifications -> summary_confirmation -> ready_to_generate"
     },
     project_type: { 
       type: ["string", "null"], 
@@ -877,20 +877,66 @@ Ready to generate your estimate?"
 - Acknowledge what they said naturally
 - Ask max 2 clarifying questions (conversationally, no numbered lists)
 - Offer defaults for unknowns
-- If user answers questions OR says "looks good" / "sounds right", move to ready_to_generate
+- If you have all essential information, move to summary_confirmation
+- If still missing critical info, stay in clarifications and ask
+
+**Phase: summary_confirmation (MANDATORY - NEVER SKIP)**
+- Use action: "show_summary"
+- Display a complete project summary organized by trade category
+- Show all line items with estimated costs
+- Format clearly with section headers
+
+Example Summary Format:
+"Perfect! Here's your complete scope:
+
+═══════════════════════════════════════════════
+📋 BATHROOM REMODEL - 125 sqft
+
+DEMO & FRAMING
+- Full gut to studs
+- Remove toilet room wall/entry
+- Frame new layout
+
+PLUMBING  
+- Relocate toilet line 8ft
+- New shower valve, curb, liner
+- Reinstall toilet with new wax ring
+
+WATERPROOFING
+- Full shower waterproofing system
+
+TILE (Materials + Install)
+- Main floor: 125 sqft porcelain @ $6.50/sqft
+- Shower floor: 14 sqft porcelain @ $12/sqft  
+- Shower walls: 90 sqft porcelain @ $6.50/sqft
+
+FIXTURES
+- 90" double vanity with quartz countertop
+- Frameless glass shower enclosure (64x33)
+- New freestanding tub
+
+ESTIMATED RANGE: $24,000 - $32,000
+═══════════════════════════════════════════════
+
+Does this look accurate? Reply 'looks good' to generate the estimate, or tell me what to change."
+
+- Wait for explicit user confirmation
+- If user says "change X" or "update Y": Update scope, show summary again, stay in summary_confirmation
+- Only move to ready_to_generate after confirmation like: "looks good", "yes", "correct", "generate", "looks perfect", "let's do it"
 
 **Phase: ready_to_generate**
+- ONLY reached after user explicitly confirms the summary
 - Set action: "generate_estimate"
 - Set has_enough_info: true
 
 ## WHEN TO STOP ASKING
-- If you have 90% of info → use defaults for the rest
-- If user seems frustrated → stop asking, generate estimate
-- If you've asked 5+ questions → wrap it up
+- If you have 90% of info → move to summary_confirmation with defaults
+- If user seems frustrated → move to summary_confirmation
+- If you've asked 5+ questions → move to summary_confirmation
 - Never ask more than 8 total questions
 
 ## KEY PRINCIPLE
-Better to generate an estimate with reasonable assumptions than to interrogate the user to death. You can always adjust after.
+Better to show a summary with reasonable assumptions than to interrogate the user to death. They can adjust in the summary phase.
 
 ## END GOAL
 User should feel like they just texted a contractor friend who "gets it" and can run with their description.`;
@@ -1008,7 +1054,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "anthropic/claude-sonnet-3.5-20241022",
         messages: [
           { role: "system", content: guidedInterviewPrompt + `\n\nCURRENT STATE:\n${JSON.stringify(fullContext, null, 2)}` },
           ...conversationMessages
@@ -1058,8 +1104,8 @@ serve(async (req) => {
     const analysis = JSON.parse(analysisToolCall.function.arguments);
     console.log("Analysis result:", JSON.stringify(analysis, null, 2));
 
-    // Return follow-up question if not ready to generate
-    if (analysis.action === "ask_question" || !analysis.has_enough_info) {
+    // Return follow-up question if asking for more info
+    if (analysis.action === "ask_question") {
       return new Response(JSON.stringify({
         needsMoreInfo: true,
         followUpQuestion: analysis.follow_up_question || "Could you tell me more about the project?",
@@ -1072,6 +1118,52 @@ serve(async (req) => {
           conversation_phase: analysis.conversation_phase,
           current_trade: analysis.current_trade
         },
+        conversation_state: {
+          phase: analysis.conversation_phase,
+          projectType: analysis.project_type,
+          itemsCaptured: analysis.items_captured,
+          exclusions: analysis.exclusions,
+          tradesConfirmed: analysis.trades_confirmed,
+          dimensions: analysis.parsed_dimensions
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Return summary for confirmation (show_summary action)
+    if (analysis.action === "show_summary" || analysis.conversation_phase === "summary_confirmation") {
+      return new Response(JSON.stringify({
+        needsMoreInfo: true,
+        showingSummary: true,
+        followUpQuestion: analysis.follow_up_question || "Here's your project summary. Does this look accurate?",
+        parsed: {
+          project_type: analysis.project_type,
+          items_captured: analysis.items_captured,
+          exclusions: analysis.exclusions,
+          trades_confirmed: analysis.trades_confirmed,
+          dimensions: analysis.parsed_dimensions,
+          conversation_phase: "summary_confirmation",
+          current_trade: analysis.current_trade
+        },
+        conversation_state: {
+          phase: "summary_confirmation",
+          projectType: analysis.project_type,
+          itemsCaptured: analysis.items_captured,
+          exclusions: analysis.exclusions,
+          tradesConfirmed: analysis.trades_confirmed,
+          dimensions: analysis.parsed_dimensions
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Only proceed to generate if has_enough_info is true and action is generate_estimate
+    if (!analysis.has_enough_info) {
+      return new Response(JSON.stringify({
+        needsMoreInfo: true,
+        followUpQuestion: analysis.follow_up_question || "Could you provide a bit more detail?",
         conversation_state: {
           phase: analysis.conversation_phase,
           projectType: analysis.project_type,
