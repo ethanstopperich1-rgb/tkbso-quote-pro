@@ -2,6 +2,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Check, MessageSquare, Camera, Zap, Shield, Clock, TrendingUp, Award, Menu, X, FileText, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { EstimAIteLogo } from '@/components/EstimAIteLogo';
 
 // Typewriter component for chat animation
 function TypewriterText({ 
@@ -158,11 +159,7 @@ export default function Landing() {
       <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img 
-              src="/estimaite-logo-tm.png" 
-              alt="EstimAIte" 
-              className="h-8 object-contain"
-            />
+            <EstimAIteLogo size="sm" />
             <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
               <span>🚀</span>
               <span>Launching Jan 1, 2026</span>
@@ -788,11 +785,7 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             {/* Logo & Copyright */}
             <div className="flex items-center gap-4">
-              <img 
-                src="/estimaite-logo-tm.png" 
-                alt="EstimAIte" 
-                className="h-6 object-contain"
-              />
+              <EstimAIteLogo size="sm" className="brightness-0 invert" />
               <span className="text-slate-500 text-sm">© {new Date().getFullYear()} EstimAIte™. All rights reserved.</span>
             </div>
 
