@@ -74,7 +74,13 @@ export default function Contact() {
       }
 
       setIsSubmitted(true);
-      toast.success("Message sent! We'll be in touch shortly.");
+      
+      // Different message if phone was provided
+      if (formData.phone) {
+        toast.success('Thanks! Expect a call within 15 minutes. 📞');
+      } else {
+        toast.success("Thanks! We'll respond via email within 24 hours. 📧");
+      }
     } catch (error) {
       console.error('Contact form error:', error);
       toast.error("Something went wrong. Please try again or call us directly.");
