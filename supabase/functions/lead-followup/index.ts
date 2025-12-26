@@ -656,7 +656,7 @@ serve(async (req: Request): Promise<Response> => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from_number: "+14078195809",
+            from_number: "+12132052583",
             to_number: phone,
             agent_id: RETELL_AGENT_ID,
             retell_llm_dynamic_variables: {
