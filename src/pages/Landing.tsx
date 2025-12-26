@@ -177,6 +177,9 @@ export default function Landing() {
             <button onClick={() => scrollToSection('how-it-works')} className="text-sm font-medium text-slate-600 hover:text-[#0F172A] transition-colors">
               How It Works
             </button>
+            <Link to="/faq" className="text-sm font-medium text-slate-600 hover:text-[#0F172A] transition-colors">
+              FAQ
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
