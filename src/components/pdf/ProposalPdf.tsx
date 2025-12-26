@@ -10,6 +10,7 @@ import { Contractor, Estimate, PricingConfig } from '@/types/database';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
 import tkbsoLogo from '@/assets/tkbso-logo-full.png';
 import { parseToFormattedLineItem, renderLineItem } from '@/lib/line-item-renderer';
+import { generatePaymentMilestones, generateProjectNotes } from '@/lib/pdf-content-generator';
 
 const styles = StyleSheet.create({
   page: {
@@ -644,9 +645,15 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
   const finalSplit = (defaults.finalPct || pricingConfig?.payment_split_final || 10) / 100;
 
   const isKitchenProject = estimate.has_kitchen && !estimate.has_bathrooms;
-  const progressLabel = isKitchenProject
-    ? (defaults.progressLabelKitchen || 'Due at arrival of cabinetry')
-    : (defaults.progressLabelBathroom || 'Due at start of tile installation');
+  
+  // Generate dynamic payment milestones and notes based on project scope
+  const paymentMilestones = generatePaymentMilestones(
+    estimate,
+    Math.round(depositSplit * 100),
+    Math.round(progressSplit * 100),
+    Math.round(finalSplit * 100)
+  );
+  const projectNotes = generateProjectNotes(estimate, companyProfile.companyName || branding.headerTitle || 'Our team');
 
   const showRange = priceRange && priceRange.low > 0 && priceRange.high > 0;
   const totalCost = estimate.final_cp_total || 0;
@@ -775,39 +782,21 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
           </View>
         </View>
 
-        {/* Payment Milestones */}
+        {/* Payment Milestones - Dynamic based on project scope */}
         <View style={styles.paymentSection} wrap={false}>
           <Text style={styles.sectionTitle}>PAYMENT MILESTONES</Text>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(depositSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Upon Contract Signing – Includes mobilization, materials ordering, and scheduling.</Text>
-            <Text style={styles.paymentAmount}>
-              {showRange 
-                ? `${formatCurrency(depositAmountLow)} – ${formatCurrency(depositAmountHigh)}`
-                : formatCurrency(depositAmount)
-              }
-            </Text>
-          </View>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(progressSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>{progressLabel} – Rough plumbing and tile work substantially complete.</Text>
-            <Text style={styles.paymentAmount}>
-              {showRange 
-                ? `${formatCurrency(progressAmountLow)} – ${formatCurrency(progressAmountHigh)}`
-                : formatCurrency(progressAmount)
-              }
-            </Text>
-          </View>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>{Math.round(finalSplit * 100)}%</Text>
-            <Text style={styles.paymentLabel}>Upon Overall Completion of Project – Final walkthrough and punchlist complete.</Text>
-            <Text style={styles.paymentAmount}>
-              {showRange 
-                ? `${formatCurrency(finalAmountLow)} – ${formatCurrency(finalAmountHigh)}`
-                : formatCurrency(finalAmount)
-              }
-            </Text>
-          </View>
+          {paymentMilestones.map((milestone, idx) => {
+            const amount = showRange
+              ? `${formatCurrency(priceRange.low * (milestone.percent / 100))} – ${formatCurrency(priceRange.high * (milestone.percent / 100))}`
+              : formatCurrency(totalCost * (milestone.percent / 100));
+            return (
+              <View key={idx} style={styles.paymentRow}>
+                <Text style={styles.paymentPercent}>{milestone.percent}%</Text>
+                <Text style={styles.paymentLabel}>{milestone.label} – {milestone.description}</Text>
+                <Text style={styles.paymentAmount}>{amount}</Text>
+              </View>
+            );
+          })}
         </View>
 
         {/* Signature Blocks */}
@@ -838,24 +827,17 @@ export function ProposalPdf({ contractor, estimate, pricingConfig, priceRange, s
           </View>
         </View>
 
-        {/* Project Notes */}
+        {/* Project Notes - Dynamic based on project scope */}
         <View style={styles.notesSection} wrap={false}>
           <Text style={styles.notesTitle}>PROJECT NOTES</Text>
-          <Text style={styles.noteItem}>
-            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note I:</Text> Dumpster delivery will be scheduled for the first day of demolition. Please ensure clear access to the driveway or designated area.
-          </Text>
-          <Text style={styles.noteItem}>
-            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note II:</Text> {companyName} will take reasonable precautions to minimize dust and disruption, including floor protection, dust barriers, and daily cleanup.
-          </Text>
-          <Text style={styles.noteItem}>
-            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note III:</Text> Estimated project timeline is approximately 14 working days from start date, pending material lead times.
-          </Text>
-          <Text style={styles.noteItem}>
-            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note IV:</Text> Permits, if required, are EXCLUDED from this proposal unless noted otherwise.
-          </Text>
-          <Text style={styles.noteItem}>
-            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note V:</Text> This estimate is valid for 30 days. Final pricing subject to site conditions and material selections.
-          </Text>
+          {projectNotes.map((note, idx) => {
+            const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+            return (
+              <Text key={idx} style={styles.noteItem}>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>Note {romanNumerals[idx] || idx + 1}:</Text> {note}
+              </Text>
+            );
+          })}
         </View>
 
         {/* Footer */}
