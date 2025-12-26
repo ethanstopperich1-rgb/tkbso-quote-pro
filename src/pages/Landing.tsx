@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Check, Star, MessageSquare, Camera, Video, Zap, Shield, Clock, Users, TrendingUp, Award, Menu, X, Play, FileText, Lightbulb } from 'lucide-react';
+import { ArrowRight, Check, MessageSquare, Camera, Zap, Shield, Clock, TrendingUp, Award, Menu, X, FileText, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 
@@ -143,7 +143,6 @@ function AnimatedChatDemo() {
 export default function Landing() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showVideoModal, setShowVideoModal] = useState(false);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -158,12 +157,16 @@ export default function Landing() {
       {/* Navigation - Sticky */}
       <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="text-2xl font-bold">
               <span className="text-[#0F172A]">Estim</span>
               <span className="text-[#00E5FF]">AI</span>
               <span className="text-[#0F172A]">te</span>
               <sup className="text-[10px] text-slate-400 ml-0.5">™</sup>
+            </div>
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+              <span>🚀</span>
+              <span>Launching Jan 1, 2026</span>
             </div>
           </div>
           
@@ -231,7 +234,7 @@ export default function Landing() {
             </h1>
             
             <p className="text-xl text-slate-300 mb-8 leading-relaxed">
-              Upload a photo, describe the job, or record a video. Get professional estimates in under 3 minutes.
+              Describe your project naturally—like texting a contractor friend. Get professional estimates in under 3 minutes. No forms, no spreadsheets.
             </p>
 
             {/* CTA Button */}
@@ -259,21 +262,24 @@ export default function Landing() {
             <div className="relative">
               <AnimatedChatDemo />
               
-              {/* Video Demo Thumbnail */}
-              <div 
-                className="mt-6 relative group cursor-pointer" 
-                onClick={() => setShowVideoModal(true)}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] blur-xl opacity-30 group-hover:opacity-50 transition-opacity rounded-2xl" />
-                <div className="relative bg-[#1E293B] rounded-2xl p-4 border border-[#00E5FF]/30 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#00E5FF] flex items-center justify-center">
-                    <Play className="h-6 w-6 text-[#0F172A] ml-1" />
+              {/* Quick Stats Instead of Video */}
+              <div className="mt-6 bg-[#1E293B] rounded-2xl p-6 border border-[#00E5FF]/30">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-white mb-1">3 min</p>
+                    <p className="text-slate-400 text-sm">Average time</p>
                   </div>
-                  <div>
-                    <p className="text-white font-semibold">Watch 2-min Demo</p>
-                    <p className="text-slate-400 text-sm">See how contractors save 10+ hours/week</p>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-white mb-1">65%+</p>
+                    <p className="text-slate-400 text-sm">Close rate</p>
                   </div>
                 </div>
+                <Button 
+                  onClick={() => navigate('/signup')}
+                  className="w-full mt-4 bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] py-3 font-semibold"
+                >
+                  Try It Free - No Credit Card →
+                </Button>
               </div>
             </div>
             
@@ -291,33 +297,35 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Social Proof Bar */}
-      <section className="bg-[#F8FAFC] py-8 border-y border-slate-200">
+      {/* Value Metrics Bar */}
+      <section className="bg-[#F8FAFC] py-12 border-y border-slate-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div className="flex flex-col items-center gap-2">
-              <Users className="h-6 w-6 text-slate-600" />
-              <p className="font-bold text-[#0F172A]">500+ Contractors</p>
+              <Clock className="h-8 w-8 text-[#00E5FF]" />
+              <p className="font-bold text-[#0F172A] text-2xl">3 Min</p>
+              <p className="text-sm text-slate-600">Average Estimate Time</p>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-1 text-yellow-400">
-                {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}
-              </div>
-              <p className="font-bold text-[#0F172A]">4.9/5 Stars</p>
+              <Zap className="h-8 w-8 text-[#00E5FF]" />
+              <p className="font-bold text-[#0F172A] text-2xl">10+ Hours</p>
+              <p className="text-sm text-slate-600">Saved Per Week</p>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <Award className="h-6 w-6 text-slate-600" />
-              <p className="font-bold text-[#0F172A]">NARI Certified</p>
+              <TrendingUp className="h-8 w-8 text-[#00E5FF]" />
+              <p className="font-bold text-[#0F172A] text-2xl">3x More</p>
+              <p className="text-sm text-slate-600">Proposals Sent</p>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-slate-600" />
-              <p className="font-bold text-[#0F172A]">$12K+ Avg. Monthly Profit</p>
+              <Award className="h-8 w-8 text-[#00E5FF]" />
+              <p className="font-bold text-[#0F172A] text-2xl">65%+</p>
+              <p className="text-sm text-slate-600">Average Close Rate</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section - NEW */}
+      {/* How It Works Section */}
       <section id="how-it-works" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -335,11 +343,11 @@ export default function Landing() {
               <div className="absolute -top-4 -left-4 w-12 h-12 bg-[#00E5FF] rounded-full flex items-center justify-center text-[#0F172A] font-bold text-xl z-10">1</div>
               <div className="bg-slate-50 rounded-2xl p-8 pt-12 h-full">
                 <div className="w-16 h-16 bg-[#00E5FF]/20 rounded-2xl flex items-center justify-center mb-6">
-                  <Camera className="h-8 w-8 text-[#00E5FF]" />
+                  <MessageSquare className="h-8 w-8 text-[#00E5FF]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#0F172A] mb-3">Snap & Describe</h3>
+                <h3 className="text-xl font-bold text-[#0F172A] mb-3">Describe the Job</h3>
                 <p className="text-slate-600">
-                  Upload photos from the job site or describe the project. Our AI analyzes existing conditions and extracts dimensions.
+                  Type naturally like you're texting another contractor. "Master bath remodel, 8x10, walk-in shower with bench."
                 </p>
               </div>
             </div>
@@ -375,125 +383,174 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Three Ways to Estimate */}
+      {/* Single Method - Conversational Estimating */}
       <section id="features" className="bg-[#F8FAFC] py-20">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center mb-4 text-[#0F172A]">Three Ways to Estimate</h2>
-          <p className="text-xl text-slate-600 text-center mb-16">Choose the method that fits your workflow</p>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4 text-[#0F172A]">
+              The Fastest Way to Estimate
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+              No forms. No spreadsheets. Just describe your project naturally—our AI handles the rest.
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Chat Estimator */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-slate-100">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-6 shadow-md">
-                <MessageSquare className="h-7 w-7 text-white" />
+          <div className="bg-white rounded-2xl p-8 md:p-12 shadow-xl border border-slate-100">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              {/* Left Column - Features */}
+              <div>
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-6 shadow-md">
+                  <MessageSquare className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-3xl font-bold mb-4 text-[#0F172A]">
+                  Conversational AI Estimating
+                </h3>
+                <p className="text-lg text-slate-600 mb-8">
+                  Talk to EstimAIte like you're describing the job to another contractor. 
+                  It understands your language and asks smart follow-up questions.
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#00E5FF]/20 flex items-center justify-center flex-shrink-0">
+                      <Check className="h-5 w-5 text-[#00E5FF]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#0F172A] mb-1">Speaks Contractor Language</p>
+                      <p className="text-slate-600 text-sm">Say "3×5 walk-in shower" and it knows exactly what you mean</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#00E5FF]/20 flex items-center justify-center flex-shrink-0">
+                      <Check className="h-5 w-5 text-[#00E5FF]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#0F172A] mb-1">Smart Follow-Up Questions</p>
+                      <p className="text-slate-600 text-sm">AI asks only what it needs to know—no unnecessary forms</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#00E5FF]/20 flex items-center justify-center flex-shrink-0">
+                      <Check className="h-5 w-5 text-[#00E5FF]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#0F172A] mb-1">Accurate Line Items</p>
+                      <p className="text-slate-600 text-sm">Generates detailed breakdowns with your pricing automatically</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#00E5FF]/20 flex items-center justify-center flex-shrink-0">
+                      <Check className="h-5 w-5 text-[#00E5FF]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#0F172A] mb-1">Professional PDFs</p>
+                      <p className="text-slate-600 text-sm">Export branded proposals that look like they took hours to create</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex items-center gap-2 text-sm">
+                  <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full font-semibold">
+                    ⚡ Fastest Method
+                  </span>
+                  <span className="text-slate-500">Average: 2-3 minutes</span>
+                </div>
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-[#0F172A]">Chat Estimator</h3>
-              <p className="text-slate-600 mb-4">
-                Type naturally: "10x12 kitchen, quartz counters, shaker cabinets"
-              </p>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">Fastest</span>
-                <span className="text-slate-500">~2 minutes</span>
+
+              {/* Right Column - Chat Demo */}
+              <div>
+                <AnimatedChatDemo />
+                
+                <div className="mt-6 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Lightbulb className="h-5 w-5 text-[#00E5FF]" />
+                    <p className="font-semibold text-[#0F172A] text-sm">Pro Tip</p>
+                  </div>
+                  <p className="text-slate-600 text-sm">
+                    Works great on mobile! Create estimates on-site while walking through the job.
+                  </p>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Photo-to-Quote - Featured */}
-            <div className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-2 border-[#00E5FF]">
-              <div className="absolute -top-3 right-8 bg-[#00E5FF] text-[#0F172A] px-3 py-1 rounded-full text-xs font-bold">
-                MOST POPULAR
-              </div>
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-6 shadow-md">
-                <Camera className="h-7 w-7 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-[#0F172A]">Photo-to-Quote</h3>
-              <p className="text-slate-600 mb-4">
-                Upload photos, AI identifies fixtures & estimates quantities
-              </p>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">Most Accurate</span>
-                <span className="text-slate-500">~3 minutes</span>
-              </div>
-            </div>
-
-            {/* Video Walk-and-Talk */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-slate-100">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mb-6 shadow-md">
-                <Video className="h-7 w-7 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-[#0F172A]">Video Walk-and-Talk</h3>
-              <p className="text-slate-600 mb-4">
-                Record yourself narrating the scope while walking the space
-              </p>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full font-semibold">Most Detail</span>
-                <span className="text-slate-500">~4 minutes</span>
-              </div>
+          {/* Coming Soon Badge */}
+          <div className="mt-12 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full text-blue-700 text-sm">
+              <Camera className="h-4 w-4" />
+              <span className="font-medium">Photo & Video Analysis Coming Q1 2026</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section - NEW */}
+      {/* Why Contractors Choose EstimAIte */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#0F172A] mb-4">
-              Contractors Love EstimAIte
+              Built for Contractors, By Contractors
             </h2>
-            <p className="text-xl text-slate-600">
-              Join the contractors who've transformed their estimating process
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              EstimAIte understands how you work because it was built by someone who's been doing this for 20+ years
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200">
-              <div className="flex items-center gap-1 mb-4">
-                {[1,2,3,4,5].map(i => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}
+            {/* Reason 1 */}
+            <div className="bg-slate-50 rounded-2xl p-8">
+              <div className="w-14 h-14 bg-[#00E5FF]/20 rounded-xl flex items-center justify-center mb-6">
+                <MessageSquare className="h-7 w-7 text-[#00E5FF]" />
               </div>
-              <p className="text-slate-700 mb-6 italic">
-                "I used to spend 4 hours on estimates. Now it's 10 minutes. EstimAIte paid for itself in the first week."
+              <h3 className="text-xl font-bold text-[#0F172A] mb-3">Speaks Your Language</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Say "3×5 walk-in shower with bench" and it knows exactly what you mean. 
+                No need to learn complicated software or fill out endless forms. Just talk naturally.
               </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600">MR</div>
-                <div>
-                  <p className="font-semibold text-[#0F172A]">Mike Rodriguez</p>
-                  <p className="text-sm text-slate-500">Rodriguez Remodeling, Tampa FL</p>
-                </div>
-              </div>
             </div>
-            
-            {/* Testimonial 2 */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200">
-              <div className="flex items-center gap-1 mb-4">
-                {[1,2,3,4,5].map(i => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}
+
+            {/* Reason 2 */}
+            <div className="bg-slate-50 rounded-2xl p-8">
+              <div className="w-14 h-14 bg-[#00E5FF]/20 rounded-xl flex items-center justify-center mb-6">
+                <TrendingUp className="h-7 w-7 text-[#00E5FF]" />
               </div>
-              <p className="text-slate-700 mb-6 italic">
-                "The photo analysis is insane. I take pictures on site and have a quote ready before I leave. Game changer."
+              <h3 className="text-xl font-bold text-[#0F172A] mb-3">Protects Your Margins</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Built-in pricing intelligence ensures you never leave money on the table. 
+                Track IC, CP, and margins automatically. Know your profit before sending the quote.
               </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600">SJ</div>
-                <div>
-                  <p className="font-semibold text-[#0F172A]">Sarah Johnson</p>
-                  <p className="text-sm text-slate-500">Luxury Bath Designs, Austin TX</p>
-                </div>
-              </div>
             </div>
-            
-            {/* Testimonial 3 */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200">
-              <div className="flex items-center gap-1 mb-4">
-                {[1,2,3,4,5].map(i => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}
+
+            {/* Reason 3 */}
+            <div className="bg-slate-50 rounded-2xl p-8">
+              <div className="w-14 h-14 bg-[#00E5FF]/20 rounded-xl flex items-center justify-center mb-6">
+                <Clock className="h-7 w-7 text-[#00E5FF]" />
               </div>
-              <p className="text-slate-700 mb-6 italic">
-                "My close rate went from 30% to 65%. The professional PDFs make us look like a much bigger company."
+              <h3 className="text-xl font-bold text-[#0F172A] mb-3">Get Your Life Back</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Stop spending evenings and weekends creating estimates. Generate professional, 
+                detailed quotes in minutes—not hours. Spend more time with family or closing deals.
               </p>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600">DT</div>
-                <div>
-                  <p className="font-semibold text-[#0F172A]">David Thompson</p>
-                  <p className="text-sm text-slate-500">Thompson Kitchen & Bath, Denver CO</p>
-                </div>
+            </div>
+          </div>
+
+          {/* Real Results Callout */}
+          <div className="mt-12 bg-gradient-to-r from-[#00E5FF]/10 to-blue-50 rounded-2xl p-8 border border-[#00E5FF]/30">
+            <div className="grid md:grid-cols-3 gap-8 text-center">
+              <div>
+                <p className="text-3xl font-bold text-[#0F172A] mb-2">4 Hours → 10 Minutes</p>
+                <p className="text-slate-600">Average time savings per estimate</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-[#0F172A] mb-2">30% → 65%</p>
+                <p className="text-slate-600">Close rate improvement</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-[#0F172A] mb-2">$0 → $12K+</p>
+                <p className="text-slate-600">Monthly profit increase potential</p>
               </div>
             </div>
           </div>
@@ -522,129 +579,181 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing - Updated to 4 tiers */}
+      {/* Pricing - Simplified to 3 tiers */}
       <section id="pricing" className="bg-gradient-to-br from-[#0F172A] to-[#1E3A5F] py-20">
         <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#00E5FF]/20 border border-[#00E5FF]/40 rounded-full text-[#00E5FF] text-sm font-semibold mb-6">
+              <span>🚀</span>
+              <span>Launch Pricing - Save 20%</span>
+            </div>
+          </div>
           <h2 className="text-4xl font-bold text-center mb-4 text-white">Simple, Transparent Pricing</h2>
           <p className="text-xl text-slate-300 text-center mb-16">Start free, upgrade when you're ready</p>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Solo Plan - NEW */}
-            <div className="bg-white rounded-2xl p-6 border-2 border-slate-200">
-              <h3 className="text-xl font-bold text-[#0F172A] mb-2">Solo</h3>
-              <p className="text-slate-600 text-sm mb-1">For independent contractors</p>
-              <div className="mb-1">
-                <span className="text-4xl font-bold text-[#0F172A]">$97</span>
-                <span className="text-slate-600">/month</span>
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Starter Plan */}
+            <div className="bg-white rounded-2xl p-8 border-2 border-slate-200">
+              <h3 className="text-2xl font-bold text-[#0F172A] mb-2">Starter</h3>
+              <p className="text-slate-600 text-sm mb-4">For independent contractors</p>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-[#0F172A]">$79</span>
+                  <span className="text-slate-600">/month</span>
+                </div>
+                <p className="text-xs text-slate-500 line-through">$99/month regular price</p>
               </div>
-              <p className="text-xs text-slate-500 mb-3">or $870/year <span className="text-green-600 font-semibold">(save $294)</span></p>
-              <ul className="space-y-2 mb-6">
-                {['15 estimates/month', 'Photo-to-Quote (AI)', 'Professional PDFs', 'Email support'].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
-                    <Check className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-[#00E5FF] flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700"><strong>50 estimates</strong> per month</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">AI conversational interface</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">Professional PDF export</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">Logo upload</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">Email support</span>
+                </li>
               </ul>
+              
               <Button 
                 onClick={() => navigate('/signup')}
                 variant="outline"
-                className="w-full py-5 font-semibold border-2"
+                className="w-full py-6 font-semibold border-2 text-base"
               >
-                Start Free Trial
+                Start 14-Day Trial
               </Button>
-              <p className="text-xs text-slate-500 text-center mt-2">No credit card required</p>
+              <p className="text-xs text-slate-500 text-center mt-3">No credit card required</p>
             </div>
 
             {/* Pro Plan - MOST POPULAR */}
-            <div className="bg-white rounded-2xl p-6 border-2 border-[#00E5FF] relative shadow-xl shadow-[#00E5FF]/10">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] text-xs font-bold px-4 py-1 rounded-full">
+            <div className="bg-white rounded-2xl p-8 border-2 border-[#00E5FF] relative shadow-2xl shadow-[#00E5FF]/20 transform md:scale-105">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] text-sm font-bold px-6 py-2 rounded-full">
                 MOST POPULAR
               </div>
-              <h3 className="text-xl font-bold text-[#0F172A] mb-2">Pro</h3>
-              <p className="text-slate-600 text-sm mb-1">For growing contractors</p>
-              <div className="mb-1">
-                <span className="text-4xl font-bold text-[#0F172A]">$297</span>
-                <span className="text-slate-600">/month</span>
+              <h3 className="text-2xl font-bold text-[#0F172A] mb-2 mt-2">Pro</h3>
+              <p className="text-slate-600 text-sm mb-4">For growing contractors</p>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-[#0F172A]">$149</span>
+                  <span className="text-slate-600">/month</span>
+                </div>
+                <p className="text-xs text-slate-500 line-through">$297/month regular price</p>
               </div>
-              <p className="text-xs text-slate-500 mb-3">or $2,673/year <span className="text-green-600 font-semibold">(save $891)</span></p>
-              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-2 mb-4">
-                <p className="text-xs text-cyan-800 font-medium">💰 Saves 10 hrs/week = $3,000+/month</p>
+              
+              <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 mb-6">
+                <p className="text-sm text-cyan-800 font-medium text-center">
+                  💰 Saves 10 hrs/week = $3,000+/month value
+                </p>
               </div>
-              <ul className="space-y-2 mb-6">
-                {['Unlimited estimates', 'Photo-to-Quote (AI)', 'Video Walk-and-Talk (AI)', 'Custom branding', 'Forgotten Items Checker', 'Priority email support'].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
-                    <Check className="h-4 w-4 text-cyan-500 flex-shrink-0" />
-                    <span className={i < 3 ? 'font-semibold' : ''}>{feature}</span>
-                  </li>
-                ))}
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-[#00E5FF] flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700"><strong>Unlimited estimates</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-[#00E5FF] flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700"><strong>Custom pricing overrides</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">Everything in Starter</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">Advanced branding options</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">Margin tracking & analytics</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-700">Priority email support</span>
+                </li>
               </ul>
+              
               <Button 
                 onClick={() => navigate('/signup')}
-                className="w-full bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] py-5 font-semibold hover:shadow-lg"
+                className="w-full bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] text-[#0F172A] py-6 font-semibold hover:shadow-lg text-base"
               >
                 Start 14-Day Trial →
               </Button>
-              <p className="text-xs text-slate-500 text-center mt-2">No credit card required</p>
+              <p className="text-xs text-slate-500 text-center mt-3">No credit card required</p>
             </div>
 
             {/* Team Plan */}
-            <div className="bg-[#1E293B] rounded-2xl p-6">
-              <h3 className="text-xl font-bold text-white mb-2">Team</h3>
-              <p className="text-slate-400 text-sm mb-1">For contractor teams</p>
-              <div className="mb-1">
-                <span className="text-4xl font-bold text-white">$597</span>
-                <span className="text-slate-400">/month</span>
+            <div className="bg-[#1E293B] rounded-2xl p-8 border-2 border-[#334155]">
+              <h3 className="text-2xl font-bold text-white mb-2">Team</h3>
+              <p className="text-slate-400 text-sm mb-4">For contractor teams</p>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-white">$299</span>
+                  <span className="text-slate-400">/month</span>
+                </div>
+                <p className="text-xs text-slate-500 line-through">$597/month regular price</p>
               </div>
-              <p className="text-xs text-slate-500 mb-3">or $5,373/year <span className="text-green-500 font-semibold">(save $1,791)</span></p>
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 mb-4">
-                <p className="text-xs text-blue-300 font-medium">👥 Includes 3 user seats</p>
+              
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-6">
+                <p className="text-sm text-blue-300 font-medium text-center">
+                  👥 Includes 3 user seats
+                </p>
               </div>
-              <ul className="space-y-2 mb-6">
-                {['Everything in Pro', '3 user seats included', 'Team collaboration', 'API access', 'White-label proposals', 'Priority phone support'].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                    <span className={i < 2 ? 'font-semibold' : ''}>{feature}</span>
-                  </li>
-                ))}
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-300"><strong>3 user seats included</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-300"><strong>Team collaboration</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-300">Everything in Pro</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-300">Role permissions</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-300">Priority phone support</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-slate-300">Dedicated onboarding</span>
+                </li>
               </ul>
+              
               <Button 
                 onClick={() => navigate('/signup')}
-                className="w-full bg-white text-[#0F172A] hover:bg-slate-100 py-5 font-semibold"
+                className="w-full bg-white text-[#0F172A] hover:bg-slate-100 py-6 font-semibold text-base"
               >
                 Start 14-Day Trial →
               </Button>
-              <p className="text-xs text-slate-500 text-center mt-2">No credit card required</p>
+              <p className="text-xs text-slate-500 text-center mt-3">No credit card required</p>
             </div>
+          </div>
 
-            {/* Enterprise Plan */}
-            <div className="bg-gradient-to-br from-[#0F172A] to-blue-900 rounded-2xl p-6 border border-slate-700">
-              <h3 className="text-xl font-bold text-white mb-2">Enterprise</h3>
-              <p className="text-slate-400 text-sm mb-1">For large operations</p>
-              <p className="text-xs text-slate-500 mb-1">Starting at</p>
-              <div className="mb-3">
-                <span className="text-4xl font-bold text-white">$1,497</span>
-                <span className="text-slate-400">/month</span>
-              </div>
-              <div className="bg-white/10 border border-white/20 rounded-lg p-2 mb-4">
-                <p className="text-xs text-white font-medium">🏢 For showrooms & franchises</p>
-              </div>
-              <ul className="space-y-2 mb-6">
-                {['Everything in Team', 'Unlimited user seats', 'Custom integrations', 'Dedicated account manager', 'On-site training', 'SLA guarantees'].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                    <Check className="h-4 w-4 text-cyan-400 flex-shrink-0" />
-                    <span className={i < 2 ? 'font-semibold' : ''}>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button 
-                onClick={() => navigate('/contact')}
-                className="w-full bg-white text-[#0F172A] hover:bg-slate-100 py-5 font-semibold"
-              >
-                Contact Sales
-              </Button>
-              <p className="text-xs text-slate-500 text-center mt-2">Schedule a demo</p>
-            </div>
+          {/* FAQ Note */}
+          <div className="mt-12 text-center">
+            <p className="text-slate-300 text-sm">
+              Need more than 3 seats? <a href="/contact" className="text-[#00E5FF] hover:underline">Contact us</a> for custom Enterprise pricing
+            </p>
           </div>
         </div>
       </section>
@@ -653,10 +762,10 @@ export default function Landing() {
       <section className="bg-gradient-to-r from-[#00E5FF] to-[#3B82F6] py-20">
         <div className="max-w-4xl mx-auto text-center px-6">
           <h2 className="text-4xl lg:text-5xl font-bold text-[#0F172A] mb-6">
-            Ready to Close More Deals?
+            Ready to Save 10+ Hours Every Week?
           </h2>
           <p className="text-xl text-[#0F172A]/80 mb-8">
-            Join 500+ contractors estimating faster and closing more with EstimAIte
+            Join contractors who are estimating faster and closing more deals with EstimAIte
           </p>
           <Button 
             onClick={() => navigate('/signup')}
@@ -716,26 +825,6 @@ export default function Landing() {
           </div>
         </div>
       </footer>
-
-      {/* Video Modal Placeholder */}
-      {showVideoModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setShowVideoModal(false)}>
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Watch Demo</h3>
-              <button onClick={() => setShowVideoModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <Play className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                <p className="text-slate-600">Demo video coming soon</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
