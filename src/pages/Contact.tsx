@@ -74,7 +74,7 @@ export default function Contact() {
 
       // Also send to n8n webhook for automation (production URL)
       try {
-        const response = await fetch('https://estopperich.app.n8n.cloud/webhook/gemini', {
+        const response = await fetch('https://estopperich.app.n8n.cloud/webhook-test/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
