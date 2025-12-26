@@ -55,7 +55,7 @@ export default function Contact() {
 
       // Also send to n8n webhook for automation
       try {
-        await fetch('https://estopperich.app.n8n.cloud/webhook/estimaite-lead', {
+        await fetch('https://estopperich.app.n8n.cloud/webhook-test/estimaite-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           mode: 'no-cors',
