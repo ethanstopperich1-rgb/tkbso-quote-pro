@@ -3,28 +3,33 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Save, X, Building2, Palette, FileCheck, Shield, ChevronRight, DollarSign } from 'lucide-react';
+import { RefreshCw, Save, X, Building2, Palette, FileCheck, Shield, ChevronRight, DollarSign, CreditCard, Settings2 } from 'lucide-react';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
 import { CompanyProfileCard } from '@/components/settings/CompanyProfileCard';
 import { PaymentTermsCard } from '@/components/settings/PaymentTermsCard';
+import { EstimateDefaultsCard } from '@/components/settings/EstimateDefaultsCard';
 import { BrandingCard } from '@/components/settings/BrandingCard';
 import { LicensesCard } from '@/components/settings/LicensesCard';
 import { InsuranceCard } from '@/components/settings/InsuranceCard';
 import { MarginStrategyCard } from '@/components/settings/MarginStrategyCard';
+import { PricingModeCard } from '@/components/settings/PricingModeCard';
+import { AccountBillingCard } from '@/components/settings/AccountBillingCard';
 import { cn } from '@/lib/utils';
 
 const tabs = [
   { id: 'company', label: 'Company Profile', icon: Building2 },
+  { id: 'pricing', label: 'Pricing & Margins', icon: DollarSign },
   { id: 'branding', label: 'Branding', icon: Palette },
-  { id: 'margins', label: 'Margin Strategy', icon: DollarSign },
   { id: 'licenses', label: 'Licenses', icon: FileCheck },
   { id: 'insurance', label: 'Insurance', icon: Shield },
+  { id: 'billing', label: 'Account & Billing', icon: CreditCard },
 ];
 
 export default function Settings() {
   const { contractor, profile } = useAuth();
   const [settings, setSettings] = useState<ContractorSettings>(defaultSettings);
   const [originalSettings, setOriginalSettings] = useState<ContractorSettings>(defaultSettings);
+  const [pricingMode, setPricingMode] = useState<string>('ic_and_cp');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('company');
@@ -36,11 +41,13 @@ export default function Settings() {
       try {
         const { data, error } = await supabase
           .from('contractors')
-          .select('settings, name, primary_contact_email, primary_contact_phone, primary_contact_name')
+          .select('settings, name, primary_contact_email, primary_contact_phone, primary_contact_name, pricing_mode')
           .eq('id', contractor.id)
           .single();
         
         if (error) throw error;
+        
+        setPricingMode(data?.pricing_mode || 'ic_and_cp');
         
         const storedSettings = (data?.settings || {}) as Partial<ContractorSettings>;
         const mergedSettings: ContractorSettings = {
@@ -192,6 +199,20 @@ export default function Settings() {
                   data={settings.defaults}
                   onChange={(value) => updateSettings('defaults', value)}
                 />
+                <EstimateDefaultsCard
+                  data={settings.defaults}
+                  onChange={(value) => updateSettings('defaults', value)}
+                />
+              </>
+            )}
+
+            {activeTab === 'pricing' && contractor?.id && (
+              <>
+                <PricingModeCard 
+                  contractorId={contractor.id} 
+                  initialMode={pricingMode}
+                />
+                <MarginStrategyCard contractorId={contractor.id} />
               </>
             )}
 
@@ -212,16 +233,16 @@ export default function Settings() {
               />
             )}
 
-            {activeTab === 'margins' && contractor?.id && (
-              <MarginStrategyCard contractorId={contractor.id} />
-            )}
-
             {activeTab === 'insurance' && (
               <InsuranceCard
                 data={settings.insurance}
                 onChange={(value) => updateSettings('insurance', value)}
                 contractorId={contractor?.id}
               />
+            )}
+
+            {activeTab === 'billing' && contractor?.id && (
+              <AccountBillingCard contractorId={contractor.id} />
             )}
           </main>
         </div>
