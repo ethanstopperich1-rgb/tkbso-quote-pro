@@ -8,16 +8,22 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { Shield, Lock, Check } from 'lucide-react';
 import { analytics, EVENTS } from '@/lib/analytics';
+import { supabase } from '@/integrations/supabase/client';
+import { EstimAIteLogo } from '@/components/EstimAIteLogo';
 
 const signupSchema = z.object({
+  name: z.string().min(1, 'Please enter your name'),
   email: z.string().email('Please enter a valid email address'),
+  phone: z.string().min(10, 'Please enter a valid phone number'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 export default function Signup() {
   const navigate = useNavigate();
   const { user, signUp, loading } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,6 +34,23 @@ export default function Signup() {
     }
   }, [user, loading, navigate]);
 
+  const triggerLeadFollowup = async (userName: string, userEmail: string, userPhone: string) => {
+    try {
+      await supabase.functions.invoke('lead-followup', {
+        body: {
+          name: userName,
+          email: userEmail,
+          phone: userPhone,
+          source: 'signup',
+        },
+      });
+      console.log('[Signup] Lead followup triggered successfully');
+    } catch (error) {
+      console.error('[Signup] Lead followup error:', error);
+      // Don't block signup flow if followup fails
+    }
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -36,7 +59,7 @@ export default function Signup() {
       return;
     }
     
-    const validation = signupSchema.safeParse({ email, password });
+    const validation = signupSchema.safeParse({ name, email, phone, password });
     if (!validation.success) {
       toast.error(validation.error.issues[0].message);
       return;
@@ -46,17 +69,21 @@ export default function Signup() {
     
     setIsSubmitting(true);
     const { error } = await signUp(email, password);
-    setIsSubmitting(false);
     
     if (error) {
+      setIsSubmitting(false);
       if (error.message.includes('User already registered')) {
         toast.error('An account with this email already exists. Please sign in instead.');
       } else {
         toast.error(error.message);
       }
     } else {
+      // Trigger AI call and email followup in background
+      triggerLeadFollowup(name, email, phone);
+      
       analytics.track(EVENTS.SIGNUP_COMPLETED, { email });
-      toast.success('Account created! Let\'s set up your profile.');
+      toast.success('Account created! You\'ll receive a welcome call shortly.');
+      setIsSubmitting(false);
       navigate('/onboarding');
     }
   };
@@ -74,11 +101,9 @@ export default function Signup() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-1 mb-4">
-            <span className="text-4xl font-bold text-white">Estim</span>
-            <span className="text-4xl font-bold text-[#00E5FF]">AI</span>
-            <span className="text-4xl font-bold text-white">te</span>
-          </div>
+          <Link to="/" className="inline-block mb-4">
+            <EstimAIteLogo size="md" className="brightness-0 invert mx-auto" />
+          </Link>
           <h1 className="text-2xl font-bold text-white mb-2">
             Start Your Free Trial
           </h1>
@@ -87,23 +112,33 @@ export default function Signup() {
           </p>
         </div>
 
-        {/* Social Proof */}
+        {/* Value Prop */}
         <div className="flex items-center justify-center gap-4 mb-6">
-          <div className="flex -space-x-2">
-            {['MR', 'SJ', 'DT', 'KL'].map((initials, i) => (
-              <div key={i} className="w-8 h-8 rounded-full bg-slate-700 border-2 border-slate-800 flex items-center justify-center text-xs text-white font-semibold">
-                {initials}
-              </div>
-            ))}
+          <div className="text-center">
+            <p className="text-slate-400 text-sm">
+              Join contractors who are <span className="text-white font-semibold">saving 10+ hours</span> every week
+            </p>
           </div>
-          <p className="text-slate-400 text-sm">
-            <span className="text-white font-semibold">500+</span> contractors already estimating faster
-          </p>
         </div>
 
         {/* Signup Card */}
         <div className="bg-white rounded-2xl p-8 shadow-2xl">
-          <form onSubmit={handleSignup} className="space-y-5">
+          <form onSubmit={handleSignup} className="space-y-4">
+            {/* Name Input */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Full Name
+              </label>
+              <Input 
+                type="text"
+                required
+                placeholder="John Smith"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full h-12 px-4 border-2 border-slate-300 rounded-lg focus:border-cyan-400 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
             {/* Email Input */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -117,8 +152,23 @@ export default function Signup() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-12 px-4 border-2 border-slate-300 rounded-lg focus:border-cyan-400 focus:ring-cyan-400 transition-colors"
               />
+            </div>
+
+            {/* Phone Input */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Phone Number
+              </label>
+              <Input 
+                type="tel"
+                required
+                placeholder="(555) 123-4567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full h-12 px-4 border-2 border-slate-300 rounded-lg focus:border-cyan-400 focus:ring-cyan-400 transition-colors"
+              />
               <p className="text-xs text-slate-500 mt-1">
-                We'll send you a verification code
+                We'll call to help you get started
               </p>
             </div>
 
@@ -136,13 +186,10 @@ export default function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full h-12 px-4 border-2 border-slate-300 rounded-lg focus:border-cyan-400 focus:ring-cyan-400 transition-colors"
               />
-              <p className="text-xs text-slate-500 mt-1">
-                Must be at least 8 characters
-              </p>
             </div>
 
             {/* Terms Checkbox */}
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 pt-2">
               <Checkbox 
                 id="terms"
                 checked={agreedToTerms}
@@ -150,7 +197,7 @@ export default function Signup() {
                 className="mt-1"
               />
               <label htmlFor="terms" className="text-sm text-slate-600 cursor-pointer">
-                I agree to the <a href="/terms" className="text-cyan-600 hover:underline">Terms of Service</a> and <a href="/privacy" className="text-cyan-600 hover:underline">Privacy Policy</a>
+                I agree to the <Link to="/terms" className="text-cyan-600 hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-cyan-600 hover:underline">Privacy Policy</Link>
               </label>
             </div>
 
@@ -164,36 +211,15 @@ export default function Signup() {
             </Button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-sm text-slate-500">or</span>
-            <div className="flex-1 h-px bg-slate-200" />
-          </div>
-
-          {/* Social Signup */}
-          <Button 
-            variant="outline"
-            className="w-full h-12 border-2 border-slate-300 rounded-lg font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-3"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Continue with Google
-          </Button>
-
           {/* What You'll Get */}
           <div className="mt-6 pt-6 border-t border-slate-100">
             <p className="text-sm font-semibold text-slate-700 mb-3">Your free trial includes:</p>
             <div className="space-y-2">
               {[
                 'Unlimited estimates for 14 days',
-                'Photo-to-Quote AI analysis',
+                'AI-powered conversational estimating',
                 'Professional PDF proposals',
-                'Custom branding'
+                'Personalized onboarding call'
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-slate-600">
                   <Check className="h-4 w-4 text-green-500" />
