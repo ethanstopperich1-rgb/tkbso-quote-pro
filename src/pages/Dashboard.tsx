@@ -242,13 +242,14 @@ export default function Dashboard() {
 
       {/* Footer Branding */}
       <div className="mt-8 pt-6 border-t border-border text-center">
-        <p className="text-sm text-muted-foreground">
-          Powered by{' '}
-          <span className="text-foreground/80 font-semibold">Estim</span>
-          <span className="text-cyan-500 font-semibold">AI</span>
-          <span className="text-foreground/80 font-semibold">te</span>
-          <span className="text-muted-foreground/60 text-xs ml-0.5">™</span>
-        </p>
+        <div className="flex items-center justify-center gap-1.5">
+          <span className="text-sm text-muted-foreground">Powered by</span>
+          <img 
+            src="/estimaite-logo-tm.png" 
+            alt="EstimAIte" 
+            className="h-4 object-contain"
+          />
+        </div>
       </div>
     </div>
   );

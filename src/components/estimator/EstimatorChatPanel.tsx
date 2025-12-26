@@ -1554,12 +1554,14 @@ export function EstimatorChatPanel() {
           </div>
           <div>
             <h2 className="font-display font-semibold text-base sm:text-lg text-foreground tracking-tight">AI Estimator</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Powered by{' '}
-              <span className="text-foreground/80 font-semibold">Estim</span>
-              <span className="text-cyan-500 font-semibold">AI</span>
-              <span className="text-foreground/80 font-semibold">te</span>
-            </p>
+            <div className="flex items-center gap-1">
+              <span className="text-xs sm:text-sm text-muted-foreground">Powered by</span>
+              <img 
+                src="/estimaite-logo-tm.png" 
+                alt="EstimAIte" 
+                className="h-3.5 object-contain"
+              />
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">

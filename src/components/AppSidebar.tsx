@@ -65,13 +65,14 @@ export function AppSidebar() {
               <span className="font-display font-semibold text-sm text-sidebar-foreground truncate tracking-tight">
                 {companyName}
               </span>
-              <span className="text-xs text-sidebar-foreground/50">
-                Powered by{' '}
-                <span className="text-sidebar-foreground/70 font-semibold">Estim</span>
-                <span className="text-cyan-400 font-semibold">AI</span>
-                <span className="text-sidebar-foreground/70 font-semibold">te</span>
-                <sup className="text-[8px] text-sidebar-foreground/50 ml-0.5">™</sup>
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-sidebar-foreground/50">Powered by</span>
+                <img 
+                  src="/estimaite-logo-tm.png" 
+                  alt="EstimAIte" 
+                  className="h-3 object-contain"
+                />
+              </div>
             </div>
           )}
         </div>
