@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,10 +88,10 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-      {/* Logo */}
-      <div className="mb-8">
+      {/* Logo - Clickable to go home */}
+      <Link to="/" className="mb-8 hover:opacity-80 transition-opacity">
         <EstimAIteLogo size="lg" />
-      </div>
+      </Link>
 
       {/* Auth Card */}
       <div className="w-full max-w-md">
