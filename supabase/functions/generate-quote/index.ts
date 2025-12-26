@@ -268,7 +268,8 @@ const conversationSchema = {
   properties: {
     action: { 
       type: "string", 
-      enum: ["ask_question", "generate_quote"] 
+      enum: ["ask_question", "show_summary", "generate_quote"],
+      description: "ask_question = need more info, show_summary = have all info and showing summary for confirmation, generate_quote = user confirmed summary"
     },
     response_text: { type: "string" },
     parsed_data: {
@@ -510,7 +511,10 @@ When user mentions main floor tile, provide sales context:
 "Smart move bundling the main floor. When you show homeowners the shower tile and ask 'should we continue this onto the main floor for a complete look?', 85% say yes. What are the floor dimensions?"
 
 ### Phase 5: MANDATORY SUMMARY/CONFIRMATION (CRITICAL!)
-**BEFORE generating any quote, you MUST show this summary and WAIT for explicit confirmation:**
+**You MUST use action: "show_summary" when you have gathered all required information.**
+**NEVER skip this phase. NEVER use action: "generate_quote" until after showing summary and receiving explicit confirmation.**
+
+When you have all the scope details, use action: "show_summary" and present this summary:
 
 "═══════════════════════════════════════════════
 ESTIMATE SUMMARY - PLEASE REVIEW
@@ -524,22 +528,21 @@ SCOPE:
 • Main floor: [sqft or 'not included']
 • Additions: [bench, niche, heated floors, etc.]
 
-PRICING:
-Base scope:          $[amount]
-Premium additions:   $[amount]
-─────────────────────────────
-TOTAL QUOTE:        $[amount]
-
-Your margin: $[amount] ([%]%)
+ESTIMATED RANGE: $[low] - $[high]
 
 ═══════════════════════════════════════════════
 
 Does everything look correct? Reply:
-→ 'Looks good' to generate estimate
+→ 'Looks good' or 'Yes' to generate the full estimate
 → 'Change [item]' to adjust
 → 'Add [item]' to include more"
 
-**DO NOT use action: "generate_quote" until contractor explicitly confirms with "looks good", "perfect", "yes", or similar.**
+**ONLY use action: "generate_quote" AFTER the contractor explicitly confirms with "looks good", "perfect", "yes", "generate", "let's do it", or similar confirmation words.**
+
+**Action Flow:**
+1. ask_question → still gathering info
+2. show_summary → have all info, showing for confirmation
+3. generate_quote → ONLY after user confirms the summary
 
 ---
 
@@ -846,6 +849,18 @@ serve(async (req) => {
     if (parsedResponse.action === "ask_question") {
       return new Response(JSON.stringify({
         needsMoreInfo: true,
+        followUpQuestion: parsedResponse.response_text,
+        parsed: parsedResponse.parsed_data
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // If showing summary for confirmation, return it and wait for user to confirm
+    if (parsedResponse.action === "show_summary") {
+      return new Response(JSON.stringify({
+        needsMoreInfo: true,
+        showingSummary: true,
         followUpQuestion: parsedResponse.response_text,
         parsed: parsedResponse.parsed_data
       }), {
