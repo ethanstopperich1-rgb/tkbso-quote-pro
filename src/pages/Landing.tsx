@@ -158,12 +158,11 @@ export default function Landing() {
       <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="text-2xl font-bold">
-              <span className="text-[#0F172A]">Estim</span>
-              <span className="text-[#00E5FF]">AI</span>
-              <span className="text-[#0F172A]">te</span>
-              <sup className="text-[10px] text-slate-400 ml-0.5">™</sup>
-            </div>
+            <img 
+              src="/estimaite-logo-tm.png" 
+              alt="EstimAIte" 
+              className="h-8 object-contain"
+            />
             <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
               <span>🚀</span>
               <span>Launching Jan 1, 2026</span>
@@ -788,12 +787,13 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             {/* Logo & Copyright */}
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-white">Estim</span>
-              <span className="text-xl font-bold text-[#00E5FF]">AI</span>
-              <span className="text-xl font-bold text-white">te</span>
-              <sup className="text-[10px] text-slate-400">™</sup>
-              <span className="text-slate-500 ml-4 text-sm">© {new Date().getFullYear()} EstimAIte™. All rights reserved.</span>
+            <div className="flex items-center gap-4">
+              <img 
+                src="/estimaite-logo-tm.png" 
+                alt="EstimAIte" 
+                className="h-6 object-contain"
+              />
+              <span className="text-slate-500 text-sm">© {new Date().getFullYear()} EstimAIte™. All rights reserved.</span>
             </div>
 
             {/* Legal Links */}
