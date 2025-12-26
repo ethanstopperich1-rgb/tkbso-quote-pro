@@ -722,7 +722,8 @@ export function EstimatorChatPanel() {
       ];
       
       if (transformedResponse.project_header?.overall_size_sqft) {
-        summaryParts.push(`${transformedResponse.project_header.overall_size_sqft} sq ft • ${transformedResponse.trade_buckets?.length || 0} trade items`);
+        const itemCount = transformedResponse.pricing?.line_items?.length || transformedResponse.trade_buckets?.length || 0;
+        summaryParts.push(`${transformedResponse.project_header.overall_size_sqft} sq ft • ${itemCount} trade items`);
       }
       
       addAssistantMessage(summaryParts.join('\n'));
@@ -1012,7 +1013,8 @@ export function EstimatorChatPanel() {
         projectType: (projectType === 'Kitchen' || projectType === 'Bathroom') ? projectType : prev.projectType,
       }));
 
-      addAssistantMessage(`**${projectType} Quote Ready** ✓\n${transformedResponse.trade_buckets.length} trade items`);
+      const itemCount = transformedResponse.pricing?.line_items?.length || transformedResponse.trade_buckets?.length || 0;
+      addAssistantMessage(`**${projectType} Quote Ready** ✓\n${itemCount} trade items`);
       
     } catch (err) {
       console.error('Error generating quote:', err);
