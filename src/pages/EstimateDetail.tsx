@@ -735,41 +735,6 @@ export default function EstimateDetail() {
             </CardContent>
           </Card>
 
-          {/* Project Summary */}
-          <Card>
-            <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="text-base sm:text-lg">Project Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-              {estimate.has_kitchen && estimate.num_kitchens > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Kitchens</span>
-                  <span>{estimate.num_kitchens} ({estimate.total_kitchen_sqft} sqft)</span>
-                </div>
-              )}
-              {estimate.has_bathrooms && estimate.num_bathrooms > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Bathrooms</span>
-                  <span>{estimate.num_bathrooms} ({estimate.total_bathroom_sqft} sqft)</span>
-                </div>
-              )}
-              {estimate.has_closets && estimate.num_closets > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Closets</span>
-                  <span>{estimate.num_closets} ({estimate.total_closet_sqft} sqft)</span>
-                </div>
-              )}
-              <Separator />
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">GC Partner</span>
-                <span>{estimate.needs_gc_partner ? 'Yes' : 'No'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Permit Required</span>
-                <span>{estimate.permit_required ? 'Yes' : 'No'}</span>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
