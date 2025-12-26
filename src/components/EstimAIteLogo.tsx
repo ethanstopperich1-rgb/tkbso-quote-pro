@@ -1,4 +1,4 @@
-import estimaiteLogo from '@/assets/estimaite-logo-tm.png';
+const estimaiteLogo = '/estimaite-logo-tm.png';
 
 interface EstimAIteLogoProps {
   className?: string;
