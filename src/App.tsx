@@ -34,6 +34,7 @@ import ApiPage from "./pages/ApiPage";
 import Documentation from "./pages/Documentation";
 import HelpCenter from "./pages/HelpCenter";
 import Community from "./pages/Community";
+import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/docs" element={<Documentation />} />
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/faq" element={<FAQ />} />
               
               {/* Auth pages */}
               <Route path="/auth" element={<Auth />} />

@@ -791,6 +791,7 @@ export default function Landing() {
 
             {/* Legal Links */}
             <div className="flex items-center gap-6 text-sm text-slate-400">
+              <Link to="/faq" className="hover:text-white transition-colors">FAQ</Link>
               <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
               <Link to="/security" className="hover:text-white transition-colors">Security</Link>
