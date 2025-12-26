@@ -280,10 +280,14 @@ The Kitchen & Bath Store of Orlando
   `.trim();
 }
 
-// Generate signup welcome email HTML
+// Generate signup welcome email HTML - World-class onboarding template
 function generateSignupEmailHtml(name: string): string {
   const firstName = getFirstName(name);
   const currentYear = new Date().getFullYear();
+  const dashboardUrl = "https://estimaite.lovable.app/dashboard";
+  const settingsUrl = "https://estimaite.lovable.app/settings";
+  const helpUrl = "https://estimaite.lovable.app/help";
+  const demoVideoUrl = "https://www.loom.com/share/estimaite-demo";
   
   return `
 <!DOCTYPE html>
@@ -301,8 +305,21 @@ function generateSignupEmailHtml(name: string): string {
           
           <!-- Logo Header -->
           <tr>
-            <td style="text-align: center; padding-bottom: 30px;">
+            <td style="text-align: center; padding-bottom: 24px;">
               <img src="https://bepdsritihnkfseurqjl.supabase.co/storage/v1/object/public/assets/estimaite-logo-tm.png" alt="EstimAIte" style="height: 40px; width: auto;" />
+            </td>
+          </tr>
+          
+          <!-- Celebration Header -->
+          <tr>
+            <td style="text-align: center; padding-bottom: 24px;">
+              <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
+              <h1 style="color: #FFFFFF; font-size: 32px; font-weight: 700; margin: 0 0 8px 0;">
+                Welcome to EstimAIte!
+              </h1>
+              <p style="color: #94A3B8; font-size: 16px; margin: 0;">
+                Your account is ready. Let's get you set up in 3 minutes.
+              </p>
             </td>
           </tr>
           
@@ -311,66 +328,182 @@ function generateSignupEmailHtml(name: string): string {
             <td>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #1E293B; border-radius: 16px; overflow: hidden;">
                 <tr>
-                  <td style="padding: 40px 32px;">
+                  <td style="padding: 32px;">
                     
-                    <h1 style="color: #FFFFFF; font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">
-                      Welcome to EstimAIte™, ${firstName}! 🎉
-                    </h1>
+                    <!-- Progress Bar -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
+                      <tr>
+                        <td>
+                          <div style="background: #334155; border-radius: 8px; height: 8px; overflow: hidden;">
+                            <div style="background: linear-gradient(135deg, #00E5FF 0%, #3B82F6 100%); width: 33%; height: 100%; border-radius: 8px;"></div>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top: 8px;">
+                          <p style="color: #00E5FF; font-size: 13px; margin: 0; font-weight: 600;">
+                            Step 1 of 3 Complete: Account created ✓
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
                     
-                    <p style="color: #00E5FF; font-size: 16px; margin: 0 0 24px 0;">
-                      The AI-Powered Estimating Platform for Contractors
-                    </p>
-                    
-                    <p style="color: #CBD5E1; font-size: 16px; line-height: 1.7; margin: 0 0 24px 0;">
-                      You just made a decision that's going to save you 10+ hours every week. No more spreadsheets. No more guessing on pricing. Let's get you set up!
-                    </p>
-                    
-                    <!-- Quick Start Steps -->
-                    <div style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%); border-radius: 12px; padding: 24px; margin: 0 0 24px 0;">
-                      <p style="color: #00E5FF; font-size: 14px; font-weight: 600; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Get started in 3 easy steps:
-                      </p>
+                    <!-- Step 2: Quick Setup -->
+                    <div style="background: #0F172A; border-radius: 12px; padding: 24px; margin-bottom: 20px;">
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                         <tr>
-                          <td style="padding: 8px 0; color: #FFFFFF; font-size: 15px;">
-                            <strong>1.</strong> Complete your company profile (2 min)
+                          <td style="vertical-align: top; width: 40px;">
+                            <div style="background: linear-gradient(135deg, #00E5FF 0%, #3B82F6 100%); width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; color: #0F172A; font-weight: 700; font-size: 14px;">2</div>
                           </td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 8px 0; color: #FFFFFF; font-size: 15px;">
-                            <strong>2.</strong> Upload your logo for branded PDFs
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 8px 0; color: #FFFFFF; font-size: 15px;">
-                            <strong>3.</strong> Create your first estimate (3 min)
+                          <td style="vertical-align: top;">
+                            <h3 style="color: #FFFFFF; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">
+                              Quick Setup (2 minutes)
+                            </h3>
+                            <p style="color: #94A3B8; font-size: 14px; margin: 0 0 16px 0; line-height: 1.5;">
+                              These settings make your estimates look professional and protect your margins:
+                            </p>
+                            
+                            <!-- Checklist -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                              <tr>
+                                <td style="padding: 6px 0;">
+                                  <span style="color: #64748B; font-size: 14px;">☐</span>
+                                  <span style="color: #CBD5E1; font-size: 14px; margin-left: 8px;">Upload your logo</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 6px 0;">
+                                  <span style="color: #64748B; font-size: 14px;">☐</span>
+                                  <span style="color: #CBD5E1; font-size: 14px; margin-left: 8px;">Set your default margin (we recommend 42%)</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 6px 0;">
+                                  <span style="color: #64748B; font-size: 14px;">☐</span>
+                                  <span style="color: #CBD5E1; font-size: 14px; margin-left: 8px;">Add your contact info</span>
+                                </td>
+                              </tr>
+                            </table>
+                            
+                            <div style="margin-top: 16px;">
+                              <a href="${settingsUrl}" style="display: inline-block; background: transparent; color: #00E5FF; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; border: 1px solid #00E5FF;">
+                                Go to Settings →
+                              </a>
+                            </div>
                           </td>
                         </tr>
                       </table>
                     </div>
                     
-                    <!-- CTA Button -->
-                    <div style="text-align: center; margin: 0 0 24px 0;">
-                      <a href="https://estimaite.lovable.app/dashboard" style="display: inline-block; background: linear-gradient(135deg, #00E5FF 0%, #3B82F6 100%); color: #0F172A; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 18px; font-weight: 700;">
-                        Go to Your Dashboard →
+                    <!-- Step 3: Create First Estimate -->
+                    <div style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid rgba(0, 229, 255, 0.3);">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="vertical-align: top; width: 40px;">
+                            <div style="background: linear-gradient(135deg, #00E5FF 0%, #3B82F6 100%); width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; color: #0F172A; font-weight: 700; font-size: 14px;">3</div>
+                          </td>
+                          <td style="vertical-align: top;">
+                            <h3 style="color: #FFFFFF; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">
+                              Create Your First Estimate
+                            </h3>
+                            <p style="color: #CBD5E1; font-size: 14px; margin: 0 0 12px 0; line-height: 1.5;">
+                              This is where the magic happens. Just describe your project naturally - like you're texting another contractor. We'll handle the rest.
+                            </p>
+                            <p style="color: #00E5FF; font-size: 13px; margin: 0 0 16px 0; font-style: italic;">
+                              💡 Tip: Try a real project you're currently working on. You'll see how fast this is!
+                            </p>
+                            <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #00E5FF 0%, #3B82F6 100%); color: #0F172A; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-size: 16px; font-weight: 700;">
+                              Create First Estimate →
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <!-- Video Demo Section -->
+                    <div style="background: #0F172A; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center;">
+                      <p style="color: #FFFFFF; font-size: 15px; font-weight: 600; margin: 0 0 8px 0;">
+                        🎬 Prefer to watch first?
+                      </p>
+                      <p style="color: #94A3B8; font-size: 13px; margin: 0 0 12px 0;">
+                        Watch this 2-minute walkthrough to see EstimAIte in action
+                      </p>
+                      <a href="${demoVideoUrl}" style="color: #00E5FF; text-decoration: none; font-size: 14px; font-weight: 600;">
+                        ▶ Watch Demo (2 min)
                       </a>
                     </div>
                     
-                    <p style="color: #CBD5E1; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
-                      <strong style="color: #FFFFFF;">You'll be receiving a call from our team shortly</strong> to walk you through the platform and answer any questions you might have.
-                    </p>
+                    <!-- Help Section -->
+                    <div style="margin-bottom: 24px;">
+                      <p style="color: #FFFFFF; font-size: 16px; font-weight: 600; margin: 0 0 16px 0; text-align: center;">
+                        Need Help? We've Got You.
+                      </p>
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="width: 50%; padding-right: 8px;">
+                            <a href="${helpUrl}" style="display: block; background: #0F172A; border-radius: 8px; padding: 16px; text-decoration: none; text-align: center;">
+                              <div style="font-size: 24px; margin-bottom: 8px;">📚</div>
+                              <p style="color: #FFFFFF; font-size: 14px; font-weight: 600; margin: 0 0 4px 0;">Help Center</p>
+                              <p style="color: #64748B; font-size: 12px; margin: 0;">Quick guides and FAQs</p>
+                            </a>
+                          </td>
+                          <td style="width: 50%; padding-left: 8px;">
+                            <a href="mailto:support@estimaite.com" style="display: block; background: #0F172A; border-radius: 8px; padding: 16px; text-decoration: none; text-align: center;">
+                              <div style="font-size: 24px; margin-bottom: 8px;">💬</div>
+                              <p style="color: #FFFFFF; font-size: 14px; font-weight: 600; margin: 0 0 4px 0;">Email Support</p>
+                              <p style="color: #64748B; font-size: 12px; margin: 0;">Get answers fast</p>
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
                     
-                    <p style="color: #94A3B8; font-size: 14px; margin: 0 0 24px 0;">
-                      Questions before then? Call us at <strong style="color: #FFFFFF;">(407) 819-5809</strong> or just reply to this email.
+                    <!-- Trial Benefits -->
+                    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                      <p style="color: #10B981; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">
+                        ✓ Your 14-Day Free Trial Includes:
+                      </p>
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="width: 50%; padding: 4px 0; color: #CBD5E1; font-size: 13px;">✓ Unlimited estimates</td>
+                          <td style="width: 50%; padding: 4px 0; color: #CBD5E1; font-size: 13px;">✓ Professional PDF export</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #CBD5E1; font-size: 13px;">✓ Logo & branding</td>
+                          <td style="padding: 4px 0; color: #CBD5E1; font-size: 13px;">✓ Margin tracking</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; color: #CBD5E1; font-size: 13px;">✓ Email support</td>
+                          <td style="padding: 4px 0; color: #CBD5E1; font-size: 13px;">✓ All features included</td>
+                        </tr>
+                      </table>
+                      <p style="color: #64748B; font-size: 12px; margin: 12px 0 0 0;">
+                        No credit card required. Cancel anytime.
+                      </p>
+                    </div>
+                    
+                    <!-- Pro Tip -->
+                    <div style="background: rgba(251, 191, 36, 0.1); border-left: 4px solid #FBBF24; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+                      <p style="color: #FBBF24; font-size: 13px; margin: 0; line-height: 1.5;">
+                        <strong>⏰ Pro Tip:</strong> The best way to learn EstimAIte is to use it on a real project. Think of a bathroom you're quoting this week and create the estimate. You'll be amazed how fast it is!
+                      </p>
+                    </div>
+                    
+                    <!-- Reply CTA -->
+                    <p style="color: #CBD5E1; font-size: 15px; margin: 0 0 24px 0;">
+                      Questions? Just hit reply - I read every email personally.
                     </p>
                     
                     <!-- Signature -->
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td>
-                          <p style="color: #FFFFFF; font-size: 16px; font-weight: 600; margin: 0;">Ethan Stopperich</p>
+                          <p style="color: #FFFFFF; font-size: 15px; margin: 0 0 4px 0;">Welcome aboard!</p>
+                          <p style="color: #FFFFFF; font-size: 16px; font-weight: 600; margin: 8px 0 0 0;">Ethan Stopperich</p>
                           <p style="color: #00E5FF; font-size: 14px; margin: 4px 0;">Founder, EstimAIte</p>
-                          <p style="color: #64748B; font-size: 13px; margin: 4px 0;">The Kitchen & Bath Store of Orlando</p>
+                          <p style="color: #64748B; font-size: 13px; margin: 4px 0;">
+                            <a href="mailto:ethan@estimaite.com" style="color: #64748B; text-decoration: none;">ethan@estimaite.com</a>
+                          </p>
                         </td>
                       </tr>
                     </table>
@@ -389,7 +522,8 @@ function generateSignupEmailHtml(name: string): string {
               </p>
               <p style="color: #475569; font-size: 12px; margin: 0 0 16px 0;">
                 <a href="https://estimaite.lovable.app" style="color: #00E5FF; text-decoration: none;">estimaite.com</a> • 
-                <a href="mailto:support@estimaite.com" style="color: #00E5FF; text-decoration: none;">support@estimaite.com</a>
+                <a href="${helpUrl}" style="color: #00E5FF; text-decoration: none;">Help Center</a> • 
+                <a href="https://estimaite.lovable.app/privacy" style="color: #475569; text-decoration: underline;">Unsubscribe</a>
               </p>
               <p style="color: #475569; font-size: 11px; margin: 0;">
                 © ${currentYear} EstimAIte™. All rights reserved.
@@ -404,6 +538,87 @@ function generateSignupEmailHtml(name: string): string {
 </body>
 </html>
   `.trim();
+}
+
+// Generate plain text version for signup emails
+function generateSignupEmailText(name: string): string {
+  const firstName = getFirstName(name);
+  
+  return `
+🎉 WELCOME TO ESTIMAITE!
+
+Your account is ready. Let's get you set up in 3 minutes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ STEP 1 OF 3 COMPLETE: Account Created
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 2: QUICK SETUP (2 MINUTES)
+
+These settings make your estimates look professional and protect your margins:
+
+☐ Upload your logo
+☐ Set your default margin (we recommend 42%)
+☐ Add your contact info
+
+→ Go to Settings: https://estimaite.lovable.app/settings
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 3: CREATE YOUR FIRST ESTIMATE
+
+This is where the magic happens. Just describe your project naturally - like you're texting another contractor. We'll handle the rest.
+
+💡 TIP: Try a real project you're currently working on. You'll see how fast this is!
+
+→ Create First Estimate: https://estimaite.lovable.app/dashboard
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎬 PREFER TO WATCH FIRST?
+
+Watch this 2-minute walkthrough to see EstimAIte in action
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NEED HELP? WE'VE GOT YOU.
+
+📚 Help Center: https://estimaite.lovable.app/help
+💬 Email Support: support@estimaite.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ YOUR 14-DAY FREE TRIAL INCLUDES:
+
+• Unlimited estimates
+• Professional PDF export
+• Logo & branding customization
+• Margin tracking & intelligence
+• Email support
+• Full access to all features
+
+No credit card required. Cancel anytime.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏰ PRO TIP: The best way to learn EstimAIte is to use it on a real project. Think of a bathroom you're quoting this week and create the estimate. You'll be amazed how fast it is!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Questions? Just hit reply - I read every email personally.
+
+Welcome aboard!
+
+Ethan Stopperich
+Founder, EstimAIte
+ethan@estimaite.com
+
+---
+EstimAIte - AI-Powered Estimates That Close Deals
+https://estimaite.lovable.app | https://estimaite.lovable.app/help
+`.trim();
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -487,7 +702,7 @@ serve(async (req: Request): Promise<Response> => {
           : generateContactEmailHtml(name, message);
 
         const emailText = source === "signup"
-          ? `Welcome to EstimAIte, ${firstName}! Go to your dashboard: https://estimaite.lovable.app/dashboard`
+          ? generateSignupEmailText(name)
           : generateContactEmailText(name, message);
 
         const emailResponse = await fetch("https://api.resend.com/emails", {
