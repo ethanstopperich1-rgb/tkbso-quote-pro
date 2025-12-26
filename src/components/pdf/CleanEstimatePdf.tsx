@@ -9,6 +9,7 @@ import {
 import { Contractor, Estimate } from '@/types/database';
 import { ContractorSettings, defaultSettings } from '@/types/settings';
 import tkbsoLogo from '@/assets/tkbso-logo-full.png';
+import { generatePaymentMilestones, generateProjectNotes } from '@/lib/pdf-content-generator';
 
 const styles = StyleSheet.create({
   page: {
@@ -249,13 +250,12 @@ export function CleanEstimatePdf({
     day: 'numeric',
   });
 
-  const defaultNotes = [
-    'Estimate valid for 30 days',
-    'Permits not included unless noted',
-    'Final material selections to be confirmed',
-  ];
-
-  const displayNotes = notes && notes.length > 0 ? notes : defaultNotes;
+  // Generate dynamic notes based on project scope
+  const projectNotes = generateProjectNotes(estimate, companyName);
+  const displayNotes = notes && notes.length > 0 ? notes : projectNotes;
+  
+  // Generate dynamic payment milestones
+  const paymentMilestones = generatePaymentMilestones(estimate);
 
   return (
     <Document>
@@ -315,21 +315,15 @@ export function CleanEstimatePdf({
           </Text>
         </View>
 
-        {/* Payment Schedule */}
+        {/* Payment Schedule - Dynamic based on project scope */}
         <View style={styles.paymentSection}>
           <Text style={styles.paymentTitle}>PAYMENT SCHEDULE</Text>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>65%</Text>
-            <Text style={styles.paymentLabel}>Upon contract signing</Text>
-          </View>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>25%</Text>
-            <Text style={styles.paymentLabel}>At tile installation</Text>
-          </View>
-          <View style={styles.paymentRow}>
-            <Text style={styles.paymentPercent}>10%</Text>
-            <Text style={styles.paymentLabel}>Upon completion</Text>
-          </View>
+          {paymentMilestones.map((milestone, idx) => (
+            <View key={idx} style={styles.paymentRow}>
+              <Text style={styles.paymentPercent}>{milestone.percent}%</Text>
+              <Text style={styles.paymentLabel}>{milestone.label}</Text>
+            </View>
+          ))}
         </View>
 
         {/* Notes */}
