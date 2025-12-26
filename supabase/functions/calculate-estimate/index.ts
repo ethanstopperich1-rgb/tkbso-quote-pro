@@ -265,21 +265,22 @@ function mapCategoryToPricing(
   }
 
   // ============ TILE & WATERPROOFING ============
+  // Updated pricing: Wall=$21 labor + $6.50 materials = $27.50, Floor=$5 labor + $12 materials = $17
   if (categoryLower.includes('tile')) {
-    // Wall tile
+    // Wall tile (includes labor + materials)
     if (taskLower.includes('wall')) {
-      return { ic: 18, cp: 31.03, unit: 'sqft' };
+      return { ic: 27.50, cp: 47.45, unit: 'sqft' };
     }
-    // Shower floor tile
+    // Shower floor tile (includes labor + materials)
     if (taskLower.includes('shower') && taskLower.includes('floor')) {
-      return { ic: 5, cp: 8.62, unit: 'sqft' };
+      return { ic: 17, cp: 29.31, unit: 'sqft' };
     }
-    // Main floor tile
+    // Main floor tile (includes labor + materials)
     if (taskLower.includes('main') || taskLower.includes('floor')) {
-      return { ic: 4.5, cp: 7.76, unit: 'sqft' };
+      return { ic: 17, cp: 29.31, unit: 'sqft' };
     }
     // Default to wall tile
-    return { ic: 18, cp: 31.03, unit: 'sqft' };
+    return { ic: 27.50, cp: 47.45, unit: 'sqft' };
   }
 
   // ============ WATERPROOFING ============
@@ -740,24 +741,38 @@ For the shower walls, how many sqft are we tiling?"
 
 DO NOT ask about flooring sqft again if they already told you.
 
-## CALCULATING SQUARE FOOTAGE
-- Main bathroom floor: what they tell you
-- Shower floor: separate (they'll specify)
-- Shower walls: you need to ask OR calculate (64x33 shower = ~35 sqft walls typical)
+## CALCULATING SQUARE FOOTAGE - CRITICAL FOR ACCURATE PRICING
+
+**SHOWER FLOOR:** shower_length × shower_width
+- 3×5 shower = 15 sqft floor
+- 64"×33" (5.33×2.75) = ~14.7 sqft floor
+
+**SHOWER WALLS:** perimeter × ceiling_height (NOT floor sqft!)
+- 3×5 shower with 8ft ceiling: (3+5+3+5)×8 = 128 sqft walls
+- 3×5 shower with 10ft ceiling: (3+5+3+5)×10 = 160 sqft walls
+- 3-wall alcove (3×5): (3+5+3)×8 = 88 sqft walls
+
+**COMMON MISTAKE:** Shower wall sqft should be 5-10x LARGER than floor sqft!
+- ❌ WRONG: 3×5 shower = 15 sqft walls (this is FLOOR not walls!)
+- ✅ CORRECT: 3×5 shower = 128-160 sqft walls (depending on ceiling height)
+
+**Main bathroom floor:** what they tell you
+**Shower floor:** shower dimensions (separate calculation)
+**Shower walls:** perimeter × height (ALWAYS ask ceiling height if tiling to ceiling)
 
 If they say "125 sqft excludes shower":
 - 125 sqft = main bathroom floor
-- Shower floor = 64x33 = ~14 sqft
-- Shower walls = you need to ask OR estimate
+- Shower floor = 3×5 = 15 sqft
+- Shower walls = (3+5+3+5)×ceiling_height (ASK ceiling height or default to 8ft)
 
 ## MEMORY TRACKING
 Keep track of what you know. Example:
 - ✓ Bathroom size: 125 sqft (main floor only)
-- ✓ Shower size: 64x33
+- ✓ Shower size: 3×5 (15 sqft floor, ~128 sqft walls at 8ft)
 - ✓ Vanity: 90" double, quartz top
-- ✓ Tile: porcelain, $6.50/sqft main floor, $12/sqft shower floor, $6.50/sqft walls
+- ✓ Ceiling height: 10ft (so shower walls = 160 sqft)
 - ✓ No electrical updates
-- ? Shower wall sqft - NEED THIS
+- ? Ceiling height - NEED THIS if tiling to ceiling
 
 ## NEVER RE-ASK
 ✗ "Is it 125 sqft for the entire bathroom?" - if they already answered
@@ -944,12 +959,45 @@ User should feel like they just texted a contractor friend who "gets it" and can
 // Estimate generation system prompt
 const estimateGenerationPrompt = `You are a construction estimator. Convert the CONFIRMED scope into a structured estimate.
 
+## CRITICAL: SHOWER WALL SQFT CALCULATION
+
+When calculating shower tile, you MUST calculate floor and walls SEPARATELY:
+
+**SHOWER FLOOR CALCULATION:**
+- Shower floor sqft = length × width
+- Example: 3' × 5' shower = 15 sqft floor
+
+**SHOWER WALL CALCULATION:**
+- Step 1: Calculate perimeter = (Length + Width) × 2
+- Step 2: Multiply perimeter × ceiling height
+- Example: 3' × 5' shower with 10' ceiling
+  - Perimeter: (3 + 5) × 2 = 16 linear feet
+  - Wall area: 16 LF × 10' height = 160 sqft
+
+**THREE-WALL SHOWERS (Alcove/Open on one side):**
+- Perimeter = Length + Width + Length = back wall + 2 side walls
+- Example: 3×5 alcove shower = (3 + 5 + 3) = 11 LF × 8' = 88 sqft walls
+
+**COMMON MISTAKES TO AVOID:**
+❌ WRONG: Using floor sqft (15) for wall sqft
+❌ WRONG: Using shower dimensions (3×5=15) for walls  
+❌ WRONG: Forgetting to multiply by ceiling height
+✅ CORRECT: Calculate perimeter × height separately
+
+**VERIFICATION:** Wall sqft should ALWAYS be much larger than floor sqft!
+- If wall sqft ≈ floor sqft, you made a mistake!
+
 ## MEASUREMENT RULES
 - Room floor sqft = length × width
 - Shower floor sqft = shower_length × shower_width  
-- Shower wall sqft = 2 × (shower_length + shower_width) × ceiling_height
-- Default ceiling height: 8ft
+- Shower wall sqft = perimeter × ceiling_height (see above for calculation)
+- Default ceiling height: 8ft (use 10ft if mentioned)
 - Kitchen cabinets: estimate LF from kitchen size (small <120sqft: 15-18 LF, medium 120-200sqft: 20-25 LF, large 200+sqft: 28-35 LF)
+
+## TILE PRICING (includes labor + materials)
+- Tile - Wall: $27.50/sqft cost (for shower walls, tub surrounds)
+- Tile - Main Floor: $17/sqft cost (for bathroom main floor)
+- Tile - Shower Floor: $17/sqft cost (for shower pan/floor)
 
 ## CRITICAL: RESPECT EXCLUSIONS
 Items in the exclusions array must NOT appear in trade_buckets.
@@ -980,11 +1028,7 @@ Items in the exclusions array must NOT appear in trade_buckets.
 - Countertop pricing includes slab + fab + install
 - Paint includes paint/primer
 - Electrical includes fixtures
-
-## MATERIALS NEEDED SEPARATELY
-- "Materials - Tile" (sqft) - when tile is in scope
-- "Materials - Plumbing" (ea) - plumbing fixtures allowance
-- "Materials - Flooring" (sqft) - for LVP/flooring material`;
+- Tile pricing now includes labor + materials (no separate material lines needed)`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {

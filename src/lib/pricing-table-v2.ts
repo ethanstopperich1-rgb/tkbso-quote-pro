@@ -494,29 +494,29 @@ export const PRICING_TABLE: Record<string, PricingItem> = {
   // TILE & WATERPROOFING
   // ============================================================================
 
-  // --- Tile Labor ---
+  // --- Tile Labor (includes labor + materials: wall=$21+$6.50, floor=$5+$12) ---
   "Tile - Wall": {
-    cost: 18, price: 30, unit: "sqft", perUnit: true,
+    cost: 27.50, price: 47.45, unit: "sqft", perUnit: true,
     category: "tile",
     aliases: ["wall tile", "shower wall tile", "bathroom wall tile"]
   },
   "Tile - Shower Floor": {
-    cost: 16.50, price: 27.50, unit: "sqft", perUnit: true,
+    cost: 17, price: 29.31, unit: "sqft", perUnit: true,
     category: "tile",
     aliases: ["shower floor tile", "shower pan tile"]
   },
   "Tile - Main Floor": {
-    cost: 11.50, price: 19.17, unit: "sqft", perUnit: true,
+    cost: 17, price: 29.31, unit: "sqft", perUnit: true,
     category: "tile",
     aliases: ["floor tile", "bathroom floor", "main floor tile"]
   },
   "Tile - Tub Surround": {
-    cost: 18, price: 30, unit: "sqft", perUnit: true,
+    cost: 27.50, price: 47.45, unit: "sqft", perUnit: true,
     category: "tile",
     aliases: ["tub surround", "tub tile", "tub wall tile"]
   },
   "Tile - Backsplash": {
-    cost: 18, price: 32, unit: "sqft", perUnit: true,
+    cost: 27.50, price: 47.45, unit: "sqft", perUnit: true,
     category: "tile",
     aliases: ["backsplash", "kitchen backsplash"]
   },
