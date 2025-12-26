@@ -739,17 +739,21 @@ serve(async (req: Request): Promise<Response> => {
       results.errors.push("Resend API key not configured");
     }
 
-    // Return results
+    // Return results - always return 200 since n8n is the primary automation
+    // Retell and email are supplementary and shouldn't block the form
     const success = results.retellCall || results.email;
+    
+    console.log("[lead-followup] Complete. Retell:", !!results.retellCall, "Email:", !!results.email, "Errors:", results.errors.length);
     
     return new Response(
       JSON.stringify({
-        success,
-        message: success ? "Lead follow-up initiated" : "Follow-up failed",
+        success: true, // Always succeed - n8n handles the real automation
+        message: "Lead received",
         results,
+        warnings: results.errors.length > 0 ? results.errors : undefined,
       }),
       {
-        status: success ? 200 : 500,
+        status: 200, // Always return 200 to not block form submission
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
