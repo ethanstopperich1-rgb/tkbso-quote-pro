@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, ChevronDown, ChevronUp, User, Bot } from 'lucide-react';
+import { MessageSquare, ChevronDown, ChevronUp, User, Bot, MessageCirclePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ConversationMessage {
@@ -11,10 +12,18 @@ interface ConversationMessage {
 
 interface ConversationHistoryCardProps {
   conversationHistory?: ConversationMessage[];
+  estimateId?: string;
 }
 
-export function ConversationHistoryCard({ conversationHistory }: ConversationHistoryCardProps) {
+export function ConversationHistoryCard({ conversationHistory, estimateId }: ConversationHistoryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
+
+  const handleContinueConversation = () => {
+    if (estimateId) {
+      navigate(`/estimator?continue=${estimateId}`);
+    }
+  };
 
   if (!conversationHistory || conversationHistory.length === 0) {
     return (
@@ -43,25 +52,38 @@ export function ConversationHistoryCard({ conversationHistory }: ConversationHis
           <MessageSquare className="h-5 w-5" />
           Conversation History
         </CardTitle>
-        {conversationHistory.length > 4 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-1" />
-                Show Less
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1" />
-                Show All ({conversationHistory.length})
-              </>
-            )}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {estimateId && (
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleContinueConversation}
+              className="gap-1.5"
+            >
+              <MessageCirclePlus className="h-4 w-4" />
+              Continue
+            </Button>
+          )}
+          {conversationHistory.length > 4 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-1" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Show All ({conversationHistory.length})
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-3 max-h-96 overflow-y-auto">
         {!isExpanded && conversationHistory.length > 4 && (
