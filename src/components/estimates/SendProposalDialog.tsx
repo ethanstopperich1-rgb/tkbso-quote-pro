@@ -73,6 +73,8 @@ export function SendProposalDialog({
           estimate={estimate}
           lineItems={lineItems}
           total={total}
+          lowEstimate={estimate.low_estimate_cp || undefined}
+          highEstimate={estimate.high_estimate_cp || undefined}
         />
       ).toBlob();
 
