@@ -112,6 +112,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   
+  // Trade section styles (grouping by trade)
+  tradeSection: {
+    marginBottom: 8,
+  },
+  tradeHeader: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e3a8a',
+    textDecoration: 'underline',
+    textTransform: 'uppercase',
+    marginBottom: 3,
+    marginTop: 6,
+  },
+  
   // Bullet list styles (no prices)
   bulletList: {
     paddingVertical: 6,
@@ -121,6 +135,7 @@ const styles = StyleSheet.create({
   bulletItem: {
     flexDirection: 'row',
     marginBottom: 3,
+    paddingLeft: 4,
   },
   bulletPoint: {
     width: 12,
@@ -546,6 +561,105 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Trade classification for grouping line items
+const TRADE_ORDER = [
+  'DEMOLITION',
+  'PLUMBING', 
+  'FRAMING & DRYWALL',
+  'ELECTRICAL',
+  'TILE & WATERPROOFING',
+  'VANITY & COUNTERTOPS',
+  'CABINETS',
+  'GLASS',
+  'PAINT & FINISH',
+  'OTHER',
+] as const;
+
+function classifyTrade(itemName: string): string {
+  const name = itemName.toLowerCase();
+  
+  // Demo
+  if (name.includes('demo') || name.includes('gut') || name.includes('debris') || 
+      name.includes('removal') || name.includes('remove') || name.includes('dumpster')) {
+    return 'DEMOLITION';
+  }
+  
+  // Plumbing
+  if (name.includes('plumb') || name.includes('toilet') || name.includes('faucet') || 
+      name.includes('drain') || name.includes('shower head') || name.includes('supply line') ||
+      name.includes('tub install') || name.includes('tub filler') || name.includes('vanity line') ||
+      name.includes('cap existing') || name.includes('reconnect') || name.includes('shower kit')) {
+    return 'PLUMBING';
+  }
+  
+  // Framing & Drywall
+  if (name.includes('drywall') || name.includes('fram') || name.includes('curb') || 
+      name.includes('liner') || name.includes('door') || name.includes('texture')) {
+    return 'FRAMING & DRYWALL';
+  }
+  
+  // Electrical
+  if (name.includes('electric') || name.includes('outlet') || name.includes('switch') ||
+      name.includes('recessed') || name.includes('can light') || name.includes('led') ||
+      name.includes('mirror') || name.includes('wiring') || name.includes('decora') ||
+      name.includes('gfci')) {
+    return 'ELECTRICAL';
+  }
+  
+  // Tile & Waterproofing
+  if (name.includes('tile') || name.includes('waterproof') || name.includes('cement board') ||
+      name.includes('niche') || name.includes('substrate') || name.includes('mud bed')) {
+    return 'TILE & WATERPROOFING';
+  }
+  
+  // Vanity & Countertops
+  if (name.includes('vanity') || name.includes('countertop') || name.includes('quartz') ||
+      name.includes('polish') || name.includes('reinstall')) {
+    return 'VANITY & COUNTERTOPS';
+  }
+  
+  // Cabinets
+  if (name.includes('cabinet') || name.includes('shaker') || name.includes('hardware')) {
+    return 'CABINETS';
+  }
+  
+  // Glass
+  if (name.includes('glass') || name.includes('shower door') || name.includes('frameless')) {
+    return 'GLASS';
+  }
+  
+  // Paint & Finish
+  if (name.includes('paint') || name.includes('ceiling') || name.includes('trim') ||
+      name.includes('finish') || name.includes('color')) {
+    return 'PAINT & FINISH';
+  }
+  
+  return 'OTHER';
+}
+
+// Group line items by trade within a room
+function groupItemsByTrade(items: PassthroughLineItem[]): Map<string, PassthroughLineItem[]> {
+  const grouped = new Map<string, PassthroughLineItem[]>();
+  
+  for (const item of items) {
+    const trade = classifyTrade(item.name);
+    if (!grouped.has(trade)) {
+      grouped.set(trade, []);
+    }
+    grouped.get(trade)!.push(item);
+  }
+  
+  // Sort by trade order
+  const sortedGrouped = new Map<string, PassthroughLineItem[]>();
+  for (const trade of TRADE_ORDER) {
+    if (grouped.has(trade)) {
+      sortedGrouped.set(trade, grouped.get(trade)!);
+    }
+  }
+  
+  return sortedGrouped;
+}
+
 // Group line items by room_label
 // For single-bathroom projects, all items go under one bathroom section
 function groupLineItemsByRoom(
@@ -904,61 +1018,40 @@ export function SimpleProposalPdf({
           )}
         </View>
 
-        {/* ROOM SECTIONS - Bullets without prices, subtotals per room */}
+        {/* ROOM SECTIONS - Grouped by trade */}
         {roomEntries.map(([roomLabel, roomItems], groupIndex) => {
           const rawSubtotal = calculateSubtotal(roomItems);
           const subtotal = Math.round(rawSubtotal * scaleFactor);
           const displayLabel = roomLabel === '_general' ? 'Scope of Work' : roomLabel;
           
-          // Parse dimensions for sqft calculation
-          const dims = parseDimensionsFromLabel(roomLabel);
-          const hasTile = roomHasTileWork(roomItems);
-          
-          // Calculate sqft if we have dimensions and tile work
-          const wallTileSqft = dims && hasTile ? calculateWallTileSqft(dims) : null;
-          const showerFloorSqft = dims && hasTile ? calculateShowerFloorSqft(dims) : null;
-          
           // Calculate market price for this room
           const roomMarketPrice = shouldShowDualPricing ? calculateMarketPrice(subtotal, marketPriceMultiplier) : null;
           const roomSavings = roomMarketPrice ? roomMarketPrice - subtotal : 0;
           
-          // Process items - consolidate tile items with inline sqft
-          const processedItems: { name: string; isTile: boolean; isMainTile: boolean }[] = [];
-          let hasAddedTileDescription = false;
-          
-          for (const item of roomItems) {
-            const isTile = isTileLineItem(item.name);
-            
-            // For tile items, check if we should create consolidated description
-            if (isTile && hasTile && wallTileSqft && !hasAddedTileDescription) {
-              // Create comprehensive tile description with inline sqft
-              const bathroomName = displayLabel.replace(/\s*\([^)]*\)\s*$/, '').trim();
-              const consolidatedTileDesc = `${bathroomName}: Large format porcelain(24"x48" or 36"x36") shower wall tile to 96" ceiling (${wallTileSqft} sqft), mosaic shower floor tile (${showerFloorSqft} sqft), + waterproofing and 1 niche`;
-              processedItems.push({ name: consolidatedTileDesc, isTile: true, isMainTile: true });
-              hasAddedTileDescription = true;
-            } else if (isTile && hasAddedTileDescription) {
-              // Skip additional tile line items since we consolidated
-              continue;
-            } else {
-              // Non-tile items pass through
-              processedItems.push({ name: item.name, isTile: false, isMainTile: false });
-            }
-          }
+          // Group items by trade
+          const tradeGroups = groupItemsByTrade(roomItems);
+          const tradeEntries = Array.from(tradeGroups.entries());
           
           return (
-            <View key={roomLabel} style={styles.roomSection} wrap={false}>
+            <View key={roomLabel} style={styles.roomSection}>
               {/* Room Header */}
-              <View style={styles.roomHeader}>
+              <View style={styles.roomHeader} wrap={false}>
                 <Text style={styles.roomHeaderText}>{displayLabel}</Text>
               </View>
               
-              {/* Bullet List (NO PRICES) - with inline sqft for tile */}
+              {/* Trade-grouped Scope Details */}
               <View style={styles.bulletList}>
                 <Text style={styles.scopeLabel}>Scope Details</Text>
-                {processedItems.map((item, index) => (
-                  <View key={`${roomLabel}-${index}`} style={styles.bulletItem}>
-                    <Text style={styles.bulletPoint}>•</Text>
-                    <Text style={styles.bulletText}>{item.name}</Text>
+                
+                {tradeEntries.map(([tradeName, tradeItems]) => (
+                  <View key={tradeName} style={styles.tradeSection}>
+                    <Text style={styles.tradeHeader}>{tradeName}</Text>
+                    {tradeItems.map((item, index) => (
+                      <View key={`${tradeName}-${index}`} style={styles.bulletItem}>
+                        <Text style={styles.bulletPoint}>−</Text>
+                        <Text style={styles.bulletText}>{item.name}</Text>
+                      </View>
+                    ))}
                   </View>
                 ))}
               </View>
