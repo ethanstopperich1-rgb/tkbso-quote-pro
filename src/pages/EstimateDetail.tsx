@@ -679,6 +679,7 @@ export default function EstimateDetail() {
           {!clientMode && (
             <ConversationHistoryCard 
               conversationHistory={(estimate.internal_json_payload as any)?.conversation_history}
+              estimateId={estimate.id}
             />
           )}
         </div>

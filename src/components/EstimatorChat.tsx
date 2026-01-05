@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Message } from "@/types/estimator";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
@@ -7,6 +8,7 @@ import { Button } from "./ui/button";
 import { RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEstimator } from "@/contexts/EstimatorContext";
+import { toast } from "sonner";
 
 const WELCOME_MESSAGE: Message = {
   id: 'welcome',
@@ -15,14 +17,71 @@ const WELCOME_MESSAGE: Message = {
   timestamp: new Date(),
 };
 
+const CONTINUE_MESSAGE: Message = {
+  id: 'continue',
+  role: 'assistant',
+  content: `Welcome back! I've loaded your previous conversation. You can continue adding details or ask me to update the estimate.`,
+  timestamp: new Date(),
+};
+
 export function EstimatorChat() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [isTyping, setIsTyping] = useState(false);
+  const [loadedEstimateId, setLoadedEstimateId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { setFinalQuote, setStage, state } = useEstimator();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Load conversation from estimate if "continue" param is present
+  useEffect(() => {
+    const continueId = searchParams.get('continue');
+    if (continueId && continueId !== loadedEstimateId) {
+      loadConversationFromEstimate(continueId);
+    }
+  }, [searchParams]);
+
+  const loadConversationFromEstimate = async (estimateId: string) => {
+    try {
+      setIsTyping(true);
+      const { data: estimate, error } = await supabase
+        .from('estimates')
+        .select('internal_json_payload')
+        .eq('id', estimateId)
+        .single();
+
+      if (error) throw error;
+
+      const payload = estimate?.internal_json_payload as { conversation_history?: Array<{ role: string; content: string }> } | null;
+      const conversationHistory = payload?.conversation_history;
+
+      if (conversationHistory && conversationHistory.length > 0) {
+        // Convert to Message format
+        const loadedMessages: Message[] = conversationHistory.map((msg, idx) => ({
+          id: `loaded-${idx}`,
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+          timestamp: new Date(),
+        }));
+
+        // Add continue message at the end
+        setMessages([...loadedMessages, CONTINUE_MESSAGE]);
+        setLoadedEstimateId(estimateId);
+        toast.success('Conversation loaded! Continue where you left off.');
+      } else {
+        toast.error('No conversation history found for this estimate.');
+        setMessages([WELCOME_MESSAGE]);
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      toast.error('Failed to load conversation history.');
+      setMessages([WELCOME_MESSAGE]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   useEffect(() => {
@@ -43,7 +102,7 @@ export function EstimatorChat() {
     try {
       // Build conversation history for the AI
       const conversationHistory = messages
-        .filter(m => m.id !== 'welcome')
+        .filter(m => m.id !== 'welcome' && m.id !== 'continue')
         .map(m => ({
           role: m.role,
           content: m.content
@@ -114,9 +173,15 @@ export function EstimatorChat() {
     setMessages([WELCOME_MESSAGE]);
     setFinalQuote(null as any);
     setStage('collecting');
+    setLoadedEstimateId(null);
+    // Clear the continue param from URL
+    if (searchParams.has('continue')) {
+      searchParams.delete('continue');
+      setSearchParams(searchParams);
+    }
   };
 
-  const showQuickStart = messages.length === 1;
+  const showQuickStart = messages.length === 1 && messages[0].id === 'welcome';
 
   return (
     <div className="flex flex-col h-full">
