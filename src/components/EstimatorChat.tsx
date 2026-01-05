@@ -39,10 +39,11 @@ export function EstimatorChat() {
   // Load conversation from estimate if "continue" param is present
   useEffect(() => {
     const continueId = searchParams.get('continue');
+    console.log('Continue param:', continueId, 'Loaded:', loadedEstimateId);
     if (continueId && continueId !== loadedEstimateId) {
       loadConversationFromEstimate(continueId);
     }
-  }, [searchParams]);
+  }, [searchParams, loadedEstimateId]);
 
   const loadConversationFromEstimate = async (estimateId: string) => {
     try {
