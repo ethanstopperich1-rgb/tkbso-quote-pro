@@ -548,6 +548,8 @@ export interface SimpleProposalPdfProps {
   estimate: Estimate;
   lineItems: PassthroughLineItem[];
   total: number;
+  lowEstimate?: number;
+  highEstimate?: number;
   showDualPricing?: boolean;
   marketPriceMultiplier?: number;
 }
@@ -918,6 +920,8 @@ export function SimpleProposalPdf({
   estimate, 
   lineItems,
   total,
+  lowEstimate,
+  highEstimate,
   showDualPricing,
   marketPriceMultiplier = 1.23,
 }: SimpleProposalPdfProps) {
@@ -1117,10 +1121,14 @@ export function SimpleProposalPdf({
           </View>
         )}
 
-        {/* Total Row */}
+        {/* Total Row - with price range if available */}
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>TOTAL PROJECT INVESTMENT</Text>
-          <Text style={styles.totalAmount}>{formatCurrency(total)}</Text>
+          <Text style={styles.totalAmount}>
+            {lowEstimate && highEstimate && lowEstimate !== highEstimate
+              ? `${formatCurrency(lowEstimate)} – ${formatCurrency(highEstimate)}`
+              : formatCurrency(total)}
+          </Text>
         </View>
         
         {/* Market comparison for total */}
