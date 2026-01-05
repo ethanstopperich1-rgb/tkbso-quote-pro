@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { RotateCcw, Sparkles, Loader2, FileDown, ArrowRight, ChevronDown, ChevronUp, Menu, FileText, Camera, Upload, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MultiPhotoAnalysisCard, PhotoAnalysisEntry, mergePhotoAnalyses } from './MultiPhotoAnalysisCard';
 import { PhotoAnalysisConfirmation } from './PhotoAnalysisConfirmation';
 import { PhotoAnalysis, DetectedItem } from './PhotoUploadButton';
@@ -146,6 +146,7 @@ If you have client details, include them: "master bath remodel for the Smiths at
 export function EstimatorChatPanel() {
   const { contractor, profile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [context, setContext] = useState<ConversationContext>({});
@@ -186,6 +187,72 @@ export function EstimatorChatPanel() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, estimate, photoEntries]);
+
+  // Continue an existing estimate conversation (from the Estimate Detail "Continue Conversation" button)
+  useEffect(() => {
+    const continueId = searchParams.get('continue');
+    if (!continueId) return;
+
+    let cancelled = false;
+
+    const loadConversation = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('estimates')
+          .select('internal_json_payload')
+          .eq('id', continueId)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!data?.internal_json_payload) {
+          toast.error('No saved conversation found for that estimate.');
+          return;
+        }
+
+        const payload = data.internal_json_payload as {
+          conversation_history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+        };
+
+        const history = payload.conversation_history || [];
+        if (history.length === 0) {
+          toast.error('No conversation history found for that estimate.');
+          return;
+        }
+
+        if (cancelled) return;
+
+        const loadedMessages: Message[] = history.map((m, idx) => ({
+          id: `loaded-${continueId}-${idx}`,
+          role: m.role,
+          content: m.content,
+          timestamp: new Date(),
+        }));
+
+        setMessages(loadedMessages);
+        setConversationHistory(history);
+        setSavedEstimateId(continueId);
+
+        toast.success('Conversation loaded. You can keep adding details.');
+
+        // Keep URL clean (prevents reload loops)
+        const next = new URLSearchParams(searchParams);
+        next.delete('continue');
+        setSearchParams(next, { replace: true });
+      } catch (e) {
+        console.error('Failed to load conversation:', e);
+        toast.error('Failed to load conversation.');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    loadConversation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, setSearchParams]);
 
   // Drag and drop handlers
   const handleDragEnter = (e: React.DragEvent) => {
