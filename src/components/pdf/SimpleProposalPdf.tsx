@@ -578,17 +578,32 @@ const TRADE_ORDER = [
 function classifyTrade(itemName: string): string {
   const name = itemName.toLowerCase();
   
-  // Demo
+  // Demo - check first
   if (name.includes('demo') || name.includes('gut') || name.includes('debris') || 
       name.includes('removal') || name.includes('remove') || name.includes('dumpster')) {
     return 'DEMOLITION';
+  }
+  
+  // Tile & Waterproofing - check BEFORE electrical to catch tile-related items
+  if (name.includes('tile') || name.includes('waterproof') || name.includes('cement board') ||
+      name.includes('niche') || name.includes('substrate') || name.includes('mud bed') ||
+      name.includes('grout') || name.includes('thinset')) {
+    return 'TILE & WATERPROOFING';
+  }
+  
+  // Vanity & Countertops - check BEFORE electrical to catch mirror/vanity items
+  if (name.includes('vanity') || name.includes('countertop') || name.includes('quartz') ||
+      name.includes('polish') || name.includes('reinstall') || 
+      (name.includes('mirror') && !name.includes('light'))) {
+    return 'VANITY & COUNTERTOPS';
   }
   
   // Plumbing
   if (name.includes('plumb') || name.includes('toilet') || name.includes('faucet') || 
       name.includes('drain') || name.includes('shower head') || name.includes('supply line') ||
       name.includes('tub install') || name.includes('tub filler') || name.includes('vanity line') ||
-      name.includes('cap existing') || name.includes('reconnect') || name.includes('shower kit')) {
+      name.includes('cap existing') || name.includes('reconnect') || name.includes('shower kit') ||
+      name.includes('shower valve') || name.includes('trim kit')) {
     return 'PLUMBING';
   }
   
@@ -598,24 +613,13 @@ function classifyTrade(itemName: string): string {
     return 'FRAMING & DRYWALL';
   }
   
-  // Electrical
+  // Electrical - now checked after tile/vanity to avoid false matches
   if (name.includes('electric') || name.includes('outlet') || name.includes('switch') ||
-      name.includes('recessed') || name.includes('can light') || name.includes('led') ||
-      name.includes('mirror') || name.includes('wiring') || name.includes('decora') ||
-      name.includes('gfci')) {
+      name.includes('recessed') || name.includes('can light') || 
+      (name.includes('led') && name.includes('light')) ||
+      name.includes('wiring') || name.includes('decora') || name.includes('gfci') ||
+      name.includes('vanity light') || name.includes('sconce')) {
     return 'ELECTRICAL';
-  }
-  
-  // Tile & Waterproofing
-  if (name.includes('tile') || name.includes('waterproof') || name.includes('cement board') ||
-      name.includes('niche') || name.includes('substrate') || name.includes('mud bed')) {
-    return 'TILE & WATERPROOFING';
-  }
-  
-  // Vanity & Countertops
-  if (name.includes('vanity') || name.includes('countertop') || name.includes('quartz') ||
-      name.includes('polish') || name.includes('reinstall')) {
-    return 'VANITY & COUNTERTOPS';
   }
   
   // Cabinets
