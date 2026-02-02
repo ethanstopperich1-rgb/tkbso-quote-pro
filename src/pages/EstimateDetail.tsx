@@ -266,8 +266,7 @@ export default function EstimateDetail() {
           estimate={estimate} 
           lineItems={lineItems}
           total={total}
-          lowEstimate={estimate.low_estimate_cp || undefined}
-          highEstimate={estimate.high_estimate_cp || undefined}
+          // Don't show price range by default - only single price
         />
       ).toBlob();
       

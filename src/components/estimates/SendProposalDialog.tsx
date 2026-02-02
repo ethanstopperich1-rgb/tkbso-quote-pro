@@ -73,8 +73,8 @@ export function SendProposalDialog({
           estimate={estimate}
           lineItems={lineItems}
           total={total}
-          lowEstimate={estimate.low_estimate_cp || undefined}
-          highEstimate={estimate.high_estimate_cp || undefined}
+          // Don't pass lowEstimate/highEstimate by default - only show single price
+          // Set showPriceRange={true} if range display is needed
         />
       ).toBlob();
 
