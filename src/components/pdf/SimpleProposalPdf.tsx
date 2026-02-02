@@ -550,6 +550,7 @@ export interface SimpleProposalPdfProps {
   total: number;
   lowEstimate?: number;
   highEstimate?: number;
+  showPriceRange?: boolean; // Only show price range if explicitly true
   showDualPricing?: boolean;
   marketPriceMultiplier?: number;
 }
@@ -922,6 +923,7 @@ export function SimpleProposalPdf({
   total,
   lowEstimate,
   highEstimate,
+  showPriceRange = false, // Default to false - only show range when explicitly requested
   showDualPricing,
   marketPriceMultiplier = 1.23,
 }: SimpleProposalPdfProps) {
@@ -1121,11 +1123,11 @@ export function SimpleProposalPdf({
           </View>
         )}
 
-        {/* Total Row - with price range if available */}
+        {/* Total Row - only show range if showPriceRange is explicitly true */}
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>TOTAL PROJECT INVESTMENT</Text>
           <Text style={styles.totalAmount}>
-            {lowEstimate && highEstimate && lowEstimate !== highEstimate
+            {showPriceRange && lowEstimate && highEstimate && lowEstimate !== highEstimate
               ? `${formatCurrency(lowEstimate)} – ${formatCurrency(highEstimate)}`
               : formatCurrency(total)}
           </Text>
