@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { ArrowUp, CornerDownLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type QuickReply, type FlowStep } from '@/lib/chatFlow';
+import { type QuickReply, type FlowStep, isMultiSelectStep } from '@/lib/chatFlow';
 
 interface Props {
   onSend: (value: string) => void;
@@ -33,7 +33,15 @@ export function ChatInput({
 
   const submit = () => {
     const val = text.trim();
-    if (!val) return;
+    if (!val) {
+      // Allow empty submit for optional steps (email, dimensions)
+      if (currentStep === 'customer_email' || currentStep === 'room_dimensions') {
+        onSend('');
+        setText('');
+        return;
+      }
+      return;
+    }
     onSend(val);
     setText('');
   };
@@ -45,7 +53,7 @@ export function ChatInput({
     }
   };
 
-  const isExtras = currentStep === 'extras';
+  const isExtras = isMultiSelectStep(currentStep);
 
   return (
     <div className="flex flex-col gap-2">
@@ -82,7 +90,7 @@ export function ChatInput({
                 )}
               >
                 {isExtras && !isContinue && (
-                  <span className="mr-1">{isSelected ? '✓' : '+'}</span>
+                  <span className="mr-1">{isSelected ? '\u2713' : '+'}</span>
                 )}
                 {qr.label}
               </button>
@@ -91,7 +99,7 @@ export function ChatInput({
         </div>
       )}
 
-      {/* Text input — only show when no quickReplies or it's a text step */}
+      {/* Text input -- show when no quickReplies or for text/number input steps */}
       {(!quickReplies || quickReplies.length === 0 || inputType !== 'text') && (
         inputType !== 'text' || !quickReplies?.length
       ) && (
@@ -109,7 +117,7 @@ export function ChatInput({
           />
           <button
             onClick={submit}
-            disabled={!text.trim() || disabled}
+            disabled={disabled}
             className="m-2 w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 transition-all duration-150 disabled:opacity-20 hover:bg-white/90 cursor-pointer"
           >
             <ArrowUp className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />

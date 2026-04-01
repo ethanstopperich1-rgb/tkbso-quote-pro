@@ -10,6 +10,7 @@ import {
   getNextStep,
   FLOW_STEPS,
   calculateEstimate,
+  isMultiSelectStep,
 } from '@/lib/chatFlow';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
@@ -65,6 +66,10 @@ export function ChatEstimator() {
 
     setIsTyping(true);
     setInputConfig(null);
+    // Reset extras selection for new multi-select steps
+    if (isMultiSelectStep(step)) {
+      setSelectedExtras(new Set());
+    }
 
     setTimeout(() => {
       setIsTyping(false);
@@ -84,8 +89,8 @@ export function ChatEstimator() {
     // Initial start
     if (!currentStep) {
       if (raw === '__start__') {
-        addUserMessage("Let's go →");
-        advanceToStep('room', state);
+        addUserMessage("Let's go \u2192");
+        advanceToStep('customer_name', state);
       }
       return;
     }
@@ -93,19 +98,24 @@ export function ChatEstimator() {
     const step = currentStep;
     const cfg = FLOW_STEPS[step];
 
-    // Extras step — multi-select with continue
-    if (step === 'extras') {
+    // Multi-select steps (bath_extras, bath_plumbing_extras, kitchen_extras)
+    if (isMultiSelectStep(step)) {
       if (raw === '__continue__') {
-        addUserMessage(`Selected: ${[...selectedExtras].join(', ') || 'none'}`);
-        const updated: Partial<EstimateState> = {
-          ...state,
-          backsplash: selectedExtras.has('backsplash'),
-          plumbing: selectedExtras.has('plumbing'),
-          electrical: selectedExtras.has('electrical'),
-          demo: selectedExtras.has('demo'),
-        };
+        const selected = [...selectedExtras];
+        addUserMessage(`Selected: ${selected.join(', ') || 'none'}`);
+
+        let updated = { ...state };
+        if (step === 'bath_extras') {
+          updated.bathExtras = selected;
+        } else if (step === 'bath_plumbing_extras') {
+          updated.bathPlumbingExtras = selected;
+        } else if (step === 'kitchen_extras') {
+          updated.kitchenExtras = selected;
+        }
+
         setState(updated);
-        advanceToStep('contact_name', updated);
+        const next = getNextStep(step, updated);
+        advanceToStep(next, updated);
       }
       return;
     }
@@ -124,30 +134,67 @@ export function ChatEstimator() {
     addUserMessage(displayLabel);
     setInputConfig(null);
 
-    // Update state
+    // Update state based on step
     let updated = { ...state };
-    if (step === 'room') updated.roomType = raw;
-    else if (step === 'sqft') updated.sqFootage = parseFloat(raw);
-    else if (step === 'complexity') updated.complexity = raw;
-    else if (step === 'cabinets') updated.cabinets = raw;
-    else if (step === 'countertops') updated.countertops = raw;
-    else if (step === 'flooring') updated.flooring = raw;
-    else if (step === 'contact_name') updated.customerName = raw;
-    else if (step === 'contact_email') updated.customerEmail = raw;
-    else if (step === 'contact_phone') updated.customerPhone = raw;
-    else if (step === 'notes') updated.notes = raw;
-    else if (step === 'confirm') {
-      if (raw === 'restart') {
-        setState({});
-        setSelectedExtras(new Set());
-        setMessages([]);
-        setCurrentStep(null);
-        setTimeout(() => {
-          const greeting = getGreeting();
-          setMessages([greeting]);
-          setInputConfig({ quickReplies: greeting.quickReplies });
-        }, 300);
-        return;
+
+    switch (step) {
+      // Customer
+      case 'customer_name': updated.customerName = raw; break;
+      case 'customer_address': updated.customerAddress = raw; break;
+      case 'customer_phone': updated.customerPhone = raw; break;
+      case 'customer_email': updated.customerEmail = raw || ''; break;
+
+      // Room
+      case 'room_type': updated.roomType = raw; break;
+      case 'room_dimensions': updated.roomDimensions = raw || ''; break;
+
+      // Bathroom
+      case 'bath_demo': updated.bathDemo = raw; break;
+      case 'bath_shower_type': updated.bathShowerType = raw; break;
+      case 'bath_tile_wall_sqft': updated.bathTileWallSqft = parseFloat(raw) || 0; break;
+      case 'bath_tile_floor_sqft': updated.bathTileFloorSqft = parseFloat(raw) || 0; break;
+      case 'bath_vanity_size': updated.bathVanitySize = raw; break;
+      case 'bath_countertop': updated.bathCountertop = raw; break;
+      case 'bath_glass': updated.bathGlass = raw; break;
+
+      // Kitchen
+      case 'kitchen_demo': updated.kitchenDemo = raw; break;
+      case 'kitchen_cabinets': updated.kitchenCabinets = raw; break;
+      case 'kitchen_cabinet_color': updated.kitchenCabinetColor = raw; break;
+      case 'kitchen_countertop': updated.kitchenCountertop = raw; break;
+      case 'kitchen_countertop_sqft': updated.kitchenCountertopSqft = parseFloat(raw) || 0; break;
+      case 'kitchen_backsplash': updated.kitchenBacksplash = raw; break;
+      case 'kitchen_flooring': updated.kitchenFlooring = raw; break;
+      case 'kitchen_flooring_sqft': updated.kitchenFlooringSqft = parseFloat(raw) || 0; break;
+
+      // Closing
+      case 'pricing_tier': updated.pricingTier = raw; break;
+      case 'total_price': {
+        if (raw.toLowerCase() === 'auto') {
+          updated.totalPriceOverride = null;
+        } else {
+          const parsed = parseFloat(raw.replace(/[$,]/g, ''));
+          updated.totalPriceOverride = isNaN(parsed) ? null : parsed;
+        }
+        break;
+      }
+      case 'payment_schedule': updated.paymentSchedule = raw; break;
+
+      // Confirm
+      case 'confirm': {
+        if (raw === 'restart') {
+          setState({});
+          setSelectedExtras(new Set());
+          setMessages([]);
+          setCurrentStep(null);
+          setTimeout(() => {
+            const greeting = getGreeting();
+            setMessages([greeting]);
+            setInputConfig({ quickReplies: greeting.quickReplies });
+          }, 300);
+          return;
+        }
+        break;
       }
     }
 
@@ -164,7 +211,16 @@ export function ChatEstimator() {
     });
   };
 
-  const showPricePanel = ['countertops', 'flooring', 'extras', 'contact_name', 'contact_email', 'contact_phone', 'notes', 'confirm'].includes(currentStep ?? '');
+  // Show price panel once we're past room selection into scope questions
+  const priceSteps: FlowStep[] = [
+    'bath_demo', 'bath_shower_type', 'bath_tile_wall_sqft', 'bath_tile_floor_sqft',
+    'bath_vanity_size', 'bath_countertop', 'bath_glass', 'bath_extras', 'bath_plumbing_extras',
+    'kitchen_demo', 'kitchen_cabinets', 'kitchen_cabinet_color',
+    'kitchen_countertop', 'kitchen_countertop_sqft',
+    'kitchen_backsplash', 'kitchen_flooring', 'kitchen_flooring_sqft', 'kitchen_extras',
+    'pricing_tier', 'total_price', 'payment_schedule', 'confirm', 'done',
+  ];
+  const showPricePanel = priceSteps.includes(currentStep ?? '' as FlowStep);
 
   const currentCfg = currentStep ? FLOW_STEPS[currentStep] : null;
 
@@ -192,7 +248,7 @@ export function ChatEstimator() {
             inputType={currentCfg?.inputType}
             placeholder={currentCfg?.inputPlaceholder}
             disabled={isTyping}
-            currentStep={currentStep ?? 'room'}
+            currentStep={currentStep ?? 'customer_name'}
           />
         )}
       </div>
