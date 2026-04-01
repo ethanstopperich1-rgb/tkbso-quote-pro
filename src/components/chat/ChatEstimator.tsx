@@ -5,6 +5,7 @@ import {
   type ChatMessage as ChatMessageType,
   type EstimateState,
   type FlowStep,
+  type QuickReply,
   getGreeting,
   getNextStep,
   FLOW_STEPS,
@@ -21,7 +22,7 @@ export function ChatEstimator() {
   const [isTyping, setIsTyping] = useState(false);
   const [state, setState] = useState<Partial<EstimateState>>({});
   const [selectedExtras, setSelectedExtras] = useState<Set<string>>(new Set());
-  const [inputConfig, setInputConfig] = useState<{ type?: string; placeholder?: string; quickReplies?: typeof FLOW_STEPS['room']['quickReplies'] } | null>(null);
+  const [inputConfig, setInputConfig] = useState<{ type?: string; placeholder?: string; quickReplies?: QuickReply[] } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () =>
@@ -52,7 +53,7 @@ export function ChatEstimator() {
     const greeting = getGreeting();
     setTimeout(() => {
       setMessages([greeting]);
-      setInputConfig({ quickReplies: greeting.quickReplies ? () => greeting.quickReplies! : undefined });
+      setInputConfig({ quickReplies: greeting.quickReplies });
     }, 400);
   }, []);
 
@@ -144,7 +145,7 @@ export function ChatEstimator() {
         setTimeout(() => {
           const greeting = getGreeting();
           setMessages([greeting]);
-          setInputConfig({ quickReplies: greeting.quickReplies ? () => greeting.quickReplies! : undefined });
+          setInputConfig({ quickReplies: greeting.quickReplies });
         }, 300);
         return;
       }
@@ -185,7 +186,7 @@ export function ChatEstimator() {
         {inputConfig !== null && (
           <ChatInput
             onSend={handleSend}
-            quickReplies={inputConfig.quickReplies?.(state)}
+            quickReplies={inputConfig.quickReplies}
             selectedExtras={selectedExtras}
             onToggleExtra={toggleExtra}
             inputType={currentCfg?.inputType}
