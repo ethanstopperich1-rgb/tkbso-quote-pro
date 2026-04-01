@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { TKBSO_DEFAULT_PRICING, type TKBSOPricingConfig } from './tkbso-pricing';
+import { calculateBurden, getConsumableKit, getTotalBurden, type BurdenLine } from './cost-rules';
 
 // ── Shared Types ──────────────────────────────────────────────
 
@@ -483,6 +484,37 @@ export function calculateEstimate(
     }
     if (kExtras.includes('paint')) {
       trades.push({ name: 'Paint Kitchen', ic: pricing.paint_full_bath_ic, cp: pricing.paint_full_bath_cp });
+    }
+  }
+
+  // ── Support Materials & Burden ─────────────────────────────
+
+  // Build trade totals map for burden calculation
+  const tradeTotals: Record<string, { ic: number; cp: number }> = {};
+  for (const t of trades) {
+    const key = t.name.toLowerCase().split(' ')[0]; // first word as key
+    if (!tradeTotals[key]) tradeTotals[key] = { ic: 0, cp: 0 };
+    tradeTotals[key].ic += t.ic;
+    tradeTotals[key].cp += t.cp;
+  }
+
+  // Calculate burden lines based on project type
+  const projectType = isBathroom(room) ? 'bathroom' : isKitchen(room) ? 'kitchen' : null;
+  if (projectType && trades.length > 0) {
+    const burdenLines = calculateBurden(projectType, tradeTotals);
+    const totalBurden = getTotalBurden(burdenLines);
+
+    // Add consumable kit
+    const kit = getConsumableKit(room);
+    const kitCost = kit?.defaultCost ?? 0;
+
+    // Add burden as a single hidden IC line (not shown to customer, protects margin)
+    if (totalBurden + kitCost > 0) {
+      trades.push({
+        name: 'Support Materials & Consumables',
+        ic: totalBurden + kitCost,
+        cp: 0, // burden is absorbed into IC — already covered by trade CP margins
+      });
     }
   }
 
