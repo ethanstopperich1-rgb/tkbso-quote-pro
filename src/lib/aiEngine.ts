@@ -1,17 +1,15 @@
 /**
- * AI Engine — Qwen-2.5-72B via Hugging Face Inference API (free tier)
- * Powers: voice-to-estimate, photo analysis, scope gap detection, markup prediction
+ * AI Engine — Qwen 3 via local Ollama (http://localhost:11434)
+ * Powers: voice-to-estimate, scope gap detection, markup prediction
  *
- * Env vars required:
- *   VITE_HF_TOKEN — HuggingFace API token (free at huggingface.co/settings/tokens)
+ * No API keys needed — runs entirely local via Ollama.
+ * Model: qwen3:8b (5.2GB, fast inference on Apple Silicon)
  */
 
 import type { AIScopeRequest, AIScopeResponse, LineItem, ProjectType } from '../types';
 
-const HF_API_URL =
-  'https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions';
-
-const HF_TOKEN = import.meta.env.VITE_HF_TOKEN;
+const OLLAMA_URL = 'http://localhost:11434/api/chat';
+const MODEL = 'qwen3:8b';
 
 // ─── Orlando-specific market context injected into every prompt ───────────────
 const ORLANDO_CONTEXT = `
@@ -32,6 +30,7 @@ function buildSystemPrompt(): string {
   return `${ORLANDO_CONTEXT}
 
 You MUST respond with valid JSON only. No markdown, no explanation outside the JSON.
+Do not use thinking tags or reasoning blocks. Output JSON directly.
 Your output schema:
 {
   "lineItems": [
@@ -52,49 +51,77 @@ Your output schema:
 }`;
 }
 
+// ─── Ollama API call ─────────────────────────────────────────────────────────
+async function callOllama(
+  systemPrompt: string,
+  userMessage: string,
+  maxTokens: number = 4096,
+): Promise<string> {
+  try {
+    const response = await fetch(OLLAMA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        stream: false,
+        options: {
+          temperature: 0.3,
+          num_predict: maxTokens,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Ollama error ${response.status}: ${err}`);
+    }
+
+    const data = await response.json();
+    return data?.message?.content ?? '';
+  } catch (error: any) {
+    if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+      console.warn('[aiEngine] Ollama not reachable at localhost:11434 — returning mock data');
+      return '';
+    }
+    throw error;
+  }
+}
+
+// ─── Extract JSON from response (handles thinking tags, code fences) ─────────
+function extractJson(raw: string): string {
+  // Remove <think>...</think> blocks (Qwen 3 reasoning)
+  let cleaned = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  // Remove markdown code fences
+  cleaned = cleaned.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  // Find the first { and last }
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start >= 0 && end > start) {
+    return cleaned.slice(start, end + 1);
+  }
+  return cleaned;
+}
+
 // ─── Main AI call ─────────────────────────────────────────────────────────────
 export async function generateEstimateFromScope(
   request: AIScopeRequest
 ): Promise<AIScopeResponse> {
-  if (!HF_TOKEN) {
-    console.warn('[aiEngine] VITE_HF_TOKEN not set — returning mock data');
+  const userMessage = buildUserMessage(request);
+  const raw = await callOllama(buildSystemPrompt(), userMessage);
+
+  if (!raw) {
+    console.warn('[aiEngine] Empty response — returning mock data');
     return getMockEstimate(request.projectType);
   }
 
-  const userMessage = buildUserMessage(request);
-
-  const response = await fetch(HF_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${HF_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'Qwen/Qwen2.5-72B-Instruct',
-      messages: [
-        { role: 'system', content: buildSystemPrompt() },
-        { role: 'user', content: userMessage },
-      ],
-      max_tokens: 4096,
-      temperature: 0.3, // low temp = more consistent pricing
-      stream: false,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`HuggingFace API error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json();
-  const raw = data?.choices?.[0]?.message?.content ?? '';
-
-  // Strip any accidental markdown code fences
-  const cleaned = raw.replace(/```json|```/g, '').trim();
+  const jsonStr = extractJson(raw);
 
   try {
-    const parsed = JSON.parse(cleaned) as AIScopeResponse;
-    // Attach IDs and source
+    const parsed = JSON.parse(jsonStr) as AIScopeResponse;
     parsed.lineItems = parsed.lineItems.map((item, i) => ({
       ...item,
       id: `ai-${Date.now()}-${i}`,
@@ -102,7 +129,8 @@ export async function generateEstimateFromScope(
     }));
     return parsed;
   } catch {
-    throw new Error(`Failed to parse AI response: ${cleaned.slice(0, 200)}`);
+    console.error('[aiEngine] Failed to parse:', jsonStr.slice(0, 300));
+    return getMockEstimate(request.projectType);
   }
 }
 
@@ -133,46 +161,27 @@ export async function detectScopeGaps(
   existingItems: string[],
   projectType: ProjectType
 ): Promise<string[]> {
-  if (!HF_TOKEN) return [];
-
-  const response = await fetch(HF_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${HF_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'Qwen/Qwen2.5-72B-Instruct',
-      messages: [
-        {
-          role: 'system',
-          content: `${ORLANDO_CONTEXT}
+  const raw = await callOllama(
+    `${ORLANDO_CONTEXT}
 You are reviewing a contractor's scope list for missing items.
 Respond with JSON only: { "gaps": string[] }
-Each gap is a short warning string like "Missing backsplash tile — typically needed after countertop install".`,
-        },
-        {
-          role: 'user',
-          content: `Project type: ${projectType}\nCurrent line items:\n${existingItems.join('\n')}\n\nWhat commonly-missed items should be added?`,
-        },
-      ],
-      max_tokens: 512,
-      temperature: 0.2,
-      stream: false,
-    }),
-  });
+Each gap is a short warning string like "Missing backsplash tile — typically needed after countertop install".
+Do not use thinking tags.`,
+    `Project type: ${projectType}\nCurrent line items:\n${existingItems.join('\n')}\n\nWhat commonly-missed items should be added?`,
+    512,
+  );
 
-  const data = await response.json();
-  const raw = data?.choices?.[0]?.message?.content ?? '{"gaps":[]}';
-  const cleaned = raw.replace(/```json|```/g, '').trim();
+  if (!raw) return [];
+
+  const jsonStr = extractJson(raw);
   try {
-    return JSON.parse(cleaned).gaps ?? [];
+    return JSON.parse(jsonStr).gaps ?? [];
   } catch {
     return [];
   }
 }
 
-// ─── Predictive markup ────────────────────────────────────────────────────────
+// ─── Predictive markup (pure function, no AI needed) ─────────────────────────
 export function predictMarkup(params: {
   projectTotal: number;
   projectType: ProjectType;
@@ -181,17 +190,17 @@ export function predictMarkup(params: {
 }): number {
   let base = 35; // TKBSO default markup
 
-  if (params.projectTotal < 15000) base = 40; // small jobs need higher margin
-  if (params.projectTotal > 80000) base = 28; // large jobs win on lower margin
+  if (params.projectTotal < 15000) base = 40;
+  if (params.projectTotal > 80000) base = 28;
 
-  if (params.projectType === 'both') base += 3; // full remodel complexity premium
+  if (params.projectType === 'both') base += 3;
 
-  if (params.isSeason === 'peak') base -= 3; // busy season — can be slightly less aggressive
-  if (params.isSeason === 'slow') base += 5; // slow season — protect margin
+  if (params.isSeason === 'peak') base -= 3;
+  if (params.isSeason === 'slow') base += 5;
 
   if (params.winRateLast30 !== undefined) {
-    if (params.winRateLast30 > 70) base += 3; // closing well → push margin up
-    if (params.winRateLast30 < 30) base -= 5; // losing too much → need to price sharper
+    if (params.winRateLast30 > 70) base += 3;
+    if (params.winRateLast30 < 30) base -= 5;
   }
 
   return Math.max(15, Math.min(55, Math.round(base)));
@@ -222,7 +231,7 @@ function buildUserMessage(req: AIScopeRequest): string {
   return parts.join('\n');
 }
 
-// ─── Mock data (used when no API token) ──────────────────────────────────────
+// ─── Mock data (used when Ollama is not running) ────────────────────────────
 function getMockEstimate(projectType: ProjectType): AIScopeResponse {
   const kitchenItems = [
     { category: 'Demolition', name: 'Cabinet removal', description: 'Remove and dispose of existing upper and lower cabinets', quantity: 1, unit: 'lot', unitPrice: 850, totalPrice: 850, isOptional: false },
@@ -235,16 +244,32 @@ function getMockEstimate(projectType: ProjectType): AIScopeResponse {
     { category: 'Labor', name: 'Installation labor', description: 'Full installation crew, estimated 5 days', quantity: 40, unit: 'hour', unitPrice: 75, totalPrice: 3000, isOptional: false },
   ];
 
-  const totalPrice = kitchenItems.reduce((s, i) => s + i.totalPrice, 0);
+  const bathroomItems = [
+    { category: 'Demolition', name: 'Full bathroom demo', description: 'Remove tile, vanity, toilet, shower, fixtures. Haul away debris.', quantity: 1, unit: 'lot', unitPrice: 2050, totalPrice: 2050, isOptional: false },
+    { category: 'Plumbing', name: 'Shower rough-in', description: 'New shower valve, drain relocation, supply lines', quantity: 1, unit: 'lot', unitPrice: 3425, totalPrice: 3425, isOptional: false },
+    { category: 'Tile', name: 'Shower wall tile', description: 'Large format porcelain tile, floor to ceiling', quantity: 96, unit: 'sq ft', unitPrice: 39, totalPrice: 3744, isOptional: false },
+    { category: 'Tile', name: 'Floor tile', description: 'Porcelain floor tile with waterproofing', quantity: 50, unit: 'sq ft', unitPrice: 12, totalPrice: 600, isOptional: false },
+    { category: 'Cabinetry', name: 'Vanity 36" with quartz top', description: 'Shaker-style vanity with Level 1 quartz countertop, undermount sink', quantity: 1, unit: 'each', unitPrice: 2100, totalPrice: 2100, isOptional: false },
+    { category: 'Glass', name: 'Frameless shower glass', description: '78"H frameless glass enclosure, 3/8" tempered, door + panel', quantity: 1, unit: 'lot', unitPrice: 2100, totalPrice: 2100, isOptional: false },
+    { category: 'Electrical', name: 'Bathroom electrical package', description: '3 recessed cans, vanity light wiring, LED mirror wiring, new switches', quantity: 1, unit: 'lot', unitPrice: 750, totalPrice: 750, isOptional: false },
+    { category: 'Paint', name: 'Paint full bathroom', description: 'Walls, ceiling, door, trim. Sherwin Williams, 2 coats.', quantity: 1, unit: 'lot', unitPrice: 1900, totalPrice: 1900, isOptional: false },
+  ];
+
+  const items = projectType === 'kitchen' ? kitchenItems : bathroomItems;
+  const totalPrice = items.reduce((s, i) => s + i.totalPrice, 0);
 
   return {
-    lineItems: kitchenItems.map((item, i) => ({ ...item, id: `mock-${i}`, source: 'ai_suggested' })) as AIScopeResponse['lineItems'],
-    gapWarnings: [
+    lineItems: items.map((item, i) => ({ ...item, id: `mock-${i}`, source: 'ai_suggested' })) as AIScopeResponse['lineItems'],
+    gapWarnings: projectType === 'kitchen' ? [
       'Permit fees not included — Orlando building permit typically $400-800 for kitchen remodel',
       'Appliances not included — confirm if client is supplying or you are providing',
       'Flooring transition strips not listed — needed where kitchen meets adjacent rooms',
+    ] : [
+      'Permit fees not included — plumbing/electrical permits required in Orange County',
+      'Dumpster rental not listed — typically $750 for bathroom demo',
+      'Accessories not listed (towel bar, TP holder, robe hook) — typically $150-300',
     ],
     suggestedMarkup: 35,
-    summary: `Mock kitchen estimate totaling $${totalPrice.toLocaleString()} covering demo, cabinetry, countertops, backsplash, plumbing, and labor. Orlando market rates applied. Permits and appliances excluded.`,
+    summary: `Mock ${projectType} estimate totaling $${totalPrice.toLocaleString()} using Orlando market rates. ${projectType === 'kitchen' ? 'Permits and appliances excluded.' : 'Permits and accessories excluded.'}`,
   };
 }
