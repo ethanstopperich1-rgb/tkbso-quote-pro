@@ -46,15 +46,26 @@ export interface GhlSyncResult {
 
 // ─── Quote Status → GHL Stage Mapping ─────────────────────────────────────────
 
-// These IDs need to be set after checking your GHL pipeline stages.
-// For now, using placeholder keys — replace with real stage IDs from your pipeline.
+// Real GHL Pipeline: "Marketing Pipeline" (7GwFVY3EsZYCYmXPZW1Q)
+export const GHL_PIPELINE_ID = '7GwFVY3EsZYCYmXPZW1Q';
+
+export const GHL_STAGES = {
+  NEW_LEAD: '981a06b4-0f63-4115-86e4-bf72e2f70ef4',
+  HOT_LEAD: '7bc46e12-3650-4114-a8ba-b3563dd30571',
+  NEW_BOOKING: '665ae523-de18-4a84-be63-780c0b440b03',
+  VISIT_ATTENDED: 'a44444ab-643d-42d2-bf45-be20a46a2862',
+  SALE: 'abd33e2a-6c71-4b3f-84f8-fdd53bc3f6f9',
+  LEFT_REVIEW: '90c7b71f-4664-4895-8ff6-7c3cf26d396b',
+} as const;
+
+// Quote status → GHL stage mapping
 export const QUOTE_STATUS_TO_GHL_STAGE: Record<string, string> = {
-  draft: 'draft',           // Replace with real stage ID
-  sent: 'sent',             // Replace with real stage ID
-  viewed: 'viewed',         // Replace with real stage ID
-  approved: 'won',          // Replace with real stage ID
-  declined: 'lost',         // Replace with real stage ID
-  expired: 'lost',          // Replace with real stage ID
+  draft: GHL_STAGES.NEW_LEAD,
+  sent: GHL_STAGES.HOT_LEAD,
+  viewed: GHL_STAGES.NEW_BOOKING,
+  approved: GHL_STAGES.SALE,
+  declined: GHL_STAGES.NEW_LEAD,   // back to new lead for re-engagement
+  expired: GHL_STAGES.NEW_LEAD,
 };
 
 // ─── Tags ─────────────────────────────────────────────────────────────────────
@@ -121,7 +132,8 @@ export function buildGhlOpportunity(
 // ─── GHL API Client (direct REST, for when MCP isn't available) ───────────────
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com';
-const GHL_LOCATION_ID = 'euXH15G0pqPgr497kAL2';
+const GHL_LOCATION_ID = import.meta.env.VITE_GHL_LOCATION_ID || 'euXH15G0pqPgr497kAL2';
+const GHL_TOKEN = import.meta.env.VITE_GHL_API_TOKEN || '';
 
 export class GhlClient {
   private token: string;
@@ -285,4 +297,30 @@ export async function syncQuoteToGhl(
   }
 
   return result;
+}
+
+// ─── Convenience: sync using env token + auto-map status ──────────────────────
+
+/**
+ * One-call sync. Uses VITE_GHL_API_TOKEN from env.
+ * Automatically maps quote status to the correct GHL pipeline stage.
+ */
+export async function pushQuoteToGhl(
+  quoteState: {
+    customerName?: string;
+    customerAddress?: string;
+    customerPhone?: string;
+    customerEmail?: string;
+    roomType?: string;
+    grandTotal?: number;
+    quoteNumber?: string;
+    status?: string;
+  },
+): Promise<GhlSyncResult> {
+  if (!GHL_TOKEN) {
+    return { contactId: null, opportunityId: null, errors: ['VITE_GHL_API_TOKEN not set'] };
+  }
+
+  const stageId = QUOTE_STATUS_TO_GHL_STAGE[quoteState.status || 'draft'] || GHL_STAGES.NEW_LEAD;
+  return syncQuoteToGhl(GHL_TOKEN, GHL_PIPELINE_ID, stageId, quoteState);
 }
