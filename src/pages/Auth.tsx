@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { EstimAIteLogo } from '@/components/EstimAIteLogo';
+// TKBSO branding
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -88,10 +88,12 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-      {/* Logo - Clickable to go home */}
-      <Link to="/" className="mb-8 hover:opacity-80 transition-opacity">
-        <EstimAIteLogo size="lg" />
-      </Link>
+      {/* Logo */}
+      <div className="mb-8 text-center">
+        <img src="/images/tkbso-logo.png" alt="TKBSO" className="h-16 mx-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        <h1 className="text-xl font-semibold text-slate-900 mt-3">TKBSO Quote Pro</h1>
+        <p className="text-sm text-slate-400 mt-1">Internal Quoting Tool</p>
+      </div>
 
       {/* Auth Card */}
       <div className="w-full max-w-md">

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// TKB Quote Pro — Chat Flow Engine v2
+// TKBSO Quote Pro — Chat Flow Engine v2
 // Real TKBSO pricing, trade-by-trade IC/CP breakdowns
 // Drives the conversational estimator step by step
 // ─────────────────────────────────────────────────────────────
@@ -993,7 +993,7 @@ export function getGreeting(): ChatMessage {
   return {
     id: 'greeting',
     role: 'assistant',
-    text: "TKB Quote Pro \u2014 Let's build a quote for a customer. This tool uses real TKBSO trade pricing to generate accurate IC/CP breakdowns.",
+    text: "TKBSO Quote Pro \u2014 Let's build a quote for a customer. This tool uses real TKBSO trade pricing to generate accurate IC/CP breakdowns.",
     timestamp: new Date(),
     quickReplies: [{ label: "Let's go \u2192", value: '__start__', style: 'price' }],
   };

@@ -34,7 +34,6 @@ export function ChatInput({
   const submit = () => {
     const val = text.trim();
     if (!val) {
-      // Allow empty submit for optional steps (email, dimensions)
       if (currentStep === 'customer_email' || currentStep === 'room_dimensions') {
         onSend('');
         setText('');
@@ -79,13 +78,13 @@ export function ChatInput({
                   'px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer select-none',
                   qr.style === 'price'
                     ? isContinue
-                      ? 'bg-white text-black border-white hover:bg-white/90'
+                      ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-700'
                       : isSelected
-                        ? 'bg-white text-black border-white'
-                        : 'bg-transparent text-white border-white/20 hover:border-white/50'
+                        ? 'bg-slate-800 text-white border-slate-800'
+                        : 'bg-white text-slate-700 border-slate-300 hover:border-slate-500'
                     : isSelected
-                      ? 'bg-white/10 text-white border-white/30'
-                      : 'bg-transparent text-white/60 border-white/10 hover:text-white hover:border-white/30',
+                      ? 'bg-slate-100 text-slate-800 border-slate-400'
+                      : 'bg-white text-slate-500 border-slate-200 hover:text-slate-700 hover:border-slate-400',
                   disabled && 'opacity-40 pointer-events-none'
                 )}
               >
@@ -99,11 +98,11 @@ export function ChatInput({
         </div>
       )}
 
-      {/* Text input -- show when no quickReplies or for text/number input steps */}
+      {/* Text input */}
       {(!quickReplies || quickReplies.length === 0 || inputType !== 'text') && (
         inputType !== 'text' || !quickReplies?.length
       ) && (
-        <div className="relative flex items-end bg-[#141414] border border-white/[0.08] rounded-2xl overflow-hidden focus-within:border-white/20 transition-colors">
+        <div className="relative flex items-end bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:border-slate-400 transition-colors">
           <textarea
             ref={inputRef}
             value={text}
@@ -112,22 +111,22 @@ export function ChatInput({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className="flex-1 bg-transparent px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none resize-none leading-relaxed max-h-36"
+            className="flex-1 bg-transparent px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none resize-none leading-relaxed max-h-36"
             style={{ fieldSizing: 'content' } as React.CSSProperties}
           />
           <button
             onClick={submit}
             disabled={disabled}
-            className="m-2 w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 transition-all duration-150 disabled:opacity-20 hover:bg-white/90 cursor-pointer"
+            className="m-2 w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 transition-all duration-150 disabled:opacity-20 hover:bg-slate-700 cursor-pointer"
           >
-            <ArrowUp className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+            <ArrowUp className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
           </button>
         </div>
       )}
 
       {/* Hint */}
       {!quickReplies?.length && (
-        <p className="text-[10px] text-white/20 px-1 flex items-center gap-1">
+        <p className="text-[10px] text-slate-400 px-1 flex items-center gap-1">
           <CornerDownLeft className="w-2.5 h-2.5" />
           Enter to send
         </p>

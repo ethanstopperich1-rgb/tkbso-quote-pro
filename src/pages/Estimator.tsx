@@ -1,23 +1,23 @@
 import { ChatEstimator } from '@/components/chat/ChatEstimator';
-import { Sparkles } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 export default function Estimator() {
   return (
-    <div className="h-full flex flex-col bg-[#0a0a0a] min-h-0">
+    <div className="h-full flex flex-col bg-white min-h-0">
       {/* Page header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] flex-shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-white/60" />
+          <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+            <FileText className="w-3.5 h-3.5 text-slate-500" />
           </div>
           <div>
-            <h1 className="text-sm font-medium text-white">New Estimate</h1>
-            <p className="text-xs text-white/30">Chat-based estimator · 2 min</p>
+            <h1 className="text-sm font-semibold text-slate-900">New Quote</h1>
+            <p className="text-xs text-slate-400">TKBSO Quote Builder</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-white/30">Live pricing</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs text-slate-400">Live pricing</span>
         </div>
       </div>
 

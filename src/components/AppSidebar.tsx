@@ -65,14 +65,7 @@ export function AppSidebar() {
               <span className="font-display font-semibold text-sm text-sidebar-foreground truncate tracking-tight">
                 {companyName}
               </span>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-sidebar-foreground/50">Powered by</span>
-                <img 
-                  src="/estimaite-logo-tm.png" 
-                  alt="EstimAIte" 
-                  className="h-3 object-contain"
-                />
-              </div>
+              <span className="text-xs text-sidebar-foreground/50">TKBSO Quote Pro</span>
             </div>
           )}
         </div>
