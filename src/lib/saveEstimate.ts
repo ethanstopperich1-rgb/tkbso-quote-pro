@@ -81,7 +81,6 @@ export async function saveEstimate(
       client_email: state.customerEmail || null,
       client_phone: state.customerPhone || null,
       property_address: state.customerAddress || null,
-      project_type: projectType,
 
       // Room flags
       has_kitchen: isKitchen || room === 'Multiple Rooms',
