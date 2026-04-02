@@ -1,4 +1,4 @@
-import { LayoutDashboard, MessageSquare, FileText, DollarSign, LogOut, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, MessageSquare, FileText, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranding } from "@/contexts/BrandingContext";
@@ -18,10 +18,8 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Estimator", url: "/estimator", icon: MessageSquare },
+  { title: "New Quote", url: "/estimator", icon: MessageSquare },
   { title: "Projects", url: "/estimates", icon: FileText },
-  { title: "Pricing", url: "/pricing", icon: DollarSign },
-  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
