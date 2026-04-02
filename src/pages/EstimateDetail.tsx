@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { pdf } from '@react-pdf/renderer';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,7 +8,7 @@ import { Estimate, PricingConfig } from '@/types/database';
 import { SimpleProposalPdf } from '@/components/pdf/SimpleProposalPdf';
 import { extractPassthroughLineItems, calculatePassthroughTotal } from '@/lib/estimate-passthrough';
 import { generateProposalWord } from '@/components/word/ProposalWord';
-import { ArrowLeft, Download, FileText, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Edit2, Check, X } from 'lucide-react';
 
 const fmt = (n: number | null) => '$' + (n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
@@ -19,6 +19,21 @@ const STATUS_STYLES: Record<string, string> = {
   won: 'border-[#4A9E5C] text-[#4A9E5C]',
   lost: 'border-[#D71921] text-[#D71921]',
 };
+
+// Nothing-style inline input
+function InlineInput({ value, onChange, placeholder, type = 'text', className = '' }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; type?: string; className?: string;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={`bg-transparent border-b border-[#333] focus:border-[#2B4C8C] outline-none text-sm text-[#E8E8E8] py-1 w-full transition-colors duration-150 placeholder:text-[#444] ${className}`}
+    />
+  );
+}
 
 function generateScope(est: Estimate): string[] {
   const lines: string[] = [];
@@ -75,7 +90,7 @@ function generateScope(est: Estimate): string[] {
 
   if (est.include_paint) {
     lines.push('PAINT & TRIM');
-    lines.push('- Walls, ceiling, trim — 2 coats');
+    lines.push('- Walls, ceiling, trim \u2014 2 coats');
     lines.push('- Door trim and baseboards');
     lines.push('');
   }
@@ -102,6 +117,19 @@ export default function EstimateDetail() {
   const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Edit states
+  const [editingClient, setEditingClient] = useState(false);
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+
+  // Editable fields
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientAddress, setClientAddress] = useState('');
+  const [priceValue, setPriceValue] = useState('');
+  const [notesValue, setNotesValue] = useState('');
+
   useEffect(() => {
     if (!id || !contractor) return;
 
@@ -112,7 +140,16 @@ export default function EstimateDetail() {
         .eq('id', id)
         .single();
 
-      if (est) setEstimate(est as unknown as Estimate);
+      if (est) {
+        const e = est as unknown as Estimate;
+        setEstimate(e);
+        setClientName(e.client_name || '');
+        setClientPhone(e.client_phone || '');
+        setClientEmail(e.client_email || '');
+        setClientAddress(e.property_address || '');
+        setPriceValue(String(e.final_cp_total || 0));
+        setNotesValue(e.job_notes || '');
+      }
 
       const { data: pc } = await supabase
         .from('pricing_configs')
@@ -127,11 +164,42 @@ export default function EstimateDetail() {
     load();
   }, [id, contractor]);
 
+  const saveField = useCallback(async (updates: Record<string, unknown>) => {
+    if (!estimate) return;
+    const { error } = await supabase.from('estimates').update(updates).eq('id', estimate.id);
+    if (error) {
+      toast.error('Save failed');
+      return;
+    }
+    setEstimate({ ...estimate, ...updates } as Estimate);
+    toast.success('[SAVED]');
+  }, [estimate]);
+
+  const saveClient = () => {
+    saveField({ client_name: clientName, client_phone: clientPhone, client_email: clientEmail, property_address: clientAddress });
+    setEditingClient(false);
+  };
+
+  const savePrice = () => {
+    const num = parseFloat(priceValue.replace(/[$,]/g, '')) || 0;
+    saveField({
+      final_cp_total: num,
+      low_estimate_cp: Math.round(num * 0.95),
+      high_estimate_cp: Math.round(num * 1.05),
+    });
+    setEditingPrice(false);
+  };
+
+  const saveNotes = () => {
+    saveField({ job_notes: notesValue });
+    setEditingNotes(false);
+  };
+
   const updateStatus = async (status: string) => {
     if (!estimate) return;
     await supabase.from('estimates').update({ status }).eq('id', estimate.id);
     setEstimate({ ...estimate, status } as Estimate);
-    toast.success(`Status updated to ${status}`);
+    toast.success(`[${status.toUpperCase()}]`);
   };
 
   const downloadPdf = async () => {
@@ -139,44 +207,30 @@ export default function EstimateDetail() {
     try {
       const lineItems = extractPassthroughLineItems(estimate);
       const selectedPrice = estimate.final_cp_total || calculatePassthroughTotal(lineItems, false, null);
-
       const blob = await pdf(
-        <SimpleProposalPdf
-          estimate={estimate}
-          contractor={contractor}
-          pricingConfig={pricingConfig}
-          selectedPrice={selectedPrice}
-          showRange={false}
-        />
+        <SimpleProposalPdf estimate={estimate} contractor={contractor} pricingConfig={pricingConfig} selectedPrice={selectedPrice} showRange={false} />
       ).toBlob();
-
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `Estimate_${(estimate.client_name || estimate.id).replace(/\s+/g, '_')}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('PDF downloaded');
+      toast.success('[PDF DOWNLOADED]');
     } catch (err) {
       console.error(err);
-      toast.error('PDF generation failed');
+      toast.error('[PDF FAILED]');
     }
   };
 
   const downloadWord = async () => {
     if (!estimate || !contractor) return;
     try {
-      await generateProposalWord({
-        estimate,
-        contractor,
-        pricingConfig,
-        selectedPrice: estimate.final_cp_total || 0,
-        showRange: false,
-      });
-      toast.success('Word document downloaded');
+      await generateProposalWord({ estimate, contractor, pricingConfig, selectedPrice: estimate.final_cp_total || 0, showRange: false });
+      toast.success('[WORD DOWNLOADED]');
     } catch (err) {
       console.error(err);
-      toast.error('Word generation failed');
+      toast.error('[WORD FAILED]');
     }
   };
 
@@ -192,8 +246,8 @@ export default function EstimateDetail() {
     return (
       <div className="bg-black min-h-screen flex flex-col items-center justify-center gap-4">
         <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">[ESTIMATE NOT FOUND]</span>
-        <Link to="/estimates" className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#2B4C8C] hover:text-white transition-colors">
-          ← BACK TO PROJECTS
+        <Link to="/estimates" className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#2B4C8C] hover:text-white transition-colors cursor-pointer">
+          \u2190 BACK TO PROJECTS
         </Link>
       </div>
     );
@@ -204,8 +258,6 @@ export default function EstimateDetail() {
   const ic = estimate.final_ic_total || 0;
   const margin = total > 0 ? ((total - ic) / total * 100).toFixed(1) : '0';
   const marginColor = parseFloat(margin) >= 35 ? 'text-[#4A9E5C]' : parseFloat(margin) >= 30 ? 'text-[#D4A843]' : 'text-[#D71921]';
-
-  // Payment milestones from internal_json_payload if available
   const payload = estimate.internal_json_payload as any;
   const milestones = payload?.breakdown?.paymentMilestones || [];
 
@@ -226,7 +278,7 @@ export default function EstimateDetail() {
               {estimate.client_name || estimate.job_label || 'Untitled'}
             </h1>
             <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mt-1">
-              {estimate.property_address || ''} {estimate.property_address ? '·' : ''} {new Date(estimate.created_at || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {estimate.property_address || ''} {estimate.property_address ? '\u00b7' : ''} {new Date(estimate.created_at || '').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -244,10 +296,33 @@ export default function EstimateDetail() {
         {/* Price + Status */}
         <div className="flex items-end justify-between mb-10 pb-8 border-b border-[#222]">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-1">TOTAL</p>
-            <p className="font-mono text-[40px] text-white tabular-nums tracking-tight leading-none">
-              {fmt(total)}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">TOTAL</p>
+              {!editingPrice && (
+                <button onClick={() => setEditingPrice(true)} className="text-[#444] hover:text-[#999] transition-colors cursor-pointer">
+                  <Edit2 className="w-3 h-3" strokeWidth={1.5} />
+                </button>
+              )}
+            </div>
+            {editingPrice ? (
+              <div className="flex items-end gap-2 mt-1">
+                <span className="font-mono text-[28px] text-[#666]">$</span>
+                <input
+                  type="text"
+                  value={priceValue}
+                  onChange={e => setPriceValue(e.target.value)}
+                  className="bg-transparent border-b-2 border-[#2B4C8C] outline-none font-mono text-[28px] text-white tabular-nums w-40"
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && savePrice()}
+                />
+                <button onClick={savePrice} className="text-[#4A9E5C] hover:text-white mb-2 cursor-pointer"><Check className="w-4 h-4" strokeWidth={1.5} /></button>
+                <button onClick={() => { setPriceValue(String(total)); setEditingPrice(false); }} className="text-[#666] hover:text-white mb-2 cursor-pointer"><X className="w-4 h-4" strokeWidth={1.5} /></button>
+              </div>
+            ) : (
+              <p className="font-mono text-[40px] text-white tabular-nums tracking-tight leading-none cursor-pointer" onClick={() => setEditingPrice(true)}>
+                {fmt(total)}
+              </p>
+            )}
             <div className="flex items-center gap-4 mt-2">
               <span className="font-mono text-[11px] text-[#666] tabular-nums">IC {fmt(ic)}</span>
               <span className={`font-mono text-[11px] tabular-nums ${marginColor}`}>{margin}% MARGIN</span>
@@ -271,17 +346,41 @@ export default function EstimateDetail() {
         </div>
 
         {/* Client Info */}
-        {(estimate.client_name || estimate.client_phone || estimate.client_email) && (
-          <div className="mb-8">
-            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-3">CLIENT</p>
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">CLIENT</p>
+            {!editingClient ? (
+              <button onClick={() => setEditingClient(true)} className="text-[#444] hover:text-[#999] transition-colors cursor-pointer">
+                <Edit2 className="w-3 h-3" strokeWidth={1.5} />
+              </button>
+            ) : (
+              <div className="flex gap-1">
+                <button onClick={saveClient} className="text-[#4A9E5C] hover:text-white cursor-pointer"><Check className="w-3 h-3" strokeWidth={1.5} /></button>
+                <button onClick={() => setEditingClient(false)} className="text-[#666] hover:text-white cursor-pointer"><X className="w-3 h-3" strokeWidth={1.5} /></button>
+              </div>
+            )}
+          </div>
+          {editingClient ? (
+            <div className="space-y-3 max-w-sm">
+              <InlineInput value={clientName} onChange={setClientName} placeholder="Full name" />
+              <InlineInput value={clientPhone} onChange={setClientPhone} placeholder="Phone" type="tel" />
+              <InlineInput value={clientEmail} onChange={setClientEmail} placeholder="Email" type="email" />
+              <InlineInput value={clientAddress} onChange={setClientAddress} placeholder="Property address" />
+            </div>
+          ) : (
             <div className="space-y-1">
               {estimate.client_name && <p className="text-sm text-[#E8E8E8]">{estimate.client_name}</p>}
               {estimate.client_phone && <p className="text-sm text-[#999]">{estimate.client_phone}</p>}
               {estimate.client_email && <p className="text-sm text-[#999]">{estimate.client_email}</p>}
               {estimate.property_address && <p className="text-sm text-[#999]">{estimate.property_address}</p>}
+              {!estimate.client_name && !estimate.client_phone && (
+                <button onClick={() => setEditingClient(true)} className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#444] hover:text-[#999] cursor-pointer">
+                  + ADD CLIENT INFO
+                </button>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Scope */}
         <div className="mb-8">
@@ -337,12 +436,41 @@ export default function EstimateDetail() {
         )}
 
         {/* Notes */}
-        {estimate.job_notes && (
-          <div className="mb-8">
-            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-3">NOTES</p>
-            <p className="text-sm text-[#999] leading-relaxed">{estimate.job_notes}</p>
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">NOTES</p>
+            {!editingNotes ? (
+              <button onClick={() => setEditingNotes(true)} className="text-[#444] hover:text-[#999] transition-colors cursor-pointer">
+                <Edit2 className="w-3 h-3" strokeWidth={1.5} />
+              </button>
+            ) : (
+              <div className="flex gap-1">
+                <button onClick={saveNotes} className="text-[#4A9E5C] hover:text-white cursor-pointer"><Check className="w-3 h-3" strokeWidth={1.5} /></button>
+                <button onClick={() => { setNotesValue(estimate.job_notes || ''); setEditingNotes(false); }} className="text-[#666] hover:text-white cursor-pointer"><X className="w-3 h-3" strokeWidth={1.5} /></button>
+              </div>
+            )}
           </div>
-        )}
+          {editingNotes ? (
+            <textarea
+              value={notesValue}
+              onChange={e => setNotesValue(e.target.value)}
+              rows={4}
+              className="w-full bg-[#111] border border-[#222] rounded-[8px] p-3 text-sm text-[#E8E8E8] placeholder:text-[#444] outline-none focus:border-[#2B4C8C] transition-colors resize-none"
+              placeholder="Add notes about this project..."
+              autoFocus
+            />
+          ) : (
+            <div>
+              {estimate.job_notes ? (
+                <p className="text-sm text-[#999] leading-relaxed cursor-pointer" onClick={() => setEditingNotes(true)}>{estimate.job_notes}</p>
+              ) : (
+                <button onClick={() => setEditingNotes(true)} className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#444] hover:text-[#999] cursor-pointer">
+                  + ADD NOTES
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>
