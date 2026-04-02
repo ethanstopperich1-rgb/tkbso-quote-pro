@@ -205,8 +205,27 @@ export default function EstimateDetail() {
   const downloadPdf = async () => {
     if (!estimate || !contractor) return;
     try {
-      const lineItems = extractPassthroughLineItems(estimate);
-      const selectedPrice = estimate.final_cp_total || calculatePassthroughTotal(lineItems, false, null);
+      let lineItems = extractPassthroughLineItems(estimate);
+
+      // If no old-format line items, generate from chat breakdown trades
+      if (lineItems.length === 0) {
+        const jp = estimate.internal_json_payload as any;
+        const trades = jp?.breakdown?.trades;
+        if (trades && Array.isArray(trades)) {
+          lineItems = trades
+            .filter((t: any) => t.cp > 0)
+            .map((t: any) => ({
+              name: t.name,
+              quantity: 1,
+              unit: 'lot' as string,
+              cost: t.ic || 0,
+              price: t.cp || 0,
+              room_label: undefined,
+            }));
+        }
+      }
+
+      const selectedPrice = estimate.final_cp_total || lineItems.reduce((s: number, i: any) => s + i.price, 0);
       const blob = await pdf(
         <SimpleProposalPdf estimate={estimate} contractor={contractor} pricingConfig={pricingConfig} selectedPrice={selectedPrice} showRange={false} />
       ).toBlob();
