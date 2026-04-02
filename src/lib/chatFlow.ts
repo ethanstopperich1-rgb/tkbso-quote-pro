@@ -52,6 +52,8 @@ export type FlowStep =
   | 'kitchen_demo'
   | 'kitchen_cabinets'
   | 'kitchen_cabinet_color'
+  | 'kitchen_cabinet_count'
+  | 'kitchen_cabinet_addons'
   | 'kitchen_countertop'
   | 'kitchen_countertop_sqft'
   | 'kitchen_backsplash'
@@ -71,6 +73,7 @@ export type FlowStep =
 export const MULTI_SELECT_STEPS: FlowStep[] = [
   'bath_extras',
   'bath_plumbing_extras',
+  'kitchen_cabinet_addons',
   'kitchen_extras',
 ];
 
@@ -106,6 +109,8 @@ export interface EstimateState {
   kitchenDemo: string;
   kitchenCabinets: string;
   kitchenCabinetColor: string;
+  kitchenCabinetCount: number;          // approx total cabinet count
+  kitchenCabinetAddons: string[];       // specialty cabs: glass_fronts, spice_rack, lazy_susan, etc.
   kitchenCountertop: string;
   kitchenCountertopSqft: number;
   kitchenBacksplash: string;
@@ -379,15 +384,39 @@ export function calculateEstimate(
       trades.push({ name: 'Dumpster/Haul', ic: pricing.dumpster_kitchen_ic, cp: pricing.dumpster_kitchen_cp });
     }
 
-    // Cabinets
+    // Cabinets — dynamic pricing based on count + add-ons
     const cabs = state.kitchenCabinets ?? '';
     if (cabs === 'Full Replace (KCC)') {
-      // KCC cabinets — estimate based on avg 20-unit kitchen at ~$350/unit MSRP * 0.40 multiplier
-      // Typical KCC kitchen IC ~$3,200-5,000 depending on layout
-      // CP ~= IC / (1-0.35)
-      const cabinetIc = 4200;
-      const cabinetCp = 7500;
-      trades.push({ name: 'KCC Cabinets (installed)', ic: cabinetIc, cp: cabinetCp });
+      const cabCount = state.kitchenCabinetCount || 20;
+      // KCC avg per cabinet: ~$350 MSRP × 0.40 multiplier = $140 IC + $25 assembly = $165/unit IC
+      // CP per cabinet: $165 / (1 - 0.38) = ~$266/unit CP
+      const baseCabIcPerUnit = 165;
+      const baseCabCpPerUnit = 266;
+      let cabinetIc = cabCount * baseCabIcPerUnit;
+      let cabinetCp = cabCount * baseCabCpPerUnit;
+      trades.push({ name: `KCC Cabinets (${cabCount} units)`, ic: Math.round(cabinetIc), cp: Math.round(cabinetCp) });
+
+      // Cabinet add-ons pricing
+      const addons = state.kitchenCabinetAddons ?? [];
+      const addonPricing: Record<string, { label: string; ic: number; cp: number }> = {
+        glass_fronts:   { label: 'Glass Front Doors (×2)',    ic: 120, cp: 220 },
+        spice_rack:     { label: 'Spice Rack Pullout',        ic: 145, cp: 265 },
+        lazy_susan:     { label: 'Lazy Susan Corner',         ic: 200, cp: 370 },
+        pantry_tall:    { label: 'Pantry Cabinet (Tall)',      ic: 420, cp: 750 },
+        fridge_panel:   { label: 'Refrigerator Panel',        ic: 80,  cp: 150 },
+        waste_bin:      { label: 'Waste Bin Pullout',         ic: 210, cp: 380 },
+        roll_out_trays: { label: 'Roll-Out Trays (×4)',       ic: 260, cp: 460 },
+        wine_rack:      { label: 'Wine Rack Cabinet',         ic: 130, cp: 240 },
+        microwave_cab:  { label: 'Microwave Cabinet',         ic: 200, cp: 360 },
+        oven_tower:     { label: 'Oven Tower Cabinet',        ic: 560, cp: 1000 },
+        crown_molding:  { label: 'Crown Molding Package',     ic: 180, cp: 325 },
+        light_rail:     { label: 'Under-Cab Light Rail',      ic: 55,  cp: 100 },
+      };
+
+      for (const addon of addons) {
+        const p = addonPricing[addon];
+        if (p) trades.push({ name: p.label, ic: p.ic, cp: p.cp });
+      }
     } else if (cabs === 'Refacing') {
       trades.push({ name: 'Cabinet Refacing', ic: 2800, cp: 4800 });
     }
@@ -570,7 +599,7 @@ const BATH_FLOW: FlowStep[] = [
 ];
 
 const KITCHEN_FLOW: FlowStep[] = [
-  'kitchen_demo', 'kitchen_cabinets', 'kitchen_cabinet_color',
+  'kitchen_demo', 'kitchen_cabinets', 'kitchen_cabinet_color', 'kitchen_cabinet_count', 'kitchen_cabinet_addons',
   'kitchen_countertop', 'kitchen_countertop_sqft',
   'kitchen_backsplash', 'kitchen_flooring', 'kitchen_flooring_sqft', 'kitchen_extras',
 ];
@@ -620,10 +649,18 @@ export function getNextStep(current: FlowStep, state: Partial<EstimateState>): F
     if (kitIdx >= 0) {
       const nextKitIdx = kitIdx + 1;
 
-      // Skip kitchen_cabinet_color if not Full Replace
-      if (KITCHEN_FLOW[nextKitIdx] === 'kitchen_cabinet_color') {
+      // Skip cabinet detail steps if not Full Replace
+      if (KITCHEN_FLOW[nextKitIdx] === 'kitchen_cabinet_color' ||
+          KITCHEN_FLOW[nextKitIdx] === 'kitchen_cabinet_count' ||
+          KITCHEN_FLOW[nextKitIdx] === 'kitchen_cabinet_addons') {
         if (state.kitchenCabinets !== 'Full Replace (KCC)') {
-          return KITCHEN_FLOW[nextKitIdx + 1]; // skip color, go to countertop
+          // Find the next non-cabinet step
+          let skipIdx = nextKitIdx;
+          while (skipIdx < KITCHEN_FLOW.length &&
+            ['kitchen_cabinet_color', 'kitchen_cabinet_count', 'kitchen_cabinet_addons'].includes(KITCHEN_FLOW[skipIdx])) {
+            skipIdx++;
+          }
+          return KITCHEN_FLOW[skipIdx] ?? SHARED_CLOSE[0];
         }
       }
 
@@ -847,6 +884,36 @@ export const FLOW_STEPS: Record<FlowStep, StepConfig> = {
       { label: 'Estate Brown', value: 'Estate Brown' },
       { label: 'Estate White', value: 'Estate White' },
       { label: 'Estate Sage', value: 'Estate Sage' },
+    ],
+  },
+
+  kitchen_cabinet_count: {
+    message: () => "Approximately how many cabinets total? (uppers + lowers + tall)",
+    inputType: 'number',
+    inputPlaceholder: 'e.g. 20 (typical kitchen is 15-25)',
+    validate: (v) => {
+      const n = parseFloat(v);
+      if (isNaN(n) || n < 1 || n > 80) return 'Enter a number between 1 and 80.';
+      return null;
+    },
+  },
+
+  kitchen_cabinet_addons: {
+    message: () => "Any specialty cabinets or add-ons? Select all that apply.",
+    quickReplies: () => [
+      { label: 'Glass Front Doors', value: 'glass_fronts', style: 'price' },
+      { label: 'Spice Rack Pullout', value: 'spice_rack' },
+      { label: 'Lazy Susan Corner', value: 'lazy_susan', style: 'price' },
+      { label: 'Pantry Cabinet (Tall)', value: 'pantry_tall', style: 'price' },
+      { label: 'Fridge Panel/Garage', value: 'fridge_panel' },
+      { label: 'Waste Bin Pullout', value: 'waste_bin' },
+      { label: 'Roll-Out Trays', value: 'roll_out_trays' },
+      { label: 'Wine Rack', value: 'wine_rack' },
+      { label: 'Microwave Base/Wall', value: 'microwave_cab' },
+      { label: 'Oven Tower', value: 'oven_tower', style: 'price' },
+      { label: 'Crown Molding', value: 'crown_molding' },
+      { label: 'Under-Cab Light Rail', value: 'light_rail' },
+      { label: '\u2192 Continue', value: '__continue__', style: 'price' },
     ],
   },
 

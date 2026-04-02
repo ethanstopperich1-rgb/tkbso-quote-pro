@@ -114,6 +114,8 @@ export function ChatEstimator() {
           updated.bathExtras = selected;
         } else if (step === 'bath_plumbing_extras') {
           updated.bathPlumbingExtras = selected;
+        } else if (step === 'kitchen_cabinet_addons') {
+          updated.kitchenCabinetAddons = selected;
         } else if (step === 'kitchen_extras') {
           updated.kitchenExtras = selected;
         }
@@ -166,6 +168,7 @@ export function ChatEstimator() {
       case 'kitchen_demo': updated.kitchenDemo = raw; break;
       case 'kitchen_cabinets': updated.kitchenCabinets = raw; break;
       case 'kitchen_cabinet_color': updated.kitchenCabinetColor = raw; break;
+      case 'kitchen_cabinet_count': updated.kitchenCabinetCount = parseFloat(raw) || 20; break;
       case 'kitchen_countertop': updated.kitchenCountertop = raw; break;
       case 'kitchen_countertop_sqft': updated.kitchenCountertopSqft = parseFloat(raw) || 0; break;
       case 'kitchen_backsplash': updated.kitchenBacksplash = raw; break;
@@ -236,6 +239,7 @@ export function ChatEstimator() {
     'bath_vanity_size', 'bath_countertop', 'bath_glass', 'bath_extras', 'bath_plumbing_extras',
     'kitchen_demo', 'kitchen_cabinets', 'kitchen_cabinet_color',
     'kitchen_countertop', 'kitchen_countertop_sqft',
+    'kitchen_cabinet_count', 'kitchen_cabinet_addons',
     'kitchen_backsplash', 'kitchen_flooring', 'kitchen_flooring_sqft', 'kitchen_extras',
     'pricing_tier', 'total_price', 'payment_schedule', 'confirm', 'done',
   ];
