@@ -3,14 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import { pdf } from '@react-pdf/renderer';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { formatCurrency, formatPercentage } from '@/lib/pricing-calculator';
+import { formatCurrency } from '@/lib/pricing-calculator';
 import { Estimate, PricingConfig } from '@/types/database';
 import { SimpleProposalPdf } from '@/components/pdf/SimpleProposalPdf';
 import { extractPassthroughLineItems, calculatePassthroughTotal } from '@/lib/estimate-passthrough';
@@ -23,10 +20,9 @@ import { ProjectPhotosCard } from '@/components/estimates/ProjectPhotosCard';
 import { SendProposalDialog } from '@/components/estimates/SendProposalDialog';
 import { AdditionalsCard } from '@/components/estimates/AdditionalsCard';
 import { AddSectionCard } from '@/components/estimates/AddSectionCard';
-import { 
-  ArrowLeft, 
-  Download, 
-  DollarSign,
+import {
+  ArrowLeft,
+  Download,
   RefreshCw,
   Eye,
   EyeOff,
@@ -348,18 +344,18 @@ export default function EstimateDetail() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-8 flex items-center justify-center min-h-[50vh]">
-        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="p-4 sm:p-8 flex items-center justify-center min-h-[50vh] bg-black">
+        <RefreshCw className="h-6 w-6 animate-spin text-[#666]" />
       </div>
     );
   }
 
   if (!estimate) {
     return (
-      <div className="p-4 sm:p-8">
-        <p className="text-muted-foreground">Estimate not found.</p>
+      <div className="p-4 sm:p-8 bg-black min-h-screen">
+        <p className="text-[#666]">Estimate not found.</p>
         <Link to="/estimates">
-          <Button variant="ghost" className="mt-4">
+          <Button variant="ghost" className="mt-4 text-[#666] hover:text-[#E8E8E8] hover:bg-transparent">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Estimates
           </Button>
@@ -380,28 +376,28 @@ export default function EstimateDetail() {
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto bg-black min-h-screen">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
         <div className="flex items-start gap-3 sm:gap-4">
           <Link to="/estimates">
-            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
+            <button className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 flex items-center justify-center text-[#666] hover:text-[#E8E8E8] transition-colors">
               <ArrowLeft className="h-4 w-4" />
-            </Button>
+            </button>
           </Link>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold font-display truncate">
+            <h1 className="text-xl sm:text-2xl font-semibold text-[#E8E8E8] truncate">
               {(() => {
                 // Determine project type from estimate data - check multiple sources
-                const payload = estimate.internal_json_payload as { 
+                const payload = estimate.internal_json_payload as {
                   quote?: { project?: { type?: string } },
                   project_header?: { project_type?: string }
                 } | null;
-                
+
                 // Try project_header first (most reliable), then quote.project.type
                 const projectTypeFromHeader = payload?.project_header?.project_type;
                 const projectTypeFromQuote = payload?.quote?.project?.type;
-                
+
                 let projectType = 'Remodel';
                 if (projectTypeFromHeader) {
                   // project_header.project_type is already clean like "Bathroom" or "Kitchen"
@@ -425,12 +421,12 @@ export default function EstimateDetail() {
                 } else if (estimate.has_closets) {
                   projectType = 'Closet Remodel';
                 }
-                
+
                 // If job_label is set and it's not a generic label, use it
                 if (estimate.job_label && !['Kitchen Remodel', 'Bathroom Remodel', 'Home Remodel'].includes(estimate.job_label)) {
                   return estimate.job_label;
                 }
-                
+
                 // Show client name + project type, or just project type
                 if (estimate.client_name) {
                   return `${estimate.client_name} - ${projectType}`;
@@ -438,16 +434,16 @@ export default function EstimateDetail() {
                 return projectType;
               })()}
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mt-1">
               Created {new Date(estimate.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {/* Client Mode Toggle */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50">
-            <Label htmlFor="client-mode" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-[4px] border border-[#222] bg-[#111]">
+            <Label htmlFor="client-mode" className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] cursor-pointer flex items-center gap-1.5">
               {clientMode ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
               Client Mode
             </Label>
@@ -455,15 +451,14 @@ export default function EstimateDetail() {
               id="client-mode"
               checked={clientMode}
               onCheckedChange={setClientMode}
-              className="scale-75"
+              className="scale-75 data-[state=checked]:bg-white data-[state=unchecked]:bg-[#333]"
             />
           </div>
-          
-          <Button 
-            onClick={handleDownloadPdf} 
+
+          <button
+            onClick={handleDownloadPdf}
             disabled={downloading || !estimate.final_cp_total}
-            className="gap-2"
-            size="sm"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#333] text-[#E8E8E8] bg-transparent hover:bg-[#111] rounded-[4px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-mono uppercase tracking-[0.08em]"
           >
             {downloading ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -471,14 +466,12 @@ export default function EstimateDetail() {
               <Download className="h-4 w-4" />
             )}
             PDF
-          </Button>
-          
-          <Button 
-            onClick={handleDownloadWord} 
+          </button>
+
+          <button
+            onClick={handleDownloadWord}
             disabled={downloadingWord || !estimate.final_cp_total}
-            className="gap-2"
-            size="sm"
-            variant="outline"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#333] text-[#E8E8E8] bg-transparent hover:bg-[#111] rounded-[4px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-mono uppercase tracking-[0.08em]"
           >
             {downloadingWord ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -486,39 +479,36 @@ export default function EstimateDetail() {
               <FileIcon className="h-4 w-4" />
             )}
             Word
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Deal Stage Progress Bar */}
-      <div className="mb-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <div className="mb-6 p-4 bg-[#111] rounded-[12px] border border-[#222]">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-slate-700">Deal Stage</h3>
+          <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">Deal Stage</h3>
           {nextAction && (
-            <Button size="sm" onClick={nextAction.action} className="gap-1.5 bg-sky-500 hover:bg-sky-600">
+            <button onClick={nextAction.action} className="flex items-center gap-1.5 px-4 py-1.5 bg-white text-black rounded-full font-mono text-[11px] uppercase tracking-[0.08em] hover:bg-[#E8E8E8] transition-colors">
               <Send className="h-3.5 w-3.5" />
               {nextAction.label}
-            </Button>
+            </button>
           )}
         </div>
         <div className="flex items-center">
           {DEAL_STAGES.map((stage, index) => (
             <div key={stage.id} className="flex items-center flex-1">
-              <div 
+              <div
                 className={cn(
-                  "flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                  index <= currentStageIndex 
-                    ? "bg-sky-500 text-white" 
-                    : "bg-slate-100 text-slate-400"
+                  "flex items-center justify-center px-3 py-1.5 rounded-[4px] text-xs font-mono transition-all",
+                  index <= currentStageIndex
+                    ? "bg-[#2B4C8C] text-white"
+                    : "text-[#666]"
                 )}
               >
                 {stage.label}
               </div>
               {index < DEAL_STAGES.length - 1 && (
-                <ChevronRight className={cn(
-                  "h-4 w-4 mx-1 flex-shrink-0",
-                  index < currentStageIndex ? "text-sky-500" : "text-slate-200"
-                )} />
+                <ChevronRight className="h-4 w-4 mx-1 flex-shrink-0 text-[#333]" />
               )}
             </div>
           ))}
@@ -529,77 +519,75 @@ export default function EstimateDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column (2/3 width) */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Investment Summary - Premium Dark Card */}
-          <Card className="overflow-hidden border-0 shadow-xl">
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white">
+          {/* Investment Summary */}
+          <div className="bg-[#111] border border-[#222] rounded-[12px] p-6">
               <div className="flex items-center gap-2 mb-4">
-                <DollarSign className="h-5 w-5 text-sky-400" />
-                <h3 className="text-lg font-semibold">Investment Summary</h3>
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">Investment Summary</h3>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={() => setSelectedPriceLevel('low')}
                   className={cn(
-                    "p-3 rounded-xl text-center transition-all",
+                    "p-3 rounded-[4px] text-center transition-all",
                     selectedPriceLevel === 'low'
-                      ? "bg-white/15 ring-2 ring-sky-400"
-                      : "bg-white/5 hover:bg-white/10"
+                      ? "border-b-2 border-[#2B4C8C]"
+                      : "hover:bg-[#1a1a1a]"
                   )}
                 >
-                  <p className="text-xs text-slate-400 mb-1">Low</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-1">Low</p>
                   <p className={cn(
-                    "text-lg sm:text-xl font-semibold",
-                    selectedPriceLevel === 'low' ? 'text-sky-400' : 'text-white/80'
+                    "font-mono text-lg sm:text-xl tabular-nums",
+                    selectedPriceLevel === 'low' ? 'text-white' : 'text-[#666]'
                   )}>
                     {formatCurrency(estimate.low_estimate_cp)}
                   </p>
                 </button>
-                
+
                 <button
                   onClick={() => setSelectedPriceLevel('recommended')}
                   className={cn(
-                    "p-3 rounded-xl text-center transition-all relative",
+                    "p-3 rounded-[4px] text-center transition-all relative",
                     selectedPriceLevel === 'recommended'
-                      ? "bg-white/15 ring-2 ring-sky-400"
-                      : "bg-white/5 hover:bg-white/10"
+                      ? "border-b-2 border-[#2B4C8C]"
+                      : "hover:bg-[#1a1a1a]"
                   )}
                 >
                   <p className={cn(
-                    "text-xs mb-1",
-                    selectedPriceLevel === 'recommended' ? 'text-sky-400' : 'text-slate-400'
+                    "font-mono text-[11px] uppercase tracking-[0.08em] mb-1",
+                    selectedPriceLevel === 'recommended' ? 'text-[#999]' : 'text-[#666]'
                   )}>Recommended</p>
                   <p className={cn(
-                    "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight",
-                    selectedPriceLevel === 'recommended' ? 'text-white' : 'text-white/80'
+                    "font-mono text-[32px] sm:text-[36px] lg:text-[42px] font-normal tracking-tight tabular-nums",
+                    selectedPriceLevel === 'recommended' ? 'text-white' : 'text-[#666]'
                   )}>
                     {formatCurrency(estimate.final_cp_total)}
                   </p>
                 </button>
-                
+
                 <button
                   onClick={() => setSelectedPriceLevel('high')}
                   className={cn(
-                    "p-3 rounded-xl text-center transition-all",
+                    "p-3 rounded-[4px] text-center transition-all",
                     selectedPriceLevel === 'high'
-                      ? "bg-white/15 ring-2 ring-sky-400"
-                      : "bg-white/5 hover:bg-white/10"
+                      ? "border-b-2 border-[#2B4C8C]"
+                      : "hover:bg-[#1a1a1a]"
                   )}
                 >
-                  <p className="text-xs text-slate-400 mb-1">High</p>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-1">High</p>
                   <p className={cn(
-                    "text-lg sm:text-xl font-semibold",
-                    selectedPriceLevel === 'high' ? 'text-sky-400' : 'text-white/80'
+                    "font-mono text-lg sm:text-xl tabular-nums",
+                    selectedPriceLevel === 'high' ? 'text-white' : 'text-[#666]'
                   )}>
                     {formatCurrency(estimate.high_estimate_cp)}
                   </p>
                 </button>
               </div>
-              
+
               {/* Show Range Toggle */}
-              <div className="mt-4 pt-4 border-t border-white/10">
+              <div className="mt-4 pt-4 border-t border-[#222]">
                 <div className="flex items-center justify-between mb-3">
-                  <Label htmlFor="show-range" className="text-sm text-slate-300 cursor-pointer">
+                  <Label htmlFor="show-range" className="text-sm text-[#999] cursor-pointer">
                     Show price range on PDF
                   </Label>
                   <Switch
@@ -612,48 +600,47 @@ export default function EstimateDetail() {
                         setCustomHighPrice(String(estimate.high_estimate_cp || estimate.final_cp_total || 0));
                       }
                     }}
-                    className="data-[state=checked]:bg-sky-500"
+                    className="data-[state=checked]:bg-white data-[state=unchecked]:bg-[#333]"
                   />
                 </div>
-                
+
                 {showRange && (
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Low Price</label>
+                      <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-1 block">Low Price</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666]">$</span>
                         <input
                           type="number"
                           value={customLowPrice}
                           onChange={(e) => setCustomLowPrice(e.target.value)}
                           placeholder="48880"
-                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 pl-7 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                          className="w-full bg-black border border-[#333] rounded-[4px] px-3 pl-7 py-2 text-[#E8E8E8] font-mono tabular-nums placeholder:text-[#333] focus:outline-none focus:border-[#2B4C8C]"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">High Price</label>
+                      <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-1 block">High Price</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666]">$</span>
                         <input
                           type="number"
                           value={customHighPrice}
                           onChange={(e) => setCustomHighPrice(e.target.value)}
                           placeholder="55600"
-                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 pl-7 py-2 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                          className="w-full bg-black border border-[#333] rounded-[4px] px-3 pl-7 py-2 text-[#E8E8E8] font-mono tabular-nums placeholder:text-[#333] focus:outline-none focus:border-[#2B4C8C]"
                         />
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-              
-              
-              <p className="text-[10px] text-slate-500 text-center mt-3">
+
+
+              <p className="font-mono text-[10px] text-[#666] text-center mt-3 uppercase tracking-[0.08em]">
                 {showRange ? 'PDF will show range' : 'Tap to select price for PDF'}
               </p>
-            </div>
-          </Card>
+          </div>
 
           {/* Project Photos Card */}
           <ProjectPhotosCard estimateId={estimate.id} />
@@ -706,25 +693,25 @@ export default function EstimateDetail() {
           )}
 
           {/* Activity Log Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
+          <div className="bg-[#111] border border-[#222] rounded-[12px]">
+            <div className="p-4 pb-3">
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5" />
                 Activity Log
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+              </h3>
+            </div>
+            <div className="px-4 pb-4">
               <div className="space-y-3">
                 {activityLog.map((entry, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                      <entry.icon className="h-3.5 w-3.5 text-slate-500" />
+                    <div className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#222] flex items-center justify-center flex-shrink-0">
+                      <entry.icon className="h-3.5 w-3.5 text-[#666]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-700">{entry.action}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.date.toLocaleDateString('en-US', { 
-                          month: 'short', 
+                      <p className="text-sm text-[#E8E8E8]">{entry.action}</p>
+                      <p className="font-mono text-[11px] text-[#666] tabular-nums">
+                        {entry.date.toLocaleDateString('en-US', {
+                          month: 'short',
                           day: 'numeric',
                           hour: 'numeric',
                           minute: '2-digit'
@@ -734,8 +721,8 @@ export default function EstimateDetail() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
         </div>
       </div>

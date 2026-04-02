@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -738,21 +737,21 @@ export function AddSectionCard({ estimate, onUpdate }: AddSectionCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Plus className="h-5 w-5" />
+    <div className="bg-[#111] border border-[#222] rounded-[12px]">
+      <div className="p-4">
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] flex items-center gap-2">
+          <Plus className="h-3.5 w-3.5" />
           Add Section
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+        </h3>
+      </div>
+      <div className="px-4 pb-4 space-y-3">
         {/* Add from Template */}
         <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" className="w-full justify-start gap-2">
+            <button className="w-full flex items-center gap-2 px-3 py-2 border border-[#333] text-[#999] rounded-full font-mono text-[11px] uppercase tracking-[0.08em] hover:text-[#E8E8E8] hover:border-[#666] transition-colors">
               <Sparkles className="h-4 w-4" />
               Add from Template
-            </Button>
+            </button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -781,7 +780,7 @@ export function AddSectionCard({ estimate, onUpdate }: AddSectionCardProps) {
                           <template.icon className="h-4 w-4" />
                           <div>
                             <div className="font-medium">{template.label}</div>
-                            <div className="text-xs text-muted-foreground">{template.description}</div>
+                            <div className="text-xs text-[#666]">{template.description}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -804,14 +803,13 @@ export function AddSectionCard({ estimate, onUpdate }: AddSectionCardProps) {
         {/* Clone Existing Section */}
         <Dialog open={cloneDialogOpen} onOpenChange={setCloneDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start gap-2"
+            <button
+              className="w-full flex items-center gap-2 px-3 py-2 border border-[#333] text-[#999] rounded-full font-mono text-[11px] uppercase tracking-[0.08em] hover:text-[#E8E8E8] hover:border-[#666] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               disabled={existingRoomLabels.length === 0}
             >
               <Copy className="h-4 w-4" />
               Clone Existing Section
-            </Button>
+            </button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -844,8 +842,8 @@ export function AddSectionCard({ estimate, onUpdate }: AddSectionCardProps) {
               </div>
               
               {selectedCloneRoom && (
-                <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                  <p className="text-muted-foreground">
+                <div className="p-3 bg-black border border-[#222] rounded-[4px] text-sm">
+                  <p className="text-[#666]">
                     This will duplicate {existingLineItems.filter(i => i.room_label === selectedCloneRoom).length} items 
                     from "{selectedCloneRoom}"
                   </p>
@@ -864,11 +862,11 @@ export function AddSectionCard({ estimate, onUpdate }: AddSectionCardProps) {
         </Dialog>
 
         {existingRoomLabels.length === 0 && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-[#666]">
             Clone option will be available after you have line items with room labels.
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ImagePlus, X, Loader2, Trash2 } from 'lucide-react';
+import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -135,29 +133,28 @@ export function ProjectPhotosCard({ estimateId }: ProjectPhotosCardProps) {
   const placeholderCount = Math.max(0, 4 - photos.length);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <div className="bg-[#111] border border-[#222] rounded-[12px]">
+      <div className="p-4 pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <ImagePlus className="h-4 w-4 text-muted-foreground" />
+          <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] flex items-center gap-2">
+            <ImagePlus className="h-3.5 w-3.5" />
             Project Photos
-          </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
+          </h3>
+          <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-[#333] text-[#999] rounded-full font-mono text-[11px] uppercase tracking-[0.08em] hover:text-[#E8E8E8] hover:border-[#666] transition-colors disabled:opacity-40"
           >
             {uploading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <ImagePlus className="h-4 w-4 mr-1" />
+              <ImagePlus className="h-4 w-4" />
             )}
             Add Photos
-          </Button>
+          </button>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div className="px-4 pb-4">
         <input
           ref={fileInputRef}
           type="file"
@@ -169,7 +166,7 @@ export function ProjectPhotosCard({ estimateId }: ProjectPhotosCardProps) {
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#666]" />
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -177,18 +174,16 @@ export function ProjectPhotosCard({ estimateId }: ProjectPhotosCardProps) {
             {photos.map((photo) => (
               <div
                 key={photo.name}
-                className="relative aspect-square rounded-lg overflow-hidden group"
+                className="relative aspect-square rounded-[4px] overflow-hidden group border border-[#222]"
               >
                 <img
                   src={photo.url}
                   alt="Project photo"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="h-8 w-8"
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    className="h-8 w-8 flex items-center justify-center bg-[#D71921] text-white rounded-[4px] hover:bg-red-700 transition-colors"
                     onClick={() => handleDelete(photo.name)}
                     disabled={deletingPhoto === photo.name}
                   >
@@ -197,7 +192,7 @@ export function ProjectPhotosCard({ estimateId }: ProjectPhotosCardProps) {
                     ) : (
                       <Trash2 className="h-4 w-4" />
                     )}
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}
@@ -208,24 +203,24 @@ export function ProjectPhotosCard({ estimateId }: ProjectPhotosCardProps) {
                 key={`placeholder-${i}`}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  "aspect-square rounded-lg border-2 border-dashed border-slate-200 bg-slate-50",
-                  "flex flex-col items-center justify-center text-slate-400",
-                  "hover:border-sky-300 hover:bg-sky-50/50 transition-colors cursor-pointer"
+                  "aspect-square rounded-[4px] border border-dashed border-[#333] bg-black",
+                  "flex flex-col items-center justify-center text-[#666]",
+                  "hover:border-[#666] hover:bg-[#111] transition-colors cursor-pointer"
                 )}
               >
                 <ImagePlus className="h-6 w-6 mb-1" />
-                <span className="text-xs">Before {photos.length + i + 1}</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.08em]">Before {photos.length + i + 1}</span>
               </div>
             ))}
           </div>
         )}
 
         {photos.length > 0 && (
-          <p className="text-xs text-muted-foreground mt-3 text-center">
+          <p className="font-mono text-[11px] text-[#666] mt-3 text-center uppercase tracking-[0.08em]">
             {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

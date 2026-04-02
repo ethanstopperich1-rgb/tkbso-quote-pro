@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +6,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Estimate } from '@/types/database';
 import { Plus, X, Sparkles, Edit2, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export interface Additional {
   id: string;
@@ -183,44 +181,43 @@ export function AdditionalsCard({ estimate, onUpdate }: AdditionalsCardProps) {
   const totalAdditionals = additionals.reduce((sum, a) => sum + a.price, 0);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-amber-500" />
+    <div className="bg-[#111] border border-[#222] rounded-[12px]">
+      <div className="p-4 pb-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">
             Recommended Additionals
-          </div>
+          </h3>
           {additionals.length > 0 && (
-            <span className="text-sm font-normal text-muted-foreground">
+            <span className="font-mono text-[11px] text-[#999] tabular-nums">
               Total: ${totalAdditionals.toLocaleString()}
             </span>
           )}
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">
+        </div>
+        <p className="text-xs text-[#666] mt-1">
           Optional upgrades shown on PDF for client consideration
         </p>
-      </CardHeader>
-      <CardContent className="space-y-3">
+      </div>
+      <div className="px-4 pb-4 space-y-3">
         {/* Existing additionals */}
         {additionals.map((item) => (
-          <div 
-            key={item.id} 
-            className="flex items-start justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"
+          <div
+            key={item.id}
+            className="flex items-start justify-between p-3 bg-black rounded-[4px] border border-[#222]"
           >
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-slate-800">{item.description}</p>
+              <p className="text-sm text-[#E8E8E8]">{item.description}</p>
               {item.details && (
-                <p className="text-xs text-slate-500 mt-0.5">{item.details}</p>
+                <p className="text-xs text-[#666] mt-0.5">{item.details}</p>
               )}
             </div>
             <div className="flex items-center gap-2 ml-3">
               {editingId === item.id ? (
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-400">$</span>
+                  <span className="text-[#666]">$</span>
                   <Input
                     type="number"
                     defaultValue={item.price}
-                    className="w-20 h-7 text-sm"
+                    className="w-20 h-7 text-sm bg-black border-[#333] text-[#E8E8E8] font-mono tabular-nums"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         handleUpdatePrice(item.id, (e.target as HTMLInputElement).value);
@@ -232,7 +229,7 @@ export function AdditionalsCard({ estimate, onUpdate }: AdditionalsCardProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0"
+                    className="h-7 w-7 p-0 text-[#666] hover:text-[#E8E8E8] hover:bg-transparent"
                     onClick={() => setEditingId(null)}
                   >
                     <Check className="h-3.5 w-3.5" />
@@ -240,13 +237,13 @@ export function AdditionalsCard({ estimate, onUpdate }: AdditionalsCardProps) {
                 </div>
               ) : (
                 <>
-                  <span className="font-semibold text-sm text-slate-700">
+                  <span className="font-mono text-sm text-[#E8E8E8] tabular-nums">
                     ${item.price.toLocaleString()}
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
+                    className="h-7 w-7 p-0 text-[#666] hover:text-[#E8E8E8] hover:bg-transparent"
                     onClick={() => setEditingId(item.id)}
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -254,7 +251,7 @@ export function AdditionalsCard({ estimate, onUpdate }: AdditionalsCardProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 text-slate-400 hover:text-red-500"
+                    className="h-7 w-7 p-0 text-[#666] hover:text-[#D71921] hover:bg-transparent"
                     onClick={() => handleRemove(item.id)}
                   >
                     <X className="h-3.5 w-3.5" />
@@ -267,53 +264,53 @@ export function AdditionalsCard({ estimate, onUpdate }: AdditionalsCardProps) {
 
         {/* Add form */}
         {showAddForm && (
-          <div className="space-y-3 p-3 border rounded-lg bg-white">
+          <div className="space-y-3 p-3 border border-[#222] rounded-[4px] bg-black">
             <div>
-              <Label className="text-xs">Description *</Label>
+              <Label className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">Description *</Label>
               <Input
                 placeholder="e.g., Heated Floor System"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-[#111] border-[#333] text-[#E8E8E8] placeholder:text-[#333]"
               />
             </div>
             <div>
-              <Label className="text-xs">Details (optional)</Label>
+              <Label className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">Details (optional)</Label>
               <Input
                 placeholder="e.g., Warm tiles year-round"
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-[#111] border-[#333] text-[#E8E8E8] placeholder:text-[#333]"
               />
             </div>
             <div>
-              <Label className="text-xs">Price *</Label>
+              <Label className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">Price *</Label>
               <div className="relative mt-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666]">$</span>
                 <Input
                   type="number"
                   placeholder="1200"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="pl-7"
+                  className="pl-7 bg-[#111] border-[#333] text-[#E8E8E8] font-mono tabular-nums placeholder:text-[#333]"
                 />
               </div>
             </div>
             <div className="flex gap-2 pt-2">
-              <Button size="sm" onClick={handleAddCustom} disabled={saving}>
+              <button onClick={handleAddCustom} disabled={saving} className="px-4 py-1.5 bg-white text-black rounded-full font-mono text-[11px] uppercase tracking-[0.08em] hover:bg-[#E8E8E8] transition-colors disabled:opacity-40">
                 {saving ? 'Saving...' : 'Add'}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setShowAddForm(false)}>
+              </button>
+              <button onClick={() => setShowAddForm(false)} className="px-4 py-1.5 text-[#666] hover:text-[#E8E8E8] font-mono text-[11px] uppercase tracking-[0.08em] transition-colors">
                 Cancel
-              </Button>
+              </button>
             </div>
           </div>
         )}
 
         {/* Library */}
         {showLibrary && (
-          <div className="space-y-2 p-3 border rounded-lg bg-white max-h-80 overflow-y-auto">
-            <p className="text-xs font-medium text-slate-600 mb-2">Quick Add from Library</p>
+          <div className="space-y-2 p-3 border border-[#222] rounded-[4px] bg-black max-h-80 overflow-y-auto">
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666] mb-2">Quick Add from Library</p>
             <div className="grid grid-cols-1 gap-2">
               {COMMON_ADDITIONALS.filter(
                 item => !additionals.some(a => a.description === item.description)
@@ -321,54 +318,48 @@ export function AdditionalsCard({ estimate, onUpdate }: AdditionalsCardProps) {
                 <button
                   key={index}
                   onClick={() => handleAddFromLibrary(item)}
-                  className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-sky-300 hover:bg-sky-50 transition-all text-left"
+                  className="flex items-center justify-between p-2.5 rounded-[4px] border border-[#222] hover:border-[#333] hover:bg-[#111] transition-all text-left"
                 >
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-700">{item.description}</p>
-                    <p className="text-xs text-slate-500">{item.details}</p>
+                    <p className="text-sm text-[#E8E8E8]">{item.description}</p>
+                    <p className="text-xs text-[#666]">{item.details}</p>
                   </div>
-                  <span className="text-sm font-semibold text-slate-600 ml-3">
+                  <span className="font-mono text-sm text-[#999] tabular-nums ml-3">
                     ${item.price.toLocaleString()}
                   </span>
                 </button>
               ))}
             </div>
-            <Button 
-              size="sm" 
-              variant="ghost" 
+            <button
               onClick={() => setShowLibrary(false)}
-              className="w-full mt-2"
+              className="w-full mt-2 py-1.5 text-[#666] hover:text-[#E8E8E8] font-mono text-[11px] uppercase tracking-[0.08em] transition-colors"
             >
               Close
-            </Button>
+            </button>
           </div>
         )}
 
         {/* Action buttons */}
         {!showAddForm && !showLibrary && (
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
+            <button
               onClick={() => setShowAddForm(true)}
-              className="flex-1"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-[#333] text-[#999] rounded-full font-mono text-[11px] uppercase tracking-[0.08em] hover:text-[#E8E8E8] hover:border-[#666] transition-colors"
             >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              <Plus className="h-3.5 w-3.5" />
               Add Custom
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
+            </button>
+            <button
               onClick={() => setShowLibrary(true)}
-              className="flex-1"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-[#333] text-[#999] rounded-full font-mono text-[11px] uppercase tracking-[0.08em] hover:text-[#E8E8E8] hover:border-[#666] transition-colors"
             >
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              <Sparkles className="h-3.5 w-3.5" />
               Quick Add
-            </Button>
+            </button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
