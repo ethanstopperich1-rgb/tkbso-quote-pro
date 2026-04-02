@@ -4,106 +4,84 @@
 
 @layer base {
   :root {
-    /* Luxury Color Palette - Ritz-Carlton Inspired */
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* Nothing Design System — TKBSO Dark Mode */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 91%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 91%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 91%;
 
-    /* Primary - Deep Navy (luxury-navy) */
-    --primary: 222 47% 11%;
+    /* Primary — TKBSO Navy Blue */
+    --primary: 220 53% 36%;
     --primary-foreground: 0 0% 100%;
 
-    /* Accent - Subtle Gold */
-    --accent: 43 74% 52%;
-    --accent-foreground: 222 47% 11%;
+    /* Secondary — Surface raised */
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 91%;
 
-    /* Secondary - Pearl */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* Muted — Surface */
+    --muted: 0 0% 7%;
+    --muted-foreground: 0 0% 60%;
 
-    /* Muted - Slate */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 25% 35%;
+    /* Accent — Navy subtle */
+    --accent: 220 53% 36%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Destructive */
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
+    /* Destructive — Nothing Red */
+    --destructive: 357 80% 47%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Borders & Inputs - Silver */
-    --border: 215 25% 73%;
-    --input: 215 25% 73%;
-    --ring: 222 47% 11%;
-
-    /* Glow effects - muted */
-    --glow: 222 47% 11%;
-    --glow-muted: 215 25% 50%;
+    /* Borders */
+    --border: 0 0% 13%;
+    --input: 0 0% 13%;
+    --ring: 220 53% 36%;
 
     /* Sidebar */
-    --sidebar-background: 210 40% 98%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 222 47% 11%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 91%;
+    --sidebar-primary: 220 53% 36%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 43 74% 52%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 215 25% 73%;
-    --sidebar-ring: 222 47% 11%;
+    --sidebar-accent: 220 53% 36%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 13%;
+    --sidebar-ring: 220 53% 36%;
 
-    /* Radius - refined */
+    /* Radius */
     --radius: 0.75rem;
 
-    /* Shadows - subtle elegance */
-    --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.02);
-    --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.03);
-    --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.04);
-    --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.05);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08);
-    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.12);
+    /* No shadows in Nothing design */
+    --shadow-2xs: none;
+    --shadow-xs: none;
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+    --shadow-xl: none;
+    --shadow-2xl: none;
 
     /* Chart colors */
-    --chart-1: 222 47% 11%;
-    --chart-2: 215 25% 35%;
-    --chart-3: 43 74% 52%;
-    --chart-4: 158 64% 40%;
-    --chart-5: 215 16% 47%;
+    --chart-1: 220 53% 36%;
+    --chart-2: 0 0% 60%;
+    --chart-3: 43 52% 55%;
+    --chart-4: 130 35% 46%;
+    --chart-5: 0 0% 40%;
 
-    /* Brand identity color */
-    --brand-primary: 222 47% 11%;
-    
-    /* Luxury specific tokens */
-    --luxury-navy: 222 47% 11%;
-    --luxury-charcoal: 217 33% 17%;
-    --luxury-slate: 215 25% 35%;
-    --luxury-silver: 215 25% 73%;
-    --luxury-pearl: 210 40% 97%;
-    --luxury-gold: 43 74% 49%;
-    --luxury-success: 158 64% 40%;
-  }
-
-  /* Dark mode variant */
-  .dark {
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
-    --accent: 43 74% 52%;
-    --accent-foreground: 222 47% 11%;
-    --secondary: 215 25% 20%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 43 74% 52%;
+    /* Nothing design tokens */
+    --nothing-bg: 0 0% 0%;
+    --nothing-surface: 0 0% 7%;
+    --nothing-surface-raised: 0 0% 10%;
+    --nothing-border: 0 0% 13%;
+    --nothing-border-visible: 0 0% 20%;
+    --nothing-text-disabled: 0 0% 40%;
+    --nothing-text-secondary: 0 0% 60%;
+    --nothing-text-primary: 0 0% 91%;
+    --nothing-text-display: 0 0% 100%;
+    --nothing-accent: 220 53% 36%;
+    --nothing-success: 130 35% 46%;
+    --nothing-warning: 43 52% 55%;
+    --nothing-error: 357 80% 47%;
   }
 }
 
@@ -114,112 +92,112 @@
 
   html {
     font-size: 16px;
+    color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
     font-weight: 400;
     letter-spacing: -0.01em;
     min-height: 100vh;
+    background-color: #000000;
+    color: #E8E8E8;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 600;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 500;
     letter-spacing: -0.02em;
-  }
-  
-  /* Use Inter for UI headings (cards, buttons, nav) */
-  .font-ui {
-    font-family: 'Inter', system-ui, sans-serif;
+    color: #FFFFFF;
   }
 }
 
 @layer components {
-  /* Refined Card - subtle elegance */
-  .glass-card {
-    @apply bg-card border border-border shadow-sm rounded-xl;
+  /* Nothing label style — used everywhere */
+  .nothing-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #999999;
   }
 
-  /* Card with subtle emphasis */
-  .glass-card-glow {
-    @apply glass-card;
-    box-shadow: 
-      0 4px 12px rgba(0, 0, 0, 0.04),
-      0 0 0 1px hsl(var(--border));
-  }
-
-  /* Active card with gold accent */
-  .glass-card-active {
-    @apply glass-card;
-    box-shadow: 
-      0 4px 12px rgba(0, 0, 0, 0.04),
-      0 0 0 1px hsl(var(--luxury-gold) / 0.3);
-  }
-
-  /* Refined Input - subtle focus */
-  .glass-input {
-    @apply bg-muted/30 border border-border rounded-lg px-4 py-3;
-    @apply focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none;
-    @apply placeholder:text-muted-foreground/50 transition-all duration-200;
-  }
-
-  /* Refined Button - no scale, smooth transition */
-  .glass-button {
-    @apply bg-primary text-primary-foreground font-medium rounded-lg px-6 py-3;
-    @apply transition-all duration-200 ease-out;
-    @apply hover:bg-primary/90 hover:shadow-md;
-    @apply active:bg-primary/95;
-  }
-
-  .glass-button-secondary {
-    @apply bg-white text-foreground border border-border font-medium rounded-lg px-6 py-3;
-    @apply transition-all duration-200 ease-out;
-    @apply hover:border-primary/30 hover:shadow-sm;
-    @apply active:bg-muted/50;
-  }
-
-  /* Chat bubbles - refined */
-  .chat-bubble-user {
-    @apply bg-primary text-primary-foreground rounded-xl rounded-br-sm px-4 py-3 max-w-[85%];
-    @apply shadow-sm;
-  }
-
-  .chat-bubble-ai {
-    @apply bg-muted/50 rounded-xl rounded-bl-sm px-4 py-3 max-w-[85%];
-    @apply border border-border;
-  }
-
-  /* Quote Summary Card */
-  .quote-card {
-    @apply glass-card-active p-6;
-  }
-
-  /* Sidebar style */
-  .sidebar-glass {
-    @apply bg-sidebar border-r border-border;
-  }
-
-  /* Stats/Metric display */
-  .stat-value {
-    @apply text-3xl font-semibold tracking-tight text-foreground;
+  /* Nothing data/number style */
+  .nothing-data {
+    font-family: 'Space Mono', monospace;
     font-variant-numeric: tabular-nums;
   }
 
-  /* Loading shimmer effect */
-  .shimmer {
-    @apply animate-shimmer bg-shimmer bg-[length:200%_100%];
+  /* Nothing hero number */
+  .nothing-hero {
+    font-family: 'Doto', 'Space Mono', monospace;
+    font-variant-numeric: tabular-nums;
   }
-  
-  /* Luxury gold accent bar */
-  .luxury-accent-bar {
-    @apply h-0.5 w-12 bg-gradient-to-r from-[hsl(43,74%,52%)] to-[hsl(43,74%,62%)];
+
+  /* Nothing card */
+  .nothing-card {
+    background: #111111;
+    border: 1px solid #222222;
+    border-radius: 12px;
   }
-  
-  /* Professional insight card (replaces Pro Tip) */
-  .insight-card {
-    @apply bg-muted/30 border border-border rounded-lg p-4;
+
+  /* Nothing pill button */
+  .nothing-pill {
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
+  /* Nothing technical button */
+  .nothing-btn-tech {
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  /* Chat bubbles — Nothing style */
+  .chat-bubble-user {
+    background: #2B4C8C;
+    color: #FFFFFF;
+    border-radius: 12px;
+    border-top-right-radius: 4px;
+    padding: 12px 16px;
+    max-width: 78%;
+  }
+
+  .chat-bubble-ai {
+    background: #111111;
+    border: 1px solid #222222;
+    color: #E8E8E8;
+    border-radius: 12px;
+    border-top-left-radius: 4px;
+    padding: 12px 16px;
+    max-width: 78%;
+  }
+
+  /* Nothing input */
+  .nothing-input {
+    background: #111111;
+    border: 1px solid #222222;
+    border-radius: 8px;
+    color: #E8E8E8;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .nothing-input:focus {
+    border-color: #2B4C8C;
+  }
+
+  /* Sidebar */
+  .sidebar-glass {
+    background: #000000;
+    border-right: 1px solid #222222;
   }
 }
 
@@ -228,29 +206,27 @@
     text-wrap: balance;
   }
 
-  /* Serif headings utility */
-  .font-serif {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-  }
-  
-  /* Tabular numbers for prices */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Subtle grid background */
-  .bg-grid {
-    background-image: 
-      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
-    background-size: 40px 40px;
+  .font-space-mono {
+    font-family: 'Space Mono', monospace;
+  }
+
+  .font-space-grotesk {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  .font-doto {
+    font-family: 'Doto', 'Space Mono', monospace;
   }
 }
 
-/* Scrollbar styling - refined */
+/* Scrollbar — Nothing style */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -258,16 +234,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 3px;
+  background: #222222;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.4);
+  background: #333333;
 }
 
-/* Selection styling */
+/* Selection */
 ::selection {
-  background: hsl(var(--luxury-gold) / 0.2);
+  background: rgba(43, 76, 140, 0.3);
   color: inherit;
 }

@@ -17,18 +17,18 @@ export function ChatMessage({ message }: Props) {
     >
       <div
         className={cn(
-          'max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
+          'max-w-[78%] px-4 py-3 text-sm leading-relaxed',
           isAssistant
-            ? 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-sm'
-            : 'bg-slate-800 text-white rounded-tr-sm font-medium'
+            ? 'bg-[#111] border border-[#222] text-[#E8E8E8] rounded-[12px] rounded-tl-[4px]'
+            : 'bg-[#2B4C8C] text-white rounded-[12px] rounded-tr-[4px]'
         )}
         style={{ whiteSpace: 'pre-line' }}
       >
         {message.text}
         <div
           className={cn(
-            'text-[10px] mt-1.5 select-none',
-            isAssistant ? 'text-slate-400' : 'text-white/40'
+            'font-mono text-[10px] mt-1.5 select-none tabular-nums',
+            isAssistant ? 'text-[#666]' : 'text-white/40'
           )}
         >
           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

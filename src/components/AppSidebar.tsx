@@ -1,4 +1,4 @@
-import { LayoutDashboard, MessageSquare, FileText, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranding } from "@/contexts/BrandingContext";
@@ -6,91 +6,82 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "New Quote", url: "/estimator", icon: MessageSquare },
-  { title: "Projects", url: "/estimates", icon: FileText },
+  { title: "DASHBOARD", url: "/dashboard" },
+  { title: "NEW QUOTE", url: "/estimator" },
+  { title: "PROJECTS", url: "/estimates" },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
   const { branding } = useBranding();
-  const { state, toggleSidebar } = useSidebar();
-  const isCollapsed = state === "collapsed";
-
-  const { companyName, logoUrl, primaryColor, accentColor } = branding;
+  const { logoUrl } = branding;
 
   return (
-    <Sidebar 
-      className="sidebar-glass transition-all duration-300"
-      collapsible="icon"
+    <Sidebar
+      className="!bg-black border-r border-[#222] !w-[200px] min-w-[200px] max-w-[200px]"
+      collapsible="none"
     >
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          {logoUrl ? (
-            <img 
-              src={logoUrl} 
-              alt="Company logo" 
-              className="w-10 h-10 rounded-xl object-contain bg-white/10 flex-shrink-0 border border-white/10"
-            />
-          ) : (
-            <div 
-              className="w-10 h-10 rounded-xl flex-shrink-0 relative overflow-hidden" 
-              style={{ backgroundColor: primaryColor }}
-            >
-              <span className="absolute inset-0 flex items-center justify-center text-white font-black text-lg">
-                {companyName.slice(0, 1).toUpperCase()}
-              </span>
-              <div 
-                className="absolute top-1 right-1 w-2 h-2 rounded-full" 
-                style={{ backgroundColor: accentColor }} 
-              />
-            </div>
-          )}
-          {!isCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="font-display font-semibold text-sm text-sidebar-foreground truncate tracking-tight">
-                {companyName}
-              </span>
-              <span className="text-xs text-sidebar-foreground/50">TKBSO Quote Pro</span>
-            </div>
-          )}
-        </div>
+      {/* Logo */}
+      <SidebarHeader className="px-5 pt-6 pb-8">
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt="TKBSO"
+            className="h-8 w-auto object-contain opacity-90"
+          />
+        ) : (
+          <img
+            src="/images/tkbso-logo-white-on-dark.png"
+            alt="TKBSO"
+            className="h-8 w-auto object-contain opacity-90"
+          />
+        )}
       </SidebarHeader>
 
-      <SidebarContent className="px-2">
+      {/* Nav */}
+      <SidebarContent className="px-0 flex-1">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-0">
               {navItems.map((item) => {
-                const isActive = location.pathname === item.url || 
-                  (item.url === '/estimates' && location.pathname.startsWith('/estimates')) ||
-                  (item.url === '/settings' && location.pathname.startsWith('/settings'));
+                const isActive =
+                  location.pathname === item.url ||
+                  (item.url === "/estimates" &&
+                    location.pathname.startsWith("/estimates"));
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      tooltip={isCollapsed ? item.title : undefined}
-                      className={`w-full rounded-xl transition-all duration-300 ${
-                        isActive
-                          ? "bg-accent text-accent-foreground shadow-glow hover:bg-accent hover:text-accent-foreground"
-                          : "text-sidebar-foreground/70 hover:bg-white/[0.06] hover:text-sidebar-foreground"
-                      }`}
+                      className="!rounded-none !bg-transparent hover:!bg-transparent !h-auto !p-0"
                     >
-                      <NavLink to={item.url} className="flex items-center gap-3 px-3 py-2.5">
-                        <item.icon className="h-5 w-5 flex-shrink-0" />
-                        {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                      <NavLink
+                        to={item.url}
+                        className="relative flex items-center w-full px-5 py-2.5"
+                      >
+                        {/* Left accent bar */}
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-[#2B4C8C]" />
+                        )}
+                        <span
+                          className={`font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-150 ${
+                            isActive
+                              ? "text-white"
+                              : "text-[#666] hover:text-[#999]"
+                          }`}
+                        >
+                          {isActive ? `[ ${item.title} ]` : item.title}
+                        </span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -101,36 +92,24 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-white/[0.06]">
-        <div className="flex flex-col gap-3">
-          {!isCollapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-sidebar-foreground">
-                {profile?.name || profile?.email?.split('@')[0] || 'User'}
-              </span>
-              <span className="text-xs text-sidebar-foreground/50 truncate">
-                {profile?.email}
-              </span>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <button 
-              onClick={signOut}
-              className="flex items-center gap-2 text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground transition-all duration-300 hover:scale-105"
-              title="Sign Out"
-            >
-              <LogOut className="h-4 w-4" />
-              {!isCollapsed && <span>Sign Out</span>}
-            </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-white/[0.06] transition-all duration-300"
-            >
-              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
+      {/* Footer */}
+      <SidebarFooter className="px-5 py-4 border-t border-[#222]">
+        <div className="space-y-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#666] truncate">
+              {profile?.name || profile?.email?.split("@")[0] || "User"}
+            </p>
+            <p className="font-mono text-[10px] text-[#444] truncate mt-0.5">
+              {profile?.email}
+            </p>
           </div>
+          <button
+            onClick={signOut}
+            className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-[#444] hover:text-[#999] transition-colors duration-150"
+          >
+            <LogOut className="w-3 h-3" strokeWidth={1.5} />
+            SIGN OUT
+          </button>
         </div>
       </SidebarFooter>
     </Sidebar>

@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import { calculateEstimate, type EstimateState } from '@/lib/chatFlow';
-import { TrendingUp } from 'lucide-react';
 
 interface Props {
   state: Partial<EstimateState>;
@@ -17,10 +16,10 @@ export function PriceSummaryPanel({ state, visible }: Props) {
   const hasTrades = est.trades.length > 0;
 
   const marginColor =
-    est.marginPercent >= 0.35 ? 'text-emerald-600'
-    : est.marginPercent >= 0.30 ? 'text-amber-600'
-    : est.marginPercent > 0 ? 'text-red-600'
-    : 'text-slate-300';
+    est.marginPercent >= 0.35 ? 'text-[#4A9E5C]'
+    : est.marginPercent >= 0.30 ? 'text-[#D4A843]'
+    : est.marginPercent > 0 ? 'text-[#D71921]'
+    : 'text-[#666]';
 
   return (
     <div
@@ -29,11 +28,11 @@ export function PriceSummaryPanel({ state, visible }: Props) {
         visible ? 'opacity-100 max-h-[600px]' : 'opacity-0 max-h-0'
       )}
     >
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium tracking-wide uppercase">
-          <TrendingUp className="w-3 h-3" />
-          Live Estimate
-        </div>
+      <div className="bg-[#111] border border-[#222] rounded-[12px] p-4 space-y-3">
+        {/* Label */}
+        <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#999]">
+          LIVE ESTIMATE
+        </span>
 
         {/* Trade breakdown */}
         {hasTrades && (
@@ -42,12 +41,12 @@ export function PriceSummaryPanel({ state, visible }: Props) {
               .filter((t) => t.cp > 0 || t.ic > 0)
               .map((t, i) => (
                 <div key={i} className="flex justify-between text-xs">
-                  <span className="text-slate-500 truncate mr-2">{t.name}</span>
+                  <span className="text-[#999] truncate mr-2">{t.name}</span>
                   <div className="flex gap-3 flex-shrink-0">
-                    <span className="font-mono tabular-nums text-slate-700">
+                    <span className="font-mono tabular-nums text-[#E8E8E8]">
                       {fmt(t.cp)}
                     </span>
-                    <span className="font-mono tabular-nums text-slate-400 w-16 text-right">
+                    <span className="font-mono tabular-nums text-[#666] w-16 text-right">
                       {t.ic > 0 ? fmt(t.ic) : ''}
                     </span>
                   </div>
@@ -55,7 +54,7 @@ export function PriceSummaryPanel({ state, visible }: Props) {
               ))}
 
             {/* Column headers */}
-            <div className="flex justify-end text-[10px] text-slate-400 pt-1 border-t border-slate-200">
+            <div className="flex justify-end font-mono text-[10px] text-[#666] pt-1 border-t border-[#222] uppercase tracking-[0.08em]">
               <span className="mr-3">CP</span>
               <span className="w-16 text-right">IC</span>
             </div>
@@ -63,20 +62,20 @@ export function PriceSummaryPanel({ state, visible }: Props) {
         )}
 
         {/* Totals */}
-        <div className="border-t border-slate-200 pt-3 space-y-1.5">
+        <div className="border-t border-[#222] pt-3 space-y-1.5">
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-              Total CP
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#999]">
+              TOTAL CP
             </span>
-            <span className="text-xl font-semibold text-slate-900 tabular-nums font-mono">
+            <span className="font-mono text-2xl font-bold text-white tabular-nums">
               {est.subtotalCp > 0 ? fmt(est.subtotalCp) : '...'}
             </span>
           </div>
 
           {est.subtotalIc > 0 && (
             <div className="flex justify-between text-xs">
-              <span className="text-slate-400">Total IC</span>
-              <span className="font-mono tabular-nums text-slate-400">
+              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">TOTAL IC</span>
+              <span className="font-mono tabular-nums text-[#666]">
                 {fmt(est.subtotalIc)}
               </span>
             </div>
@@ -84,7 +83,7 @@ export function PriceSummaryPanel({ state, visible }: Props) {
 
           {est.marginPercent > 0 && (
             <div className="flex justify-between text-xs">
-              <span className="text-slate-400">Margin</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#666]">MARGIN</span>
               <span className={cn('font-mono tabular-nums', marginColor)}>
                 {fmt(est.margin)} ({(est.marginPercent * 100).toFixed(1)}%)
               </span>
@@ -94,13 +93,13 @@ export function PriceSummaryPanel({ state, visible }: Props) {
 
         {/* Payment milestones */}
         {est.paymentMilestones.length > 0 && est.subtotalCp > 0 && (
-          <div className="border-t border-slate-200 pt-2 space-y-1">
+          <div className="border-t border-[#222] pt-2 space-y-1">
             {est.paymentMilestones.map((m, i) => (
               <div key={i} className="flex justify-between text-[11px]">
-                <span className="text-slate-400">
+                <span className="font-mono text-[#666] uppercase tracking-[0.08em]">
                   {m.label} ({m.percent}%)
                 </span>
-                <span className="font-mono tabular-nums text-slate-500">
+                <span className="font-mono tabular-nums text-[#666]">
                   {fmt(m.amount)}
                 </span>
               </div>
@@ -108,8 +107,8 @@ export function PriceSummaryPanel({ state, visible }: Props) {
           </div>
         )}
 
-        <p className="text-[10px] text-slate-400 leading-relaxed">
-          Real TKBSO trade pricing. IC = internal cost. CP = client price.
+        <p className="font-mono text-[10px] text-[#444] leading-relaxed uppercase tracking-[0.05em]">
+          REAL TKBSO TRADE PRICING. IC = INTERNAL COST. CP = CLIENT PRICE.
         </p>
       </div>
     </div>

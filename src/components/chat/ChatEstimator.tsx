@@ -244,7 +244,7 @@ export function ChatEstimator() {
   const currentCfg = currentStep ? FLOW_STEPS[currentStep] : null;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 bg-black">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 pt-6 pb-2 space-y-3 scroll-smooth">
         {messages.map((msg) => (
@@ -255,7 +255,7 @@ export function ChatEstimator() {
       </div>
 
       {/* Bottom panel */}
-      <div className="px-4 pb-4 pt-2 space-y-3 border-t border-white/[0.05]">
+      <div className="px-4 pb-4 pt-2 space-y-3 border-t border-[#222]">
         <PriceSummaryPanel state={state} visible={showPricePanel} />
 
         {inputConfig !== null && (

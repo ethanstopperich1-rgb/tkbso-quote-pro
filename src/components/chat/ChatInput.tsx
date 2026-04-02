@@ -56,7 +56,7 @@ export function ChatInput({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Quick reply chips */}
+      {/* Quick reply chips — Nothing style */}
       {quickReplies && quickReplies.length > 0 && (
         <div className="flex flex-wrap gap-2 px-1">
           {quickReplies.map((qr) => {
@@ -75,17 +75,13 @@ export function ChatInput({
                 }}
                 disabled={disabled}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer select-none',
-                  qr.style === 'price'
-                    ? isContinue
-                      ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-700'
-                      : isSelected
-                        ? 'bg-slate-800 text-white border-slate-800'
-                        : 'bg-white text-slate-700 border-slate-300 hover:border-slate-500'
+                  'px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] border transition-colors duration-150 cursor-pointer select-none',
+                  isContinue
+                    ? 'bg-white text-black border-white rounded-pill hover:bg-[#E8E8E8]'
                     : isSelected
-                      ? 'bg-slate-100 text-slate-800 border-slate-400'
-                      : 'bg-white text-slate-500 border-slate-200 hover:text-slate-700 hover:border-slate-400',
-                  disabled && 'opacity-40 pointer-events-none'
+                      ? 'bg-[#2B4C8C] text-white border-[#2B4C8C] rounded-pill'
+                      : 'bg-transparent text-[#999] border-[#333] rounded-pill hover:text-[#E8E8E8] hover:border-[#666]',
+                  disabled && 'opacity-30 pointer-events-none'
                 )}
               >
                 {isExtras && !isContinue && (
@@ -98,11 +94,11 @@ export function ChatInput({
         </div>
       )}
 
-      {/* Text input */}
+      {/* Text input — Nothing style */}
       {(!quickReplies || quickReplies.length === 0 || inputType !== 'text') && (
         inputType !== 'text' || !quickReplies?.length
       ) && (
-        <div className="relative flex items-end bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:border-slate-400 transition-colors">
+        <div className="relative flex items-end bg-[#111] border border-[#222] rounded-lg overflow-hidden focus-within:border-[#2B4C8C] transition-colors duration-150">
           <textarea
             ref={inputRef}
             value={text}
@@ -111,24 +107,24 @@ export function ChatInput({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className="flex-1 bg-transparent px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none resize-none leading-relaxed max-h-36"
+            className="flex-1 bg-transparent px-4 py-3 text-sm text-[#E8E8E8] placeholder:text-[#444] outline-none resize-none leading-relaxed max-h-36 font-sans"
             style={{ fieldSizing: 'content' } as React.CSSProperties}
           />
           <button
             onClick={submit}
             disabled={disabled}
-            className="m-2 w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0 transition-all duration-150 disabled:opacity-20 hover:bg-slate-700 cursor-pointer"
+            className="m-2 w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 transition-colors duration-150 disabled:opacity-20 hover:bg-[#E8E8E8] cursor-pointer"
           >
-            <ArrowUp className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            <ArrowUp className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
           </button>
         </div>
       )}
 
       {/* Hint */}
       {!quickReplies?.length && (
-        <p className="text-[10px] text-slate-400 px-1 flex items-center gap-1">
-          <CornerDownLeft className="w-2.5 h-2.5" />
-          Enter to send
+        <p className="font-mono text-[10px] text-[#444] px-1 flex items-center gap-1 uppercase tracking-[0.08em]">
+          <CornerDownLeft className="w-2.5 h-2.5" strokeWidth={1.5} />
+          ENTER TO SEND
         </p>
       )}
     </div>
