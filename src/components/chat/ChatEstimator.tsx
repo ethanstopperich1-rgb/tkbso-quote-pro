@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import { cn } from '@/lib/utils';
 import {
@@ -12,12 +13,16 @@ import {
   calculateEstimate,
   isMultiSelectStep,
 } from '@/lib/chatFlow';
+import { saveEstimate } from '@/lib/saveEstimate';
+import { useAuth } from '@/hooks/useAuth';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { TypingIndicator } from './TypingIndicator';
 import { PriceSummaryPanel } from './PriceSummaryPanel';
 
 export function ChatEstimator() {
+  const navigate = useNavigate();
+  const { contractor, profile } = useAuth();
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [currentStep, setCurrentStep] = useState<FlowStep | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -193,6 +198,20 @@ export function ChatEstimator() {
             setInputConfig({ quickReplies: greeting.quickReplies });
           }, 300);
           return;
+        }
+        if (raw === 'submit' && contractor?.id) {
+          // Save to Supabase + GHL
+          const breakdown = calculateEstimate(updated);
+          saveEstimate(updated, breakdown, contractor.id, profile?.id).then((result) => {
+            if (result.error) {
+              addAssistantMessage(`⚠️ Save failed: ${result.error}. Your quote data is still here — try again.`);
+            } else {
+              // Navigate to the saved estimate after the done message shows
+              if (result.estimateId) {
+                setTimeout(() => navigate(`/estimates/${result.estimateId}`), 2500);
+              }
+            }
+          });
         }
         break;
       }
