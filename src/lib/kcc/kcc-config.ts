@@ -16,8 +16,8 @@ export const KCC_SUPPLIER = {
   priceListDate: '2025-10-01',
   priceListVersion: 'October 2025 Revised',
   specBookVersion: '2024',
-  /** TKB SO pays 40% of MSRP (60% discount off list) — verified from Sales Order #SO-KCCFL-4844 */
-  multiplier: 0.40,
+  /** DEPRECATED: Use KCC_SERIES_MULTIPLIERS for per-series rates */
+  multiplier: 0.40, // fallback only — per-series multipliers below are authoritative
   /** Cabinets ship pre-assembled — assembly charged separately per unit */
   assembled: true,
   /** Assembly costs from Sales Order #SO-KCCFL-4844 */
@@ -33,6 +33,49 @@ export const KCC_SUPPLIER = {
   /** Prices subject to change without notice */
   pricesGuaranteed: false,
 } as const;
+
+// ---- Per-Series Multipliers (April 2026) ----
+// IC = (MSRP × series_multiplier) + assembly_cost
+
+export interface KccSeriesMultiplier {
+  series: string;
+  finish: string;
+  multiplier: number;
+}
+
+export const KCC_SERIES_MULTIPLIERS: KccSeriesMultiplier[] = [
+  { series: 'Brooklyn', finish: 'Fawn', multiplier: 0.357 },
+  { series: 'Brooklyn', finish: 'Slate', multiplier: 0.357 },
+  { series: 'Brooklyn', finish: 'Gray', multiplier: 0.338 },
+  { series: 'Brooklyn', finish: 'White', multiplier: 0.338 },
+  { series: 'Brooklyn', finish: 'Midnight', multiplier: 0.348 },
+  { series: 'Essential', finish: 'Gray', multiplier: 0.257 },
+  { series: 'Essential', finish: 'White', multiplier: 0.257 },
+  { series: 'Oslo', finish: 'Classic Walnut', multiplier: 0.418 },
+  { series: 'Oslo', finish: 'Oak', multiplier: 0.381 },
+  { series: 'Oslo', finish: 'White', multiplier: 0.331 },
+  { series: 'Shaker', finish: 'Kodiak', multiplier: 0.341 },
+  { series: 'Shaker', finish: 'Moss', multiplier: 0.331 },
+  { series: 'Shaker', finish: 'Sand', multiplier: 0.331 },
+  { series: 'Shaker', finish: 'White', multiplier: 0.326 },
+];
+
+// Accessories / non-cabinet items at 1.0× (full MSRP)
+export const KCC_FULL_PRICE_CATEGORIES = [
+  'Decorative Hardware',
+  'Floating Shelves',
+  'Hoods',
+  'KCD Accessories',
+  'Rev-A-Shelf',
+];
+
+export function getSeriesMultiplier(series: string, finish: string): number {
+  const match = KCC_SERIES_MULTIPLIERS.find(
+    m => m.series.toLowerCase() === series.toLowerCase() &&
+         m.finish.toLowerCase() === finish.toLowerCase()
+  );
+  return match?.multiplier ?? KCC_SUPPLIER.multiplier; // fallback to 0.40
+}
 
 // ---- Color Lines ----
 

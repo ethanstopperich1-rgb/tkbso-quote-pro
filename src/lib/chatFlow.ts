@@ -6,6 +6,7 @@
 
 import { TKBSO_DEFAULT_PRICING, type TKBSOPricingConfig } from './tkbso-pricing';
 import { calculateBurden, getConsumableKit, getTotalBurden, type BurdenLine } from './cost-rules';
+import { SCOPE_TEMPLATES, getTemplatesForRoom, type ScopeTemplate } from './scope-templates';
 
 // ── Shared Types ──────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ export type FlowStep =
   | 'customer_email'
   // Room selection
   | 'room_type'
+  | 'scope_template'
   | 'room_dimensions'
   // Bathroom flow
   | 'bath_demo'
@@ -122,6 +124,9 @@ export interface EstimateState {
   pricingTier: string;      // Standard | Upgraded | Premium
   totalPriceOverride: number | null;   // manual override, null = use calculated
   paymentSchedule: string;  // "65/25/10" | "35/30/20/15" | "50/25/25"
+
+  // Template
+  selectedTemplateId: string;  // scope template ID or 'custom'
 
   // Notes / misc
   notes: string;
@@ -548,13 +553,23 @@ export function calculateEstimate(
   }
 
   // ── Compute Totals ────────────────────────────────────────
+  // Tier multiplier applies to CABINET IC ONLY (not all CP)
+  // Cabinet trades are identified by name containing "Cabinet" or "KCC"
 
-  const rawIc = trades.reduce((sum, t) => sum + t.ic, 0);
-  const rawCp = trades.reduce((sum, t) => sum + t.cp, 0);
+  const finalTrades = trades.map(t => {
+    const isCabinetTrade = t.name.toLowerCase().includes('cabinet') ||
+                           t.name.toLowerCase().includes('kcc') ||
+                           t.name.toLowerCase().includes('crown molding') ||
+                           t.name.toLowerCase().includes('light rail');
+    return {
+      ...t,
+      ic: Math.round(isCabinetTrade ? t.ic * tierMult : t.ic),
+      cp: Math.round(isCabinetTrade ? t.cp * tierMult : t.cp),
+    };
+  });
 
-  // Apply tier multiplier to CP only (IC is fixed cost)
-  const subtotalIc = Math.round(rawIc);
-  const subtotalCp = Math.round(rawCp * tierMult);
+  const subtotalIc = finalTrades.reduce((sum, t) => sum + t.ic, 0);
+  const subtotalCp = finalTrades.reduce((sum, t) => sum + t.cp, 0);
 
   // Override total if user manually set it
   const finalCp = state.totalPriceOverride ?? subtotalCp;
@@ -578,11 +593,7 @@ export function calculateEstimate(
   }));
 
   return {
-    trades: trades.map(t => ({
-      ...t,
-      ic: Math.round(t.ic),
-      cp: Math.round(t.cp * tierMult),
-    })),
+    trades: finalTrades,
     subtotalCp: finalCp,
     subtotalIc,
     margin,
@@ -610,7 +621,7 @@ const SHARED_CLOSE: FlowStep[] = [
 
 const CUSTOMER_FLOW: FlowStep[] = [
   'customer_name', 'customer_address', 'customer_phone', 'customer_email',
-  'room_type', 'room_dimensions',
+  'room_type', 'scope_template', 'room_dimensions',
 ];
 
 export function getNextStep(current: FlowStep, state: Partial<EstimateState>): FlowStep {
@@ -623,7 +634,11 @@ export function getNextStep(current: FlowStep, state: Partial<EstimateState>): F
   }
 
   // After room_dimensions, branch by room type
+  // If a template was selected, skip ALL scope questions → go straight to pricing_tier
   if (current === 'room_dimensions') {
+    if (state.selectedTemplateId && state.selectedTemplateId !== 'custom') {
+      return 'pricing_tier'; // template pre-fills everything, skip to closing
+    }
     if (isBathroom(room)) return 'bath_demo';
     if (isKitchen(room)) return 'kitchen_demo';
     // Multiple Rooms / fallback — start with bathroom
@@ -744,8 +759,34 @@ export const FLOW_STEPS: Record<FlowStep, StepConfig> = {
     ],
   },
 
+  scope_template: {
+    message: (s) => {
+      const templates = getTemplatesForRoom(s.roomType ?? '');
+      if (templates.length === 0) return `${s.roomType} — got it. We'll build the scope step by step.`;
+      const list = templates.map(t =>
+        `• ${t.name} — ${fmt(t.totalCp)}`
+      ).join('\n');
+      return `${s.roomType} — got it. Pick a template or go custom:\n\n${list}`;
+    },
+    quickReplies: (s) => {
+      const templates = getTemplatesForRoom(s.roomType ?? '');
+      const chips: QuickReply[] = templates.map(t => ({
+        label: `${t.name} (${fmt(t.totalCp)})`,
+        value: t.id,
+        style: 'price' as ChipStyle,
+      }));
+      chips.push({ label: 'Custom (build from scratch)', value: 'custom' });
+      return chips;
+    },
+  },
+
   room_dimensions: {
-    message: (s) => `${s.roomType} \u2014 got it. Room dimensions? (optional \u2014 press enter to skip)`,
+    message: (s) => {
+      if (s.selectedTemplateId && s.selectedTemplateId !== 'custom') {
+        return 'Template loaded. Room dimensions? (optional — press enter to skip)';
+      }
+      return 'Room dimensions? (optional — press enter to skip)';
+    },
     inputType: 'text',
     inputPlaceholder: '165L x 124W  or  180 sq ft',
   },

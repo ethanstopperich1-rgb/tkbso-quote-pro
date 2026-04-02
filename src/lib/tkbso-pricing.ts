@@ -117,7 +117,9 @@ export interface TKBSOPricingConfig {
   quartz_fab_ic: number;       // Fabrication/install cost per sqft
   quartz_ic: number;           // Total IC (calculated: material + fab)
   quartz_cp: number;           // CP (calculated from IC and margin)
-  
+  granite_fab_ic: number;      // Granite fabrication-only IC per sqft
+  quartzite_fab_ic: number;    // Quartzite fabrication-only IC per sqft
+
   // Material Allowances (CP only - client-facing)
   tile_material_allowance_cp_per_sqft: number;
   plumbing_fixture_allowance_cp: number;
@@ -142,7 +144,7 @@ export interface TKBSOPricingConfig {
   target_margin: number;
 }
 
-// Default TKBSO pricing - Updated Jan 2025
+// Default TKBSO pricing - Updated April 2026
 // No multipliers - use line items for scope variations
 export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   // Tile rates (per sqft ranges from pricing doc)
@@ -150,7 +152,7 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   tile_wall_cp: 39,       // $36-42/sqft range
   tile_floor_ic: 5.5,     // $4.5-6.5/sqft range
   tile_floor_cp: 12,      // $10-14/sqft range
-  tile_shower_floor_ic: 6, // $5-7/sqft range
+  tile_shower_floor_ic: 5, // Corrected from $6 to $5
   tile_shower_floor_cp: 14, // $12-16/sqft range
   
   // LVP & Barrier flooring
@@ -255,11 +257,15 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   vanity_84_bundle_ic: 3200,
   vanity_84_bundle_cp: 5000,
   
-  // Quartz (material + fab = total IC, CP from margin)
-  quartz_material_ic: 25,  // Material cost per sqft
-  quartz_fab_ic: 15,       // Fabrication/install cost per sqft
-  quartz_ic: 40,           // Total IC (material + fab)
-  quartz_cp: 65,           // CP = 40 / (1 - 0.38) ≈ 64.5
+  // Quartz — IC is fabrication-only (material sourced from Slab Depot at 70% off CP)
+  quartz_material_ic: 25,  // Material cost per sqft (Slab Depot, separate from fab)
+  quartz_fab_ic: 21.50,    // Fabrication-only IC per sqft (Slab Depot confirmed rate)
+  quartz_ic: 40,           // Total IC used in estimates (material + fab combined)
+  quartz_cp: 65,           // CP = IC / (1 - 0.38)
+
+  // Granite/Quartzite fabrication-only IC rates (material sourced separately)
+  granite_fab_ic: 22.00,   // Granite fabrication-only IC per sqft
+  quartzite_fab_ic: 25.00, // Quartzite fabrication-only IC per sqft
   
   // Material Allowances (CP only - client-facing)
   tile_material_allowance_cp_per_sqft: 7.85,  // Tile, grout, thinset, sealer

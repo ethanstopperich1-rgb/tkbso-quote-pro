@@ -14,6 +14,7 @@ import {
   isMultiSelectStep,
 } from '@/lib/chatFlow';
 import { saveEstimate } from '@/lib/saveEstimate';
+import { getTemplate } from '@/lib/scope-templates';
 import { useAuth } from '@/hooks/useAuth';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
@@ -153,6 +154,17 @@ export function ChatEstimator() {
 
       // Room
       case 'room_type': updated.roomType = raw; break;
+      case 'scope_template': {
+        updated.selectedTemplateId = raw;
+        if (raw !== 'custom') {
+          // Template selected — inject all presets into state
+          const tmpl = getTemplate(raw);
+          if (tmpl) {
+            Object.assign(updated, tmpl.presets);
+          }
+        }
+        break;
+      }
       case 'room_dimensions': updated.roomDimensions = raw || ''; break;
 
       // Bathroom
