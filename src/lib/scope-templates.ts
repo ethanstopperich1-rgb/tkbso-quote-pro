@@ -100,6 +100,46 @@ export const SCOPE_TEMPLATES: ScopeTemplate[] = [
     ],
   },
 
+  // ── 2B-alt. Primary Bath — Standard (no tub, 48" vanity) ──
+  // Matches sold quote median of ~$28-30K
+  {
+    id: 'primary-bath-standard',
+    name: 'Primary Bath — Standard',
+    description: '8×10 full demo, walk-in shower (no tub), niche, 48" vanity, standard glass, 3 cans, paint, permit',
+    roomType: 'Primary Bathroom',
+    totalIc: 17680,
+    totalCp: 28516,
+    margin: 0.38,
+    tier: 'standard',
+    presets: {
+      bathDemo: 'Full Gut',
+      bathShowerType: 'Walk-in Shower (new build)',
+      bathTileWallSqft: 100,
+      bathTileFloorSqft: 50,
+      bathVanitySize: '48"',
+      bathCountertop: 'Level 1 Quartz',
+      bathGlass: 'Standard (door+panel)',
+      bathExtras: ['recessed_cans', 'new_toilet', 'led_mirror', 'niche', 'paint_full', 'door_trim'],
+      bathPlumbingExtras: [],
+      pricingTier: 'Standard',
+      paymentSchedule: '65/25/10',
+    },
+    trades: [
+      { name: 'Demo + Dumpster', ic: 2050, cp: 3306 },
+      { name: 'Plumbing (shower + toilet)', ic: 2925, cp: 4718 },
+      { name: 'Electrical (3 cans + vanity light)', ic: 395, cp: 637 },
+      { name: 'Framing + Niche', ic: 1050, cp: 1694 },
+      { name: 'Tile (100 wall + 50 floor + 14 shower floor)', ic: 2327, cp: 3753 },
+      { name: 'Waterproofing + Cement Board', ic: 225, cp: 363 },
+      { name: 'Vanity 48" Bundle', ic: 1600, cp: 2581 },
+      { name: 'Shower Glass (standard)', ic: 1200, cp: 1935 },
+      { name: 'Paint Full Bath', ic: 1200, cp: 1935 },
+      { name: 'Material Allowances', ic: 1508, cp: 2432 },
+      { name: 'Support Materials + Consumables', ic: 1550, cp: 0 },
+      { name: 'Permit', ic: 400, cp: 645 },
+    ],
+  },
+
   // ── 2C. Tub-to-Shower Conversion (5×8) ──
   {
     id: 'tub-to-shower',

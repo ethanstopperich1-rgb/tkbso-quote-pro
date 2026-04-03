@@ -268,15 +268,16 @@ export const TKBSO_DEFAULT_PRICING: TKBSOPricingConfig = {
   quartzite_fab_ic: 25.00, // Quartzite fabrication-only IC per sqft
   
   // Material Allowances (CP only - client-facing)
-  tile_material_allowance_cp_per_sqft: 7.85,  // Tile, grout, thinset, sealer
+  // Calibrated April 2026 against 23 sold quotes
+  tile_material_allowance_cp_per_sqft: 6.50,  // Most common rate in sold quotes ($6.50/sqft)
   plumbing_fixture_allowance_cp: 1350,        // Valve/trim, head, handheld, faucet
-  mirror_allowance_cp: 500,
-  lighting_fixture_allowance_cp: 400,
-  hardware_allowance_per_pull_cp: 15,
-  toilet_allowance_cp: 450,
-  sink_faucet_allowance_cp: 350,
+  mirror_allowance_cp: 475,                   // Sold range $235-$755, median ~$475
+  lighting_fixture_allowance_cp: 200,         // Sold range $125-$400, common $200
+  hardware_allowance_per_pull_cp: 4,          // Sold quotes consistently $4/pull
+  toilet_allowance_cp: 350,                   // Sold range $275-$475, common $350
+  sink_faucet_allowance_cp: 175,              // Sold range $125-$300, avg $175 (was $350)
   tub_allowance_cp: 800,
-  shower_trim_kit_allowance_cp: 450,
+  shower_trim_kit_allowance_cp: 275,          // Sold range $200-$400, avg $275 (was $450)
   tub_filler_allowance_cp: 650,
   kitchen_faucet_allowance_cp: 400,
   garbage_disposal_allowance_cp: 250,
