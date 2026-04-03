@@ -31,21 +31,13 @@ export function AppSidebar() {
       className="!bg-black border-r border-[#222] !w-[200px] min-w-[200px] max-w-[200px]"
       collapsible="none"
     >
-      {/* Logo */}
+      {/* Logo — always use static TKBSO logo (single-company app) */}
       <SidebarHeader className="px-5 pt-6 pb-8">
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt="TKBSO"
-            className="h-8 w-auto object-contain opacity-90"
-          />
-        ) : (
-          <img
-            src="/images/tkbso-logo-white-on-dark.png"
-            alt="TKBSO"
-            className="h-8 w-auto object-contain opacity-90"
-          />
-        )}
+        <img
+          src="/images/tkbso-logo-white-on-dark.png"
+          alt="The Kitchen and Bath Store of Orlando"
+          className="h-8 w-auto object-contain opacity-90"
+        />
       </SidebarHeader>
 
       {/* Nav */}
